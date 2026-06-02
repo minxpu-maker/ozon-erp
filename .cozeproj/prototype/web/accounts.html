@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/jquery/jquery-3.7.1.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/lucide/lucide-1.11.0.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/tailwindcss/tailwindcss-browser-4.2.4.min.js"></script>
+
+  <style type="text/tailwindcss">
+    @theme {
+      /* === 品牌色 === */
+      --color-primary:              #2F6BFF;
+      --color-primary-container:    #E8F0FF;
+      --color-on-primary:           #ffffff;
+      /* === 背景 / 表面 === */
+      --color-background:                 #F6F8FB;
+      --color-surface-container-lowest:   #EEF1F6;
+      --color-surface:                    #FFFFFF;
+      --color-surface-container:          #EEF1F6;
+      --color-surface-container-high:     #E6EAF2;
+      --color-surface-container-highest:  #DDE3ED;
+      /* === 文字 === */
+      --color-on-surface:           #152033;
+      --color-on-surface-variant:   #637089;
+      /* === 功能色 === */
+      --color-success:  #16A37B;
+      --color-error:    #EF4444;
+      --color-warning:  #F59E0B;
+      /* === 边框 === */
+      --color-outline:          #E6EAF2;
+      --color-outline-variant:  #D1D5DB;
+      /* === 圆角 === */
+      --radius-sm:   0.25rem;
+      --radius-md:   0.375rem;
+      --radius-lg:   0.5rem;
+      --radius-xl:   0.75rem;
+      --radius-2xl:  1rem;
+      --radius-full: 9999px;
+      /* === 阴影 === */
+      --shadow-card:   0 2px 8px rgba(0,0,0,0.08);
+      --shadow-float:  0 10px 25px rgba(0,0,0,0.12);
+      --shadow-dialog: 0 25px 50px rgba(0,0,0,0.16);
+      /* === 字体 === */
+      --font-sans: "Inter", system-ui, sans-serif;
+    }
+  </style>
+
+  <!-- 图片兜底 -->
+  <script>
+    document.addEventListener('error', function (e) {
+      const img = e.target;
+      if (img.tagName !== 'IMG' || img.dataset.fallback) return;
+      img.dataset.fallback = '1';
+      const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const cat = img.getAttribute('data-category') || '其他';
+      const alt = img.getAttribute('alt') || '';
+      const label = esc(alt.length > 8 ? alt.slice(0, 8) + '…' : alt);
+      const icons = { '人物': '👤', '自然风景': '🏞', '动物': '🐾', '建筑城市': '🏙', '运动体育': '⚽', '交通工具': '🚗', '食物': '🍽', '服饰时尚': '👗', '商业科技': '💼', '游戏娱乐': '🎮', '艺术': '🎨', '其他': '🖼' };
+      const icon = icons[cat] || '🖼';
+      const w = img.width || 400, h = img.height || 300;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="45%" text-anchor="middle" font-size="${Math.min(w, h) * 0.18}" dominant-baseline="central">${icon}</text><text x="50%" y="68%" text-anchor="middle" font-size="${Math.min(w, h) * 0.07}" fill="%239ca3af" font-family="system-ui,sans-serif" dominant-baseline="central">${label}</text></svg>`;
+      img.src = 'data:image/svg+xml,' + svg;
+    }, true);
+  </script>
+</head>
+
+<body class="bg-background text-on-surface font-sans">
+
+  <!-- @nav:start 导航组件 -->
+  <header class="bg-surface sticky top-0 z-40 h-14 flex items-center justify-between px-6 border-b border-outline/50">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+        <i data-lucide="box" class="w-4 h-4 text-on-primary"></i>
+      </div>
+      <span class="font-semibold text-base">Ozon ERP</span>
+    </div>
+    <div class="flex items-center gap-4">
+      <button class="flex items-center gap-2 text-sm text-on-surface-variant hover:text-on-surface transition-colors">
+        <i data-lucide="bell" class="w-4 h-4"></i>
+        <span class="bg-error text-white text-xs px-1.5 py-0.5 rounded-full font-medium">3</span>
+      </button>
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-primary font-medium text-sm">初</div>
+        <span class="text-sm font-medium">小初</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="flex" style="height: calc(100vh - 3.5rem)">
+    <aside class="w-56 shrink-0 bg-surface border-r border-outline/50 overflow-y-auto">
+      <div class="p-3 space-y-0.5">
+        <a href="dashboard.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="layout-dashboard" class="w-4 h-4"></i>仪表盘
+        </a>
+        <a href="orders.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="shopping-cart" class="w-4 h-4"></i>订单管理
+        </a>
+        <a href="purchase.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="package" class="w-4 h-4"></i>采购管理
+        </a>
+        <a href="quick-entry.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="clipboard-list" class="w-4 h-4"></i>快捷录单
+        </a>
+        <a href="logistics.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="truck" class="w-4 h-4"></i>物流追踪
+        </a>
+        <a href="packaging.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="box" class="w-4 h-4"></i>打包流程
+        </a>
+        <a href="finance.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="calculator" class="w-4 h-4"></i>财务核算
+        </a>
+        <div class="pt-3 pb-1">
+          <span class="px-3 text-xs font-medium text-on-surface-variant/60 uppercase tracking-wider">数据中心</span>
+        </div>
+        <a href="sku-management.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="database" class="w-4 h-4"></i>SKU管理
+        </a>
+        <a href="suppliers.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="users" class="w-4 h-4"></i>供应商管理
+        </a>
+        <a href="reports.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="bar-chart-3" class="w-4 h-4"></i>数据报表
+        </a>
+        <div class="pt-3 pb-1">
+          <span class="px-3 text-xs font-medium text-on-surface-variant/60 uppercase tracking-wider">系统</span>
+        </div>
+        <a href="settings.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="settings" class="w-4 h-4"></i>系统设置
+        </a>
+        <a href="accounts.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 text-primary font-medium text-sm" aria-current="page">
+          <i data-lucide="users" class="w-4 h-4"></i>账号管理
+        </a>
+        <a href="roles.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="shield" class="w-4 h-4"></i>角色权限
+        </a>
+      </div>
+    </aside>
+
+    <!-- @main-content:start -->
+    <main class="flex-1 min-w-0 overflow-y-auto bg-background p-6">
+      <!-- 页面标题 -->
+      <div class="mb-6">
+        <h1 class="text-2xl font-bold text-on-surface">账号管理</h1>
+        <p class="text-sm text-on-surface-variant mt-1">管理团队成员和账号权限</p>
+      </div>
+
+      <!-- 统计卡片 -->
+      <div class="grid grid-cols-4 gap-4 mb-6">
+        <!-- 统计卡片1：总账号数 -->
+        <div class="bg-surface rounded-lg shadow-card p-5">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-on-surface-variant">总账号数</p>
+              <p class="text-2xl font-bold text-on-surface mt-1">24</p>
+            </div>
+            <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+              <i data-lucide="users" class="w-5 h-5 text-primary"></i>
+            </div>
+          </div>
+        </div>
+        <!-- 统计卡片2：已启用账号 -->
+        <div class="bg-surface rounded-lg shadow-card p-5">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-on-surface-variant">已启用账号</p>
+              <p class="text-2xl font-bold text-success mt-1">20</p>
+            </div>
+            <div class="w-10 h-10 bg-success/10 rounded-lg flex items-center justify-center">
+              <i data-lucide="user-check" class="w-5 h-5 text-success"></i>
+            </div>
+          </div>
+        </div>
+        <!-- 统计卡片3：今日活跃 -->
+        <div class="bg-surface rounded-lg shadow-card p-5">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-on-surface-variant">今日活跃</p>
+              <p class="text-2xl font-bold text-primary mt-1">15</p>
+            </div>
+            <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+              <i data-lucide="activity" class="w-5 h-5 text-primary"></i>
+            </div>
+          </div>
+        </div>
+        <!-- 统计卡片4：待审核 -->
+        <div class="bg-surface rounded-lg shadow-card p-5">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-on-surface-variant">待审核</p>
+              <p class="text-2xl font-bold text-warning mt-1">3</p>
+            </div>
+            <div class="w-10 h-10 bg-warning/10 rounded-lg flex items-center justify-center">
+              <i data-lucide="user-plus" class="w-5 h-5 text-warning"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 当前登录账号信息卡片 -->
+      <div class="bg-surface rounded-lg shadow-card p-5 mb-6">
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-white font-semibold text-lg">初</div>
+          <div class="flex-1">
+            <div class="flex items-center gap-3">
+              <span class="text-base font-semibold text-on-surface">小初</span>
+              <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-error/15 text-error">管理员</span>
+            </div>
+            <p class="text-sm text-on-surface-variant mt-0.5">手机号：138****5678 | 最后登录：2024-01-15 14:32</p>
+          </div>
+          <div class="flex items-center gap-6 text-sm">
+            <div>
+              <p class="text-on-surface-variant">权限范围</p>
+              <p class="font-medium text-on-surface mt-0.5">全部权限（系统管理 + 业务操作）</p>
+            </div>
+            <button id="btn-edit-current-permission" class="text-primary font-medium hover:underline">编辑权限</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 筛选栏 -->
+      <div class="bg-surface rounded-lg shadow-card p-4 mb-4">
+        <div class="flex items-center gap-4">
+          <!-- 搜索框 -->
+          <div class="flex-1 relative">
+            <i data-lucide="search" class="w-4 h-4 text-on-surface-variant absolute left-3 top-1/2 -translate-y-1/2"></i>
+            <input type="text" id="input-search" placeholder="搜索账号名称或手机号" class="w-full bg-surface-container border-none rounded-md pl-10 pr-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" />
+          </div>
+          <!-- 角色筛选 -->
+          <select id="select-role" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
+            <option value="">全部角色</option>
+            <option value="admin">管理员</option>
+            <option value="buyer">采购员</option>
+            <option value="packer">打包员</option>
+            <option value="finance">财务</option>
+            <option value="custom">自定义</option>
+          </select>
+          <!-- 状态筛选 -->
+          <select id="select-status" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
+            <option value="">全部状态</option>
+            <option value="enabled">已启用</option>
+            <option value="disabled">已禁用</option>
+            <option value="pending">待审核</option>
+          </select>
+          <!-- 操作按钮 -->
+          <button id="btn-reset-filter" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all">重置</button>
+          <button id="btn-add-account" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-2">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i>新增账号
+          </button>
+        </div>
+      </div>
+
+      <!-- 批量操作栏 -->
+      <div id="batch-actions" class="bg-primary/5 border border-primary/20 rounded-lg p-3 mb-4 hidden">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <input type="checkbox" id="checkbox-select-all" class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30" />
+            <span class="text-sm text-on-surface">已选择 <span id="selected-count">0</span> 个账号</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="btn-batch-enable" class="bg-success/10 text-success px-3 py-1.5 rounded-md text-sm font-medium hover:bg-success/20 active:scale-[0.98] transition-all">批量启用</button>
+            <button id="btn-batch-disable" class="bg-surface-container text-on-surface-variant px-3 py-1.5 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all">批量禁用</button>
+            <button id="btn-batch-role" class="bg-primary/10 text-primary px-3 py-1.5 rounded-md text-sm font-medium hover:bg-primary/20 active:scale-[0.98] transition-all">批量分配角色</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 账号列表表格 -->
+      <div class="bg-surface rounded-lg shadow-card overflow-hidden">
+        <!-- 表头 -->
+        <div class="grid grid-cols-8 gap-4 px-6 py-3 bg-surface-container text-xs font-semibold text-on-surface-variant uppercase tracking-wide">
+          <div class="flex items-center gap-2">
+            <input type="checkbox" id="checkbox-header" class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30" />
+          </div>
+          <span>账号信息</span>
+          <span>手机号</span>
+          <span>角色</span>
+          <span>所属店铺</span>
+          <span>状态</span>
+          <span>最后登录</span>
+          <span>操作</span>
+        </div>
+        <!-- 表格内容 -->
+        <div id="account-list" class="divide-y divide-outline-variant/50">
+          <!-- 列表项1：管理员账号 -->
+          <div class="grid grid-cols-8 gap-4 px-6 py-4 hover:bg-surface-container/50 transition-colors items-center" data-id="1">
+            <div class="flex items-center">
+              <input type="checkbox" class="checkbox-item w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30" data-id="1" />
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 bg-error/10 rounded-full flex items-center justify-center text-error font-medium text-sm">张</div>
+              <span class="text-sm font-medium text-on-surface">张伟</span>
+            </div>
+            <span class="text-sm text-on-surface-variant">138****1234</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-error/15 text-error w-fit">管理员</span>
+            <span class="text-sm text-on-surface">全部店铺</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success w-fit">已启用</span>
+            <span class="text-sm text-on-surface-variant">2024-01-15 09:23</span>
+            <div class="flex items-center gap-2">
+              <button class="btn-edit-permission text-primary text-sm font-medium hover:underline" data-id="1">编辑权限</button>
+              <button class="btn-reset-password text-on-surface-variant text-sm hover:text-on-surface" data-id="1">重置密码</button>
+              <button class="btn-toggle-status text-on-surface-variant text-sm hover:text-on-surface" data-id="1">禁用</button>
+            </div>
+          </div>
+          <!-- 列表项2：采购员账号 -->
+          <div class="grid grid-cols-8 gap-4 px-6 py-4 hover:bg-surface-container/50 transition-colors items-center" data-id="2">
+            <div class="flex items-center">
+              <input type="checkbox" class="checkbox-item w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30" data-id="2" />
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-primary font-medium text-sm">李</div>
+              <span class="text-sm font-medium text-on-surface">李明</span>
+            </div>
+            <span class="text-sm text-on-surface-variant">139****5678</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-primary/15 text-primary w-fit">采购员</span>
+            <span class="text-sm text-on-surface">广州仓、深圳仓</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success w-fit">已启用</span>
+            <span class="text-sm text-on-surface-variant">2024-01-15 10:45</span>
+            <div class="flex items-center gap-2">
+              <button class="btn-edit-permission text-primary text-sm font-medium hover:underline" data-id="2">编辑权限</button>
+              <button class="btn-reset-password text-on-surface-variant text-sm hover:text-on-surface" data-id="2">重置密码</button>
+              <button class="btn-toggle-status text-on-surface-variant text-sm hover:text-on-surface" data-id="2">禁用</button>
+            </div>
+          </div>
+          <!-- 列表项3：打包员账号 -->
+          <div class="grid grid-cols-8 gap-4 px-6 py-4 hover:bg-surface-container/50 transition-colors items-center" data-id="3">
+            <div class="flex items-center">
+              <input type="checkbox" class="checkbox-item w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30" data-id="3" />
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 bg-warning/10 rounded-full flex items-center justify-center text-warning font-medium text-sm">王</div>
+              <span class="text-sm font-medium text-on-surface">王芳</span>
+            </div>
+            <span class="text-sm text-on-surface-variant">137****9012</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning w-fit">打包员</span>
+            <span class="text-sm text-on-surface">广州仓</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success w-fit">已启用</span>
+            <span class="text-sm text-on-surface-variant">2024-01-15 08:30</span>
+            <div class="flex items-center gap-2">
+              <button class="btn-edit-permission text-primary text-sm font-medium hover:underline" data-id="3">编辑权限</button>
+              <button class="btn-reset-password text-on-surface-variant text-sm hover:text-on-surface" data-id="3">重置密码</button>
+              <button class="btn-toggle-status text-on-surface-variant text-sm hover:text-on-surface" data-id="3">禁用</button>
+            </div>
+          </div>
+          <!-- 列表项4：财务账号 -->
+          <div class="grid grid-cols-8 gap-4 px-6 py-4 hover:bg-surface-container/50 transition-colors items-center" data-id="4">
+            <div class="flex items-center">
+              <input type="checkbox" class="checkbox-item w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30" data-id="4" />
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 bg-success/10 rounded-full flex items-center justify-center text-success font-medium text-sm">陈</div>
+              <span class="text-sm font-medium text-on-surface">陈丽</span>
+            </div>
+            <span class="text-sm text-on-surface-variant">136****3456</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success w-fit">财务</span>
+            <span class="text-sm text-on-surface">全部店铺</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success w-fit">已启用</span>
+            <span class="text-sm text-on-surface-variant">2024-01-14 16:20</span>
+            <div class="flex items-center gap-2">
+              <button class="btn-edit-permission text-primary text-sm font-medium hover:underline" data-id="4">编辑权限</button>
+              <button class="btn-reset-password text-on-surface-variant text-sm hover:text-on-surface" data-id="4">重置密码</button>
+              <button class="btn-toggle-status text-on-surface-variant text-sm hover:text-on-surface" data-id="4">禁用</button>
+            </div>
+          </div>
+          <!-- 列表项5：自定义角色账号 -->
+          <div class="grid grid-cols-8 gap-4 px-6 py-4 hover:bg-surface-container/50 transition-colors items-center" data-id="5">
+            <div class="flex items-center">
+              <input type="checkbox" class="checkbox-item w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30" data-id="5" />
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 bg-purple-500/10 rounded-full flex items-center justify-center text-purple-600 font-medium text-sm">刘</div>
+              <span class="text-sm font-medium text-on-surface">刘强</span>
+            </div>
+            <span class="text-sm text-on-surface-variant">135****7890</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-purple-500/15 text-purple-600 w-fit">自定义</span>
+            <span class="text-sm text-on-surface">上海仓</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-surface-container-high text-on-surface-variant w-fit">已禁用</span>
+            <span class="text-sm text-on-surface-variant">2024-01-10 11:15</span>
+            <div class="flex items-center gap-2">
+              <button class="btn-edit-permission text-primary text-sm font-medium hover:underline" data-id="5">编辑权限</button>
+              <button class="btn-reset-password text-on-surface-variant text-sm hover:text-on-surface" data-id="5">重置密码</button>
+              <button class="btn-toggle-status text-success text-sm hover:underline" data-id="5">启用</button>
+            </div>
+          </div>
+          <!-- 列表项6：待审核账号 -->
+          <div class="grid grid-cols-8 gap-4 px-6 py-4 hover:bg-surface-container/50 transition-colors items-center" data-id="6">
+            <div class="flex items-center">
+              <input type="checkbox" class="checkbox-item w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30" data-id="6" />
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 bg-surface-container-high rounded-full flex items-center justify-center text-on-surface-variant font-medium text-sm">赵</div>
+              <span class="text-sm font-medium text-on-surface">赵敏</span>
+            </div>
+            <span class="text-sm text-on-surface-variant">134****2345</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-primary/15 text-primary w-fit">采购员</span>
+            <span class="text-sm text-on-surface">待分配</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning w-fit">待审核</span>
+            <span class="text-sm text-on-surface-variant">-</span>
+            <div class="flex items-center gap-2">
+              <button class="btn-approve text-success text-sm font-medium hover:underline" data-id="6">通过</button>
+              <button class="btn-reject text-error text-sm font-medium hover:underline" data-id="6">拒绝</button>
+            </div>
+          </div>
+        </div>
+        <!-- 分页 -->
+        <div class="flex items-center justify-between px-6 py-4 border-t border-outline-variant/50">
+          <span class="text-sm text-on-surface-variant">共 24 条记录</span>
+          <div class="flex items-center gap-2">
+            <button class="px-3 py-1.5 text-sm text-on-surface-variant bg-surface-container rounded-md hover:bg-surface-container-high transition-colors">上一页</button>
+            <button class="px-3 py-1.5 text-sm text-on-surface bg-primary text-on-primary rounded-md">1</button>
+            <button class="px-3 py-1.5 text-sm text-on-surface-variant bg-surface-container rounded-md hover:bg-surface-container-high transition-colors">2</button>
+            <button class="px-3 py-1.5 text-sm text-on-surface-variant bg-surface-container rounded-md hover:bg-surface-container-high transition-colors">3</button>
+            <button class="px-3 py-1.5 text-sm text-on-surface-variant bg-surface-container rounded-md hover:bg-surface-container-high transition-colors">下一页</button>
+          </div>
+        </div>
+      </div>
+    </main>
+    <!-- @main-content:end -->
+  </div>
+  <!-- @nav:end 导航组件 -->
+
+  <!-- 新增账号弹窗 -->
+  <div id="modal-add-account" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-surface rounded-xl shadow-dialog max-w-lg w-full max-h-[90vh] overflow-y-auto">
+      <div class="p-6 border-b border-outline-variant/50">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-semibold text-on-surface">新增账号</h2>
+          <button id="btn-close-add-modal" class="text-on-surface-variant hover:text-on-surface transition-colors">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+      <div class="p-6 space-y-4">
+        <!-- 账号名称 -->
+        <div>
+          <label class="block text-sm font-medium text-on-surface mb-1.5">账号名称 <span class="text-error">*</span></label>
+          <input type="text" id="input-account-name" placeholder="请输入账号名称" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" />
+        </div>
+        <!-- 手机号 -->
+        <div>
+          <label class="block text-sm font-medium text-on-surface mb-1.5">手机号 <span class="text-error">*</span></label>
+          <input type="tel" id="input-phone" placeholder="请输入手机号" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" />
+        </div>
+        <!-- 选择角色 -->
+        <div>
+          <label class="block text-sm font-medium text-on-surface mb-1.5">选择角色 <span class="text-error">*</span></label>
+          <select id="select-add-role" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
+            <option value="">请选择角色</option>
+            <option value="admin">管理员</option>
+            <option value="buyer">采购员</option>
+            <option value="packer">打包员</option>
+            <option value="finance">财务</option>
+            <option value="custom">自定义</option>
+          </select>
+        </div>
+        <!-- 权限预览 -->
+        <div id="permission-preview" class="hidden">
+          <label class="block text-sm font-medium text-on-surface mb-1.5">权限预览</label>
+          <div class="bg-surface-container rounded-lg p-4">
+            <div id="permission-list" class="space-y-2 text-sm text-on-surface-variant">
+              <!-- 动态显示权限 -->
+            </div>
+          </div>
+        </div>
+        <!-- 分配店铺权限 -->
+        <div>
+          <label class="block text-sm font-medium text-on-surface mb-1.5">分配店铺权限</label>
+          <div class="grid grid-cols-2 gap-2">
+            <label class="flex items-center gap-2 bg-surface-container rounded-md px-3 py-2 cursor-pointer hover:bg-surface-container-high transition-colors">
+              <input type="checkbox" class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30" checked />
+              <span class="text-sm text-on-surface">广州仓</span>
+            </label>
+            <label class="flex items-center gap-2 bg-surface-container rounded-md px-3 py-2 cursor-pointer hover:bg-surface-container-high transition-colors">
+              <input type="checkbox" class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30" />
+              <span class="text-sm text-on-surface">深圳仓</span>
+            </label>
+            <label class="flex items-center gap-2 bg-surface-container rounded-md px-3 py-2 cursor-pointer hover:bg-surface-container-high transition-colors">
+              <input type="checkbox" class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30" />
+              <span class="text-sm text-on-surface">上海仓</span>
+            </label>
+            <label class="flex items-center gap-2 bg-surface-container rounded-md px-3 py-2 cursor-pointer hover:bg-surface-container-high transition-colors">
+              <input type="checkbox" class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30" />
+              <span class="text-sm text-on-surface">杭州仓</span>
+            </label>
+          </div>
+        </div>
+        <!-- 初始密码 -->
+        <div>
+          <label class="block text-sm font-medium text-on-surface mb-1.5">初始密码 <span class="text-error">*</span></label>
+          <div class="relative">
+            <input type="text" id="input-password" value="Abc@123456" readonly class="w-full bg-surface-container border-none rounded-md px-3 py-2 pr-20 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" />
+            <button id="btn-generate-password" class="absolute right-2 top-1/2 -translate-y-1/2 text-primary text-xs font-medium hover:underline">随机生成</button>
+          </div>
+          <p class="text-xs text-on-surface-variant mt-1">初始密码将在账号创建后发送至用户手机</p>
+        </div>
+      </div>
+      <div class="p-6 border-t border-outline-variant/50 flex items-center justify-end gap-3">
+        <button id="btn-cancel-add" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all">取消</button>
+        <button id="btn-confirm-add" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">确认创建</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 编辑权限弹窗 -->
+  <div id="modal-edit-permission" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-surface rounded-xl shadow-dialog max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div class="p-6 border-b border-outline-variant/50">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-semibold text-on-surface">编辑权限</h2>
+          <button id="btn-close-edit-modal" class="text-on-surface-variant hover:text-on-surface transition-colors">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+      <div class="p-6 space-y-6">
+        <!-- 账号基础信息 -->
+        <div class="flex items-center gap-4 p-4 bg-surface-container rounded-lg">
+          <div class="w-12 h-12 bg-error/10 rounded-full flex items-center justify-center text-error font-medium text-lg">张</div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-base font-semibold text-on-surface">张伟</span>
+              <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-error/15 text-error">管理员</span>
+            </div>
+            <p class="text-sm text-on-surface-variant mt-0.5">138****1234 | 最后登录：2024-01-15 09:23</p>
+          </div>
+        </div>
+        <!-- 角色选择 -->
+        <div>
+          <label class="block text-sm font-medium text-on-surface mb-1.5">选择角色</label>
+          <select id="select-edit-role" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
+            <option value="admin" selected>管理员</option>
+            <option value="buyer">采购员</option>
+            <option value="packer">打包员</option>
+            <option value="finance">财务</option>
+            <option value="custom">自定义</option>
+          </select>
+          <p class="text-xs text-on-surface-variant mt-1">切换角色将自动更新下方权限配置</p>
+        </div>
+        <!-- 自定义权限配置 -->
+        <div>
+          <label class="block text-sm font-medium text-on-surface mb-2">自定义权限配置</label>
+          <div class="space-y-3">
+            <!-- 订单管理 -->
+            <div class="p-4 bg-surface-container rounded-lg">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-sm font-medium text-on-surface">订单管理</span>
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30" checked />
+                  <span class="text-xs text-on-surface-variant">全选</span>
+                </label>
+              </div>
+              <div class="grid grid-cols-3 gap-2">
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30" checked />
+                  <span class="text-sm text-on-surface-variant">查看订单</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30" checked />
+                  <span class="text-sm text-on-surface-variant">创建订单</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30" checked />
+                  <span class="text-sm text-on-surface-variant">编辑订单</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30" checked />
+                  <span class="text-sm text-on-surface-variant">删除订单</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30" checked />
+                  <span class="text-sm text-on-surface-variant">导出订单</span>
+                </label>
+              </div>
+            </div>
+            <!-- 采购管理 -->
+            <div class="p-4 bg-surface-container rounded-lg">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-sm font-medium text-on-surface">采购管理</span>
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30" checked />
+                  <span class="text-xs text-on-surface-variant">全选</span>
+                </label>
+              </div>
+              <div class="grid grid-cols-3 gap-2">
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30" checked />
+                  <span class="text-sm text-on-surface-variant">查看采购</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30" checked />
+                  <span class="text-sm text-on-surface-variant">创建采购单</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30" checked />
+                  <span class="text-sm text-on-surface-variant">审批采购</span>
+                </label>
+              </div>
+            </div>
+            <!-- 财务权限 -->
+            <div class="p-4 bg-surface-container rounded-lg">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-sm font-medium text-on-surface">财务权限</span>
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30" checked />
+                  <span class="text-xs text-on-surface-variant">全选</span>
+                </label>
+              </div>
+              <div class="grid grid-cols-3 gap-2">
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30" checked />
+                  <span class="text-sm text-on-surface-variant">查看报表</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30" checked />
+                  <span class="text-sm text-on-surface-variant">财务审核</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30" checked />
+                  <span class="text-sm text-on-surface-variant">导出财务</span>
+                </label>
+              </div>
+            </div>
+            <!-- 系统设置 -->
+            <div class="p-4 bg-surface-container rounded-lg">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-sm font-medium text-on-surface">系统设置</span>
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30" checked />
+                  <span class="text-xs text-on-surface-variant">全选</span>
+                </label>
+              </div>
+              <div class="grid grid-cols-3 gap-2">
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30" checked />
+                  <span class="text-sm text-on-surface-variant">账号管理</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30" checked />
+                  <span class="text-sm text-on-surface-variant">角色管理</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30" checked />
+                  <span class="text-sm text-on-surface-variant">系统配置</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- 店铺权限分配 -->
+        <div>
+          <label class="block text-sm font-medium text-on-surface mb-2">店铺权限分配</label>
+          <div class="grid grid-cols-2 gap-2">
+            <label class="flex items-center gap-2 bg-surface-container rounded-md px-3 py-2 cursor-pointer hover:bg-surface-container-high transition-colors">
+              <input type="checkbox" class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30" checked />
+              <span class="text-sm text-on-surface">广州仓</span>
+            </label>
+            <label class="flex items-center gap-2 bg-surface-container rounded-md px-3 py-2 cursor-pointer hover:bg-surface-container-high transition-colors">
+              <input type="checkbox" class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30" checked />
+              <span class="text-sm text-on-surface">深圳仓</span>
+            </label>
+            <label class="flex items-center gap-2 bg-surface-container rounded-md px-3 py-2 cursor-pointer hover:bg-surface-container-high transition-colors">
+              <input type="checkbox" class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30" checked />
+              <span class="text-sm text-on-surface">上海仓</span>
+            </label>
+            <label class="flex items-center gap-2 bg-surface-container rounded-md px-3 py-2 cursor-pointer hover:bg-surface-container-high transition-colors">
+              <input type="checkbox" class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30" checked />
+              <span class="text-sm text-on-surface">杭州仓</span>
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="p-6 border-t border-outline-variant/50 flex items-center justify-end gap-3">
+        <button id="btn-cancel-edit" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all">取消</button>
+        <button id="btn-confirm-edit" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">保存修改</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 批量分配角色弹窗 -->
+  <div id="modal-batch-role" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-surface rounded-xl shadow-dialog max-w-md w-full">
+      <div class="p-6 border-b border-outline-variant/50">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-semibold text-on-surface">批量分配角色</h2>
+          <button id="btn-close-batch-role-modal" class="text-on-surface-variant hover:text-on-surface transition-colors">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+      <div class="p-6 space-y-4">
+        <p class="text-sm text-on-surface-variant">已选择 <span id="batch-selected-count" class="text-primary font-medium">0</span> 个账号，请选择要分配的角色：</p>
+        <select id="select-batch-role" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
+          <option value="">请选择角色</option>
+          <option value="admin">管理员</option>
+          <option value="buyer">采购员</option>
+          <option value="packer">打包员</option>
+          <option value="finance">财务</option>
+          <option value="custom">自定义</option>
+        </select>
+        <p class="text-xs text-on-surface-variant">注意：批量分配将覆盖已选账号的原有角色，此操作不可撤销。</p>
+      </div>
+      <div class="p-6 border-t border-outline-variant/50 flex items-center justify-end gap-3">
+        <button id="btn-cancel-batch-role" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all">取消</button>
+        <button id="btn-confirm-batch-role" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">确认分配</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 确认删除弹窗 -->
+  <div id="modal-delete-confirm" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-surface rounded-xl shadow-dialog max-w-sm w-full">
+      <div class="p-6">
+        <div class="flex items-center justify-center w-12 h-12 bg-error/10 rounded-full mx-auto mb-4">
+          <i data-lucide="alert-triangle" class="w-6 h-6 text-error"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-on-surface text-center mb-2">确认删除账号？</h3>
+        <p class="text-sm text-on-surface-variant text-center">删除后该账号将无法恢复，相关数据将被永久移除。</p>
+      </div>
+      <div class="p-6 border-t border-outline-variant/50 flex items-center justify-center gap-3">
+        <button id="btn-cancel-delete" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all">取消</button>
+        <button id="btn-confirm-delete" class="bg-error text-white px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">确认删除</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    $(function() {
+      lucide.createIcons();
+
+      // 权限配置数据
+      var rolePermissions = {
+        admin: ['订单管理（全部权限）', '采购管理（全部权限）', '财务权限（全部权限）', '系统设置（全部权限）'],
+        buyer: ['订单管理（查看、创建）', '采购管理（全部权限）'],
+        packer: ['订单管理（查看）', '打包流程（全部权限）'],
+        finance: ['订单管理（查看）', '财务权限（全部权限）'],
+        custom: ['无默认权限，请手动配置']
+      };
+
+      // 新增账号弹窗
+      $('#btn-add-account').on('click', function() {
+        $('#modal-add-account').removeClass('hidden');
+        lucide.createIcons();
+      });
+
+      $('#btn-close-add-modal, #btn-cancel-add').on('click', function() {
+        $('#modal-add-account').addClass('hidden');
+      });
+
+      // 角色选择后显示权限预览
+      $('#select-add-role').on('change', function() {
+        var role = $(this).val();
+        if (role) {
+          var permissions = rolePermissions[role] || [];
+          var html = permissions.map(function(p) {
+            return '<div class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-success"></i><span>' + p + '</span></div>';
+          }).join('');
+          $('#permission-list').html(html);
+          $('#permission-preview').removeClass('hidden');
+          lucide.createIcons();
+        } else {
+          $('#permission-preview').addClass('hidden');
+        }
+      });
+
+      // 随机生成密码
+      $('#btn-generate-password').on('click', function() {
+        var chars = 'ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz2345678!@#$%';
+        var password = '';
+        for (var i = 0; i < 10; i++) {
+          password += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        $('#input-password').val(password);
+      });
+
+      // 确认创建
+      $('#btn-confirm-add').on('click', function() {
+        // 复杂交互：创建账号应实现以下步骤：
+        // 1. 校验表单数据完整性（名称、手机号、角色、密码必填）
+        // 2. 校验手机号格式是否正确
+        // 3. 调用后端API创建账号
+        // 4. 发送初始密码短信到用户手机
+        // 5. 刷新账号列表
+        // 6. 关闭弹窗并提示创建成功
+        console.log('创建账号:', $('#input-account-name').val(), $('#input-phone').val(), $('#select-add-role').val());
+        alert('账号创建成功！初始密码已发送至用户手机。');
+        $('#modal-add-account').addClass('hidden');
+      });
+
+      // 编辑权限弹窗
+      $('.btn-edit-permission').on('click', function() {
+        var id = $(this).data('id');
+        // 复杂交互：编辑权限应实现以下步骤：
+        // 1. 根据ID获取账号详细信息（头像、名称、手机号、当前角色）
+        // 2. 获取该账号当前的权限配置
+        // 3. 获取该账号已分配的店铺列表
+        // 4. 渲染到弹窗中
+        console.log('编辑权限，账号ID:', id);
+        $('#modal-edit-permission').removeClass('hidden');
+        lucide.createIcons();
+      });
+
+      $('#btn-close-edit-modal, #btn-cancel-edit').on('click', function() {
+        $('#modal-edit-permission').addClass('hidden');
+      });
+
+      // 编辑权限弹窗角色切换时更新权限
+      $('#select-edit-role').on('change', function() {
+        var role = $(this).val();
+        // 复杂交互：切换角色应实现以下步骤：
+        // 1. 根据选择的角色获取默认权限配置
+        // 2. 自动勾选/取消勾选对应的权限复选框
+        // 3. 提示用户权限已被更新
+        console.log('切换角色:', role);
+      });
+
+      // 确认编辑权限
+      $('#btn-confirm-edit').on('click', function() {
+        // 复杂交互：保存权限应实现以下步骤：
+        // 1. 收集所有勾选的权限项
+        // 2. 收集选择的店铺权限
+        // 3. 调用后端API更新权限配置
+        // 4. 记录操作日志（审计追踪）
+        // 5. 关闭弹窗并提示保存成功
+        console.log('保存权限修改');
+        alert('权限修改已保存！');
+        $('#modal-edit-permission').addClass('hidden');
+      });
+
+      // 重置密码
+      $('.btn-reset-password').on('click', function() {
+        var id = $(this).data('id');
+        // 复杂交互：重置密码应实现以下步骤：
+        // 1. 弹出确认框确认是否重置
+        // 2. 生成新的随机密码
+        // 3. 调用后端API重置密码
+        // 4. 发送新密码到用户手机
+        // 5. 提示操作成功
+        if (confirm('确定要重置该账号的密码吗？新密码将发送至用户手机。')) {
+          console.log('重置密码，账号ID:', id);
+          alert('密码已重置！新密码已发送至用户手机。');
+        }
+      });
+
+      // 启用/禁用账号
+      $('.btn-toggle-status').on('click', function() {
+        var id = $(this).data('id');
+        var action = $(this).text().trim();
+        // 复杂交互：切换状态应实现以下步骤：
+        // 1. 根据当前状态判断操作（启用/禁用）
+        // 2. 弹出确认框确认操作
+        // 3. 调用后端API更新状态
+        // 4. 更新列表中的状态标签
+        // 5. 更新按钮文字
+        // 6. 记录操作日志
+        if (confirm('确定要' + action + '该账号吗？')) {
+          console.log(action + '账号，ID:', id);
+          alert('账号已' + action + '！');
+        }
+      });
+
+      // 审核通过
+      $('.btn-approve').on('click', function() {
+        var id = $(this).data('id');
+        // 复杂交互：审核通过应实现以下步骤：
+        // 1. 调用后端API更新账号状态为已启用
+        // 2. 发送审核通过通知到用户手机
+        // 3. 更新列表中的状态标签
+        // 4. 更新操作按钮
+        console.log('审核通过，账号ID:', id);
+        alert('审核通过！');
+      });
+
+      // 审核拒绝
+      $('.btn-reject').on('click', function() {
+        var id = $(this).data('id');
+        // 复杂交互：审核拒绝应实现以下步骤：
+        // 1. 弹出输入框填写拒绝原因
+        // 2. 调用后端API删除该账号申请
+        // 3. 发送审核拒绝通知到用户手机
+        // 4. 从列表中移除该条目
+        console.log('审核拒绝，账号ID:', id);
+        if (confirm('确定要拒绝该账号申请吗？')) {
+          alert('已拒绝申请！');
+        }
+      });
+
+      // 复选框选择逻辑
+      var selectedIds = [];
+
+      $('#checkbox-header').on('change', function() {
+        var isChecked = $(this).prop('checked');
+        $('.checkbox-item').prop('checked', isChecked);
+        updateBatchActions();
+      });
+
+      $('#account-list').on('change', '.checkbox-item', function() {
+        updateBatchActions();
+      });
+
+      function updateBatchActions() {
+        selectedIds = [];
+        $('.checkbox-item:checked').each(function() {
+          selectedIds.push($(this).data('id'));
+        });
+        $('#selected-count').text(selectedIds.length);
+        $('#batch-selected-count').text(selectedIds.length);
+        
+        if (selectedIds.length > 0) {
+          $('#batch-actions').removeClass('hidden');
+        } else {
+          $('#batch-actions').addClass('hidden');
+        }
+
+        // 更新全选框状态
+        var total = $('.checkbox-item').length;
+        var checked = selectedIds.length;
+        if (checked === 0) {
+          $('#checkbox-header').prop('checked', false);
+          $('#checkbox-header').prop('indeterminate', false);
+        } else if (checked === total) {
+          $('#checkbox-header').prop('checked', true);
+          $('#checkbox-header').prop('indeterminate', false);
+        } else {
+          $('#checkbox-header').prop('checked', false);
+          $('#checkbox-header').prop('indeterminate', true);
+        }
+      }
+
+      // 批量启用
+      $('#btn-batch-enable').on('click', function() {
+        // 复杂交互：批量启用应实现以下步骤：
+        // 1. 确认操作
+        // 2. 调用后端API批量更新状态
+        // 3. 更新列表中对应账号的状态标签
+        // 4. 清空选择并隐藏批量操作栏
+        // 5. 记录操作日志
+        if (confirm('确定要批量启用选中的 ' + selectedIds.length + ' 个账号吗？')) {
+          console.log('批量启用账号:', selectedIds);
+          alert('已批量启用 ' + selectedIds.length + ' 个账号！');
+          $('#checkbox-header').prop('checked', false);
+          $('.checkbox-item').prop('checked', false);
+          updateBatchActions();
+        }
+      });
+
+      // 批量禁用
+      $('#btn-batch-disable').on('click', function() {
+        // 复杂交互：批量禁用应实现以下步骤：
+        // 1. 确认操作
+        // 2. 调用后端API批量更新状态
+        // 3. 更新列表中对应账号的状态标签
+        // 4. 清空选择并隐藏批量操作栏
+        // 5. 记录操作日志
+        if (confirm('确定要批量禁用选中的 ' + selectedIds.length + ' 个账号吗？')) {
+          console.log('批量禁用账号:', selectedIds);
+          alert('已批量禁用 ' + selectedIds.length + ' 个账号！');
+          $('#checkbox-header').prop('checked', false);
+          $('.checkbox-item').prop('checked', false);
+          updateBatchActions();
+        }
+      });
+
+      // 批量分配角色
+      $('#btn-batch-role').on('click', function() {
+        if (selectedIds.length === 0) {
+          alert('请先选择账号');
+          return;
+        }
+        $('#modal-batch-role').removeClass('hidden');
+      });
+
+      $('#btn-close-batch-role-modal, #btn-cancel-batch-role').on('click', function() {
+        $('#modal-batch-role').addClass('hidden');
+      });
+
+      $('#btn-confirm-batch-role').on('click', function() {
+        var role = $('#select-batch-role').val();
+        if (!role) {
+          alert('请选择角色');
+          return;
+        }
+        // 复杂交互：批量分配角色应实现以下步骤：
+        // 1. 调用后端API批量更新角色
+        // 2. 更新列表中对应账号的角色标签
+        // 3. 清空选择并隐藏批量操作栏
+        // 4. 关闭弹窗并提示成功
+        // 5. 记录操作日志
+        console.log('批量分配角色:', selectedIds, '角色:', role);
+        alert('已批量分配角色！');
+        $('#modal-batch-role').addClass('hidden');
+        $('#checkbox-header').prop('checked', false);
+        $('.checkbox-item').prop('checked', false);
+        updateBatchActions();
+      });
+
+      // 搜索筛选
+      $('#input-search').on('input', function() {
+        var keyword = $(this).val().toLowerCase();
+        // 复杂交互：搜索筛选应实现以下步骤：
+        // 1. 遍历账号列表，匹配账号名称和手机号
+        // 2. 隐藏不匹配的行
+        // 3. 显示匹配的行
+        // 4. 更新记录总数
+        console.log('搜索关键词:', keyword);
+      });
+
+      $('#select-role, #select-status').on('change', function() {
+        // 复杂交互：筛选应实现以下步骤：
+        // 1. 获取所有筛选条件
+        // 2. 遍历账号列表，判断是否满足所有条件
+        // 3. 隐藏不满足条件的行
+        // 4. 显示满足条件的行
+        // 5. 更新记录总数
+        console.log('筛选条件 - 角色:', $('#select-role').val(), '状态:', $('#select-status').val());
+      });
+
+      $('#btn-reset-filter').on('click', function() {
+        $('#input-search').val('');
+        $('#select-role').val('');
+        $('#select-status').val('');
+        // 显示所有账号
+        console.log('重置筛选条件');
+      });
+
+      // 编辑当前登录账号权限
+      $('#btn-edit-current-permission').on('click', function() {
+        // 复杂交互：编辑当前账号权限应实现以下步骤：
+        // 1. 获取当前登录账号的详细信息
+        // 2. 打开编辑权限弹窗
+        // 3. 渲染当前权限配置
+        console.log('编辑当前账号权限');
+        $('#modal-edit-permission').removeClass('hidden');
+        lucide.createIcons();
+      });
+
+      // 点击弹窗外部关闭
+      $('#modal-add-account, #modal-edit-permission, #modal-batch-role, #modal-delete-confirm').on('click', function(e) {
+        if (e.target === this) {
+          $(this).addClass('hidden');
+        }
+      });
+    });
+  </script>
+</body>
+
+</html>

@@ -95,6 +95,22 @@
       },
       "title": "登录页面",
       "size": "web"
+    },
+    {
+      "type": "html",
+      "options": {
+        "path": ".cozeproj/prototype/web/accounts.html"
+      },
+      "title": "账号管理",
+      "size": "web"
+    },
+    {
+      "type": "html",
+      "options": {
+        "path": ".cozeproj/prototype/web/roles.html"
+      },
+      "title": "角色权限",
+      "size": "web"
     }
   ]
 }
