@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/jquery/jquery-3.7.1.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/lucide/lucide-1.11.0.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/tailwindcss/tailwindcss-browser-4.2.4.min.js"></script>
+
+  <style type="text/tailwindcss">
+    @theme {
+      /* === 品牌色 === */
+      --color-primary:              #2F6BFF;
+      --color-primary-container:    #E8F0FF;
+      --color-on-primary:           #ffffff;
+      /* === 背景 / 表面 === */
+      --color-background:                 #F6F8FB;
+      --color-surface-container-lowest:   #EEF1F6;
+      --color-surface:                    #FFFFFF;
+      --color-surface-container:          #EEF1F6;
+      --color-surface-container-high:     #E6EAF2;
+      --color-surface-container-highest:  #DDE3ED;
+      /* === 文字 === */
+      --color-on-surface:           #152033;
+      --color-on-surface-variant:   #637089;
+      /* === 功能色 === */
+      --color-success:  #16A37B;
+      --color-error:    #EF4444;
+      --color-warning:  #F59E0B;
+      /* === 边框 === */
+      --color-outline:          #E6EAF2;
+      --color-outline-variant:  #D1D5DB;
+      /* === 圆角 === */
+      --radius-sm:   0.25rem;
+      --radius-md:   0.375rem;
+      --radius-lg:   0.5rem;
+      --radius-xl:   0.75rem;
+      --radius-2xl:  1rem;
+      --radius-full: 9999px;
+      /* === 阴影 === */
+      --shadow-card:   0 2px 8px rgba(0,0,0,0.08);
+      --shadow-float:  0 10px 25px rgba(0,0,0,0.12);
+      --shadow-dialog: 0 25px 50px rgba(0,0,0,0.16);
+      /* === 字体 === */
+      --font-sans: "Inter", system-ui, sans-serif;
+    }
+  </style>
+
+  <!-- 图片兜底 -->
+  <script>
+    document.addEventListener('error', function (e) {
+      const img = e.target;
+      if (img.tagName !== 'IMG' || img.dataset.fallback) return;
+      img.dataset.fallback = '1';
+      const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const cat = img.getAttribute('data-category') || '其他';
+      const alt = img.getAttribute('alt') || '';
+      const label = esc(alt.length > 8 ? alt.slice(0, 8) + '…' : alt);
+      const icons = { '人物': '👤', '自然风景': '🏞', '动物': '🐾', '建筑城市': '🏙', '运动体育': '⚽', '交通工具': '🚗', '食物': '🍽', '服饰时尚': '👗', '商业科技': '💼', '游戏娱乐': '🎮', '艺术': '🎨', '其他': '🖼' };
+      const icon = icons[cat] || '🖼';
+      const w = img.width || 400, h = img.height || 300;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="45%" text-anchor="middle" font-size="${Math.min(w, h) * 0.18}" dominant-baseline="central">${icon}</text><text x="50%" y="68%" text-anchor="middle" font-size="${Math.min(w, h) * 0.07}" fill="%239ca3af" font-family="system-ui,sans-serif" dominant-baseline="central">${label}</text></svg>`;
+      img.src = 'data:image/svg+xml,' + svg;
+    }, true);
+  </script>
+</head>
+
+<body class="bg-background text-on-surface font-sans">
+
+  <!-- @nav:start 导航组件 -->
+  <header class="bg-surface sticky top-0 z-40 h-14 flex items-center justify-between px-6 border-b border-outline/50">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+        <i data-lucide="box" class="w-4 h-4 text-on-primary"></i>
+      </div>
+      <span class="font-semibold text-base">Ozon ERP</span>
+    </div>
+    <div class="flex items-center gap-4">
+      <button class="flex items-center gap-2 text-sm text-on-surface-variant hover:text-on-surface transition-colors">
+        <i data-lucide="bell" class="w-4 h-4"></i>
+        <span class="bg-error text-white text-xs px-1.5 py-0.5 rounded-full font-medium">3</span>
+      </button>
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-primary font-medium text-sm">初</div>
+        <span class="text-sm font-medium">小初</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="flex" style="height: calc(100vh - 3.5rem)">
+    <aside class="w-56 shrink-0 bg-surface border-r border-outline/50 overflow-y-auto">
+      <div class="p-3 space-y-0.5">
+        <a href="dashboard.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="layout-dashboard" class="w-4 h-4"></i>仪表盘
+        </a>
+        <a href="orders.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="shopping-cart" class="w-4 h-4"></i>订单管理
+        </a>
+        <a href="purchase.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="package" class="w-4 h-4"></i>采购管理
+        </a>
+        <a href="quick-entry.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="clipboard-list" class="w-4 h-4"></i>快捷录单
+        </a>
+        <a href="logistics.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="truck" class="w-4 h-4"></i>物流追踪
+        </a>
+        <a href="packaging.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 text-primary font-medium text-sm" aria-current="page">
+          <i data-lucide="box" class="w-4 h-4"></i>打包流程
+        </a>
+        <a href="finance.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="calculator" class="w-4 h-4"></i>财务核算
+        </a>
+      </div>
+    </aside>
+
+    <!-- @main-content:start -->
+    <main class="flex-1 min-w-0 overflow-y-auto bg-background p-6">
+      <!-- 页面标题区 -->
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h1 class="text-2xl font-bold text-on-surface">打包流程</h1>
+          <p class="text-sm text-on-surface-variant mt-1">商品打包管理，支持打印面单和称重记录</p>
+        </div>
+        <!-- 打印机状态指示 -->
+        <div id="printer-status" class="flex items-center gap-3 bg-surface rounded-lg shadow-card px-4 py-2.5">
+          <i data-lucide="printer" class="w-4 h-4 text-success"></i>
+          <span class="text-sm font-medium text-on-surface">面单打印机</span>
+          <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">已连接</span>
+        </div>
+      </div>
+
+      <!-- 打包统计卡片 -->
+      <div class="grid grid-cols-4 gap-4 mb-6">
+        <div class="bg-surface rounded-lg shadow-card p-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+              <i data-lucide="package-check" class="w-5 h-5 text-primary"></i>
+            </div>
+            <div>
+              <p class="text-xs text-on-surface-variant">今日打包数</p>
+              <p class="text-2xl font-bold text-on-surface">47</p>
+            </div>
+          </div>
+        </div>
+        <div class="bg-surface rounded-lg shadow-card p-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-success/10 rounded-lg flex items-center justify-center">
+              <i data-lucide="scale" class="w-5 h-5 text-success"></i>
+            </div>
+            <div>
+              <p class="text-xs text-on-surface-variant">总重量</p>
+              <p class="text-2xl font-bold text-on-surface">156.8<span class="text-sm font-normal text-on-surface-variant ml-1">kg</span></p>
+            </div>
+          </div>
+        </div>
+        <div class="bg-surface rounded-lg shadow-card p-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-warning/10 rounded-lg flex items-center justify-center">
+              <i data-lucide="scale-3d" class="w-5 h-5 text-warning"></i>
+            </div>
+            <div>
+              <p class="text-xs text-on-surface-variant">平均重量</p>
+              <p class="text-2xl font-bold text-on-surface">3.34<span class="text-sm font-normal text-on-surface-variant ml-1">kg</span></p>
+            </div>
+          </div>
+        </div>
+        <div class="bg-surface rounded-lg shadow-card p-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-error/10 rounded-lg flex items-center justify-center">
+              <i data-lucide="clock" class="w-5 h-5 text-error"></i>
+            </div>
+            <div>
+              <p class="text-xs text-on-surface-variant">待打包订单</p>
+              <p class="text-2xl font-bold text-on-surface">12</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 快速扫描区 -->
+      <div class="bg-surface rounded-lg shadow-card p-4 mb-6">
+        <div class="flex items-center gap-4">
+          <div class="flex items-center gap-2">
+            <i data-lucide="scan-line" class="w-5 h-5 text-primary"></i>
+            <span class="text-sm font-medium text-on-surface">快速扫描</span>
+          </div>
+          <input id="scan-input" type="text" placeholder="扫描订单号或快递单号快速定位..." 
+                 class="flex-1 bg-surface-container border-none rounded-md px-4 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/>
+          <button id="btn-scan" class="bg-primary text-on-primary px-5 py-2.5 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-2">
+            <i data-lucide="search" class="w-4 h-4"></i>定位
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-3 gap-6">
+        <!-- 左侧：待打包订单列表 -->
+        <div class="col-span-2">
+          <div class="bg-surface rounded-lg shadow-card overflow-hidden">
+            <div class="px-5 py-4 border-b border-outline/50 flex items-center justify-between">
+              <h2 class="text-base font-semibold text-on-surface">待打包订单</h2>
+              <span class="text-xs text-on-surface-variant">共 12 个待处理</span>
+            </div>
+            <div class="divide-y divide-outline-variant/30">
+              <!-- 订单1 -->
+              <div class="order-item px-5 py-4 hover:bg-surface-container/50 transition-colors cursor-pointer" data-order-id="OZ-20240115-001">
+                <div class="flex items-start justify-between">
+                  <div class="flex-1">
+                    <div class="flex items-center gap-3 mb-2">
+                      <span class="text-sm font-semibold text-primary">OZ-20240115-001</span>
+                      <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning">待打包</span>
+                    </div>
+                    <div class="flex items-center gap-4">
+                      <div class="flex items-center gap-2">
+                        <img src="https://images.unsplash.com/photo-1523275335684-870a296d852b?w=60&h=60&fit=crop" alt="无线蓝牙耳机" data-category="商业科技" class="w-10 h-10 rounded object-cover"/>
+                        <div>
+                          <p class="text-xs text-on-surface">SKU: BT-EAR-001</p>
+                          <p class="text-xs text-on-surface-variant">× 2</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="mt-2 flex items-center gap-2 text-xs text-on-surface-variant">
+                      <i data-lucide="map-pin" class="w-3 h-3"></i>
+                      <span>上海市浦东新区张江高科技园区 俄罗斯莫斯科</span>
+                    </div>
+                  </div>
+                  <button class="btn-pack bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all" data-order-id="OZ-20240115-001">
+                    打包
+                  </button>
+                </div>
+              </div>
+              <!-- 订单2 -->
+              <div class="order-item px-5 py-4 hover:bg-surface-container/50 transition-colors cursor-pointer" data-order-id="OZ-20240115-002">
+                <div class="flex items-start justify-between">
+                  <div class="flex-1">
+                    <div class="flex items-center gap-3 mb-2">
+                      <span class="text-sm font-semibold text-primary">OZ-20240115-002</span>
+                      <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning">待打包</span>
+                    </div>
+                    <div class="flex items-center gap-4">
+                      <div class="flex items-center gap-2">
+                        <img src="https://images.unsplash.com/photo-1505740420890-9037250e8c76?w=60&h=60&fit=crop" alt="运动鞋" data-category="服饰时尚" class="w-10 h-10 rounded object-cover"/>
+                        <div>
+                          <p class="text-xs text-on-surface">SKU: SHOE-RUN-42</p>
+                          <p class="text-xs text-on-surface-variant">× 1</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="mt-2 flex items-center gap-2 text-xs text-on-surface-variant">
+                      <i data-lucide="map-pin" class="w-3 h-3"></i>
+                      <span>北京市朝阳区望京街道 圣彼得堡</span>
+                    </div>
+                  </div>
+                  <button class="btn-pack bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all" data-order-id="OZ-20240115-002">
+                    打包
+                  </button>
+                </div>
+              </div>
+              <!-- 订单3 -->
+              <div class="order-item px-5 py-4 hover:bg-surface-container/50 transition-colors cursor-pointer" data-order-id="OZ-20240115-003">
+                <div class="flex items-start justify-between">
+                  <div class="flex-1">
+                    <div class="flex items-center gap-3 mb-2">
+                      <span class="text-sm font-semibold text-primary">OZ-20240115-003</span>
+                      <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning">待打包</span>
+                    </div>
+                    <div class="flex items-center gap-4">
+                      <div class="flex items-center gap-2">
+                        <img src="https://images.unsplash.com/photo-1585388154831-49ac9b41c8e6?w=60&h=60&fit=crop" alt="智能手表" data-category="商业科技" class="w-10 h-10 rounded object-cover"/>
+                        <div>
+                          <p class="text-xs text-on-surface">SKU: WATCH-SM-01</p>
+                          <p class="text-xs text-on-surface-variant">× 3</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="mt-2 flex items-center gap-2 text-xs text-on-surface-variant">
+                      <i data-lucide="map-pin" class="w-3 h-3"></i>
+                      <span>广州市天河区珠江新城 喀山</span>
+                    </div>
+                  </div>
+                  <button class="btn-pack bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all" data-order-id="OZ-20240115-003">
+                    打包
+                  </button>
+                </div>
+              </div>
+              <!-- 订单4 -->
+              <div class="order-item px-5 py-4 hover:bg-surface-container/50 transition-colors cursor-pointer" data-order-id="OZ-20240115-004">
+                <div class="flex items-start justify-between">
+                  <div class="flex-1">
+                    <div class="flex items-center gap-3 mb-2">
+                      <span class="text-sm font-semibold text-primary">OZ-20240115-004</span>
+                      <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning">待打包</span>
+                    </div>
+                    <div class="flex items-center gap-4">
+                      <div class="flex items-center gap-2">
+                        <img src="https://images.unsplash.com/photo-1558618666-2547-4aa5-835a-39ad28c0a23?w=60&h=60&fit=crop" alt="背包" data-category="服饰时尚" class="w-10 h-10 rounded object-cover"/>
+                        <div>
+                          <p class="text-xs text-on-surface">SKU: BAG-TRV-01</p>
+                          <p class="text-xs text-on-surface-variant">× 1</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="mt-2 flex items-center gap-2 text-xs text-on-surface-variant">
+                      <i data-lucide="map-pin" class="w-3 h-3"></i>
+                      <span>深圳市南山区科技园 新西伯利亚</span>
+                    </div>
+                  </div>
+                  <button class="btn-pack bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all" data-order-id="OZ-20240115-004">
+                    打包
+                  </button>
+                </div>
+              </div>
+              <!-- 订单5 -->
+              <div class="order-item px-5 py-4 hover:bg-surface-container/50 transition-colors cursor-pointer" data-order-id="OZ-20240115-005">
+                <div class="flex items-start justify-between">
+                  <div class="flex-1">
+                    <div class="flex items-center gap-3 mb-2">
+                      <span class="text-sm font-semibold text-primary">OZ-20240115-005</span>
+                      <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning">待打包</span>
+                    </div>
+                    <div class="flex items-center gap-4">
+                      <div class="flex items-center gap-2">
+                        <img src="https://images.unsplash.com/photo-1511707-1634-40a5-929d-6e9d0a1a6e6a?w=60&h=60&fit=crop" alt="手机壳" data-category="商业科技" class="w-10 h-10 rounded object-cover"/>
+                        <div>
+                          <p class="text-xs text-on-surface">SKU: CASE-IP15-01</p>
+                          <p class="text-xs text-on-surface-variant">× 5</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="mt-2 flex items-center gap-2 text-xs text-on-surface-variant">
+                      <i data-lucide="map-pin" class="w-3 h-3"></i>
+                      <span>杭州市西湖区文三路 叶卡捷琳堡</span>
+                    </div>
+                  </div>
+                  <button class="btn-pack bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all" data-order-id="OZ-20240115-005">
+                    打包
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 已打包记录列表 -->
+          <div class="bg-surface rounded-lg shadow-card overflow-hidden mt-6">
+            <div class="px-5 py-4 border-b border-outline/50 flex items-center justify-between">
+              <h2 class="text-base font-semibold text-on-surface">今日已打包记录</h2>
+              <span class="text-xs text-on-surface-variant">共 47 个包裹</span>
+            </div>
+            <div class="divide-y divide-outline-variant/30">
+              <!-- 已打包记录1 -->
+              <div class="px-5 py-3 hover:bg-surface-container/50 transition-colors">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-4">
+                    <span class="text-sm font-medium text-on-surface">OZ-20240114-088</span>
+                    <span class="text-sm text-on-surface-variant">2.35 kg</span>
+                    <span class="text-xs text-on-surface-variant">14:32 打包</span>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">面单已打印</span>
+                    <span class="text-xs text-on-surface-variant">小初</span>
+                  </div>
+                </div>
+              </div>
+              <!-- 已打包记录2 -->
+              <div class="px-5 py-3 hover:bg-surface-container/50 transition-colors">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-4">
+                    <span class="text-sm font-medium text-on-surface">OZ-20240114-087</span>
+                    <span class="text-sm text-on-surface-variant">1.80 kg</span>
+                    <span class="text-xs text-on-surface-variant">14:15 打包</span>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">面单已打印</span>
+                    <span class="text-xs text-on-surface-variant">小初</span>
+                  </div>
+                </div>
+              </div>
+              <!-- 已打包记录3 -->
+              <div class="px-5 py-3 hover:bg-surface-container/50 transition-colors">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-4">
+                    <span class="text-sm font-medium text-on-surface">OZ-20240114-086</span>
+                    <span class="text-sm text-on-surface-variant">4.20 kg</span>
+                    <span class="text-xs text-on-surface-variant">13:58 打包</span>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">面单已打印</span>
+                    <span class="text-xs text-on-surface-variant">小初</span>
+                  </div>
+                </div>
+              </div>
+              <!-- 已打包记录4 -->
+              <div class="px-5 py-3 hover:bg-surface-container/50 transition-colors">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-4">
+                    <span class="text-sm font-medium text-on-surface">OZ-20240114-085</span>
+                    <span class="text-sm text-on-surface-variant">0.95 kg</span>
+                    <span class="text-xs text-on-surface-variant">13:42 打包</span>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning">待打印</span>
+                    <span class="text-xs text-on-surface-variant">小初</span>
+                  </div>
+                </div>
+              </div>
+              <!-- 已打包记录5 -->
+              <div class="px-5 py-3 hover:bg-surface-container/50 transition-colors">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-4">
+                    <span class="text-sm font-medium text-on-surface">OZ-20240114-084</span>
+                    <span class="text-sm text-on-surface-variant">3.15 kg</span>
+                    <span class="text-xs text-on-surface-variant">13:25 打包</span>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">面单已打印</span>
+                    <span class="text-xs text-on-surface-variant">小初</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 右侧：打包操作面板 -->
+        <div class="col-span-1">
+          <div id="pack-panel" class="bg-surface rounded-lg shadow-card overflow-hidden sticky top-6">
+            <div class="px-5 py-4 border-b border-outline/50 bg-primary/5">
+              <div class="flex items-center gap-2">
+                <i data-lucide="package-plus" class="w-4 h-4 text-primary"></i>
+                <h2 class="text-base font-semibold text-on-surface">打包操作面板</h2>
+              </div>
+            </div>
+            <div class="p-5">
+              <!-- 当前订单信息 -->
+              <div id="current-order" class="mb-5">
+                <div class="flex items-center justify-between mb-3">
+                  <span class="text-xs text-on-surface-variant">当前订单</span>
+                  <span id="current-order-id" class="text-sm font-semibold text-primary">OZ-20240115-001</span>
+                </div>
+              </div>
+
+              <!-- 订单商品清单 -->
+              <div class="mb-5">
+                <p class="text-xs font-medium text-on-surface-variant mb-2">商品清单</p>
+                <div class="space-y-2">
+                  <label class="flex items-center gap-3 p-2 rounded-md bg-surface-container cursor-pointer hover:bg-surface-container-high transition-colors">
+                    <input type="checkbox" checked class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30"/>
+                    <img src="https://images.unsplash.com/photo-1523275335684-870a296d852b?w=60&h=60&fit=crop" alt="无线蓝牙耳机" data-category="商业科技" class="w-8 h-8 rounded object-cover"/>
+                    <div class="flex-1">
+                      <p class="text-xs font-medium text-on-surface">蓝牙耳机</p>
+                      <p class="text-xs text-on-surface-variant">SKU: BT-EAR-001 × 2</p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <!-- 打印面单按钮 -->
+              <button id="btn-print-label" class="w-full bg-primary-container text-primary px-4 py-3 rounded-md text-sm font-medium hover:bg-primary/20 active:scale-[0.98] transition-all inline-flex items-center justify-center gap-2 mb-5">
+                <i data-lucide="printer" class="w-4 h-4"></i>
+                打印 Ozon 面单
+              </button>
+
+              <!-- 电子秤称重区 -->
+              <div class="mb-5">
+                <p class="text-xs font-medium text-on-surface-variant mb-2">包裹重量</p>
+                <div class="bg-surface-container rounded-lg p-4">
+                  <div class="flex items-center justify-between mb-3">
+                    <span class="text-xs text-on-surface-variant">电子秤读数</span>
+                    <span id="scale-status" class="inline-flex items-center gap-1 text-xs text-success">
+                      <span class="w-1.5 h-1.5 rounded-full bg-success animate-pulse"></span>已连接
+                    </span>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <div id="weight-display" class="flex-1 bg-surface rounded-md px-4 py-3 text-center">
+                      <span id="weight-value" class="text-3xl font-bold text-on-surface">0.85</span>
+                      <span class="text-sm text-on-surface-variant ml-1">kg</span>
+                    </div>
+                    <button id="btn-refresh-weight" class="w-10 h-10 rounded-md bg-surface-container-high flex items-center justify-center hover:bg-surface-container-highest transition-colors">
+                      <i data-lucide="refresh-cw" class="w-4 h-4 text-on-surface-variant"></i>
+                    </button>
+                  </div>
+                  <div class="mt-3">
+                    <label class="text-xs text-on-surface-variant mb-1 block">手动修正重量</label>
+                    <input id="manual-weight" type="number" step="0.01" placeholder="输入重量..."
+                           class="w-full bg-surface border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 包裹尺寸录入 -->
+              <div class="mb-5">
+                <p class="text-xs font-medium text-on-surface-variant mb-2">包裹尺寸（可选）</p>
+                <div class="grid grid-cols-3 gap-2">
+                  <div>
+                    <label class="text-xs text-on-surface-variant/70 mb-1 block">长(cm)</label>
+                    <input id="dim-length" type="number" placeholder="长"
+                           class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/>
+                  </div>
+                  <div>
+                    <label class="text-xs text-on-surface-variant/70 mb-1 block">宽(cm)</label>
+                    <input id="dim-width" type="number" placeholder="宽"
+                           class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/>
+                  </div>
+                  <div>
+                    <label class="text-xs text-on-surface-variant/70 mb-1 block">高(cm)</label>
+                    <input id="dim-height" type="number" placeholder="高"
+                           class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 确认打包按钮 -->
+              <button id="btn-confirm-pack" class="w-full bg-primary text-on-primary px-4 py-3 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center justify-center gap-2">
+                <i data-lucide="check-circle" class="w-4 h-4"></i>
+                确认打包
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <!-- @main-content:end -->
+  </div>
+  <!-- @nav:end 导航组件 -->
+
+  <!-- 打印成功提示弹窗 -->
+  <div id="print-toast" class="fixed top-20 right-6 bg-success text-white px-4 py-3 rounded-lg shadow-float flex items-center gap-2 z-50 hidden">
+    <i data-lucide="check-circle" class="w-4 h-4"></i>
+    <span class="text-sm font-medium">面单打印成功</span>
+  </div>
+
+  <!-- 打包成功提示弹窗 -->
+  <div id="pack-toast" class="fixed top-20 right-6 bg-success text-white px-4 py-3 rounded-lg shadow-float flex items-center gap-2 z-50 hidden">
+    <i data-lucide="check-circle" class="w-4 h-4"></i>
+    <span class="text-sm font-medium">打包完成，已记录</span>
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    $(function() {
+      // 打印面单按钮点击
+      $('#btn-print-label').on('click', function() {
+        // 显示打印成功提示
+        $('#print-toast').removeClass('hidden').fadeIn(200);
+        setTimeout(function() {
+          $('#print-toast').fadeOut(200, function() {
+            $(this).addClass('hidden');
+          });
+        }, 2000);
+        console.log('调用 Ozon API 打印电子面单');
+      });
+
+      // 刷新重量按钮点击
+      $('#btn-refresh-weight').on('click', function() {
+        // 模拟刷新电子秤读数
+        // 后续实现：连接电子秤设备获取实时重量数据
+        const newWeight = (Math.random() * 2 + 0.5).toFixed(2);
+        $('#weight-value').text(newWeight);
+        console.log('刷新电子秤读数:', newWeight);
+      });
+
+      // 手动输入重量
+      $('#manual-weight').on('input', function() {
+        const value = $(this).val();
+        if (value) {
+          $('#weight-value').text(parseFloat(value).toFixed(2));
+        }
+      });
+
+      // 确认打包按钮点击
+      $('#btn-confirm-pack').on('click', function() {
+        const orderId = $('#current-order-id').text();
+        const weight = $('#weight-value').text();
+        // 显示打包成功提示
+        $('#pack-toast').removeClass('hidden').fadeIn(200);
+        setTimeout(function() {
+          $('#pack-toast').fadeOut(200, function() {
+            $(this).addClass('hidden');
+          });
+        }, 2000);
+        console.log('确认打包 - 订单:', orderId, '重量:', weight, 'kg', '操作人: 小初');
+      });
+
+      // 打包按钮点击（订单列表中）
+      $('.btn-pack').on('click', function(e) {
+        e.stopPropagation();
+        const orderId = $(this).data('order-id');
+        $('#current-order-id').text(orderId);
+        // 模拟切换到对应订单的商品信息
+        console.log('切换到订单:', orderId);
+      });
+
+      // 扫描定位按钮点击
+      $('#btn-scan').on('click', function() {
+        const scanValue = $('#scan-input').val().trim();
+        if (scanValue) {
+          // 后续实现：根据扫描的订单号或快递单号定位到对应订单
+          console.log('扫描定位:', scanValue);
+          // 高亮对应订单
+          $('.order-item').removeClass('bg-primary/10');
+          $('.order-item[data-order-id="' + scanValue + '"]').addClass('bg-primary/10');
+        }
+      });
+
+      // 扫描输入框回车事件
+      $('#scan-input').on('keypress', function(e) {
+        if (e.which === 13) {
+          $('#btn-scan').click();
+        }
+      });
+    });
+  </script>
+</body>
+
+</html>

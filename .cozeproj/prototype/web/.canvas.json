@@ -1,0 +1,60 @@
+{
+  "elements": [
+    {
+      "type": "html",
+      "options": {
+        "path": ".cozeproj/prototype/web/dashboard.html"
+      },
+      "title": "仪表盘",
+      "size": "web"
+    },
+    {
+      "type": "html",
+      "options": {
+        "path": ".cozeproj/prototype/web/orders.html"
+      },
+      "title": "订单管理",
+      "size": "web"
+    },
+    {
+      "type": "html",
+      "options": {
+        "path": ".cozeproj/prototype/web/purchase.html"
+      },
+      "title": "采购管理",
+      "size": "web"
+    },
+    {
+      "type": "html",
+      "options": {
+        "path": ".cozeproj/prototype/web/quick-entry.html"
+      },
+      "title": "快捷录单",
+      "size": "web"
+    },
+    {
+      "type": "html",
+      "options": {
+        "path": ".cozeproj/prototype/web/logistics.html"
+      },
+      "title": "物流追踪",
+      "size": "web"
+    },
+    {
+      "type": "html",
+      "options": {
+        "path": ".cozeproj/prototype/web/packaging.html"
+      },
+      "title": "打包流程",
+      "size": "web"
+    },
+    {
+      "type": "html",
+      "options": {
+        "path": ".cozeproj/prototype/web/finance.html"
+      },
+      "title": "财务核算",
+      "size": "web"
+    }
+  ]
+}
