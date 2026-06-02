@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/jquery/jquery-3.7.1.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/lucide/lucide-1.11.0.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/tailwindcss/tailwindcss-browser-4.2.4.min.js"></script>
+
+  <style type="text/tailwindcss">
+    @theme {
+      /* === 品牌色 === */
+      --color-primary:              #2F6BFF;
+      --color-primary-container:    #E8F0FF;
+      --color-on-primary:           #ffffff;
+      /* === 背景 / 表面 === */
+      --color-background:                 #F6F8FB;
+      --color-surface-container-lowest:   #EEF1F6;
+      --color-surface:                    #FFFFFF;
+      --color-surface-container:          #EEF1F6;
+      --color-surface-container-high:     #E6EAF2;
+      --color-surface-container-highest:   #DDE3ED;
+      /* === 文字 === */
+      --color-on-surface:           #152033;
+      --color-on-surface-variant:   #637089;
+      /* === 功能色 === */
+      --color-success:  #16A37B;
+      --color-error:    #EF4444;
+      --color-warning:  #F59E0B;
+      /* === 边框 === */
+      --color-outline:          #E6EAF2;
+      --color-outline-variant:  #D1D5DB;
+      /* === 圆角 === */
+      --radius-sm:   0.25rem;
+      --radius-md:   0.375rem;
+      --radius-lg:   0.5rem;
+      --radius-xl:   0.75rem;
+      --radius-2xl:  1rem;
+      --radius-full: 9999px;
+      /* === 阴影 === */
+      --shadow-card:   0 2px 8px rgba(0,0,0,0.08);
+      --shadow-float:  0 10px 25px rgba(0,0,0,0.12);
+      --shadow-dialog: 0 25px 50px rgba(0,0,0,0.16);
+      /* === 字体 === */
+      --font-sans: "Inter", system-ui, sans-serif;
+    }
+  </style>
+
+  <!-- 图片兜底 -->
+  <script>
+    document.addEventListener('error', function (e) {
+      const img = e.target;
+      if (img.tagName !== 'IMG' || img.dataset.fallback) return;
+      img.dataset.fallback = '1';
+      const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const cat = img.getAttribute('data-category') || '其他';
+      const alt = img.getAttribute('alt') || '';
+      const label = esc(alt.length > 8 ? alt.slice(0, 8) + '…' : alt);
+      const icons = { '人物': '👤', '自然风景': '🏞', '动物': '🐾', '建筑城市': '🏙', '运动体育': '⚽', '交通工具': '🚗', '食物': '🍽', '服饰时尚': '👗', '商业科技': '💼', '游戏娱乐': '🎮', '艺术': '🎨', '其他': '🖼' };
+      const icon = icons[cat] || '🖼';
+      const w = img.width || 400, h = img.height || 300;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="45%" text-anchor="middle" font-size="${Math.min(w, h) * 0.18}" dominant-baseline="central">${icon}</text><text x="50%" y="68%" text-anchor="middle" font-size="${Math.min(w, h) * 0.07}" fill="%239ca3af" font-family="system-ui,sans-serif" dominant-baseline="central">${label}</text></svg>`;
+      img.src = 'data:image/svg+xml,' + svg;
+    }, true);
+  </script>
+</head>
+
+<body class="bg-background text-on-surface font-sans">
+
+  <!-- @nav:start 导航组件 -->
+  <header class="bg-surface sticky top-0 z-40 h-14 flex items-center justify-between px-6 border-b border-outline/50">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+        <i data-lucide="box" class="w-4 h-4 text-on-primary"></i>
+      </div>
+      <span class="font-semibold text-base">Ozon ERP</span>
+    </div>
+    <div class="flex items-center gap-4">
+      <button class="flex items-center gap-2 text-sm text-on-surface-variant hover:text-on-surface transition-colors">
+        <i data-lucide="bell" class="w-4 h-4"></i>
+        <span class="bg-error text-white text-xs px-1.5 py-0.5 rounded-full font-medium">3</span>
+      </button>
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-primary font-medium text-sm">初</div>
+        <span class="text-sm font-medium">小初</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="flex" style="height: calc(100vh - 3.5rem)">
+    <aside class="w-56 shrink-0 bg-surface border-r border-outline/50 overflow-y-auto">
+      <div class="p-3 space-y-0.5">
+        <a href="dashboard.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="layout-dashboard" class="w-4 h-4"></i>仪表盘
+        </a>
+        <a href="orders.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="shopping-cart" class="w-4 h-4"></i>订单管理
+        </a>
+        <a href="purchase.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="package" class="w-4 h-4"></i>采购管理
+        </a>
+        <a href="quick-entry.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="clipboard-list" class="w-4 h-4"></i>快捷录单
+        </a>
+        <a href="logistics.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="truck" class="w-4 h-4"></i>物流追踪
+        </a>
+        <a href="packaging.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="box" class="w-4 h-4"></i>打包流程
+        </a>
+        <a href="finance.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="calculator" class="w-4 h-4"></i>财务核算
+        </a>
+        <div class="pt-3 pb-1">
+          <span class="px-3 text-xs font-medium text-on-surface-variant/60 uppercase tracking-wider">数据中心</span>
+        </div>
+        <a href="sku-management.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="database" class="w-4 h-4"></i>SKU管理
+        </a>
+        <a href="suppliers.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="users" class="w-4 h-4"></i>供应商管理
+        </a>
+        <a href="reports.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 text-primary font-medium text-sm" aria-current="page">
+          <i data-lucide="bar-chart-3" class="w-4 h-4"></i>数据报表
+        </a>
+        <div class="pt-3 pb-1">
+          <span class="px-3 text-xs font-medium text-on-surface-variant/60 uppercase tracking-wider">系统</span>
+        </div>
+        <a href="settings.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="settings" class="w-4 h-4"></i>系统设置
+        </a>
+      </div>
+    </aside>
+
+    <!-- @main-content:start -->
+    <main class="flex-1 min-w-0 overflow-y-auto bg-background p-6">
+      <!-- 页面标题和时间选择器 -->
+      <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold text-on-surface">数据报表</h1>
+        <div class="flex items-center gap-3">
+          <!-- 时间范围选择器 -->
+          <div class="flex items-center gap-1 bg-surface-container rounded-lg p-1">
+            <button id="time-today" class="time-btn px-3 py-1.5 text-sm font-medium rounded-md bg-primary text-on-primary transition-all">今日</button>
+            <button id="time-yesterday" class="time-btn px-3 py-1.5 text-sm font-medium rounded-md text-on-surface-variant hover:bg-surface-container-high transition-all">昨日</button>
+            <button id="time-week" class="time-btn px-3 py-1.5 text-sm font-medium rounded-md text-on-surface-variant hover:bg-surface-container-high transition-all">本周</button>
+            <button id="time-last-week" class="time-btn px-3 py-1.5 text-sm font-medium rounded-md text-on-surface-variant hover:bg-surface-container-high transition-all">上周</button>
+            <button id="time-month" class="time-btn px-3 py-1.5 text-sm font-medium rounded-md text-on-surface-variant hover:bg-surface-container-high transition-all">本月</button>
+            <button id="time-last-month" class="time-btn px-3 py-1.5 text-sm font-medium rounded-md text-on-surface-variant hover:bg-surface-container-high transition-all">上月</button>
+            <button id="time-custom" class="time-btn px-3 py-1.5 text-sm font-medium rounded-md text-on-surface-variant hover:bg-surface-container-high transition-all flex items-center gap-1">
+              <i data-lucide="calendar" class="w-3.5 h-3.5"></i>自定义
+            </button>
+          </div>
+          <!-- 导出按钮 -->
+          <div class="relative">
+            <button id="btn-export" class="flex items-center gap-2 bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">
+              <i data-lucide="download" class="w-4 h-4"></i>导出报表
+            </button>
+            <!-- 导出下拉菜单 -->
+            <div id="export-dropdown" class="hidden absolute right-0 top-full mt-2 bg-surface rounded-lg shadow-float border border-outline/30 py-1 min-w-[140px] z-10">
+              <button id="export-excel" class="w-full px-4 py-2 text-sm text-on-surface hover:bg-surface-container text-left flex items-center gap-2">
+                <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>导出 Excel
+              </button>
+              <button id="export-pdf" class="w-full px-4 py-2 text-sm text-on-surface hover:bg-surface-container text-left flex items-center gap-2">
+                <i data-lucide="file-text" class="w-4 h-4"></i>导出 PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 切换 -->
+      <div class="flex items-center gap-1 mb-6 border-b border-outline/50">
+        <button id="tab-business" class="tab-btn px-4 py-3 text-sm font-medium text-primary border-b-2 border-primary transition-all">
+          经营报表
+        </button>
+        <button id="tab-purchase" class="tab-btn px-4 py-3 text-sm font-medium text-on-surface-variant hover:text-on-surface border-b-2 border-transparent transition-all">
+          采购报表
+        </button>
+        <button id="tab-efficiency" class="tab-btn px-4 py-3 text-sm font-medium text-on-surface-variant hover:text-on-surface border-b-2 border-transparent transition-all">
+          效率报表
+        </button>
+      </div>
+
+      <!-- 经营报表内容 -->
+      <div id="panel-business" class="report-panel">
+        <!-- 核心指标卡片 -->
+        <div class="grid grid-cols-5 gap-4 mb-6">
+          <!-- 指标卡片1-销售额 -->
+          <div class="bg-surface rounded-lg shadow-card p-5">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-sm text-on-surface-variant">销售额</span>
+              <div class="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                <i data-lucide="dollar-sign" class="w-4 h-4 text-primary"></i>
+              </div>
+            </div>
+            <div class="text-2xl font-bold text-on-surface">¥128,650</div>
+            <div class="flex items-center gap-1 mt-2">
+              <span class="text-xs text-success flex items-center gap-0.5">
+                <i data-lucide="trending-up" class="w-3 h-3"></i>+12.5%
+              </span>
+              <span class="text-xs text-on-surface-variant">较上期</span>
+            </div>
+          </div>
+          <!-- 指标卡片2-订单数 -->
+          <div class="bg-surface rounded-lg shadow-card p-5">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-sm text-on-surface-variant">订单数</span>
+              <div class="w-8 h-8 bg-success/10 rounded-lg flex items-center justify-center">
+                <i data-lucide="shopping-bag" class="w-4 h-4 text-success"></i>
+              </div>
+            </div>
+            <div class="text-2xl font-bold text-on-surface">1,286</div>
+            <div class="flex items-center gap-1 mt-2">
+              <span class="text-xs text-success flex items-center gap-0.5">
+                <i data-lucide="trending-up" class="w-3 h-3"></i>+8.3%
+              </span>
+              <span class="text-xs text-on-surface-variant">较上期</span>
+            </div>
+          </div>
+          <!-- 指标卡片3-客单价 -->
+          <div class="bg-surface rounded-lg shadow-card p-5">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-sm text-on-surface-variant">客单价</span>
+              <div class="w-8 h-8 bg-warning/10 rounded-lg flex items-center justify-center">
+                <i data-lucide="receipt" class="w-4 h-4 text-warning"></i>
+              </div>
+            </div>
+            <div class="text-2xl font-bold text-on-surface">¥99.89</div>
+            <div class="flex items-center gap-1 mt-2">
+              <span class="text-xs text-success flex items-center gap-0.5">
+                <i data-lucide="trending-up" class="w-3 h-3"></i>+3.8%
+              </span>
+              <span class="text-xs text-on-surface-variant">较上期</span>
+            </div>
+          </div>
+          <!-- 指标卡片4-净利润 -->
+          <div class="bg-surface rounded-lg shadow-card p-5">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-sm text-on-surface-variant">净利润</span>
+              <div class="w-8 h-8 bg-error/10 rounded-lg flex items-center justify-center">
+                <i data-lucide="piggy-bank" class="w-4 h-4 text-error"></i>
+              </div>
+            </div>
+            <div class="text-2xl font-bold text-on-surface">¥23,580</div>
+            <div class="flex items-center gap-1 mt-2">
+              <span class="text-xs text-success flex items-center gap-0.5">
+                <i data-lucide="trending-up" class="w-3 h-3"></i>+15.2%
+              </span>
+              <span class="text-xs text-on-surface-variant">较上期</span>
+            </div>
+          </div>
+          <!-- 指标卡片5-利润率 -->
+          <div class="bg-surface rounded-lg shadow-card p-5">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-sm text-on-surface-variant">利润率</span>
+              <div class="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                <i data-lucide="percent" class="w-4 h-4 text-primary"></i>
+              </div>
+            </div>
+            <div class="text-2xl font-bold text-on-surface">18.3%</div>
+            <div class="flex items-center gap-1 mt-2">
+              <span class="text-xs text-success flex items-center gap-0.5">
+                <i data-lucide="trending-up" class="w-3 h-3"></i>+2.4%
+              </span>
+              <span class="text-xs text-on-surface-variant">较上期</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 图表区域 -->
+        <div class="grid grid-cols-2 gap-6">
+          <!-- 销售趋势图 -->
+          <div class="bg-surface rounded-lg shadow-card p-5">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-base font-semibold text-on-surface">销售趋势</h3>
+              <div class="flex items-center gap-4 text-xs">
+                <span class="flex items-center gap-1.5">
+                  <span class="w-3 h-3 rounded-full bg-primary"></span>销售额
+                </span>
+                <span class="flex items-center gap-1.5">
+                  <span class="w-3 h-3 rounded-full bg-success"></span>订单数
+                </span>
+              </div>
+            </div>
+            <div class="h-64 flex items-end gap-2">
+              <!-- 模拟折线图 - 使用柱状图表示 -->
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full flex flex-col gap-1">
+                  <div class="bg-primary/80 rounded-t" style="height: 120px;"></div>
+                  <div class="bg-success/60 rounded-t" style="height: 60px;"></div>
+                </div>
+                <span class="text-xs text-on-surface-variant">周一</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full flex flex-col gap-1">
+                  <div class="bg-primary/80 rounded-t" style="height: 140px;"></div>
+                  <div class="bg-success/60 rounded-t" style="height: 70px;"></div>
+                </div>
+                <span class="text-xs text-on-surface-variant">周二</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full flex flex-col gap-1">
+                  <div class="bg-primary/80 rounded-t" style="height: 100px;"></div>
+                  <div class="bg-success/60 rounded-t" style="height: 50px;"></div>
+                </div>
+                <span class="text-xs text-on-surface-variant">周三</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full flex flex-col gap-1">
+                  <div class="bg-primary/80 rounded-t" style="height: 160px;"></div>
+                  <div class="bg-success/60 rounded-t" style="height: 80px;"></div>
+                </div>
+                <span class="text-xs text-on-surface-variant">周四</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full flex flex-col gap-1">
+                  <div class="bg-primary/80 rounded-t" style="height: 180px;"></div>
+                  <div class="bg-success/60 rounded-t" style="height: 90px;"></div>
+                </div>
+                <span class="text-xs text-on-surface-variant">周五</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full flex flex-col gap-1">
+                  <div class="bg-primary/80 rounded-t" style="height: 200px;"></div>
+                  <div class="bg-success/60 rounded-t" style="height: 100px;"></div>
+                </div>
+                <span class="text-xs text-on-surface-variant">周六</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full flex flex-col gap-1">
+                  <div class="bg-primary/80 rounded-t" style="height: 150px;"></div>
+                  <div class="bg-success/60 rounded-t" style="height: 75px;"></div>
+                </div>
+                <span class="text-xs text-on-surface-variant">周日</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 品类分析图 -->
+          <div class="bg-surface rounded-lg shadow-card p-5">
+            <h3 class="text-base font-semibold text-on-surface mb-4">品类分析</h3>
+            <div class="flex items-center gap-8">
+              <!-- 模拟饼图 -->
+              <div class="w-40 h-40 relative">
+                <svg viewBox="0 0 100 100" class="w-full h-full -rotate-90">
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="#2F6BFF" stroke-width="20" stroke-dasharray="75.4 251.2" />
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="#16A37B" stroke-width="20" stroke-dasharray="50.2 251.2" stroke-dashoffset="-75.4" />
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="#F59E0B" stroke-width="20" stroke-dasharray="37.7 251.2" stroke-dashoffset="-125.6" />
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="#EF4444" stroke-width="20" stroke-dasharray="25.1 251.2" stroke-dashoffset="-163.3" />
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="#637089" stroke-width="20" stroke-dasharray="62.8 251.2" stroke-dashoffset="-188.4" />
+                </svg>
+              </div>
+              <!-- 图例 -->
+              <div class="flex-1 space-y-3">
+                <div class="flex items-center justify-between">
+                  <span class="flex items-center gap-2 text-sm">
+                    <span class="w-3 h-3 rounded-full bg-primary"></span>电子产品
+                  </span>
+                  <span class="text-sm font-medium">30%</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="flex items-center gap-2 text-sm">
+                    <span class="w-3 h-3 rounded-full bg-success"></span>服装配饰
+                  </span>
+                  <span class="text-sm font-medium">20%</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="flex items-center gap-2 text-sm">
+                    <span class="w-3 h-3 rounded-full bg-warning"></span>家居用品
+                  </span>
+                  <span class="text-sm font-medium">15%</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="flex items-center gap-2 text-sm">
+                    <span class="w-3 h-3 rounded-full bg-error"></span>美妆个护
+                  </span>
+                  <span class="text-sm font-medium">10%</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="flex items-center gap-2 text-sm">
+                    <span class="w-3 h-3 rounded-full bg-on-surface-variant"></span>其他
+                  </span>
+                  <span class="text-sm font-medium">25%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 利润分布图 -->
+          <div class="bg-surface rounded-lg shadow-card p-5 col-span-2">
+            <h3 class="text-base font-semibold text-on-surface mb-4">利润分布（近30天）</h3>
+            <div class="h-48 flex items-end gap-1.5">
+              <!-- 柱状图-模拟30天利润数据 -->
+              <div class="flex-1 bg-primary/20 rounded-t hover:bg-primary/40 transition-colors cursor-pointer" style="height: 45%;" title="1日: ¥780"></div>
+              <div class="flex-1 bg-primary/30 rounded-t hover:bg-primary/40 transition-colors cursor-pointer" style="height: 52%;" title="2日: ¥890"></div>
+              <div class="flex-1 bg-primary/25 rounded-t hover:bg-primary/40 transition-colors cursor-pointer" style="height: 48%;" title="3日: ¥820"></div>
+              <div class="flex-1 bg-primary/40 rounded-t hover:bg-primary/40 transition-colors cursor-pointer" style="height: 65%;" title="4日: ¥1,100"></div>
+              <div class="flex-1 bg-primary/35 rounded-t hover:bg-primary/40 transition-colors cursor-pointer" style="height: 58%;" title="5日: ¥980"></div>
+              <div class="flex-1 bg-primary/45 rounded-t hover:bg-primary/40 transition-colors cursor-pointer" style="height: 72%;" title="6日: ¥1,220"></div>
+              <div class="flex-1 bg-primary/60 rounded-t hover:bg-primary/40 transition-colors cursor-pointer" style="height: 88%;" title="7日: ¥1,500"></div>
+              <div class="flex-1 bg-primary/50 rounded-t hover:bg-primary/40 transition-colors cursor-pointer" style="height: 75%;" title="8日: ¥1,280"></div>
+              <div class="flex-1 bg-primary/55 rounded-t hover:bg-primary/40 transition-colors cursor-pointer" style="height: 82%;" title="9日: ¥1,400"></div>
+              <div class="flex-1 bg-primary/70 rounded-t hover:bg-primary/40 transition-colors cursor-pointer" style="height: 95%;" title="10日: ¥1,620"></div>
+              <div class="flex-1 bg-primary/65 rounded-t hover:bg-primary/40 transition-colors cursor-pointer" style="height: 90%;" title="11日: ¥1,530"></div>
+              <div class="flex-1 bg-primary/50 rounded-t hover:bg-primary/40 transition-colors cursor-pointer" style="height: 78%;" title="12日: ¥1,330"></div>
+              <div class="flex-1 bg-primary/40 rounded-t hover:bg-primary/40 transition-colors cursor-pointer" style="height: 62%;" title="13日: ¥1,050"></div>
+              <div class="flex-1 bg-primary/45 rounded-t hover:bg-primary/40 transition-colors cursor-pointer" style="height: 70%;" title="14日: ¥1,190"></div>
+              <div class="flex-1 bg-primary/55 rounded-t hover:bg-primary/40 transition-colors cursor-pointer" style="height: 85%;" title="15日: ¥1,450"></div>
+              <div class="flex-1 bg-primary/80 rounded-t hover:bg-primary/40 transition-colors cursor-pointer" style="height: 100%;" title="16日: ¥1,700"></div>
+              <div class="flex-1 bg-primary/60 rounded-t hover:bg-primary/40 transition-colors cursor-pointer" style="height: 82%;" title="17日: ¥1,400"></div>
+              <div class="flex-1 bg-primary/50 rounded-t hover:bg-primary/40 transition-colors cursor-pointer" style="height: 72%;" title="18日: ¥1,220"></div>
+              <div class="flex-1 bg-primary/55 rounded-t hover:bg-primary/40 transition-colors cursor-pointer" style="height: 78%;" title="19日: ¥1,330"></div>
+              <div class="flex-1 bg-primary/65 rounded-t hover:bg-primary/40 transition-colors cursor-pointer" style="height: 88%;" title="20日: ¥1,500"></div>
+              <div class="flex-1 bg-primary/60 rounded-t hover:bg-primary/40 transition-colors cursor-pointer" style="height: 80%;" title="21日: ¥1,360"></div>
+              <div class="flex-1 bg-primary/70 rounded-t hover:bg-primary/40 transition-colors cursor-pointer" style="height: 92%;" title="22日: ¥1,570"></div>
+              <div class="flex-1 bg-primary/55 rounded-t hover:bg-primary/40 transition-colors cursor-pointer" style="height: 75%;" title="23日: ¥1,280"></div>
+              <div class="flex-1 bg-primary/45 rounded-t hover:bg-primary/40 transition-colors cursor-pointer" style="height: 68%;" title="24日: ¥1,160"></div>
+              <div class="flex-1 bg-primary/50 rounded-t hover:bg-primary/40 transition-colors cursor-pointer" style="height: 72%;" title="25日: ¥1,220"></div>
+              <div class="flex-1 bg-primary/60 rounded-t hover:bg-primary/40 transition-colors cursor-pointer" style="height: 85%;" title="26日: ¥1,450"></div>
+              <div class="flex-1 bg-primary/75 rounded-t hover:bg-primary/40 transition-colors cursor-pointer" style="height: 95%;" title="27日: ¥1,620"></div>
+              <div class="flex-1 bg-primary/65 rounded-t hover:bg-primary/40 transition-colors cursor-pointer" style="height: 82%;" title="28日: ¥1,400"></div>
+              <div class="flex-1 bg-primary/70 rounded-t hover:bg-primary/40 transition-colors cursor-pointer" style="height: 90%;" title="29日: ¥1,530"></div>
+              <div class="flex-1 bg-primary/80 rounded-t hover:bg-primary/40 transition-colors cursor-pointer" style="height: 98%;" title="30日: ¥1,670"></div>
+            </div>
+            <div class="flex justify-between mt-2 text-xs text-on-surface-variant">
+              <span>1日</span>
+              <span>10日</span>
+              <span>20日</span>
+              <span>30日</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 采购报表内容 -->
+      <div id="panel-purchase" class="report-panel hidden">
+        <!-- 核心指标卡片 -->
+        <div class="grid grid-cols-4 gap-4 mb-6">
+          <!-- 指标卡片1-采购金额 -->
+          <div class="bg-surface rounded-lg shadow-card p-5">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-sm text-on-surface-variant">采购金额</span>
+              <div class="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                <i data-lucide="wallet" class="w-4 h-4 text-primary"></i>
+              </div>
+            </div>
+            <div class="text-2xl font-bold text-on-surface">¥86,420</div>
+            <div class="flex items-center gap-1 mt-2">
+              <span class="text-xs text-error flex items-center gap-0.5">
+                <i data-lucide="trending-down" class="w-3 h-3"></i>-5.2%
+              </span>
+              <span class="text-xs text-on-surface-variant">较上期</span>
+            </div>
+          </div>
+          <!-- 指标卡片2-采购订单数 -->
+          <div class="bg-surface rounded-lg shadow-card p-5">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-sm text-on-surface-variant">采购订单数</span>
+              <div class="w-8 h-8 bg-success/10 rounded-lg flex items-center justify-center">
+                <i data-lucide="file-text" class="w-4 h-4 text-success"></i>
+              </div>
+            </div>
+            <div class="text-2xl font-bold text-on-surface">328</div>
+            <div class="flex items-center gap-1 mt-2">
+              <span class="text-xs text-success flex items-center gap-0.5">
+                <i data-lucide="trending-up" class="w-3 h-3"></i>+2.1%
+              </span>
+              <span class="text-xs text-on-surface-variant">较上期</span>
+            </div>
+          </div>
+          <!-- 指标卡片3-平均采购价 -->
+          <div class="bg-surface rounded-lg shadow-card p-5">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-sm text-on-surface-variant">平均采购价</span>
+              <div class="w-8 h-8 bg-warning/10 rounded-lg flex items-center justify-center">
+                <i data-lucide="tag" class="w-4 h-4 text-warning"></i>
+              </div>
+            </div>
+            <div class="text-2xl font-bold text-on-surface">¥263.48</div>
+            <div class="flex items-center gap-1 mt-2">
+              <span class="text-xs text-error flex items-center gap-0.5">
+                <i data-lucide="trending-down" class="w-3 h-3"></i>-7.1%
+              </span>
+              <span class="text-xs text-on-surface-variant">较上期</span>
+            </div>
+          </div>
+          <!-- 指标卡片4-在途金额 -->
+          <div class="bg-surface rounded-lg shadow-card p-5">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-sm text-on-surface-variant">在途金额</span>
+              <div class="w-8 h-8 bg-error/10 rounded-lg flex items-center justify-center">
+                <i data-lucide="truck" class="w-4 h-4 text-error"></i>
+              </div>
+            </div>
+            <div class="text-2xl font-bold text-on-surface">¥12,850</div>
+            <div class="flex items-center gap-1 mt-2">
+              <span class="text-xs text-on-surface-variant">18笔订单在途</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 图表区域 -->
+        <div class="grid grid-cols-2 gap-6">
+          <!-- 平台分布图 -->
+          <div class="bg-surface rounded-lg shadow-card p-5">
+            <h3 class="text-base font-semibold text-on-surface mb-4">采购平台分布</h3>
+            <div class="flex items-center gap-8">
+              <!-- 模拟饼图 -->
+              <div class="w-40 h-40 relative">
+                <svg viewBox="0 0 100 100" class="w-full h-full -rotate-90">
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="#2F6BFF" stroke-width="20" stroke-dasharray="150.8 251.2" />
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="#16A37B" stroke-width="20" stroke-dasharray="75.4 251.2" stroke-dashoffset="-150.8" />
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="#F59E0B" stroke-width="20" stroke-dasharray="25.1 251.2" stroke-dashoffset="-226.2" />
+                </svg>
+              </div>
+              <!-- 图例 -->
+              <div class="flex-1 space-y-4">
+                <div class="flex items-center justify-between">
+                  <span class="flex items-center gap-2 text-sm">
+                    <span class="w-3 h-3 rounded-full bg-primary"></span>1688
+                  </span>
+                  <span class="text-sm font-medium">60%</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="flex items-center gap-2 text-sm">
+                    <span class="w-3 h-3 rounded-full bg-success"></span>拼多多
+                  </span>
+                  <span class="text-sm font-medium">30%</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="flex items-center gap-2 text-sm">
+                    <span class="w-3 h-3 rounded-full bg-warning"></span>其他
+                  </span>
+                  <span class="text-sm font-medium">10%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 供应商采购排名 -->
+          <div class="bg-surface rounded-lg shadow-card p-5">
+            <h3 class="text-base font-semibold text-on-surface mb-4">供应商采购排名（Top 10）</h3>
+            <div class="space-y-3">
+              <!-- 供应商1 -->
+              <div class="flex items-center gap-3">
+                <span class="w-6 text-sm font-medium text-primary">1</span>
+                <div class="flex-1">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-sm text-on-surface">深圳华强电子</span>
+                    <span class="text-sm font-medium">¥18,650</span>
+                  </div>
+                  <div class="h-2 bg-surface-container rounded-full overflow-hidden">
+                    <div class="h-full bg-primary rounded-full" style="width: 100%;"></div>
+                  </div>
+                </div>
+              </div>
+              <!-- 供应商2 -->
+              <div class="flex items-center gap-3">
+                <span class="w-6 text-sm font-medium text-on-surface-variant">2</span>
+                <div class="flex-1">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-sm text-on-surface">广州服饰批发</span>
+                    <span class="text-sm font-medium">¥15,200</span>
+                  </div>
+                  <div class="h-2 bg-surface-container rounded-full overflow-hidden">
+                    <div class="h-full bg-primary/80 rounded-full" style="width: 81%;"></div>
+                  </div>
+                </div>
+              </div>
+              <!-- 供应商3 -->
+              <div class="flex items-center gap-3">
+                <span class="w-6 text-sm font-medium text-on-surface-variant">3</span>
+                <div class="flex-1">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-sm text-on-surface">义乌小商品城</span>
+                    <span class="text-sm font-medium">¥12,800</span>
+                  </div>
+                  <div class="h-2 bg-surface-container rounded-full overflow-hidden">
+                    <div class="h-full bg-primary/70 rounded-full" style="width: 69%;"></div>
+                  </div>
+                </div>
+              </div>
+              <!-- 供应商4 -->
+              <div class="flex items-center gap-3">
+                <span class="w-6 text-sm font-medium text-on-surface-variant">4</span>
+                <div class="flex-1">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-sm text-on-surface">杭州服装厂</span>
+                    <span class="text-sm font-medium">¥9,560</span>
+                  </div>
+                  <div class="h-2 bg-surface-container rounded-full overflow-hidden">
+                    <div class="h-full bg-primary/60 rounded-full" style="width: 51%;"></div>
+                  </div>
+                </div>
+              </div>
+              <!-- 供应商5 -->
+              <div class="flex items-center gap-3">
+                <span class="w-6 text-sm font-medium text-on-surface-variant">5</span>
+                <div class="flex-1">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-sm text-on-surface">东莞数码配件</span>
+                    <span class="text-sm font-medium">¥7,230</span>
+                  </div>
+                  <div class="h-2 bg-surface-container rounded-full overflow-hidden">
+                    <div class="h-full bg-primary/50 rounded-full" style="width: 39%;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 采购价波动图 -->
+          <div class="bg-surface rounded-lg shadow-card p-5 col-span-2">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-base font-semibold text-on-surface">主要SKU采购价趋势</h3>
+              <div class="flex items-center gap-4 text-xs">
+                <span class="flex items-center gap-1.5">
+                  <span class="w-3 h-3 rounded-full bg-primary"></span>数据线
+                </span>
+                <span class="flex items-center gap-1.5">
+                  <span class="w-3 h-3 rounded-full bg-success"></span>手机壳
+                </span>
+                <span class="flex items-center gap-1.5">
+                  <span class="w-3 h-3 rounded-full bg-warning"></span>耳机
+                </span>
+              </div>
+            </div>
+            <div class="h-48 flex items-end gap-2">
+              <!-- 周数据 -->
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full flex gap-1 justify-center items-end" style="height: 160px;">
+                  <div class="w-4 bg-primary/70 rounded-t" style="height: 80px;"></div>
+                  <div class="w-4 bg-success/70 rounded-t" style="height: 60px;"></div>
+                  <div class="w-4 bg-warning/70 rounded-t" style="height: 100px;"></div>
+                </div>
+                <span class="text-xs text-on-surface-variant">第1周</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full flex gap-1 justify-center items-end" style="height: 160px;">
+                  <div class="w-4 bg-primary/70 rounded-t" style="height: 75px;"></div>
+                  <div class="w-4 bg-success/70 rounded-t" style="height: 65px;"></div>
+                  <div class="w-4 bg-warning/70 rounded-t" style="height: 95px;"></div>
+                </div>
+                <span class="text-xs text-on-surface-variant">第2周</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full flex gap-1 justify-center items-end" style="height: 160px;">
+                  <div class="w-4 bg-primary/70 rounded-t" style="height: 85px;"></div>
+                  <div class="w-4 bg-success/70 rounded-t" style="height: 55px;"></div>
+                  <div class="w-4 bg-warning/70 rounded-t" style="height: 90px;"></div>
+                </div>
+                <span class="text-xs text-on-surface-variant">第3周</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full flex gap-1 justify-center items-end" style="height: 160px;">
+                  <div class="w-4 bg-primary/70 rounded-t" style="height: 70px;"></div>
+                  <div class="w-4 bg-success/70 rounded-t" style="height: 50px;"></div>
+                  <div class="w-4 bg-warning/70 rounded-t" style="height: 85px;"></div>
+                </div>
+                <span class="text-xs text-on-surface-variant">第4周</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 效率报表内容 -->
+      <div id="panel-efficiency" class="report-panel hidden">
+        <!-- 核心指标卡片 -->
+        <div class="grid grid-cols-4 gap-4 mb-6">
+          <!-- 指标卡片1-订单处理时效 -->
+          <div class="bg-surface rounded-lg shadow-card p-5">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-sm text-on-surface-variant">订单处理时效</span>
+              <div class="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                <i data-lucide="clock" class="w-4 h-4 text-primary"></i>
+              </div>
+            </div>
+            <div class="text-2xl font-bold text-on-surface">2.5h</div>
+            <div class="flex items-center gap-1 mt-2">
+              <span class="text-xs text-success flex items-center gap-0.5">
+                <i data-lucide="trending-down" class="w-3 h-3"></i>-18%
+              </span>
+              <span class="text-xs text-on-surface-variant">效率提升</span>
+            </div>
+          </div>
+          <!-- 指标卡片2-发货时效 -->
+          <div class="bg-surface rounded-lg shadow-card p-5">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-sm text-on-surface-variant">发货时效</span>
+              <div class="w-8 h-8 bg-success/10 rounded-lg flex items-center justify-center">
+                <i data-lucide="send" class="w-4 h-4 text-success"></i>
+              </div>
+            </div>
+            <div class="text-2xl font-bold text-on-surface">4.2h</div>
+            <div class="flex items-center gap-1 mt-2">
+              <span class="text-xs text-success flex items-center gap-0.5">
+                <i data-lucide="trending-down" class="w-3 h-3"></i>-12%
+              </span>
+              <span class="text-xs text-on-surface-variant">效率提升</span>
+            </div>
+          </div>
+          <!-- 指标卡片3-打包效率 -->
+          <div class="bg-surface rounded-lg shadow-card p-5">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-sm text-on-surface-variant">打包效率</span>
+              <div class="w-8 h-8 bg-warning/10 rounded-lg flex items-center justify-center">
+                <i data-lucide="package" class="w-4 h-4 text-warning"></i>
+              </div>
+            </div>
+            <div class="text-2xl font-bold text-on-surface">86件/h</div>
+            <div class="flex items-center gap-1 mt-2">
+              <span class="text-xs text-success flex items-center gap-0.5">
+                <i data-lucide="trending-up" class="w-3 h-3"></i>+8%
+              </span>
+              <span class="text-xs text-on-surface-variant">效率提升</span>
+            </div>
+          </div>
+          <!-- 指标卡片4-异常率 -->
+          <div class="bg-surface rounded-lg shadow-card p-5">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-sm text-on-surface-variant">异常率</span>
+              <div class="w-8 h-8 bg-error/10 rounded-lg flex items-center justify-center">
+                <i data-lucide="alert-triangle" class="w-4 h-4 text-error"></i>
+              </div>
+            </div>
+            <div class="text-2xl font-bold text-on-surface">1.2%</div>
+            <div class="flex items-center gap-1 mt-2">
+              <span class="text-xs text-success flex items-center gap-0.5">
+                <i data-lucide="trending-down" class="w-3 h-3"></i>-0.3%
+              </span>
+              <span class="text-xs text-on-surface-variant">较上期</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 图表区域 -->
+        <div class="grid grid-cols-2 gap-6">
+          <!-- 时效趋势图 -->
+          <div class="bg-surface rounded-lg shadow-card p-5">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-base font-semibold text-on-surface">处理时效趋势</h3>
+              <div class="flex items-center gap-4 text-xs">
+                <span class="flex items-center gap-1.5">
+                  <span class="w-3 h-3 rounded-full bg-primary"></span>订单处理
+                </span>
+                <span class="flex items-center gap-1.5">
+                  <span class="w-3 h-3 rounded-full bg-success"></span>发货时效
+                </span>
+              </div>
+            </div>
+            <div class="h-48 flex items-end gap-2">
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full flex flex-col gap-1">
+                  <div class="bg-primary/70 rounded-t" style="height: 100px;"></div>
+                  <div class="bg-success/60 rounded-t" style="height: 120px;"></div>
+                </div>
+                <span class="text-xs text-on-surface-variant">周一</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full flex flex-col gap-1">
+                  <div class="bg-primary/70 rounded-t" style="height: 90px;"></div>
+                  <div class="bg-success/60 rounded-t" style="height: 110px;"></div>
+                </div>
+                <span class="text-xs text-on-surface-variant">周二</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full flex flex-col gap-1">
+                  <div class="bg-primary/70 rounded-t" style="height: 85px;"></div>
+                  <div class="bg-success/60 rounded-t" style="height: 100px;"></div>
+                </div>
+                <span class="text-xs text-on-surface-variant">周三</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full flex flex-col gap-1">
+                  <div class="bg-primary/70 rounded-t" style="height: 80px;"></div>
+                  <div class="bg-success/60 rounded-t" style="height: 95px;"></div>
+                </div>
+                <span class="text-xs text-on-surface-variant">周四</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full flex flex-col gap-1">
+                  <div class="bg-primary/70 rounded-t" style="height: 75px;"></div>
+                  <div class="bg-success/60 rounded-t" style="height: 90px;"></div>
+                </div>
+                <span class="text-xs text-on-surface-variant">周五</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full flex flex-col gap-1">
+                  <div class="bg-primary/70 rounded-t" style="height: 70px;"></div>
+                  <div class="bg-success/60 rounded-t" style="height: 85px;"></div>
+                </div>
+                <span class="text-xs text-on-surface-variant">周六</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-1">
+                <div class="w-full flex flex-col gap-1">
+                  <div class="bg-primary/70 rounded-t" style="height: 65px;"></div>
+                  <div class="bg-success/60 rounded-t" style="height: 80px;"></div>
+                </div>
+                <span class="text-xs text-on-surface-variant">周日</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 异常分布 -->
+          <div class="bg-surface rounded-lg shadow-card p-5">
+            <h3 class="text-base font-semibold text-on-surface mb-4">异常分布</h3>
+            <div class="flex items-center gap-8">
+              <!-- 模拟饼图 -->
+              <div class="w-40 h-40 relative">
+                <svg viewBox="0 0 100 100" class="w-full h-full -rotate-90">
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="#EF4444" stroke-width="20" stroke-dasharray="62.8 251.2" />
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="#F59E0B" stroke-width="20" stroke-dasharray="50.2 251.2" stroke-dashoffset="-62.8" />
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="#2F6BFF" stroke-width="20" stroke-dasharray="37.7 251.2" stroke-dashoffset="-113" />
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="#637089" stroke-width="20" stroke-dasharray="100.5 251.2" stroke-dashoffset="-150.7" />
+                </svg>
+              </div>
+              <!-- 图例 -->
+              <div class="flex-1 space-y-3">
+                <div class="flex items-center justify-between">
+                  <span class="flex items-center gap-2 text-sm">
+                    <span class="w-3 h-3 rounded-full bg-error"></span>地址错误
+                  </span>
+                  <span class="text-sm font-medium">25%</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="flex items-center gap-2 text-sm">
+                    <span class="w-3 h-3 rounded-full bg-warning"></span>库存不足
+                  </span>
+                  <span class="text-sm font-medium">20%</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="flex items-center gap-2 text-sm">
+                    <span class="w-3 h-3 rounded-full bg-primary"></span>物流延误
+                  </span>
+                  <span class="text-sm font-medium">15%</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="flex items-center gap-2 text-sm">
+                    <span class="w-3 h-3 rounded-full bg-on-surface-variant"></span>其他
+                  </span>
+                  <span class="text-sm font-medium">40%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 打包统计 -->
+          <div class="bg-surface rounded-lg shadow-card p-5 col-span-2">
+            <h3 class="text-base font-semibold text-on-surface mb-4">每日打包量统计</h3>
+            <div class="h-48 flex items-end gap-1.5">
+              <div class="flex-1 bg-success/60 rounded-t hover:bg-success/80 transition-colors cursor-pointer" style="height: 65%;" title="1日: 156件"></div>
+              <div class="flex-1 bg-success/60 rounded-t hover:bg-success/80 transition-colors cursor-pointer" style="height: 72%;" title="2日: 173件"></div>
+              <div class="flex-1 bg-success/60 rounded-t hover:bg-success/80 transition-colors cursor-pointer" style="height: 58%;" title="3日: 139件"></div>
+              <div class="flex-1 bg-success/60 rounded-t hover:bg-success/80 transition-colors cursor-pointer" style="height: 85%;" title="4日: 204件"></div>
+              <div class="flex-1 bg-success/60 rounded-t hover:bg-success/80 transition-colors cursor-pointer" style="height: 78%;" title="5日: 187件"></div>
+              <div class="flex-1 bg-success/60 rounded-t hover:bg-success/80 transition-colors cursor-pointer" style="height: 92%;" title="6日: 221件"></div>
+              <div class="flex-1 bg-success/60 rounded-t hover:bg-success/80 transition-colors cursor-pointer" style="height: 100%;" title="7日: 240件"></div>
+              <div class="flex-1 bg-success/60 rounded-t hover:bg-success/80 transition-colors cursor-pointer" style="height: 88%;" title="8日: 211件"></div>
+              <div class="flex-1 bg-success/60 rounded-t hover:bg-success/80 transition-colors cursor-pointer" style="height: 75%;" title="9日: 180件"></div>
+              <div class="flex-1 bg-success/60 rounded-t hover:bg-success/80 transition-colors cursor-pointer" style="height: 82%;" title="10日: 197件"></div>
+              <div class="flex-1 bg-success/60 rounded-t hover:bg-success/80 transition-colors cursor-pointer" style="height: 95%;" title="11日: 228件"></div>
+              <div class="flex-1 bg-success/60 rounded-t hover:bg-success/80 transition-colors cursor-pointer" style="height: 68%;" title="12日: 163件"></div>
+              <div class="flex-1 bg-success/60 rounded-t hover:bg-success/80 transition-colors cursor-pointer" style="height: 55%;" title="13日: 132件"></div>
+              <div class="flex-1 bg-success/60 rounded-t hover:bg-success/80 transition-colors cursor-pointer" style="height: 70%;" title="14日: 168件"></div>
+              <div class="flex-1 bg-success/60 rounded-t hover:bg-success/80 transition-colors cursor-pointer" style="height: 80%;" title="15日: 192件"></div>
+              <div class="flex-1 bg-success/60 rounded-t hover:bg-success/80 transition-colors cursor-pointer" style="height: 90%;" title="16日: 216件"></div>
+              <div class="flex-1 bg-success/60 rounded-t hover:bg-success/80 transition-colors cursor-pointer" style="height: 76%;" title="17日: 182件"></div>
+              <div class="flex-1 bg-success/60 rounded-t hover:bg-success/80 transition-colors cursor-pointer" style="height: 65%;" title="18日: 156件"></div>
+              <div class="flex-1 bg-success/60 rounded-t hover:bg-success/80 transition-colors cursor-pointer" style="height: 72%;" title="19日: 173件"></div>
+              <div class="flex-1 bg-success/60 rounded-t hover:bg-success/80 transition-colors cursor-pointer" style="height: 85%;" title="20日: 204件"></div>
+              <div class="flex-1 bg-success/60 rounded-t hover:bg-success/80 transition-colors cursor-pointer" style="height: 78%;" title="21日: 187件"></div>
+              <div class="flex-1 bg-success/60 rounded-t hover:bg-success/80 transition-colors cursor-pointer" style="height: 88%;" title="22日: 211件"></div>
+              <div class="flex-1 bg-success/60 rounded-t hover:bg-success/80 transition-colors cursor-pointer" style="height: 62%;" title="23日: 149件"></div>
+              <div class="flex-1 bg-success/60 rounded-t hover:bg-success/80 transition-colors cursor-pointer" style="height: 55%;" title="24日: 132件"></div>
+              <div class="flex-1 bg-success/60 rounded-t hover:bg-success/80 transition-colors cursor-pointer" style="height: 68%;" title="25日: 163件"></div>
+              <div class="flex-1 bg-success/60 rounded-t hover:bg-success/80 transition-colors cursor-pointer" style="height: 75%;" title="26日: 180件"></div>
+              <div class="flex-1 bg-success/60 rounded-t hover:bg-success/80 transition-colors cursor-pointer" style="height: 82%;" title="27日: 197件"></div>
+              <div class="flex-1 bg-success/60 rounded-t hover:bg-success/80 transition-colors cursor-pointer" style="height: 70%;" title="28日: 168件"></div>
+              <div class="flex-1 bg-success/60 rounded-t hover:bg-success/80 transition-colors cursor-pointer" style="height: 78%;" title="29日: 187件"></div>
+              <div class="flex-1 bg-success/60 rounded-t hover:bg-success/80 transition-colors cursor-pointer" style="height: 86%;" title="30日: 206件"></div>
+            </div>
+            <div class="flex justify-between mt-2 text-xs text-on-surface-variant">
+              <span>1日</span>
+              <span>10日</span>
+              <span>20日</span>
+              <span>30日</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+    <!-- @main-content:end -->
+  </div>
+  <!-- @nav:end 导航组件 -->
+
+  <script>
+    $(function() {
+      // 初始化图标
+      lucide.createIcons();
+
+      // 时间范围选择器交互
+      $('.time-btn').on('click', function() {
+        $('.time-btn').removeClass('bg-primary text-on-primary').addClass('text-on-surface-variant');
+        $(this).removeClass('text-on-surface-variant').addClass('bg-primary text-on-primary');
+        
+        // 自定义时间按钮点击后应实现：
+        // 1. 弹出日期范围选择器模态框
+        // 2. 用户选择开始日期和结束日期
+        // 3. 确认后更新时间范围显示，并刷新报表数据
+        if ($(this).attr('id') === 'time-custom') {
+          console.log('打开自定义日期范围选择器');
+        }
+      });
+
+      // Tab切换交互
+      $('.tab-btn').on('click', function() {
+        // 更新Tab样式
+        $('.tab-btn').removeClass('text-primary border-primary').addClass('text-on-surface-variant border-transparent');
+        $(this).removeClass('text-on-surface-variant border-transparent').addClass('text-primary border-primary');
+        
+        // 切换面板显示
+        var tabId = $(this).attr('id');
+        $('.report-panel').addClass('hidden');
+        
+        if (tabId === 'tab-business') {
+          $('#panel-business').removeClass('hidden');
+        } else if (tabId === 'tab-purchase') {
+          $('#panel-purchase').removeClass('hidden');
+        } else if (tabId === 'tab-efficiency') {
+          $('#panel-efficiency').removeClass('hidden');
+        }
+        
+        // 重新初始化图标
+        lucide.createIcons();
+      });
+
+      // 导出按钮交互
+      $('#btn-export').on('click', function(e) {
+        e.stopPropagation();
+        $('#export-dropdown').toggleClass('hidden');
+      });
+
+      // 点击其他地方关闭导出下拉菜单
+      $(document).on('click', function() {
+        $('#export-dropdown').addClass('hidden');
+      });
+
+      // 导出Excel
+      $('#export-excel').on('click', function() {
+        // 导出Excel功能应实现：
+        // 1. 获取当前Tab对应的报表数据
+        // 2. 根据当前选择的时间范围筛选数据
+        // 3. 调用后端API生成Excel文件
+        // 4. 触发浏览器下载
+        console.log('导出当前报表为Excel格式');
+        $('#export-dropdown').addClass('hidden');
+      });
+
+      // 导出PDF
+      $('#export-pdf').on('click', function() {
+        // 导出PDF功能应实现：
+        // 1. 获取当前Tab对应的报表数据和图表
+        // 2. 根据当前选择的时间范围筛选数据
+        // 3. 调用后端API生成PDF文件（包含图表截图）
+        // 4. 触发浏览器下载
+        console.log('导出当前报表为PDF格式');
+        $('#export-dropdown').addClass('hidden');
+      });
+    });
+  </script>
+</body>
+
+</html>

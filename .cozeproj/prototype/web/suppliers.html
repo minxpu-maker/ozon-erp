@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/jquery/jquery-3.7.1.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/lucide/lucide-1.11.0.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/tailwindcss/tailwindcss-browser-4.2.4.min.js"></script>
+
+  <style type="text/tailwindcss">
+    @theme {
+      /* === 品牌色 === */
+      --color-primary:              #2F6BFF;
+      --color-primary-container:    #E8F0FF;
+      --color-on-primary:           #ffffff;
+      /* === 背景 / 表面 === */
+      --color-background:                 #F6F8FB;
+      --color-surface-container-lowest:   #EEF1F6;
+      --color-surface:                    #FFFFFF;
+      --color-surface-container:          #EEF1F6;
+      --color-surface-container-high:     #E6EAF2;
+      --color-surface-container-highest:  #DDE3ED;
+      /* === 文字 === */
+      --color-on-surface:           #152033;
+      --color-on-surface-variant:   #637089;
+      /* === 功能色 === */
+      --color-success:  #16A37B;
+      --color-error:    #EF4444;
+      --color-warning:  #F59E0B;
+      /* === 边框 === */
+      --color-outline:          #E6EAF2;
+      --color-outline-variant:  #D1D5DB;
+      /* === 圆角 === */
+      --radius-sm:   0.25rem;
+      --radius-md:   0.375rem;
+      --radius-lg:   0.5rem;
+      --radius-xl:   0.75rem;
+      --radius-2xl:  1rem;
+      --radius-full: 9999px;
+      /* === 阴影 === */
+      --shadow-card:   0 2px 8px rgba(0,0,0,0.08);
+      --shadow-float:  0 10px 25px rgba(0,0,0,0.12);
+      --shadow-dialog: 0 25px 50px rgba(0,0,0,0.16);
+      /* === 字体 === */
+      --font-sans: "Inter", system-ui, sans-serif;
+    }
+  </style>
+
+  <!-- 图片兜底 -->
+  <script>
+    document.addEventListener('error', function (e) {
+      const img = e.target;
+      if (img.tagName !== 'IMG' || img.dataset.fallback) return;
+      img.dataset.fallback = '1';
+      const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const cat = img.getAttribute('data-category') || '其他';
+      const alt = img.getAttribute('alt') || '';
+      const label = esc(alt.length > 8 ? alt.slice(0, 8) + '…' : alt);
+      const icons = { '人物': '👤', '自然风景': '🏞', '动物': '🐾', '建筑城市': '🏙', '运动体育': '⚽', '交通工具': '🚗', '食物': '🍽', '服饰时尚': '👗', '商业科技': '💼', '游戏娱乐': '🎮', '艺术': '🎨', '其他': '🖼' };
+      const icon = icons[cat] || '🖼';
+      const w = img.width || 400, h = img.height || 300;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="45%" text-anchor="middle" font-size="${Math.min(w, h) * 0.18}" dominant-baseline="central">${icon}</text><text x="50%" y="68%" text-anchor="middle" font-size="${Math.min(w, h) * 0.07}" fill="%239ca3af" font-family="system-ui,sans-serif" dominant-baseline="central">${label}</text></svg>`;
+      img.src = 'data:image/svg+xml,' + svg;
+    }, true);
+  </script>
+</head>
+
+<body class="bg-background text-on-surface font-sans">
+
+  <!-- @nav:start 导航组件 -->
+  <header class="bg-surface sticky top-0 z-40 h-14 flex items-center justify-between px-6 border-b border-outline/50">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+        <i data-lucide="box" class="w-4 h-4 text-on-primary"></i>
+      </div>
+      <span class="font-semibold text-base">Ozon ERP</span>
+    </div>
+    <div class="flex items-center gap-4">
+      <button class="flex items-center gap-2 text-sm text-on-surface-variant hover:text-on-surface transition-colors">
+        <i data-lucide="bell" class="w-4 h-4"></i>
+        <span class="bg-error text-white text-xs px-1.5 py-0.5 rounded-full font-medium">3</span>
+      </button>
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-primary font-medium text-sm">初</div>
+        <span class="text-sm font-medium">小初</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="flex" style="height: calc(100vh - 3.5rem)">
+    <aside class="w-56 shrink-0 bg-surface border-r border-outline/50 overflow-y-auto">
+      <div class="p-3 space-y-0.5">
+        <a href="dashboard.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="layout-dashboard" class="w-4 h-4"></i>仪表盘
+        </a>
+        <a href="orders.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="shopping-cart" class="w-4 h-4"></i>订单管理
+        </a>
+        <a href="purchase.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="package" class="w-4 h-4"></i>采购管理
+        </a>
+        <a href="quick-entry.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="clipboard-list" class="w-4 h-4"></i>快捷录单
+        </a>
+        <a href="logistics.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="truck" class="w-4 h-4"></i>物流追踪
+        </a>
+        <a href="packaging.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="box" class="w-4 h-4"></i>打包流程
+        </a>
+        <a href="finance.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="calculator" class="w-4 h-4"></i>财务核算
+        </a>
+        <div class="pt-3 pb-1">
+          <span class="px-3 text-xs font-medium text-on-surface-variant/60 uppercase tracking-wider">数据中心</span>
+        </div>
+        <a href="sku-management.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="database" class="w-4 h-4"></i>SKU管理
+        </a>
+        <a href="suppliers.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 text-primary font-medium text-sm" aria-current="page">
+          <i data-lucide="users" class="w-4 h-4"></i>供应商管理
+        </a>
+        <a href="reports.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="bar-chart-3" class="w-4 h-4"></i>数据报表
+        </a>
+        <div class="pt-3 pb-1">
+          <span class="px-3 text-xs font-medium text-on-surface-variant/60 uppercase tracking-wider">系统</span>
+        </div>
+        <a href="settings.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="settings" class="w-4 h-4"></i>系统设置
+        </a>
+      </div>
+    </aside>
+
+    <!-- @main-content:start -->
+    <main class="flex-1 min-w-0 overflow-y-auto bg-background p-6">
+      <!-- 页面标题 -->
+      <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold text-on-surface">供应商管理</h1>
+        <button id="btn-add-supplier" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-2">
+          <i data-lucide="plus" class="w-4 h-4"></i>新增供应商
+        </button>
+      </div>
+
+      <!-- 统计卡片 -->
+      <div class="grid grid-cols-4 gap-4 mb-6">
+        <!-- 统计卡片-供应商总数 -->
+        <div class="bg-surface rounded-lg shadow-card p-5">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-sm text-on-surface-variant">供应商总数</span>
+            <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+              <i data-lucide="building-2" class="w-5 h-5 text-primary"></i>
+            </div>
+          </div>
+          <div class="text-2xl font-bold text-on-surface">156</div>
+          <div class="text-xs text-on-surface-variant mt-1">已录入系统</div>
+        </div>
+        <!-- 统计卡片-合作中 -->
+        <div class="bg-surface rounded-lg shadow-card p-5">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-sm text-on-surface-variant">合作中</span>
+            <div class="w-10 h-10 bg-success/10 rounded-lg flex items-center justify-center">
+              <i data-lucide="handshake" class="w-5 h-5 text-success"></i>
+            </div>
+          </div>
+          <div class="text-2xl font-bold text-success">128</div>
+          <div class="text-xs text-on-surface-variant mt-1">正常合作状态</div>
+        </div>
+        <!-- 统计卡片-已停用 -->
+        <div class="bg-surface rounded-lg shadow-card p-5">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-sm text-on-surface-variant">已停用</span>
+            <div class="w-10 h-10 bg-on-surface-variant/10 rounded-lg flex items-center justify-center">
+              <i data-lucide="pause-circle" class="w-5 h-5 text-on-surface-variant"></i>
+            </div>
+          </div>
+          <div class="text-2xl font-bold text-on-surface-variant">18</div>
+          <div class="text-xs text-on-surface-variant mt-1">暂停合作</div>
+        </div>
+        <!-- 统计卡片-本月采购金额 -->
+        <div class="bg-surface rounded-lg shadow-card p-5">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-sm text-on-surface-variant">本月采购金额</span>
+            <div class="w-10 h-10 bg-warning/10 rounded-lg flex items-center justify-center">
+              <i data-lucide="trending-up" class="w-5 h-5 text-warning"></i>
+            </div>
+          </div>
+          <div class="text-2xl font-bold text-on-surface">¥892,450</div>
+          <div class="text-xs text-success mt-1 inline-flex items-center gap-1">
+            <i data-lucide="arrow-up" class="w-3 h-3"></i>+12.5%
+          </div>
+        </div>
+      </div>
+
+      <!-- 筛选栏 -->
+      <div class="bg-surface rounded-lg shadow-card p-4 mb-6">
+        <div class="flex items-center gap-4 flex-wrap">
+          <div class="flex-1 min-w-[200px]">
+            <div class="relative">
+              <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant"></i>
+              <input id="search-name" type="text" placeholder="搜索供应商名称..." class="w-full bg-surface-container border-none rounded-md pl-9 pr-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/>
+            </div>
+          </div>
+          <select id="filter-platform" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
+            <option value="">全部平台</option>
+            <option value="1688">1688</option>
+            <option value="pdd">拼多多</option>
+          </select>
+          <select id="filter-status" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
+            <option value="">全部状态</option>
+            <option value="active">合作中</option>
+            <option value="inactive">已停用</option>
+            <option value="blacklist">黑名单</option>
+          </select>
+          <select id="filter-rating" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
+            <option value="">全部评分</option>
+            <option value="5">5星</option>
+            <option value="4">4星及以上</option>
+            <option value="3">3星及以上</option>
+          </select>
+          <button id="btn-search" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 transition-all">
+            搜索
+          </button>
+          <button id="btn-reset" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high transition-all">
+            重置
+          </button>
+        </div>
+      </div>
+
+      <!-- 供应商列表 -->
+      <div class="bg-surface rounded-lg shadow-card overflow-hidden mb-6">
+        <!-- 批量操作栏 -->
+        <div class="flex items-center justify-between px-4 py-3 bg-surface-container border-b border-outline-variant/20">
+          <div class="flex items-center gap-3">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="select-all" class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30"/>
+              <span class="text-sm text-on-surface-variant">全选</span>
+            </label>
+            <span class="text-sm text-on-surface-variant">已选择 <span id="selected-count" class="font-medium text-on-surface">0</span> 项</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="btn-batch-status" class="text-sm text-on-surface-variant hover:text-on-surface px-3 py-1.5 rounded-md hover:bg-surface-container-high transition-all inline-flex items-center gap-1.5">
+              <i data-lucide="settings-2" class="w-3.5 h-3.5"></i>批量设置状态
+            </button>
+            <button id="btn-export" class="text-sm text-on-surface-variant hover:text-on-surface px-3 py-1.5 rounded-md hover:bg-surface-container-high transition-all inline-flex items-center gap-1.5">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i>导出数据
+            </button>
+          </div>
+        </div>
+        <!-- 表头 -->
+        <div class="grid grid-cols-11 gap-2 px-4 py-3 bg-surface-container-high text-xs font-semibold text-on-surface-variant uppercase tracking-wide">
+          <span class="col-span-2">供应商名称</span>
+          <span>平台</span>
+          <span>联系方式</span>
+          <span>合作状态</span>
+          <span>评分</span>
+          <span>累计金额</span>
+          <span>订单数</span>
+          <span>最近采购</span>
+          <span class="col-span-2">操作</span>
+        </div>
+        <!-- 表格内容 -->
+        <div id="supplier-list" class="divide-y divide-outline-variant/30">
+          <!-- 列表-供应商1 -->
+          <div class="supplier-row grid grid-cols-11 gap-2 px-4 py-4 hover:bg-surface-container/50 transition-colors items-center" data-id="1" data-status="active">
+            <div class="col-span-2">
+              <div class="font-medium text-sm text-on-surface">广州义乌小商品批发部</div>
+              <div class="text-xs text-on-surface-variant mt-0.5">主营：日用百货、小商品</div>
+            </div>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-primary/10 text-primary w-fit">1688</span>
+            <span class="text-sm text-on-surface-variant">138****8888</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success w-fit">合作中</span>
+            <div class="flex items-center gap-0.5">
+              <i data-lucide="star" class="w-3.5 h-3.5 text-warning fill-warning"></i>
+              <i data-lucide="star" class="w-3.5 h-3.5 text-warning fill-warning"></i>
+              <i data-lucide="star" class="w-3.5 h-3.5 text-warning fill-warning"></i>
+              <i data-lucide="star" class="w-3.5 h-3.5 text-warning fill-warning"></i>
+              <i data-lucide="star" class="w-3.5 h-3.5 text-warning fill-warning"></i>
+            </div>
+            <span class="text-sm font-semibold text-on-surface">¥128,650</span>
+            <span class="text-sm text-on-surface-variant">86单</span>
+            <span class="text-sm text-on-surface-variant">2024-01-18</span>
+            <div class="col-span-2 flex items-center gap-2">
+              <button class="btn-detail text-primary text-xs font-medium hover:underline">详情</button>
+              <button class="btn-edit text-on-surface-variant text-xs font-medium hover:text-on-surface hover:underline">编辑</button>
+              <button class="btn-history text-on-surface-variant text-xs font-medium hover:text-on-surface hover:underline">采购历史</button>
+              <button class="btn-blacklist text-error text-xs font-medium hover:underline">加入黑名单</button>
+            </div>
+          </div>
+          <!-- 列表-供应商2 -->
+          <div class="supplier-row grid grid-cols-11 gap-2 px-4 py-4 hover:bg-surface-container/50 transition-colors items-center" data-id="2" data-status="active">
+            <div class="col-span-2">
+              <div class="font-medium text-sm text-on-surface">深圳华强北电子商城</div>
+              <div class="text-xs text-on-surface-variant mt-0.5">主营：电子产品、配件</div>
+            </div>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-error/10 text-error w-fit">拼多多</span>
+            <span class="text-sm text-on-surface-variant">139****6666</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success w-fit">合作中</span>
+            <div class="flex items-center gap-0.5">
+              <i data-lucide="star" class="w-3.5 h-3.5 text-warning fill-warning"></i>
+              <i data-lucide="star" class="w-3.5 h-3.5 text-warning fill-warning"></i>
+              <i data-lucide="star" class="w-3.5 h-3.5 text-warning fill-warning"></i>
+              <i data-lucide="star" class="w-3.5 h-3.5 text-warning fill-warning"></i>
+              <i data-lucide="star" class="w-3.5 h-3.5 text-outline-variant"></i>
+            </div>
+            <span class="text-sm font-semibold text-on-surface">¥256,890</span>
+            <span class="text-sm text-on-surface-variant">142单</span>
+            <span class="text-sm text-on-surface-variant">2024-01-17</span>
+            <div class="col-span-2 flex items-center gap-2">
+              <button class="btn-detail text-primary text-xs font-medium hover:underline">详情</button>
+              <button class="btn-edit text-on-surface-variant text-xs font-medium hover:text-on-surface hover:underline">编辑</button>
+              <button class="btn-history text-on-surface-variant text-xs font-medium hover:text-on-surface hover:underline">采购历史</button>
+              <button class="btn-blacklist text-error text-xs font-medium hover:underline">加入黑名单</button>
+            </div>
+          </div>
+          <!-- 列表-供应商3 -->
+          <div class="supplier-row grid grid-cols-11 gap-2 px-4 py-4 hover:bg-surface-container/50 transition-colors items-center" data-id="3" data-status="active">
+            <div class="col-span-2">
+              <div class="font-medium text-sm text-on-surface">杭州四季青服装批发</div>
+              <div class="text-xs text-on-surface-variant mt-0.5">主营：服装、面料</div>
+            </div>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-primary/10 text-primary w-fit">1688</span>
+            <span class="text-sm text-on-surface-variant">137****5555</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success w-fit">合作中</span>
+            <div class="flex items-center gap-0.5">
+              <i data-lucide="star" class="w-3.5 h-3.5 text-warning fill-warning"></i>
+              <i data-lucide="star" class="w-3.5 h-3.5 text-warning fill-warning"></i>
+              <i data-lucide="star" class="w-3.5 h-3.5 text-warning fill-warning"></i>
+              <i data-lucide="star" class="w-3.5 h-3.5 text-warning fill-warning"></i>
+              <i data-lucide="star" class="w-3.5 h-3.5 text-warning fill-warning"></i>
+            </div>
+            <span class="text-sm font-semibold text-on-surface">¥89,320</span>
+            <span class="text-sm text-on-surface-variant">67单</span>
+            <span class="text-sm text-on-surface-variant">2024-01-16</span>
+            <div class="col-span-2 flex items-center gap-2">
+              <button class="btn-detail text-primary text-xs font-medium hover:underline">详情</button>
+              <button class="btn-edit text-on-surface-variant text-xs font-medium hover:text-on-surface hover:underline">编辑</button>
+              <button class="btn-history text-on-surface-variant text-xs font-medium hover:text-on-surface hover:underline">采购历史</button>
+              <button class="btn-blacklist text-error text-xs font-medium hover:underline">加入黑名单</button>
+            </div>
+          </div>
+          <!-- 列表-供应商4 -->
+          <div class="supplier-row grid grid-cols-11 gap-2 px-4 py-4 hover:bg-surface-container/50 transition-colors items-center" data-id="4" data-status="inactive">
+            <div class="col-span-2">
+              <div class="font-medium text-sm text-on-surface">义乌饰品配件商行</div>
+              <div class="text-xs text-on-surface-variant mt-0.5">主营：饰品、配件</div>
+            </div>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-primary/10 text-primary w-fit">1688</span>
+            <span class="text-sm text-on-surface-variant">135****4444</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-on-surface-variant/15 text-on-surface-variant w-fit">已停用</span>
+            <div class="flex items-center gap-0.5">
+              <i data-lucide="star" class="w-3.5 h-3.5 text-warning fill-warning"></i>
+              <i data-lucide="star" class="w-3.5 h-3.5 text-warning fill-warning"></i>
+              <i data-lucide="star" class="w-3.5 h-3.5 text-warning fill-warning"></i>
+              <i data-lucide="star" class="w-3.5 h-3.5 text-outline-variant"></i>
+              <i data-lucide="star" class="w-3.5 h-3.5 text-outline-variant"></i>
+            </div>
+            <span class="text-sm font-semibold text-on-surface">¥45,600</span>
+            <span class="text-sm text-on-surface-variant">34单</span>
+            <span class="text-sm text-on-surface-variant">2023-11-20</span>
+            <div class="col-span-2 flex items-center gap-2">
+              <button class="btn-detail text-primary text-xs font-medium hover:underline">详情</button>
+              <button class="btn-edit text-on-surface-variant text-xs font-medium hover:text-on-surface hover:underline">编辑</button>
+              <button class="btn-history text-on-surface-variant text-xs font-medium hover:text-on-surface hover:underline">采购历史</button>
+              <button class="btn-blacklist text-error text-xs font-medium hover:underline">加入黑名单</button>
+            </div>
+          </div>
+          <!-- 列表-供应商5 -->
+          <div class="supplier-row grid grid-cols-11 gap-2 px-4 py-4 hover:bg-surface-container/50 transition-colors items-center" data-id="5" data-status="active">
+            <div class="col-span-2">
+              <div class="font-medium text-sm text-on-surface">上海家居用品总汇</div>
+              <div class="text-xs text-on-surface-variant mt-0.5">主营：家居用品、收纳</div>
+            </div>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-error/10 text-error w-fit">拼多多</span>
+            <span class="text-sm text-on-surface-variant">136****7777</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success w-fit">合作中</span>
+            <div class="flex items-center gap-0.5">
+              <i data-lucide="star" class="w-3.5 h-3.5 text-warning fill-warning"></i>
+              <i data-lucide="star" class="w-3.5 h-3.5 text-warning fill-warning"></i>
+              <i data-lucide="star" class="w-3.5 h-3.5 text-warning fill-warning"></i>
+              <i data-lucide="star" class="w-3.5 h-3.5 text-warning fill-warning"></i>
+              <i data-lucide="star" class="w-3.5 h-3.5 text-outline-variant"></i>
+            </div>
+            <span class="text-sm font-semibold text-on-surface">¥178,450</span>
+            <span class="text-sm text-on-surface-variant">98单</span>
+            <span class="text-sm text-on-surface-variant">2024-01-18</span>
+            <div class="col-span-2 flex items-center gap-2">
+              <button class="btn-detail text-primary text-xs font-medium hover:underline">详情</button>
+              <button class="btn-edit text-on-surface-variant text-xs font-medium hover:text-on-surface hover:underline">编辑</button>
+              <button class="btn-history text-on-surface-variant text-xs font-medium hover:text-on-surface hover:underline">采购历史</button>
+              <button class="btn-blacklist text-error text-xs font-medium hover:underline">加入黑名单</button>
+            </div>
+          </div>
+          <!-- 列表-供应商6-黑名单 -->
+          <div class="supplier-row grid grid-cols-11 gap-2 px-4 py-4 hover:bg-surface-container/50 transition-colors items-center bg-error/5" data-id="6" data-status="blacklist">
+            <div class="col-span-2">
+              <div class="font-medium text-sm text-on-surface">东莞五金建材有限公司</div>
+              <div class="text-xs text-on-surface-variant mt-0.5">主营：五金工具、建材</div>
+            </div>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-primary/10 text-primary w-fit">1688</span>
+            <span class="text-sm text-on-surface-variant">133****2222</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-error/15 text-error w-fit">黑名单</span>
+            <div class="flex items-center gap-0.5">
+              <i data-lucide="star" class="w-3.5 h-3.5 text-warning fill-warning"></i>
+              <i data-lucide="star" class="w-3.5 h-3.5 text-warning fill-warning"></i>
+              <i data-lucide="star" class="w-3.5 h-3.5 text-outline-variant"></i>
+              <i data-lucide="star" class="w-3.5 h-3.5 text-outline-variant"></i>
+              <i data-lucide="star" class="w-3.5 h-3.5 text-outline-variant"></i>
+            </div>
+            <span class="text-sm font-semibold text-on-surface">¥12,300</span>
+            <span class="text-sm text-on-surface-variant">8单</span>
+            <span class="text-sm text-on-surface-variant">2023-08-15</span>
+            <div class="col-span-2 flex items-center gap-2">
+              <button class="btn-detail text-primary text-xs font-medium hover:underline">详情</button>
+              <button class="btn-edit text-on-surface-variant text-xs font-medium hover:text-on-surface hover:underline">编辑</button>
+              <button class="btn-history text-on-surface-variant text-xs font-medium hover:text-on-surface hover:underline">采购历史</button>
+              <button class="btn-remove-blacklist text-success text-xs font-medium hover:underline">移出黑名单</button>
+            </div>
+          </div>
+        </div>
+        <!-- 分页 -->
+        <div class="flex items-center justify-between px-4 py-3 bg-surface-container-lowest">
+          <span class="text-sm text-on-surface-variant">共 156 条记录，每页 10 条</span>
+          <div class="flex items-center gap-1">
+            <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">上一页</button>
+            <button class="px-3 py-1.5 text-sm bg-primary text-on-primary rounded-md">1</button>
+            <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">2</button>
+            <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">3</button>
+            <span class="px-2 text-sm text-on-surface-variant">...</span>
+            <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">16</button>
+            <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">下一页</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 黑名单管理区域 -->
+      <div class="bg-surface rounded-lg shadow-card overflow-hidden">
+        <div class="px-5 py-4 border-b border-outline-variant/20 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <i data-lucide="ban" class="w-5 h-5 text-error"></i>
+            <h2 class="text-base font-semibold text-on-surface">黑名单管理</h2>
+            <span class="text-sm text-on-surface-variant">(10家供应商)</span>
+          </div>
+          <button id="btn-toggle-blacklist" class="text-sm text-primary font-medium hover:underline inline-flex items-center gap-1">
+            <i data-lucide="chevron-down" class="w-4 h-4"></i>展开查看
+          </button>
+        </div>
+        <div id="blacklist-content" class="hidden">
+          <div class="divide-y divide-outline-variant/30">
+            <!-- 黑名单-供应商1 -->
+            <div class="grid grid-cols-6 gap-4 px-5 py-4 hover:bg-surface-container/50 transition-colors items-center">
+              <div class="col-span-2">
+                <div class="font-medium text-sm text-on-surface">东莞五金建材有限公司</div>
+                <div class="text-xs text-on-surface-variant mt-0.5">加入原因：多次交货延迟，质量不稳定</div>
+              </div>
+              <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-primary/10 text-primary w-fit">1688</span>
+              <span class="text-sm text-on-surface-variant">2023-08-20 加入</span>
+              <span class="text-sm text-on-surface-variant">¥12,300 累计</span>
+              <button class="btn-remove-blacklist text-success text-sm font-medium hover:underline w-fit">移出黑名单</button>
+            </div>
+            <!-- 黑名单-供应商2 -->
+            <div class="grid grid-cols-6 gap-4 px-5 py-4 hover:bg-surface-container/50 transition-colors items-center">
+              <div class="col-span-2">
+                <div class="font-medium text-sm text-on-surface">深圳伪劣产品商行</div>
+                <div class="text-xs text-on-surface-variant mt-0.5">加入原因：售假被举报，严重影响店铺信誉</div>
+              </div>
+              <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-error/10 text-error w-fit">拼多多</span>
+              <span class="text-sm text-on-surface-variant">2023-06-15 加入</span>
+              <span class="text-sm text-on-surface-variant">¥5,600 累计</span>
+              <button class="btn-remove-blacklist text-success text-sm font-medium hover:underline w-fit">移出黑名单</button>
+            </div>
+            <!-- 黑名单-供应商3 -->
+            <div class="grid grid-cols-6 gap-4 px-5 py-4 hover:bg-surface-container/50 transition-colors items-center">
+              <div class="col-span-2">
+                <div class="font-medium text-sm text-on-surface">义乌虚假宣传店铺</div>
+                <div class="text-xs text-on-surface-variant mt-0.5">加入原因：货不对板，多次投诉无果</div>
+              </div>
+              <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-primary/10 text-primary w-fit">1688</span>
+              <span class="text-sm text-on-surface-variant">2023-04-10 加入</span>
+              <span class="text-sm text-on-surface-variant">¥8,900 累计</span>
+              <button class="btn-remove-blacklist text-success text-sm font-medium hover:underline w-fit">移出黑名单</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <!-- @main-content:end -->
+  </div>
+  <!-- @nav:end 导航组件 -->
+
+  <!-- 供应商详情抽屉 -->
+  <div id="drawer-detail" class="fixed inset-0 bg-black/50 z-50 hidden">
+    <div class="absolute right-0 top-0 h-full w-[560px] bg-surface shadow-dialog overflow-y-auto">
+      <div class="sticky top-0 bg-surface px-6 py-4 border-b border-outline-variant/20 flex items-center justify-between">
+        <h3 class="text-lg font-semibold text-on-surface">供应商详情</h3>
+        <button id="btn-close-drawer" class="p-1.5 hover:bg-surface-container rounded-md transition-colors">
+          <i data-lucide="x" class="w-5 h-5 text-on-surface-variant"></i>
+        </button>
+      </div>
+      <div class="p-6 space-y-6">
+        <!-- 基础信息 -->
+        <div>
+          <h4 class="text-sm font-semibold text-on-surface mb-4 flex items-center gap-2">
+            <i data-lucide="building-2" class="w-4 h-4 text-primary"></i>基础信息
+          </h4>
+          <div class="bg-surface-container rounded-lg p-4 space-y-3">
+            <div class="flex justify-between">
+              <span class="text-sm text-on-surface-variant">供应商名称</span>
+              <span class="text-sm font-medium text-on-surface">广州义乌小商品批发部</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-sm text-on-surface-variant">采购平台</span>
+              <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-primary/10 text-primary">1688</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-sm text-on-surface-variant">联系人</span>
+              <span class="text-sm font-medium text-on-surface">张经理</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-sm text-on-surface-variant">联系电话</span>
+              <span class="text-sm font-medium text-on-surface">138-8888-8888</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-sm text-on-surface-variant">详细地址</span>
+              <span class="text-sm font-medium text-on-surface text-right max-w-[200px]">广州市白云区义乌小商品城A区102号</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-sm text-on-surface-variant">开户行</span>
+              <span class="text-sm font-medium text-on-surface">中国工商银行广州分行</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-sm text-on-surface-variant">银行账号</span>
+              <span class="text-sm font-medium text-on-surface">6222 **** **** 8888</span>
+            </div>
+          </div>
+        </div>
+        <!-- 评分详情 -->
+        <div>
+          <h4 class="text-sm font-semibold text-on-surface mb-4 flex items-center gap-2">
+            <i data-lucide="star" class="w-4 h-4 text-warning"></i>评分详情
+          </h4>
+          <div class="bg-surface-container rounded-lg p-4 space-y-4">
+            <div>
+              <div class="flex justify-between mb-2">
+                <span class="text-sm text-on-surface-variant">响应速度</span>
+                <span class="text-sm font-medium text-on-surface">4.8分</span>
+              </div>
+              <div class="h-2 bg-surface-container-high rounded-full overflow-hidden">
+                <div class="h-full bg-success rounded-full" style="width: 96%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between mb-2">
+                <span class="text-sm text-on-surface-variant">产品质量</span>
+                <span class="text-sm font-medium text-on-surface">4.9分</span>
+              </div>
+              <div class="h-2 bg-surface-container-high rounded-full overflow-hidden">
+                <div class="h-full bg-success rounded-full" style="width: 98%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between mb-2">
+                <span class="text-sm text-on-surface-variant">综合评分</span>
+                <span class="text-sm font-medium text-on-surface">5.0分</span>
+              </div>
+              <div class="h-2 bg-surface-container-high rounded-full overflow-hidden">
+                <div class="h-full bg-warning rounded-full" style="width: 100%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- 采购历史 -->
+        <div>
+          <h4 class="text-sm font-semibold text-on-surface mb-4 flex items-center gap-2">
+            <i data-lucide="history" class="w-4 h-4 text-primary"></i>采购历史
+          </h4>
+          <div class="bg-surface-container rounded-lg overflow-hidden">
+            <div class="grid grid-cols-4 px-4 py-3 bg-surface-container-high text-xs font-semibold text-on-surface-variant">
+              <span>采购单号</span>
+              <span>金额</span>
+              <span>SKU数</span>
+              <span>日期</span>
+            </div>
+            <div class="divide-y divide-outline-variant/20">
+              <div class="grid grid-cols-4 px-4 py-3">
+                <span class="text-sm text-on-surface">PO20240118001</span>
+                <span class="text-sm font-medium text-on-surface">¥3,580</span>
+                <span class="text-sm text-on-surface-variant">12件</span>
+                <span class="text-sm text-on-surface-variant">2024-01-18</span>
+              </div>
+              <div class="grid grid-cols-4 px-4 py-3">
+                <span class="text-sm text-on-surface">PO20240115002</span>
+                <span class="text-sm font-medium text-on-surface">¥2,890</span>
+                <span class="text-sm text-on-surface-variant">8件</span>
+                <span class="text-sm text-on-surface-variant">2024-01-15</span>
+              </div>
+              <div class="grid grid-cols-4 px-4 py-3">
+                <span class="text-sm text-on-surface">PO20240110003</span>
+                <span class="text-sm font-medium text-on-surface">¥5,260</span>
+                <span class="text-sm text-on-surface-variant">18件</span>
+                <span class="text-sm text-on-surface-variant">2024-01-10</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- 供应商品类 -->
+        <div>
+          <h4 class="text-sm font-semibold text-on-surface mb-4 flex items-center gap-2">
+            <i data-lucide="package" class="w-4 h-4 text-primary"></i>供应商品类
+          </h4>
+          <div class="bg-surface-container rounded-lg p-4">
+            <div class="flex flex-wrap gap-2">
+              <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-primary/10 text-primary">日用百货</span>
+              <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-primary/10 text-primary">小商品</span>
+              <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-primary/10 text-primary">收纳用品</span>
+              <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-primary/10 text-primary">厨房用品</span>
+              <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-primary/10 text-primary">清洁用品</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 新增供应商弹窗 -->
+  <div id="modal-add" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-surface rounded-xl shadow-dialog max-w-lg w-full max-h-[90vh] overflow-y-auto">
+      <div class="px-6 py-4 border-b border-outline-variant/20 flex items-center justify-between">
+        <h3 class="text-lg font-semibold text-on-surface">新增供应商</h3>
+        <button id="btn-close-modal" class="p-1.5 hover:bg-surface-container rounded-md transition-colors">
+          <i data-lucide="x" class="w-5 h-5 text-on-surface-variant"></i>
+        </button>
+      </div>
+      <div class="p-6 space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-on-surface mb-1.5">供应商名称 <span class="text-error">*</span></label>
+          <input type="text" placeholder="请输入供应商名称" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-on-surface mb-1.5">采购平台 <span class="text-error">*</span></label>
+          <select class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
+            <option value="">请选择采购平台</option>
+            <option value="1688">1688</option>
+            <option value="pdd">拼多多</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-on-surface mb-1.5">联系人</label>
+          <input type="text" placeholder="请输入联系人姓名" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-on-surface mb-1.5">联系电话</label>
+          <input type="tel" placeholder="请输入联系电话" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-on-surface mb-1.5">详细地址</label>
+          <input type="text" placeholder="请输入详细地址" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-on-surface mb-1.5">开户行</label>
+          <input type="text" placeholder="请输入开户行信息" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-on-surface mb-1.5">银行账号</label>
+          <input type="text" placeholder="请输入银行账号" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-on-surface mb-1.5">备注</label>
+          <textarea rows="3" placeholder="请输入备注信息（选填）" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors resize-none"></textarea>
+        </div>
+      </div>
+      <div class="px-6 py-4 border-t border-outline-variant/20 flex items-center justify-end gap-3">
+        <button id="btn-cancel-modal" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all">取消</button>
+        <button id="btn-submit-modal" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">确认添加</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 编辑供应商弹窗 -->
+  <div id="modal-edit" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-surface rounded-xl shadow-dialog max-w-lg w-full max-h-[90vh] overflow-y-auto">
+      <div class="px-6 py-4 border-b border-outline-variant/20 flex items-center justify-between">
+        <h3 class="text-lg font-semibold text-on-surface">编辑供应商</h3>
+        <button id="btn-close-edit-modal" class="p-1.5 hover:bg-surface-container rounded-md transition-colors">
+          <i data-lucide="x" class="w-5 h-5 text-on-surface-variant"></i>
+        </button>
+      </div>
+      <div class="p-6 space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-on-surface mb-1.5">供应商名称 <span class="text-error">*</span></label>
+          <input type="text" value="广州义乌小商品批发部" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-on-surface mb-1.5">采购平台 <span class="text-error">*</span></label>
+          <select class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
+            <option value="1688" selected>1688</option>
+            <option value="pdd">拼多多</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-on-surface mb-1.5">合作状态</label>
+          <select class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
+            <option value="active" selected>合作中</option>
+            <option value="inactive">已停用</option>
+            <option value="blacklist">黑名单</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-on-surface mb-1.5">联系人</label>
+          <input type="text" value="张经理" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-on-surface mb-1.5">联系电话</label>
+          <input type="tel" value="138-8888-8888" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-on-surface mb-1.5">详细地址</label>
+          <input type="text" value="广州市白云区义乌小商品城A区102号" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/>
+        </div>
+      </div>
+      <div class="px-6 py-4 border-t border-outline-variant/20 flex items-center justify-end gap-3">
+        <button id="btn-cancel-edit-modal" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all">取消</button>
+        <button id="btn-submit-edit-modal" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">保存修改</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 确认操作弹窗 -->
+  <div id="modal-confirm" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-surface rounded-xl shadow-dialog max-w-sm w-full">
+      <div class="p-6 text-center">
+        <div class="w-12 h-12 bg-error/10 rounded-full flex items-center justify-center mx-auto mb-4">
+          <i data-lucide="alert-triangle" class="w-6 h-6 text-error"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-on-surface mb-2" id="confirm-title">确认操作</h3>
+        <p class="text-sm text-on-surface-variant" id="confirm-message">确定要将该供应商加入黑名单吗？加入后将无法进行采购操作。</p>
+      </div>
+      <div class="px-6 py-4 border-t border-outline-variant/20 flex items-center justify-center gap-3">
+        <button id="btn-cancel-confirm" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all">取消</button>
+        <button id="btn-submit-confirm" class="bg-error text-white px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">确认</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 批量设置状态弹窗 -->
+  <div id="modal-batch-status" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-surface rounded-xl shadow-dialog max-w-sm w-full">
+      <div class="px-6 py-4 border-b border-outline-variant/20">
+        <h3 class="text-lg font-semibold text-on-surface">批量设置状态</h3>
+      </div>
+      <div class="p-6 space-y-4">
+        <p class="text-sm text-on-surface-variant">已选择 <span class="font-medium text-on-surface">3</span> 个供应商</p>
+        <div>
+          <label class="block text-sm font-medium text-on-surface mb-1.5">设置状态</label>
+          <select id="batch-status-select" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
+            <option value="active">合作中</option>
+            <option value="inactive">已停用</option>
+            <option value="blacklist">黑名单</option>
+          </select>
+        </div>
+      </div>
+      <div class="px-6 py-4 border-t border-outline-variant/20 flex items-center justify-end gap-3">
+        <button id="btn-cancel-batch" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all">取消</button>
+        <button id="btn-submit-batch" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">确认设置</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    $(function() {
+      // 初始化图标
+      lucide.createIcons();
+
+      // 新增供应商弹窗
+      $('#btn-add-supplier').on('click', function() {
+        $('#modal-add').removeClass('hidden');
+      });
+      $('#btn-close-modal, #btn-cancel-modal').on('click', function() {
+        $('#modal-add').addClass('hidden');
+      });
+      $('#btn-submit-modal').on('click', function() {
+        // 后续实现：收集表单数据，验证后提交新增供应商请求
+        console.log('提交新增供应商表单');
+        $('#modal-add').addClass('hidden');
+      });
+
+      // 供应商详情抽屉
+      $('#supplier-list').on('click', '.btn-detail', function() {
+        $('#drawer-detail').removeClass('hidden');
+      });
+      $('#btn-close-drawer').on('click', function() {
+        $('#drawer-detail').addClass('hidden');
+      });
+      // 点击遮罩关闭抽屉
+      $('#drawer-detail').on('click', function(e) {
+        if (e.target === this) {
+          $(this).addClass('hidden');
+        }
+      });
+
+      // 编辑供应商弹窗
+      $('#supplier-list').on('click', '.btn-edit', function() {
+        $('#modal-edit').removeClass('hidden');
+      });
+      $('#btn-close-edit-modal, #btn-cancel-edit-modal').on('click', function() {
+        $('#modal-edit').addClass('hidden');
+      });
+      $('#btn-submit-edit-modal').on('click', function() {
+        // 后续实现：收集表单数据，提交编辑供应商请求
+        console.log('提交编辑供应商表单');
+        $('#modal-edit').addClass('hidden');
+      });
+
+      // 采购历史 - 跳转到采购管理页面并带上供应商筛选参数
+      $('#supplier-list').on('click', '.btn-history', function() {
+        // 后续实现：跳转到采购管理页面，并带上供应商ID参数
+        // window.location.href = 'purchase.html?supplier_id=' + $(this).closest('.supplier-row').data('id');
+        console.log('查看采购历史，供应商ID:', $(this).closest('.supplier-row').data('id'));
+      });
+
+      // 加入黑名单
+      $('#supplier-list').on('click', '.btn-blacklist', function() {
+        $('#confirm-title').text('加入黑名单');
+        $('#confirm-message').text('确定要将该供应商加入黑名单吗？加入后将无法进行采购操作。');
+        $('#modal-confirm').removeClass('hidden');
+      });
+
+      // 移出黑名单
+      $('#supplier-list').on('click', '.btn-remove-blacklist', function() {
+        $('#confirm-title').text('移出黑名单');
+        $('#confirm-message').text('确定要将该供应商移出黑名单吗？移出后可恢复正常的采购合作。');
+        $('#modal-confirm').removeClass('hidden');
+      });
+
+      // 确认弹窗操作
+      $('#btn-cancel-confirm').on('click', function() {
+        $('#modal-confirm').addClass('hidden');
+      });
+      $('#btn-submit-confirm').on('click', function() {
+        // 后续实现：根据当前操作类型执行相应API调用
+        console.log('确认执行操作');
+        $('#modal-confirm').addClass('hidden');
+      });
+
+      // 黑名单展开/收起
+      $('#btn-toggle-blacklist').on('click', function() {
+        var $content = $('#blacklist-content');
+        var $icon = $(this).find('i');
+        if ($content.hasClass('hidden')) {
+          $content.removeClass('hidden');
+          $icon.attr('data-lucide', 'chevron-up');
+          $(this).find('span:last').text('收起');
+        } else {
+          $content.addClass('hidden');
+          $icon.attr('data-lucide', 'chevron-down');
+          $(this).find('span:last').text('展开查看');
+        }
+        lucide.createIcons();
+      });
+
+      // 全选
+      $('#select-all').on('change', function() {
+        var checked = $(this).prop('checked');
+        $('.supplier-checkbox').prop('checked', checked);
+        updateSelectedCount();
+      });
+
+      // 更新选中数量
+      function updateSelectedCount() {
+        var count = $('.supplier-checkbox:checked').length;
+        $('#selected-count').text(count);
+      }
+
+      // 批量设置状态弹窗
+      $('#btn-batch-status').on('click', function() {
+        var count = $('.supplier-checkbox:checked').length;
+        if (count === 0) {
+          alert('请先选择供应商');
+          return;
+        }
+        $('#modal-batch-status').find('span.font-medium').text(count);
+        $('#modal-batch-status').removeClass('hidden');
+      });
+      $('#btn-cancel-batch').on('click', function() {
+        $('#modal-batch-status').addClass('hidden');
+      });
+      $('#btn-submit-batch').on('click', function() {
+        // 后续实现：批量更新选中供应商的状态
+        var status = $('#batch-status-select').val();
+        console.log('批量设置状态:', status);
+        $('#modal-batch-status').addClass('hidden');
+      });
+
+      // 导出数据
+      $('#btn-export').on('click', function() {
+        // 后续实现：根据当前筛选条件导出供应商数据为Excel
+        console.log('导出供应商数据');
+      });
+
+      // 搜索筛选
+      $('#btn-search').on('click', function() {
+        var name = $('#search-name').val();
+        var platform = $('#filter-platform').val();
+        var status = $('#filter-status').val();
+        var rating = $('#filter-rating').val();
+        // 后续实现：根据筛选条件过滤供应商列表
+        console.log('搜索条件:', { name: name, platform: platform, status: status, rating: rating });
+      });
+
+      // 重置筛选
+      $('#btn-reset').on('click', function() {
+        $('#search-name').val('');
+        $('#filter-platform').val('');
+        $('#filter-status').val('');
+        $('#filter-rating').val('');
+        // 后续实现：重置列表显示全部供应商
+        console.log('重置筛选条件');
+      });
+
+      // 为供应商行添加复选框（动态）
+      $('.supplier-row').each(function() {
+        var $row = $(this);
+        var $firstCell = $row.find('> div:first-child, > span:first-child');
+        if ($firstCell.length && !$firstCell.find('.supplier-checkbox').length) {
+          // 在第一列前插入复选框
+          $row.prepend('<div class="flex items-center"><input type="checkbox" class="supplier-checkbox w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30"/></div>');
+          $row.removeClass('grid-cols-11').addClass('grid-cols-12');
+        }
+      });
+
+      // 监听复选框变化
+      $(document).on('change', '.supplier-checkbox', function() {
+        updateSelectedCount();
+      });
+    });
+  </script>
+
+  <script>lucide.createIcons();</script>
+</body>
+
+</html>

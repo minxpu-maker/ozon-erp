@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/jquery/jquery-3.7.1.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/lucide/lucide-1.11.0.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/tailwindcss/tailwindcss-browser-4.2.4.min.js"></script>
+
+  <style type="text/tailwindcss">
+    @theme {
+      /* === 品牌色 === */
+      --color-primary:              #2F6BFF;
+      --color-primary-container:    #E8F0FF;
+      --color-on-primary:           #ffffff;
+      /* === 背景 / 表面 === */
+      --color-background:                 #F6F8FB;
+      --color-surface-container-lowest:   #EEF1F6;
+      --color-surface:                    #FFFFFF;
+      --color-surface-container:          #EEF1F6;
+      --color-surface-container-high:     #E6EAF2;
+      --color-surface-container-highest:  #DDE3ED;
+      /* === 文字 === */
+      --color-on-surface:           #152033;
+      --color-on-surface-variant:   #637089;
+      /* === 功能色 === */
+      --color-success:  #16A37B;
+      --color-error:    #EF4444;
+      --color-warning:  #F59E0B;
+      /* === 边框 === */
+      --color-outline:          #E6EAF2;
+      --color-outline-variant:  #D1D5DB;
+      /* === 圆角 === */
+      --radius-sm:   0.25rem;
+      --radius-md:   0.375rem;
+      --radius-lg:   0.5rem;
+      --radius-xl:   0.75rem;
+      --radius-2xl:  1rem;
+      --radius-full: 9999px;
+      /* === 阴影 === */
+      --shadow-card:   0 2px 8px rgba(0,0,0,0.08);
+      --shadow-float:  0 10px 25px rgba(0,0,0,0.12);
+      --shadow-dialog: 0 25px 50px rgba(0,0,0,0.16);
+      /* === 字体 === */
+      --font-sans: "Inter", system-ui, sans-serif;
+    }
+  </style>
+
+  <!-- 图片兜底 -->
+  <script>
+    document.addEventListener('error', function (e) {
+      const img = e.target;
+      if (img.tagName !== 'IMG' || img.dataset.fallback) return;
+      img.dataset.fallback = '1';
+      const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const cat = img.getAttribute('data-category') || '其他';
+      const alt = img.getAttribute('alt') || '';
+      const label = esc(alt.length > 8 ? alt.slice(0, 8) + '…' : alt);
+      const icons = { '人物': '👤', '自然风景': '🏞', '动物': '🐾', '建筑城市': '🏙', '运动体育': '⚽', '交通工具': '🚗', '食物': '🍽', '服饰时尚': '👗', '商业科技': '💼', '游戏娱乐': '🎮', '艺术': '🎨', '其他': '🖼' };
+      const icon = icons[cat] || '🖼';
+      const w = img.width || 400, h = img.height || 300;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="45%" text-anchor="middle" font-size="${Math.min(w, h) * 0.18}" dominant-baseline="central">${icon}</text><text x="50%" y="68%" text-anchor="middle" font-size="${Math.min(w, h) * 0.07}" fill="%239ca3af" font-family="system-ui,sans-serif" dominant-baseline="central">${label}</text></svg>`;
+      img.src = 'data:image/svg+xml,' + svg;
+    }, true);
+  </script>
+</head>
+
+<body class="bg-background text-on-surface font-sans">
+
+  <!-- @nav:start 导航组件 -->
+  <header class="bg-surface sticky top-0 z-40 h-14 flex items-center justify-between px-6 border-b border-outline/50">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+        <i data-lucide="box" class="w-4 h-4 text-on-primary"></i>
+      </div>
+      <span class="font-semibold text-base">Ozon ERP</span>
+    </div>
+    <div class="flex items-center gap-4">
+      <button class="flex items-center gap-2 text-sm text-on-surface-variant hover:text-on-surface transition-colors">
+        <i data-lucide="bell" class="w-4 h-4"></i>
+        <span class="bg-error text-white text-xs px-1.5 py-0.5 rounded-full font-medium">3</span>
+      </button>
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-primary font-medium text-sm">初</div>
+        <span class="text-sm font-medium">小初</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="flex" style="height: calc(100vh - 3.5rem)">
+    <aside class="w-56 shrink-0 bg-surface border-r border-outline/50 overflow-y-auto">
+      <div class="p-3 space-y-0.5">
+        <a href="dashboard.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="layout-dashboard" class="w-4 h-4"></i>仪表盘
+        </a>
+        <a href="orders.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="shopping-cart" class="w-4 h-4"></i>订单管理
+        </a>
+        <a href="purchase.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="package" class="w-4 h-4"></i>采购管理
+        </a>
+        <a href="quick-entry.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="clipboard-list" class="w-4 h-4"></i>快捷录单
+        </a>
+        <a href="logistics.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="truck" class="w-4 h-4"></i>物流追踪
+        </a>
+        <a href="packaging.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="box" class="w-4 h-4"></i>打包流程
+        </a>
+        <a href="finance.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="calculator" class="w-4 h-4"></i>财务核算
+        </a>
+        <div class="pt-3 pb-1">
+          <span class="px-3 text-xs font-medium text-on-surface-variant/60 uppercase tracking-wider">数据中心</span>
+        </div>
+        <a href="sku-management.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 text-primary font-medium text-sm" aria-current="page">
+          <i data-lucide="database" class="w-4 h-4"></i>SKU管理
+        </a>
+        <a href="suppliers.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="users" class="w-4 h-4"></i>供应商管理
+        </a>
+        <a href="reports.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="bar-chart-3" class="w-4 h-4"></i>数据报表
+        </a>
+        <div class="pt-3 pb-1">
+          <span class="px-3 text-xs font-medium text-on-surface-variant/60 uppercase tracking-wider">系统</span>
+        </div>
+        <a href="settings.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="settings" class="w-4 h-4"></i>系统设置
+        </a>
+      </div>
+    </aside>
+
+    <!-- @main-content:start -->
+    <main class="flex-1 min-w-0 overflow-y-auto bg-background p-6">
+      <!-- 页面标题 -->
+      <div class="mb-6">
+        <h1 class="text-2xl font-bold text-on-surface">SKU管理</h1>
+        <p class="text-sm text-on-surface-variant mt-1">管理商品主数据和货源映射关系</p>
+      </div>
+
+      <!-- 统计卡片 -->
+      <div class="grid grid-cols-4 gap-4 mb-6">
+        <!-- 统计卡片1：SKU总数 -->
+        <div class="bg-surface rounded-lg shadow-card p-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-on-surface-variant">SKU总数</p>
+              <p class="text-2xl font-bold text-on-surface mt-1">1,286</p>
+            </div>
+            <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+              <i data-lucide="database" class="w-5 h-5 text-primary"></i>
+            </div>
+          </div>
+          <p class="text-xs text-on-surface-variant mt-2">较上月 <span class="text-success font-medium">+128</span></p>
+        </div>
+        <!-- 统计卡片2：已映射数量 -->
+        <div class="bg-surface rounded-lg shadow-card p-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-on-surface-variant">已映射</p>
+              <p class="text-2xl font-bold text-success mt-1">1,089</p>
+            </div>
+            <div class="w-10 h-10 bg-success/10 rounded-lg flex items-center justify-center">
+              <i data-lucide="link" class="w-5 h-5 text-success"></i>
+            </div>
+          </div>
+          <p class="text-xs text-on-surface-variant mt-2">映射率 <span class="text-success font-medium">84.7%</span></p>
+        </div>
+        <!-- 统计卡片3：待映射数量 -->
+        <div class="bg-surface rounded-lg shadow-card p-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-on-surface-variant">待映射</p>
+              <p class="text-2xl font-bold text-warning mt-1">197</p>
+            </div>
+            <div class="w-10 h-10 bg-warning/10 rounded-lg flex items-center justify-center">
+              <i data-lucide="link-2-off" class="w-5 h-5 text-warning"></i>
+            </div>
+          </div>
+          <p class="text-xs text-on-surface-variant mt-2">需要处理 <span class="text-warning font-medium">197</span> 项</p>
+        </div>
+        <!-- 统计卡片4：本月新增 -->
+        <div class="bg-surface rounded-lg shadow-card p-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-on-surface-variant">本月新增</p>
+              <p class="text-2xl font-bold text-on-surface mt-1">86</p>
+            </div>
+            <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+              <i data-lucide="trending-up" class="w-5 h-5 text-primary"></i>
+            </div>
+          </div>
+          <p class="text-xs text-on-surface-variant mt-2">日均新增 <span class="text-primary font-medium">2.9</span> 个</p>
+        </div>
+      </div>
+
+      <!-- 标签页切换 -->
+      <div class="bg-surface rounded-lg shadow-card">
+        <!-- 标签页头部 -->
+        <div class="flex items-center border-b border-outline-variant/30">
+          <button id="tab-sku" class="px-5 py-3 text-sm font-medium text-primary border-b-2 border-primary -mb-px transition-colors">
+            <i data-lucide="database" class="w-4 h-4 inline mr-1.5"></i>SKU主数据
+          </button>
+          <button id="tab-mapping" class="px-5 py-3 text-sm font-medium text-on-surface-variant hover:text-on-surface border-b-2 border-transparent -mb-px transition-colors">
+            <i data-lucide="link" class="w-4 h-4 inline mr-1.5"></i>货源映射
+          </button>
+        </div>
+
+        <!-- SKU主数据内容区 -->
+        <div id="panel-sku" class="p-5">
+          <!-- 筛选栏 -->
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <!-- SKU搜索 -->
+              <div class="relative">
+                <i data-lucide="search" class="w-4 h-4 text-on-surface-variant absolute left-3 top-1/2 -translate-y-1/2"></i>
+                <input id="sku-search" type="text" placeholder="搜索SKU编码或商品名称" class="w-64 bg-surface-container border-none rounded-md pl-9 pr-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/>
+              </div>
+              <!-- 品类筛选 -->
+              <select id="category-filter" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
+                <option value="">全部品类</option>
+                <option value="electronics">电子产品</option>
+                <option value="clothing">服装配饰</option>
+                <option value="home">家居用品</option>
+                <option value="beauty">美妆护肤</option>
+                <option value="sports">运动户外</option>
+              </select>
+              <!-- 映射状态筛选 -->
+              <select id="sku-status-filter" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
+                <option value="">全部状态</option>
+                <option value="mapped">已映射</option>
+                <option value="pending">待映射</option>
+                <option value="disabled">已禁用</option>
+              </select>
+            </div>
+            <div class="flex items-center gap-2">
+              <button id="btn-batch-import" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all inline-flex items-center gap-2">
+                <i data-lucide="upload" class="w-3.5 h-3.5"></i>批量导入
+              </button>
+              <button id="btn-add-sku" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-2">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i>新增SKU
+              </button>
+            </div>
+          </div>
+
+          <!-- SKU列表表格 -->
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead>
+                <tr class="bg-surface-container text-xs font-semibold text-on-surface-variant uppercase tracking-wide">
+                  <th class="px-4 py-3 text-left">SKU编码</th>
+                  <th class="px-4 py-3 text-left">商品信息</th>
+                  <th class="px-4 py-3 text-left">规格型号</th>
+                  <th class="px-4 py-3 text-left">参考成本</th>
+                  <th class="px-4 py-3 text-left">映射状态</th>
+                  <th class="px-4 py-3 text-right">操作</th>
+                </tr>
+              </thead>
+              <tbody id="sku-table-body" class="divide-y divide-outline-variant/30">
+                <!-- 列表-SKU1 -->
+                <tr class="hover:bg-surface-container/50 transition-colors">
+                  <td class="px-4 py-3">
+                    <span class="text-sm font-medium text-on-surface">OZN-SKU-001</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <div class="flex items-center gap-3">
+                      <img src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=80&h=80&fit=crop" alt="智能手表" class="w-10 h-10 rounded object-cover" data-category="商业科技">
+                      <div>
+                        <p class="text-sm font-medium text-on-surface">智能运动手表</p>
+                        <p class="text-xs text-on-surface-variant">电子产品</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="text-sm text-on-surface">黑色 / 42mm</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="text-sm font-semibold text-on-surface">¥289.00</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">已映射</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <div class="flex items-center justify-end gap-2">
+                      <button class="btn-edit-sku text-primary text-sm font-medium hover:underline" data-id="OZN-SKU-001">编辑</button>
+                      <button class="btn-view-mapping text-on-surface-variant text-sm font-medium hover:underline" data-id="OZN-SKU-001">查看映射</button>
+                    </div>
+                  </td>
+                </tr>
+                <!-- 列表-SKU2 -->
+                <tr class="hover:bg-surface-container/50 transition-colors">
+                  <td class="px-4 py-3">
+                    <span class="text-sm font-medium text-on-surface">OZN-SKU-002</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <div class="flex items-center gap-3">
+                      <img src="https://images.unsplash.com/photo-1585386959984-a4155224a1ad?w=80&h=80&fit=crop" alt="护肤精华" class="w-10 h-10 rounded object-cover" data-category="其他">
+                      <div>
+                        <p class="text-sm font-medium text-on-surface">玻尿酸精华液</p>
+                        <p class="text-xs text-on-surface-variant">美妆护肤</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="text-sm text-on-surface">30ml</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="text-sm font-semibold text-on-surface">¥68.00</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">已映射</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <div class="flex items-center justify-end gap-2">
+                      <button class="btn-edit-sku text-primary text-sm font-medium hover:underline" data-id="OZN-SKU-002">编辑</button>
+                      <button class="btn-view-mapping text-on-surface-variant text-sm font-medium hover:underline" data-id="OZN-SKU-002">查看映射</button>
+                    </div>
+                  </td>
+                </tr>
+                <!-- 列表-SKU3 -->
+                <tr class="hover:bg-surface-container/50 transition-colors">
+                  <td class="px-4 py-3">
+                    <span class="text-sm font-medium text-on-surface">OZN-SKU-003</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <div class="flex items-center gap-3">
+                      <img src="https://images.unsplash.com/photo-1551028719-00167b16eac5?w=80&h=80&fit=crop" alt="皮夹克" class="w-10 h-10 rounded object-cover" data-category="服饰时尚">
+                      <div>
+                        <p class="text-sm font-medium text-on-surface">复古真皮夹克</p>
+                        <p class="text-xs text-on-surface-variant">服装配饰</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="text-sm text-on-surface">棕色 / L</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="text-sm font-semibold text-on-surface">¥458.00</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning">待映射</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <div class="flex items-center justify-end gap-2">
+                      <button class="btn-edit-sku text-primary text-sm font-medium hover:underline" data-id="OZN-SKU-003">编辑</button>
+                      <button class="btn-smart-match text-success text-sm font-medium hover:underline" data-id="OZN-SKU-003">智能匹配</button>
+                    </div>
+                  </td>
+                </tr>
+                <!-- 列表-SKU4 -->
+                <tr class="hover:bg-surface-container/50 transition-colors">
+                  <td class="px-4 py-3">
+                    <span class="text-sm font-medium text-on-surface">OZN-SKU-004</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <div class="flex items-center gap-3">
+                      <img src="https://images.unsplash.com/photo-1586495777744-4413f21062fa?w=80&h=80&fit=crop" alt="保温杯" class="w-10 h-10 rounded object-cover" data-category="其他">
+                      <div>
+                        <p class="text-sm font-medium text-on-surface">不锈钢保温杯</p>
+                        <p class="text-xs text-on-surface-variant">家居用品</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="text-sm text-on-surface">银色 / 500ml</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="text-sm font-semibold text-on-surface">¥45.00</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">已映射</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <div class="flex items-center justify-end gap-2">
+                      <button class="btn-edit-sku text-primary text-sm font-medium hover:underline" data-id="OZN-SKU-004">编辑</button>
+                      <button class="btn-view-mapping text-on-surface-variant text-sm font-medium hover:underline" data-id="OZN-SKU-004">查看映射</button>
+                    </div>
+                  </td>
+                </tr>
+                <!-- 列表-SKU5 -->
+                <tr class="hover:bg-surface-container/50 transition-colors">
+                  <td class="px-4 py-3">
+                    <span class="text-sm font-medium text-on-surface">OZN-SKU-005</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <div class="flex items-center gap-3">
+                      <img src="https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=80&h=80&fit=crop" alt="运动鞋" class="w-10 h-10 rounded object-cover" data-category="服饰时尚">
+                      <div>
+                        <p class="text-sm font-medium text-on-surface">轻便跑步鞋</p>
+                        <p class="text-xs text-on-surface-variant">运动户外</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="text-sm text-on-surface">白色 / 42码</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="text-sm font-semibold text-on-surface">¥186.00</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-on-surface-variant/10 text-on-surface-variant">已禁用</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <div class="flex items-center justify-end gap-2">
+                      <button class="btn-edit-sku text-primary text-sm font-medium hover:underline" data-id="OZN-SKU-005">编辑</button>
+                      <button class="btn-enable-sku text-success text-sm font-medium hover:underline" data-id="OZN-SKU-005">启用</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 分页 -->
+          <div class="flex items-center justify-between mt-4 pt-4 border-t border-outline-variant/30">
+            <p class="text-sm text-on-surface-variant">显示 1-5 条，共 1,286 条</p>
+            <div class="flex items-center gap-1">
+              <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">上一页</button>
+              <button class="px-3 py-1.5 text-sm bg-primary text-on-primary rounded-md">1</button>
+              <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">2</button>
+              <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">3</button>
+              <span class="px-2 text-on-surface-variant">...</span>
+              <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">258</button>
+              <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">下一页</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 货源映射内容区 -->
+        <div id="panel-mapping" class="p-5 hidden">
+          <!-- 筛选栏 -->
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <!-- SKU搜索 -->
+              <div class="relative">
+                <i data-lucide="search" class="w-4 h-4 text-on-surface-variant absolute left-3 top-1/2 -translate-y-1/2"></i>
+                <input id="mapping-search" type="text" placeholder="搜索Ozon SKU或商品名称" class="w-64 bg-surface-container border-none rounded-md pl-9 pr-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/>
+              </div>
+              <!-- 采购平台筛选 -->
+              <select id="platform-filter" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
+                <option value="">全部平台</option>
+                <option value="1688">1688</option>
+                <option value="pdd">拼多多</option>
+              </select>
+              <!-- 映射状态筛选 -->
+              <select id="mapping-status-filter" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
+                <option value="">全部状态</option>
+                <option value="active">启用中</option>
+                <option value="disabled">已禁用</option>
+              </select>
+            </div>
+            <div class="flex items-center gap-2">
+              <button id="btn-batch-disable" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all inline-flex items-center gap-2">
+                <i data-lucide="ban" class="w-3.5 h-3.5"></i>批量禁用
+              </button>
+              <button id="btn-batch-price" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all inline-flex items-center gap-2">
+                <i data-lucide="pencil" class="w-3.5 h-3.5"></i>批量改价
+              </button>
+              <button id="btn-smart-match-modal" class="bg-primary-container text-primary px-4 py-2 rounded-md text-sm font-medium hover:bg-primary/20 active:scale-[0.98] transition-all inline-flex items-center gap-2">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>智能匹配
+              </button>
+              <button id="btn-add-mapping" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-2">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i>新增映射
+              </button>
+            </div>
+          </div>
+
+          <!-- 映射列表表格 -->
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead>
+                <tr class="bg-surface-container text-xs font-semibold text-on-surface-variant uppercase tracking-wide">
+                  <th class="px-4 py-3 text-left w-8">
+                    <input type="checkbox" id="select-all-mapping" class="w-4 h-4 rounded border-outline-variant bg-surface-container">
+                  </th>
+                  <th class="px-4 py-3 text-left">Ozon SKU</th>
+                  <th class="px-4 py-3 text-left">商品名称</th>
+                  <th class="px-4 py-3 text-left">采购平台</th>
+                  <th class="px-4 py-3 text-left">货源链接</th>
+                  <th class="px-4 py-3 text-left">采购价</th>
+                  <th class="px-4 py-3 text-left">优先级</th>
+                  <th class="px-4 py-3 text-left">状态</th>
+                  <th class="px-4 py-3 text-right">操作</th>
+                </tr>
+              </thead>
+              <tbody id="mapping-table-body" class="divide-y divide-outline-variant/30">
+                <!-- 列表-映射1 -->
+                <tr class="hover:bg-surface-container/50 transition-colors">
+                  <td class="px-4 py-3">
+                    <input type="checkbox" class="mapping-checkbox w-4 h-4 rounded border-outline-variant bg-surface-container" data-id="M001">
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="text-sm font-medium text-on-surface">OZN-SKU-001</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="text-sm text-on-surface">智能运动手表</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-primary/10 text-primary">1688</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <a href="#" class="text-sm text-primary hover:underline truncate max-w-[200px] block">https://detail.1688.com/offer/12345...</a>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="text-sm font-semibold text-on-surface">¥158.00</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning">主供</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">启用中</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <div class="flex items-center justify-end gap-2">
+                      <button class="btn-edit-mapping text-primary text-sm font-medium hover:underline" data-id="M001">编辑</button>
+                      <button class="btn-disable-mapping text-on-surface-variant text-sm font-medium hover:underline" data-id="M001">禁用</button>
+                    </div>
+                  </td>
+                </tr>
+                <!-- 列表-映射2 -->
+                <tr class="hover:bg-surface-container/50 transition-colors">
+                  <td class="px-4 py-3">
+                    <input type="checkbox" class="mapping-checkbox w-4 h-4 rounded border-outline-variant bg-surface-container" data-id="M002">
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="text-sm font-medium text-on-surface">OZN-SKU-001</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="text-sm text-on-surface">智能运动手表</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-error/10 text-error">拼多多</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <a href="#" class="text-sm text-primary hover:underline truncate max-w-[200px] block">https://mobile.yangkeduo.com/goods2...</a>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="text-sm font-semibold text-on-surface">¥175.00</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-surface-container-high text-on-surface-variant">备供</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">启用中</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <div class="flex items-center justify-end gap-2">
+                      <button class="btn-edit-mapping text-primary text-sm font-medium hover:underline" data-id="M002">编辑</button>
+                      <button class="btn-disable-mapping text-on-surface-variant text-sm font-medium hover:underline" data-id="M002">禁用</button>
+                    </div>
+                  </td>
+                </tr>
+                <!-- 列表-映射3 -->
+                <tr class="hover:bg-surface-container/50 transition-colors">
+                  <td class="px-4 py-3">
+                    <input type="checkbox" class="mapping-checkbox w-4 h-4 rounded border-outline-variant bg-surface-container" data-id="M003">
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="text-sm font-medium text-on-surface">OZN-SKU-002</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="text-sm text-on-surface">玻尿酸精华液</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-primary/10 text-primary">1688</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <a href="#" class="text-sm text-primary hover:underline truncate max-w-[200px] block">https://detail.1688.com/offer/67890...</a>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="text-sm font-semibold text-on-surface">¥32.00</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning">主供</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">启用中</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <div class="flex items-center justify-end gap-2">
+                      <button class="btn-edit-mapping text-primary text-sm font-medium hover:underline" data-id="M003">编辑</button>
+                      <button class="btn-disable-mapping text-on-surface-variant text-sm font-medium hover:underline" data-id="M003">禁用</button>
+                    </div>
+                  </td>
+                </tr>
+                <!-- 列表-映射4 -->
+                <tr class="hover:bg-surface-container/50 transition-colors">
+                  <td class="px-4 py-3">
+                    <input type="checkbox" class="mapping-checkbox w-4 h-4 rounded border-outline-variant bg-surface-container" data-id="M004">
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="text-sm font-medium text-on-surface">OZN-SKU-004</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="text-sm text-on-surface">不锈钢保温杯</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-primary/10 text-primary">1688</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <a href="#" class="text-sm text-primary hover:underline truncate max-w-[200px] block">https://detail.1688.com/offer/11223...</a>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="text-sm font-semibold text-on-surface">¥22.50</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning">主供</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">启用中</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <div class="flex items-center justify-end gap-2">
+                      <button class="btn-edit-mapping text-primary text-sm font-medium hover:underline" data-id="M004">编辑</button>
+                      <button class="btn-disable-mapping text-on-surface-variant text-sm font-medium hover:underline" data-id="M004">禁用</button>
+                    </div>
+                  </td>
+                </tr>
+                <!-- 列表-映射5 -->
+                <tr class="hover:bg-surface-container/50 transition-colors">
+                  <td class="px-4 py-3">
+                    <input type="checkbox" class="mapping-checkbox w-4 h-4 rounded border-outline-variant bg-surface-container" data-id="M005">
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="text-sm font-medium text-on-surface">OZN-SKU-005</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="text-sm text-on-surface">轻便跑步鞋</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-error/10 text-error">拼多多</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <a href="#" class="text-sm text-primary hover:underline truncate max-w-[200px] block">https://mobile.yangkeduo.com/goods5...</a>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="text-sm font-semibold text-on-surface">¥98.00</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning">主供</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-on-surface-variant/10 text-on-surface-variant">已禁用</span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <div class="flex items-center justify-end gap-2">
+                      <button class="btn-edit-mapping text-primary text-sm font-medium hover:underline" data-id="M005">编辑</button>
+                      <button class="btn-enable-mapping text-success text-sm font-medium hover:underline" data-id="M005">启用</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 分页 -->
+          <div class="flex items-center justify-between mt-4 pt-4 border-t border-outline-variant/30">
+            <p class="text-sm text-on-surface-variant">显示 1-5 条，共 1,456 条</p>
+            <div class="flex items-center gap-1">
+              <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">上一页</button>
+              <button class="px-3 py-1.5 text-sm bg-primary text-on-primary rounded-md">1</button>
+              <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">2</button>
+              <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">3</button>
+              <span class="px-2 text-on-surface-variant">...</span>
+              <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">292</button>
+              <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">下一页</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <!-- @main-content:end -->
+  </div>
+  <!-- @nav:end 导航组件 -->
+
+  <!-- SKU详情/编辑弹窗 -->
+  <div id="modal-sku-detail" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-surface rounded-xl shadow-dialog max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div class="p-6 border-b border-outline-variant/30">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-semibold text-on-surface">SKU详情</h2>
+          <button id="close-sku-modal" class="text-on-surface-variant hover:text-on-surface transition-colors">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+      <div class="p-6 space-y-6">
+        <!-- 基本信息 -->
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-on-surface-variant mb-1.5">SKU编码</label>
+            <input type="text" value="OZN-SKU-001" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-on-surface-variant mb-1.5">商品名称</label>
+            <input type="text" value="智能运动手表" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-on-surface-variant mb-1.5">品类</label>
+            <select class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
+              <option value="electronics" selected>电子产品</option>
+              <option value="clothing">服装配饰</option>
+              <option value="home">家居用品</option>
+              <option value="beauty">美妆护肤</option>
+              <option value="sports">运动户外</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-on-surface-variant mb-1.5">规格型号</label>
+            <input type="text" value="黑色 / 42mm" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-on-surface-variant mb-1.5">参考成本</label>
+            <input type="text" value="289.00" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-on-surface-variant mb-1.5">映射状态</label>
+            <select class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
+              <option value="mapped" selected>已映射</option>
+              <option value="pending">待映射</option>
+              <option value="disabled">已禁用</option>
+            </select>
+          </div>
+        </div>
+        <!-- 商品图片 -->
+        <div>
+          <label class="block text-sm font-medium text-on-surface-variant mb-1.5">商品图片</label>
+          <div class="flex gap-3">
+            <div class="w-20 h-20 rounded-lg overflow-hidden bg-surface-container">
+              <img src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=160&h=160&fit=crop" alt="智能手表" class="w-full h-full object-cover" data-category="商业科技">
+            </div>
+            <button class="w-20 h-20 rounded-lg border-2 border-dashed border-outline-variant flex flex-col items-center justify-center text-on-surface-variant hover:border-primary hover:text-primary transition-colors">
+              <i data-lucide="plus" class="w-6 h-6"></i>
+              <span class="text-xs mt-1">上传</span>
+            </button>
+          </div>
+        </div>
+        <!-- 备注 -->
+        <div>
+          <label class="block text-sm font-medium text-on-surface-variant mb-1.5">备注</label>
+          <textarea rows="3" placeholder="添加备注信息..." class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors resize-none">热销商品，需保持充足库存</textarea>
+        </div>
+      </div>
+      <div class="p-6 border-t border-outline-variant/30 flex justify-end gap-3">
+        <button id="cancel-sku-btn" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all">取消</button>
+        <button id="save-sku-btn" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">保存更改</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 新增映射弹窗 -->
+  <div id="modal-add-mapping" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-surface rounded-xl shadow-dialog max-w-lg w-full max-h-[90vh] overflow-y-auto">
+      <div class="p-6 border-b border-outline-variant/30">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-semibold text-on-surface">新增货源映射</h2>
+          <button id="close-mapping-modal" class="text-on-surface-variant hover:text-on-surface transition-colors">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+      <div class="p-6 space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-on-surface-variant mb-1.5">Ozon SKU</label>
+          <select class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
+            <option value="">请选择SKU</option>
+            <option value="OZN-SKU-001">OZN-SKU-001 - 智能运动手表</option>
+            <option value="OZN-SKU-002">OZN-SKU-002 - 玻尿酸精华液</option>
+            <option value="OZN-SKU-003">OZN-SKU-003 - 复古真皮夹克</option>
+            <option value="OZN-SKU-004">OZN-SKU-004 - 不锈钢保温杯</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-on-surface-variant mb-1.5">采购平台</label>
+          <select class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
+            <option value="1688">1688</option>
+            <option value="pdd">拼多多</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-on-surface-variant mb-1.5">货源链接</label>
+          <input type="text" placeholder="请输入货源链接" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-on-surface-variant mb-1.5">采购价</label>
+          <input type="text" placeholder="请输入采购价" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-on-surface-variant mb-1.5">优先级</label>
+          <select class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
+            <option value="primary">主供</option>
+            <option value="backup">备供</option>
+          </select>
+        </div>
+      </div>
+      <div class="p-6 border-t border-outline-variant/30 flex justify-end gap-3">
+        <button id="cancel-mapping-btn" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all">取消</button>
+        <button id="save-mapping-btn" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 智能匹配弹窗 -->
+  <div id="modal-smart-match" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-surface rounded-xl shadow-dialog max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div class="p-6 border-b border-outline-variant/30">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-semibold text-on-surface">智能货源匹配</h2>
+          <button id="close-match-modal" class="text-on-surface-variant hover:text-on-surface transition-colors">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+      <div class="p-6">
+        <!-- SKU输入 -->
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-on-surface-variant mb-1.5">输入Ozon SKU编码</label>
+          <div class="flex gap-2">
+            <input id="match-sku-input" type="text" placeholder="请输入SKU编码，如：OZN-SKU-003" class="flex-1 bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/>
+            <button id="btn-start-match" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-2">
+              <i data-lucide="search" class="w-4 h-4"></i>匹配
+            </button>
+          </div>
+        </div>
+        <!-- 匹配结果 -->
+        <div id="match-results" class="space-y-3">
+          <!-- 匹配结果1 -->
+          <div class="border border-outline-variant/30 rounded-lg p-4 hover:bg-surface-container/50 transition-colors">
+            <div class="flex items-start gap-4">
+              <img src="https://images.unsplash.com/photo-1551028719-00167b16eac5?w=80&h=80&fit=crop" alt="皮夹克" class="w-16 h-16 rounded object-cover" data-category="服饰时尚">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-primary/10 text-primary">1688</span>
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">匹配度 95%</span>
+                </div>
+                <p class="text-sm font-medium text-on-surface truncate">复古真皮夹克 男士修身款</p>
+                <p class="text-xs text-on-surface-variant mt-1">价格：¥320.00 | 库存充足</p>
+                <a href="#" class="text-xs text-primary hover:underline mt-1 inline-block">查看货源详情</a>
+              </div>
+              <button class="btn-bind-source bg-primary text-on-primary px-3 py-1.5 rounded-md text-xs font-medium hover:opacity-90 transition-all">绑定</button>
+            </div>
+          </div>
+          <!-- 匹配结果2 -->
+          <div class="border border-outline-variant/30 rounded-lg p-4 hover:bg-surface-container/50 transition-colors">
+            <div class="flex items-start gap-4">
+              <img src="https://images.unsplash.com/photo-1520975954732-35dd22299614?w=80&h=80&fit=crop" alt="皮夹克2" class="w-16 h-16 rounded object-cover" data-category="服饰时尚">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-error/10 text-error">拼多多</span>
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">匹配度 89%</span>
+                </div>
+                <p class="text-sm font-medium text-on-surface truncate">真皮夹克男士复古机车外套</p>
+                <p class="text-xs text-on-surface-variant mt-1">价格：¥298.00 | 库存充足</p>
+                <a href="#" class="text-xs text-primary hover:underline mt-1 inline-block">查看货源详情</a>
+              </div>
+              <button class="btn-bind-source bg-primary text-on-primary px-3 py-1.5 rounded-md text-xs font-medium hover:opacity-90 transition-all">绑定</button>
+            </div>
+          </div>
+          <!-- 匹配结果3 -->
+          <div class="border border-outline-variant/30 rounded-lg p-4 hover:bg-surface-container/50 transition-colors">
+            <div class="flex items-start gap-4">
+              <img src="https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=80&h=80&fit=crop" alt="外套" class="w-16 h-16 rounded object-cover" data-category="服饰时尚">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-primary/10 text-primary">1688</span>
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning">匹配度 76%</span>
+                </div>
+                <p class="text-sm font-medium text-on-surface truncate">春秋男士真皮外套修身款</p>
+                <p class="text-xs text-on-surface-variant mt-1">价格：¥358.00 | 库存较少</p>
+                <a href="#" class="text-xs text-primary hover:underline mt-1 inline-block">查看货源详情</a>
+              </div>
+              <button class="btn-bind-source bg-primary text-on-primary px-3 py-1.5 rounded-md text-xs font-medium hover:opacity-90 transition-all">绑定</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="p-6 border-t border-outline-variant/30 flex justify-end">
+        <button id="close-match-btn" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 批量改价弹窗 -->
+  <div id="modal-batch-price" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-surface rounded-xl shadow-dialog max-w-md w-full">
+      <div class="p-6 border-b border-outline-variant/30">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg font-semibold text-on-surface">批量更新采购价</h2>
+          <button id="close-price-modal" class="text-on-surface-variant hover:text-on-surface transition-colors">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+      <div class="p-6 space-y-4">
+        <p class="text-sm text-on-surface-variant">已选择 <span class="font-semibold text-on-surface">0</span> 条映射记录</p>
+        <div>
+          <label class="block text-sm font-medium text-on-surface-variant mb-1.5">调价方式</label>
+          <select class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
+            <option value="percent">按百分比调整</option>
+            <option value="fixed">固定价格</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-on-surface-variant mb-1.5">调整幅度</label>
+          <input type="text" placeholder="如：-5 表示降价5%" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/>
+        </div>
+      </div>
+      <div class="p-6 border-t border-outline-variant/30 flex justify-end gap-3">
+        <button id="cancel-price-btn" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all">取消</button>
+        <button id="confirm-price-btn" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">确认调整</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    $(function() {
+      // 初始化图标
+      lucide.createIcons();
+
+      // 标签页切换
+      $('#tab-sku').on('click', function() {
+        $(this).addClass('text-primary border-primary').removeClass('text-on-surface-variant border-transparent');
+        $('#tab-mapping').removeClass('text-primary border-primary').addClass('text-on-surface-variant border-transparent');
+        $('#panel-sku').removeClass('hidden');
+        $('#panel-mapping').addClass('hidden');
+      });
+
+      $('#tab-mapping').on('click', function() {
+        $(this).addClass('text-primary border-primary').removeClass('text-on-surface-variant border-transparent');
+        $('#tab-sku').removeClass('text-primary border-primary').addClass('text-on-surface-variant border-transparent');
+        $('#panel-mapping').removeClass('hidden');
+        $('#panel-sku').addClass('hidden');
+      });
+
+      // SKU详情弹窗
+      $('#btn-add-sku, .btn-edit-sku').on('click', function() {
+        $('#modal-sku-detail').removeClass('hidden');
+      });
+
+      $('#close-sku-modal, #cancel-sku-btn').on('click', function() {
+        $('#modal-sku-detail').addClass('hidden');
+      });
+
+      $('#save-sku-btn').on('click', function() {
+        // 保存SKU - 应实现：
+        // 1. 收集表单数据
+        // 2. 调用API保存
+        // 3. 刷新列表
+        console.log('保存SKU更改');
+        $('#modal-sku-detail').addClass('hidden');
+      });
+
+      // 新增映射弹窗
+      $('#btn-add-mapping').on('click', function() {
+        $('#modal-add-mapping').removeClass('hidden');
+      });
+
+      $('#close-mapping-modal, #cancel-mapping-btn').on('click', function() {
+        $('#modal-add-mapping').addClass('hidden');
+      });
+
+      $('#save-mapping-btn').on('click', function() {
+        // 保存映射 - 应实现：
+        // 1. 收集表单数据
+        // 2. 验证货源链接
+        // 3. 调用API保存
+        // 4. 刷新映射列表
+        console.log('保存货源映射');
+        $('#modal-add-mapping').addClass('hidden');
+      });
+
+      // 智能匹配弹窗
+      $('#btn-smart-match-modal, .btn-smart-match').on('click', function() {
+        $('#modal-smart-match').removeClass('hidden');
+      });
+
+      $('#close-match-modal, #close-match-btn').on('click', function() {
+        $('#modal-smart-match').addClass('hidden');
+      });
+
+      $('#btn-start-match').on('click', function() {
+        // 智能匹配 - 应实现：
+        // 1. 获取SKU信息
+        // 2. 调用匹配算法API
+        // 3. 展示匹配结果
+        console.log('开始智能匹配:', $('#match-sku-input').val());
+      });
+
+      $('.btn-bind-source').on('click', function() {
+        // 绑定货源 - 应实现：
+        // 1. 获取选中的货源信息
+        // 2. 创建映射关系
+        // 3. 更新SKU状态
+        console.log('绑定货源');
+        $('#modal-smart-match').addClass('hidden');
+      });
+
+      // 编辑映射
+      $('.btn-edit-mapping').on('click', function() {
+        $('#modal-add-mapping').removeClass('hidden');
+      });
+
+      // 禁用映射
+      $('.btn-disable-mapping').on('click', function() {
+        // 禁用映射 - 应实现：
+        // 1. 确认操作
+        // 2. 调用API更新状态
+        // 3. 刷新列表
+        console.log('禁用映射:', $(this).data('id'));
+      });
+
+      // 启用映射
+      $('.btn-enable-mapping').on('click', function() {
+        console.log('启用映射:', $(this).data('id'));
+      });
+
+      // 查看映射
+      $('.btn-view-mapping').on('click', function() {
+        // 跳转到映射详情页或显示映射信息
+        console.log('查看映射:', $(this).data('id'));
+        $('#tab-mapping').click();
+      });
+
+      // 批量操作
+      $('#select-all-mapping').on('change', function() {
+        $('.mapping-checkbox').prop('checked', $(this).prop('checked'));
+      });
+
+      $('.mapping-checkbox').on('change', function() {
+        $('#select-all-mapping').prop('checked', $('.mapping-checkbox:checked').length === $('.mapping-checkbox').length);
+      });
+
+      // 批量禁用
+      $('#btn-batch-disable').on('click', function() {
+        // 批量禁用 - 应实现：
+        // 1. 获取选中的映射ID
+        // 2. 确认操作
+        // 3. 调用API批量更新
+        var selected = $('.mapping-checkbox:checked').map(function() {
+          return $(this).data('id');
+        }).get();
+        console.log('批量禁用:', selected);
+      });
+
+      // 批量改价弹窗
+      $('#btn-batch-price').on('click', function() {
+        $('#modal-batch-price').removeClass('hidden');
+      });
+
+      $('#close-price-modal, #cancel-price-btn').on('click', function() {
+        $('#modal-batch-price').addClass('hidden');
+      });
+
+      $('#confirm-price-btn').on('click', function() {
+        // 批量改价 - 应实现：
+        // 1. 获取选中的映射ID
+        // 2. 收集调价参数
+        // 3. 调用API批量更新价格
+        console.log('确认批量改价');
+        $('#modal-batch-price').addClass('hidden');
+      });
+
+      // 批量导入
+      $('#btn-batch-import').on('click', function() {
+        // 批量导入 - 应实现：
+        // 1. 打开文件选择器
+        // 2. 解析Excel/CSV文件
+        // 3. 验证数据格式
+        // 4. 批量导入SKU
+        console.log('批量导入SKU');
+      });
+
+      // 启用SKU
+      $('.btn-enable-sku').on('click', function() {
+        // 启用SKU - 应实现：
+        // 1. 调用API更新状态
+        // 2. 刷新列表
+        console.log('启用SKU:', $(this).data('id'));
+      });
+
+      // 点击弹窗背景关闭
+      $('.fixed.inset-0').on('click', function(e) {
+        if (e.target === this) {
+          $(this).addClass('hidden');
+        }
+      });
+    });
+  </script>
+  <script>lucide.createIcons();</script>
+</body>
+
+</html>

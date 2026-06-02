@@ -55,6 +55,38 @@
       },
       "title": "财务核算",
       "size": "web"
+    },
+    {
+      "type": "html",
+      "options": {
+        "path": ".cozeproj/prototype/web/settings.html"
+      },
+      "title": "系统设置",
+      "size": "web"
+    },
+    {
+      "type": "html",
+      "options": {
+        "path": ".cozeproj/prototype/web/sku-management.html"
+      },
+      "title": "SKU管理",
+      "size": "web"
+    },
+    {
+      "type": "html",
+      "options": {
+        "path": ".cozeproj/prototype/web/reports.html"
+      },
+      "title": "数据报表",
+      "size": "web"
+    },
+    {
+      "type": "html",
+      "options": {
+        "path": ".cozeproj/prototype/web/suppliers.html"
+      },
+      "title": "供应商管理",
+      "size": "web"
     }
   ]
 }
