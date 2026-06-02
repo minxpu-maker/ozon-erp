@@ -87,6 +87,14 @@
       },
       "title": "供应商管理",
       "size": "web"
+    },
+    {
+      "type": "html",
+      "options": {
+        "path": ".cozeproj/prototype/web/login.html"
+      },
+      "title": "登录页面",
+      "size": "web"
     }
   ]
 }
