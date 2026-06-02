@@ -174,7 +174,7 @@
           <div class="flex-1 min-w-0">
             <!-- 平台账号配置 -->
             <div id="section-platform" class="space-y-4">
-              <!-- Ozon账号卡片 -->
+              <!-- Ozon账号卡片 - 多店铺绑定 -->
               <div class="bg-surface rounded-lg shadow-card p-5">
                 <div class="flex items-center justify-between mb-4">
                   <div class="flex items-center gap-3">
@@ -182,41 +182,194 @@
                       <i data-lucide="store" class="w-5 h-5 text-primary"></i>
                     </div>
                     <div>
-                      <h3 class="text-base font-semibold text-on-surface">Ozon 账号</h3>
-                      <p class="text-xs text-on-surface-variant">俄罗斯电商平台</p>
+                      <h3 class="text-base font-semibold text-on-surface">Ozon 店铺管理</h3>
+                      <p class="text-xs text-on-surface-variant">支持绑定多个Ozon店铺，实现多店统一管理</p>
                     </div>
                   </div>
-                  <!-- 状态开关 -->
-                  <div class="flex items-center gap-2">
-                    <span id="ozon-status-text" class="text-xs text-success font-medium">已启用</span>
-                    <button id="ozon-toggle" class="relative w-10 h-5 bg-success rounded-full transition-colors" aria-label="切换Ozon账号状态">
-                      <span class="absolute right-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform"></span>
-                    </button>
-                  </div>
+                  <button id="ozon-add-shop-btn" class="bg-primary text-on-primary px-3 py-1.5 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-1.5">
+                    <i data-lucide="plus" class="w-4 h-4"></i>添加店铺
+                  </button>
                 </div>
-                <div class="grid grid-cols-2 gap-4">
-                  <div>
-                    <label class="block text-xs font-medium text-on-surface-variant mb-1.5">店铺名称</label>
-                    <input type="text" value="Ozon官方旗舰店" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" />
+
+                <!-- 店铺列表 -->
+                <div class="space-y-3" id="ozon-shops-list">
+                  <!-- 店铺1 - 主店铺 -->
+                  <div class="bg-surface-container-lowest rounded-lg p-4 border border-outline-variant/20">
+                    <div class="flex items-start justify-between mb-3">
+                      <div class="flex items-center gap-2">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-primary/15 text-primary">主店铺</span>
+                        <h4 class="text-sm font-semibold text-on-surface">Ozon官方旗舰店</h4>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">已启用</span>
+                        <button class="text-on-surface-variant hover:text-on-surface p-1 transition-colors" title="更多操作">
+                          <i data-lucide="more-vertical" class="w-4 h-4"></i>
+                        </button>
+                      </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-3 text-xs">
+                      <div>
+                        <span class="text-on-surface-variant">Client ID</span>
+                        <p class="text-on-surface font-mono mt-0.5">123456</p>
+                      </div>
+                      <div>
+                        <span class="text-on-surface-variant">API Key</span>
+                        <p class="text-on-surface font-mono mt-0.5">sk-xxx...xxx</p>
+                      </div>
+                      <div>
+                        <span class="text-on-surface-variant">最后同步</span>
+                        <p class="text-on-surface mt-0.5">2024-01-15 14:30</p>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2 mt-3 pt-3 border-t border-outline-variant/20">
+                      <button class="text-xs text-primary hover:text-primary/80 font-medium inline-flex items-center gap-1 transition-colors">
+                        <i data-lucide="pencil" class="w-3 h-3"></i>编辑
+                      </button>
+                      <span class="text-outline-variant">|</span>
+                      <button class="text-xs text-on-surface-variant hover:text-on-surface font-medium inline-flex items-center gap-1 transition-colors">
+                        <i data-lucide="plug" class="w-3 h-3"></i>测试连接
+                      </button>
+                      <span class="text-outline-variant">|</span>
+                      <button class="text-xs text-on-surface-variant hover:text-on-surface font-medium inline-flex items-center gap-1 transition-colors">
+                        <i data-lucide="refresh-cw" class="w-3 h-3"></i>立即同步
+                      </button>
+                    </div>
                   </div>
-                  <div>
-                    <label class="block text-xs font-medium text-on-surface-variant mb-1.5">Client ID</label>
-                    <input type="text" value="123456" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" />
+
+                  <!-- 店铺2 -->
+                  <div class="bg-surface-container-lowest rounded-lg p-4 border border-outline-variant/20">
+                    <div class="flex items-start justify-between mb-3">
+                      <div class="flex items-center gap-2">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-surface-container-high text-on-surface-variant">子店铺</span>
+                        <h4 class="text-sm font-semibold text-on-surface">Ozon数码专营店</h4>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">已启用</span>
+                        <button class="text-on-surface-variant hover:text-on-surface p-1 transition-colors" title="更多操作">
+                          <i data-lucide="more-vertical" class="w-4 h-4"></i>
+                        </button>
+                      </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-3 text-xs">
+                      <div>
+                        <span class="text-on-surface-variant">Client ID</span>
+                        <p class="text-on-surface font-mono mt-0.5">789012</p>
+                      </div>
+                      <div>
+                        <span class="text-on-surface-variant">API Key</span>
+                        <p class="text-on-surface font-mono mt-0.5">sk-yyy...yyy</p>
+                      </div>
+                      <div>
+                        <span class="text-on-surface-variant">最后同步</span>
+                        <p class="text-on-surface mt-0.5">2024-01-15 13:45</p>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2 mt-3 pt-3 border-t border-outline-variant/20">
+                      <button class="text-xs text-primary hover:text-primary/80 font-medium inline-flex items-center gap-1 transition-colors">
+                        <i data-lucide="pencil" class="w-3 h-3"></i>编辑
+                      </button>
+                      <span class="text-outline-variant">|</span>
+                      <button class="text-xs text-on-surface-variant hover:text-on-surface font-medium inline-flex items-center gap-1 transition-colors">
+                        <i data-lucide="plug" class="w-3 h-3"></i>测试连接
+                      </button>
+                      <span class="text-outline-variant">|</span>
+                      <button class="text-xs text-on-surface-variant hover:text-on-surface font-medium inline-flex items-center gap-1 transition-colors">
+                        <i data-lucide="refresh-cw" class="w-3 h-3"></i>立即同步
+                      </button>
+                      <span class="text-outline-variant">|</span>
+                      <button class="text-xs text-error hover:text-error/80 font-medium inline-flex items-center gap-1 transition-colors">
+                        <i data-lucide="trash-2" class="w-3 h-3"></i>删除
+                      </button>
+                    </div>
                   </div>
-                  <div class="col-span-2">
-                    <label class="block text-xs font-medium text-on-surface-variant mb-1.5">API Key</label>
-                    <div class="flex gap-2">
-                      <input type="password" value="sk-xxxxxxxxxxxxxxxxxxxxxxxx" class="flex-1 bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" />
-                      <button id="ozon-test-btn" class="bg-surface-container-high text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-highest active:scale-[0.98] transition-all inline-flex items-center gap-2 shrink-0">
-                        <i data-lucide="plug" class="w-4 h-4"></i>测试连接
+
+                  <!-- 店铺3 - 未启用 -->
+                  <div class="bg-surface-container-lowest rounded-lg p-4 border border-outline-variant/20 opacity-60">
+                    <div class="flex items-start justify-between mb-3">
+                      <div class="flex items-center gap-2">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-surface-container-high text-on-surface-variant">子店铺</span>
+                        <h4 class="text-sm font-semibold text-on-surface">Ozon家居生活馆</h4>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-surface-container-high text-on-surface-variant">未启用</span>
+                        <button class="text-on-surface-variant hover:text-on-surface p-1 transition-colors" title="更多操作">
+                          <i data-lucide="more-vertical" class="w-4 h-4"></i>
+                        </button>
+                      </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-3 text-xs">
+                      <div>
+                        <span class="text-on-surface-variant">Client ID</span>
+                        <p class="text-on-surface font-mono mt-0.5">345678</p>
+                      </div>
+                      <div>
+                        <span class="text-on-surface-variant">API Key</span>
+                        <p class="text-on-surface font-mono mt-0.5">sk-zzz...zzz</p>
+                      </div>
+                      <div>
+                        <span class="text-on-surface-variant">最后同步</span>
+                        <p class="text-on-surface mt-0.5">--</p>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2 mt-3 pt-3 border-t border-outline-variant/20">
+                      <button class="text-xs text-success hover:text-success/80 font-medium inline-flex items-center gap-1 transition-colors">
+                        <i data-lucide="play" class="w-3 h-3"></i>启用
+                      </button>
+                      <span class="text-outline-variant">|</span>
+                      <button class="text-xs text-primary hover:text-primary/80 font-medium inline-flex items-center gap-1 transition-colors">
+                        <i data-lucide="pencil" class="w-3 h-3"></i>编辑
+                      </button>
+                      <span class="text-outline-variant">|</span>
+                      <button class="text-xs text-error hover:text-error/80 font-medium inline-flex items-center gap-1 transition-colors">
+                        <i data-lucide="trash-2" class="w-3 h-3"></i>删除
                       </button>
                     </div>
                   </div>
                 </div>
-                <div class="flex justify-end gap-2 mt-4 pt-4 border-t border-outline-variant/20">
-                  <button id="ozon-save-btn" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-2">
-                    <i data-lucide="save" class="w-4 h-4"></i>保存配置
+
+                <!-- 统计信息 -->
+                <div class="flex items-center justify-between mt-4 pt-4 border-t border-outline-variant/20 text-xs text-on-surface-variant">
+                  <span>共绑定 <strong class="text-on-surface">3</strong> 个店铺，已启用 <strong class="text-success">2</strong> 个</span>
+                  <button class="text-primary hover:text-primary/80 font-medium inline-flex items-center gap-1 transition-colors">
+                    <i data-lucide="refresh-cw" class="w-3 h-3"></i>同步全部店铺
                   </button>
+                </div>
+              </div>
+
+              <!-- 新增店铺弹窗 -->
+              <div id="add-shop-modal" class="fixed inset-0 z-50 hidden">
+                <div class="absolute inset-0 bg-on-surface/50" id="add-shop-modal-overlay"></div>
+                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[480px] bg-surface rounded-xl shadow-dialog p-6">
+                  <div class="flex items-center justify-between mb-5">
+                    <h3 class="text-lg font-semibold text-on-surface">添加Ozon店铺</h3>
+                    <button id="add-shop-modal-close" class="text-on-surface-variant hover:text-on-surface transition-colors">
+                      <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                  </div>
+                  <div class="space-y-4">
+                    <div>
+                      <label class="block text-sm font-medium text-on-surface mb-1.5">店铺名称 <span class="text-error">*</span></label>
+                      <input type="text" placeholder="请输入店铺名称" class="w-full bg-surface-container border-none rounded-md px-3 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" />
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium text-on-surface mb-1.5">Client ID <span class="text-error">*</span></label>
+                      <input type="text" placeholder="请输入Ozon应用的Client ID" class="w-full bg-surface-container border-none rounded-md px-3 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" />
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium text-on-surface mb-1.5">API Key <span class="text-error">*</span></label>
+                      <input type="password" placeholder="请输入Ozon应用的API Key" class="w-full bg-surface-container border-none rounded-md px-3 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" />
+                    </div>
+                    <div class="flex items-center gap-2 py-2">
+                      <input type="checkbox" id="set-as-main" class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30" />
+                      <label for="set-as-main" class="text-sm text-on-surface">设为主店铺</label>
+                    </div>
+                  </div>
+                  <div class="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-outline-variant/20">
+                    <button id="add-shop-cancel" class="px-4 py-2 rounded-md text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors">取消</button>
+                    <button id="add-shop-confirm" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-2">
+                      <i data-lucide="plus" class="w-4 h-4"></i>添加店铺
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -768,6 +921,29 @@
       $('#printer-test-btn').on('click', function() {
         console.log('测试打印：应调用打印机接口发送测试打印任务');
         // 后续实现：调用打印机 API 发送测试页面
+      });
+
+      // 新增店铺弹窗
+      $('#ozon-add-shop-btn').on('click', function() {
+        $('#add-shop-modal').removeClass('hidden');
+        lucide.createIcons();
+      });
+
+      $('#add-shop-modal-close, #add-shop-cancel, #add-shop-modal-overlay').on('click', function() {
+        $('#add-shop-modal').addClass('hidden');
+      });
+
+      $('#add-shop-confirm').on('click', function() {
+        console.log('添加店铺：应收集表单数据并保存新店铺');
+        // 后续实现：收集表单数据，验证后保存到数据库，刷新店铺列表
+        $('#add-shop-modal').addClass('hidden');
+        // 显示成功提示
+        alert('店铺添加成功！');
+      });
+
+      // 阻止弹窗内容区域点击事件冒泡
+      $('#add-shop-modal > div:last-child').on('click', function(e) {
+        e.stopPropagation();
       });
     });
   </script>
