@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/jquery/jquery-3.7.1.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/lucide/lucide-1.11.0.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/tailwindcss/tailwindcss-browser-4.2.4.min.js"></script>
+
+  <style type="text/tailwindcss">
+    @theme {
+      /* === 品牌色 === */
+      --color-primary:              #2F6BFF;
+      --color-primary-container:    #E8F0FF;
+      --color-on-primary:           #ffffff;
+      /* === 背景 / 表面 === */
+      --color-background:                 #F6F8FB;
+      --color-surface-container-lowest:   #EEF1F6;
+      --color-surface:                    #FFFFFF;
+      --color-surface-container:          #EEF1F6;
+      --color-surface-container-high:     #E6EAF2;
+      --color-surface-container-highest:  #DDE3ED;
+      /* === 文字 === */
+      --color-on-surface:           #152033;
+      --color-on-surface-variant:   #637089;
+      /* === 功能色 === */
+      --color-success:  #16A37B;
+      --color-error:    #EF4444;
+      --color-warning:  #F59E0B;
+      /* === 边框 === */
+      --color-outline:          #E6EAF2;
+      --color-outline-variant:  #D1D5DB;
+      /* === 圆角 === */
+      --radius-sm:   0.25rem;
+      --radius-md:   0.375rem;
+      --radius-lg:   0.5rem;
+      --radius-xl:   0.75rem;
+      --radius-2xl:  1rem;
+      --radius-full: 9999px;
+      /* === 阴影 === */
+      --shadow-card:   0 2px 8px rgba(0,0,0,0.08);
+      --shadow-float:  0 10px 25px rgba(0,0,0,0.12);
+      --shadow-dialog: 0 25px 50px rgba(0,0,0,0.16);
+      /* === 字体 === */
+      --font-sans: "Inter", system-ui, sans-serif;
+    }
+  </style>
+
+  <!-- 图片兜底 -->
+  <script>
+    document.addEventListener('error', function (e) {
+      const img = e.target;
+      if (img.tagName !== 'IMG' || img.dataset.fallback) return;
+      img.dataset.fallback = '1';
+      const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const cat = img.getAttribute('data-category') || '其他';
+      const alt = img.getAttribute('alt') || '';
+      const label = esc(alt.length > 8 ? alt.slice(0, 8) + '…' : alt);
+      const icons = { '人物': '👤', '自然风景': '🏞', '动物': '🐾', '建筑城市': '🏙', '运动体育': '⚽', '交通工具': '🚗', '食物': '🍽', '服饰时尚': '👗', '商业科技': '💼', '游戏娱乐': '🎮', '艺术': '🎨', '其他': '🖼' };
+      const icon = icons[cat] || '🖼';
+      const w = img.width || 400, h = img.height || 300;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="45%" text-anchor="middle" font-size="${Math.min(w, h) * 0.18}" dominant-baseline="central">${icon}</text><text x="50%" y="68%" text-anchor="middle" font-size="${Math.min(w, h) * 0.07}" fill="%239ca3af" font-family="system-ui,sans-serif" dominant-baseline="central">${label}</text></svg>`;
+      img.src = 'data:image/svg+xml,' + svg;
+    }, true);
+  </script>
+</head>
+
+<body class="bg-background text-on-surface font-sans">
+
+  <!-- @nav:start 导航组件 -->
+  <header class="bg-surface sticky top-0 z-40 h-14 flex items-center justify-between px-6 border-b border-outline/50">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+        <i data-lucide="box" class="w-4 h-4 text-on-primary"></i>
+      </div>
+      <span class="font-semibold text-base">Ozon ERP</span>
+    </div>
+    <div class="flex items-center gap-4">
+      <button class="flex items-center gap-2 text-sm text-on-surface-variant hover:text-on-surface transition-colors">
+        <i data-lucide="bell" class="w-4 h-4"></i>
+        <span class="bg-error text-white text-xs px-1.5 py-0.5 rounded-full font-medium">3</span>
+      </button>
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-primary font-medium text-sm">初</div>
+        <span class="text-sm font-medium">小初</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="flex" style="height: calc(100vh - 3.5rem)">
+    <aside class="w-56 shrink-0 bg-surface border-r border-outline/50 overflow-y-auto">
+      <div class="p-3 space-y-0.5">
+        <a href="dashboard.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 text-primary font-medium text-sm" aria-current="page">
+          <i data-lucide="layout-dashboard" class="w-4 h-4"></i>仪表盘
+        </a>
+        <a href="orders.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="shopping-cart" class="w-4 h-4"></i>订单管理
+        </a>
+        <a href="purchase.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="package" class="w-4 h-4"></i>采购管理
+        </a>
+        <a href="quick-entry.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="clipboard-list" class="w-4 h-4"></i>快捷录单
+        </a>
+        <a href="logistics.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="truck" class="w-4 h-4"></i>物流追踪
+        </a>
+        <a href="packaging.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="box" class="w-4 h-4"></i>打包流程
+        </a>
+        <a href="finance.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="calculator" class="w-4 h-4"></i>财务核算
+        </a>
+      </div>
+    </aside>
+
+    <!-- @main-content:start -->
+    <main class="flex-1 min-w-0 overflow-y-auto bg-background p-6">
+      <!-- 页面标题 -->
+      <div class="mb-6">
+        <h1 class="text-2xl font-bold text-on-surface">仪表盘</h1>
+        <p class="text-sm text-on-surface-variant mt-1">实时数据概览，掌握业务动态</p>
+      </div>
+
+      <!-- 顶部统计卡片区域 -->
+      <div class="grid grid-cols-4 gap-4 mb-6">
+        <!-- 统计卡片-今日订单数 -->
+        <div class="bg-surface rounded-lg shadow-card p-5">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-sm text-on-surface-variant">今日订单</span>
+            <div class="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+              <i data-lucide="shopping-cart" class="w-4 h-4 text-primary"></i>
+            </div>
+          </div>
+          <div class="flex items-end justify-between">
+            <div>
+              <span class="text-2xl font-bold text-on-surface">128</span>
+              <span class="text-sm text-on-surface-variant ml-1">单</span>
+            </div>
+            <div class="flex items-center gap-1 text-success text-xs">
+              <i data-lucide="trending-up" class="w-3 h-3"></i>
+              <span>+12.5%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 统计卡片-待处理采购 -->
+        <div class="bg-surface rounded-lg shadow-card p-5">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-sm text-on-surface-variant">待处理采购</span>
+            <div class="w-8 h-8 bg-warning/10 rounded-lg flex items-center justify-center">
+              <i data-lucide="package" class="w-4 h-4 text-warning"></i>
+            </div>
+          </div>
+          <div class="flex items-end justify-between">
+            <div>
+              <span class="text-2xl font-bold text-on-surface">23</span>
+              <span class="text-sm text-on-surface-variant ml-1">笔</span>
+            </div>
+            <div class="flex items-center gap-1 text-error text-xs">
+              <i data-lucide="trending-up" class="w-3 h-3"></i>
+              <span>+5.2%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 统计卡片-在途物流 -->
+        <div class="bg-surface rounded-lg shadow-card p-5">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-sm text-on-surface-variant">在途物流</span>
+            <div class="w-8 h-8 bg-success/10 rounded-lg flex items-center justify-center">
+              <i data-lucide="truck" class="w-4 h-4 text-success"></i>
+            </div>
+          </div>
+          <div class="flex items-end justify-between">
+            <div>
+              <span class="text-2xl font-bold text-on-surface">67</span>
+              <span class="text-sm text-on-surface-variant ml-1">件</span>
+            </div>
+            <div class="flex items-center gap-1 text-success text-xs">
+              <i data-lucide="trending-down" class="w-3 h-3"></i>
+              <span>-3.8%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 统计卡片-本月净利润 -->
+        <div class="bg-surface rounded-lg shadow-card p-5">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-sm text-on-surface-variant">本月净利润</span>
+            <div class="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+              <i data-lucide="wallet" class="w-4 h-4 text-primary"></i>
+            </div>
+          </div>
+          <div class="flex items-end justify-between">
+            <div>
+              <span class="text-2xl font-bold text-on-surface">¥86,420</span>
+            </div>
+            <div class="flex items-center gap-1 text-success text-xs">
+              <i data-lucide="trending-up" class="w-3 h-3"></i>
+              <span>+18.3%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 中部内容区域 -->
+      <div class="flex gap-6">
+        <!-- 左侧图表区 -->
+        <div class="flex-1 space-y-6">
+          <!-- 近7天订单趋势图 -->
+          <div class="bg-surface rounded-lg shadow-card p-5">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-base font-semibold text-on-surface">近7天订单趋势</h2>
+              <span class="text-xs text-on-surface-variant">单位：单</span>
+            </div>
+            <!-- 折线图模拟 -->
+            <div class="relative h-48">
+              <svg class="w-full h-full" viewBox="0 0 700 180" preserveAspectRatio="none">
+                <!-- 网格线 -->
+                <line x1="0" y1="45" x2="700" y2="45" stroke="#E6EAF2" stroke-width="1"/>
+                <line x1="0" y1="90" x2="700" y2="90" stroke="#E6EAF2" stroke-width="1"/>
+                <line x1="0" y1="135" x2="700" y2="135" stroke="#E6EAF2" stroke-width="1"/>
+                <!-- 折线 -->
+                <polyline fill="none" stroke="#2F6BFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                  points="50,120 150,80 250,100 350,60 450,90 550,50 650,70"/>
+                <!-- 数据点 -->
+                <circle cx="50" cy="120" r="4" fill="#2F6BFF"/>
+                <circle cx="150" cy="80" r="4" fill="#2F6BFF"/>
+                <circle cx="250" cy="100" r="4" fill="#2F6BFF"/>
+                <circle cx="350" cy="60" r="4" fill="#2F6BFF"/>
+                <circle cx="450" cy="90" r="4" fill="#2F6BFF"/>
+                <circle cx="550" cy="50" r="4" fill="#2F6BFF"/>
+                <circle cx="650" cy="70" r="4" fill="#2F6BFF"/>
+                <!-- 渐变填充 -->
+                <defs>
+                  <linearGradient id="gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" style="stop-color:#2F6BFF;stop-opacity:0.2"/>
+                    <stop offset="100%" style="stop-color:#2F6BFF;stop-opacity:0"/>
+                  </linearGradient>
+                </defs>
+                <polygon fill="url(#gradient)"
+                  points="50,120 150,80 250,100 350,60 450,90 550,50 650,70 650,180 50,180"/>
+              </svg>
+              <!-- X轴标签 -->
+              <div class="absolute bottom-0 left-0 right-0 flex justify-between px-2 text-xs text-on-surface-variant">
+                <span>01/15</span>
+                <span>01/16</span>
+                <span>01/17</span>
+                <span>01/18</span>
+                <span>01/19</span>
+                <span>01/20</span>
+                <span>01/21</span>
+              </div>
+              <!-- Y轴标签 -->
+              <div class="absolute left-0 top-0 bottom-4 flex flex-col justify-between text-xs text-on-surface-variant">
+                <span>150</span>
+                <span>100</span>
+                <span>50</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 采购平台分布饼图 -->
+          <div class="bg-surface rounded-lg shadow-card p-5">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-base font-semibold text-on-surface">采购平台分布</h2>
+              <span class="text-xs text-on-surface-variant">本月采购来源</span>
+            </div>
+            <div class="flex items-center gap-8">
+              <!-- 饼图模拟 -->
+              <div class="relative w-32 h-32">
+                <svg class="w-full h-full" viewBox="0 0 100 100">
+                  <!-- 1688占比62% -->
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="#2F6BFF" stroke-width="20"
+                    stroke-dasharray="155.8 251.2" transform="rotate(-90 50 50)"/>
+                  <!-- 拼多多占比38% -->
+                  <circle cx="50" cy="50" r="40" fill="none" stroke="#16A37B" stroke-width="20"
+                    stroke-dasharray="95.4 251.2" stroke-dashoffset="-155.8" transform="rotate(-90 50 50)"/>
+                </svg>
+                <div class="absolute inset-0 flex items-center justify-center">
+                  <div class="text-center">
+                    <span class="text-lg font-bold text-on-surface">89</span>
+                    <span class="text-xs text-on-surface-variant block">笔</span>
+                  </div>
+                </div>
+              </div>
+              <!-- 图例说明 -->
+              <div class="flex-1 space-y-3">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-sm bg-primary"></div>
+                    <span class="text-sm text-on-surface">1688</span>
+                  </div>
+                  <div class="text-right">
+                    <span class="text-sm font-semibold text-on-surface">55笔</span>
+                    <span class="text-xs text-on-surface-variant ml-2">62%</span>
+                  </div>
+                </div>
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-sm bg-success"></div>
+                    <span class="text-sm text-on-surface">拼多多</span>
+                  </div>
+                  <div class="text-right">
+                    <span class="text-sm font-semibold text-on-surface">34笔</span>
+                    <span class="text-xs text-on-surface-variant ml-2">38%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 右侧待办事项和快捷操作区 -->
+        <div class="w-80 space-y-6">
+          <!-- 快捷操作区 -->
+          <div class="bg-surface rounded-lg shadow-card p-5">
+            <h2 class="text-base font-semibold text-on-surface mb-4">快捷操作</h2>
+            <div class="grid grid-cols-2 gap-3">
+              <button id="btn-sync-orders" class="flex flex-col items-center gap-2 p-3 rounded-lg bg-surface-container hover:bg-surface-container-high transition-colors">
+                <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                  <i data-lucide="refresh-cw" class="w-5 h-5 text-primary"></i>
+                </div>
+                <span class="text-xs font-medium text-on-surface">同步订单</span>
+              </button>
+              <button id="btn-create-purchase" class="flex flex-col items-center gap-2 p-3 rounded-lg bg-surface-container hover:bg-surface-container-high transition-colors">
+                <div class="w-10 h-10 bg-warning/10 rounded-lg flex items-center justify-center">
+                  <i data-lucide="plus" class="w-5 h-5 text-warning"></i>
+                </div>
+                <span class="text-xs font-medium text-on-surface">创建采购</span>
+              </button>
+              <button id="btn-entry-logistics" class="flex flex-col items-center gap-2 p-3 rounded-lg bg-surface-container hover:bg-surface-container-high transition-colors">
+                <div class="w-10 h-10 bg-success/10 rounded-lg flex items-center justify-center">
+                  <i data-lucide="truck" class="w-5 h-5 text-success"></i>
+                </div>
+                <span class="text-xs font-medium text-on-surface">录入物流</span>
+              </button>
+              <button id="btn-print-label" class="flex flex-col items-center gap-2 p-3 rounded-lg bg-surface-container hover:bg-surface-container-high transition-colors">
+                <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                  <i data-lucide="printer" class="w-5 h-5 text-primary"></i>
+                </div>
+                <span class="text-xs font-medium text-on-surface">打印面单</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 待办事项区 -->
+          <div class="bg-surface rounded-lg shadow-card p-5">
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-base font-semibold text-on-surface">待办事项</h2>
+              <span class="text-xs text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full">5项待处理</span>
+            </div>
+            <div id="todo-list" class="space-y-3">
+              <!-- 待办事项-待确认订单 -->
+              <div class="todo-item flex items-start gap-3 p-3 rounded-lg bg-surface-container/50 hover:bg-surface-container transition-colors cursor-pointer" data-id="1">
+                <div class="w-8 h-8 bg-warning/10 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
+                  <i data-lucide="clock" class="w-4 h-4 text-warning"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="text-sm font-medium text-on-surface truncate">待确认订单</span>
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning">待处理</span>
+                  </div>
+                  <div class="text-xs text-on-surface-variant">订单号：OZ-20240121-0088</div>
+                  <div class="text-xs text-on-surface-variant/70 mt-1">10分钟前</div>
+                </div>
+              </div>
+
+              <!-- 待办事项-待采购商品 -->
+              <div class="todo-item flex items-start gap-3 p-3 rounded-lg bg-surface-container/50 hover:bg-surface-container transition-colors cursor-pointer" data-id="2">
+                <div class="w-8 h-8 bg-error/10 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
+                  <i data-lucide="package-x" class="w-4 h-4 text-error"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="text-sm font-medium text-on-surface truncate">待采购商品</span>
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded-sm text-xs font-medium bg-error/15 text-error">紧急</span>
+                  </div>
+                  <div class="text-xs text-on-surface-variant">订单号：OZ-20240121-0092</div>
+                  <div class="text-xs text-on-surface-variant/70 mt-1">25分钟前</div>
+                </div>
+              </div>
+
+              <!-- 待办事项-异常物流 -->
+              <div class="todo-item flex items-start gap-3 p-3 rounded-lg bg-surface-container/50 hover:bg-surface-container transition-colors cursor-pointer" data-id="3">
+                <div class="w-8 h-8 bg-error/10 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
+                  <i data-lucide="alert-triangle" class="w-4 h-4 text-error"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="text-sm font-medium text-on-surface truncate">异常物流</span>
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded-sm text-xs font-medium bg-error/15 text-error">异常</span>
+                  </div>
+                  <div class="text-xs text-on-surface-variant">订单号：OZ-20240120-0075</div>
+                  <div class="text-xs text-on-surface-variant/70 mt-1">1小时前</div>
+                </div>
+              </div>
+
+              <!-- 待办事项-库存预警 -->
+              <div class="todo-item flex items-start gap-3 p-3 rounded-lg bg-surface-container/50 hover:bg-surface-container transition-colors cursor-pointer" data-id="4">
+                <div class="w-8 h-8 bg-warning/10 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
+                  <i data-lucide="alert-circle" class="w-4 h-4 text-warning"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="text-sm font-medium text-on-surface truncate">库存预警</span>
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning">预警</span>
+                  </div>
+                  <div class="text-xs text-on-surface-variant">SKU：SKU-A001-蓝色-L</div>
+                  <div class="text-xs text-on-surface-variant/70 mt-1">2小时前</div>
+                </div>
+              </div>
+
+              <!-- 待办事项-待发货 -->
+              <div class="todo-item flex items-start gap-3 p-3 rounded-lg bg-surface-container/50 hover:bg-surface-container transition-colors cursor-pointer" data-id="5">
+                <div class="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
+                  <i data-lucide="send" class="w-4 h-4 text-primary"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="text-sm font-medium text-on-surface truncate">待发货订单</span>
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded-sm text-xs font-medium bg-primary/15 text-primary">待发货</span>
+                  </div>
+                  <div class="text-xs text-on-surface-variant">订单号：OZ-20240121-0095</div>
+                  <div class="text-xs text-on-surface-variant/70 mt-1">3小时前</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <!-- @main-content:end -->
+  </div>
+  <!-- @nav:end 导航组件 -->
+
+  <script>
+    lucide.createIcons();
+
+    $(function() {
+      // 快捷操作按钮事件
+
+      // 同步订单按钮 - 点击后应实现：
+      // 1. 显示同步进度弹窗
+      // 2. 调用API同步平台订单数据
+      // 3. 同步完成后刷新页面数据
+      $('#btn-sync-orders').on('click', function() {
+        console.log('同步订单功能：需要调用第三方平台API获取最新订单数据');
+      });
+
+      // 创建采购按钮 - 点击后跳转到采购管理页面
+      $('#btn-create-purchase').on('click', function() {
+        window.location.href = 'purchase.html';
+      });
+
+      // 录入物流按钮 - 点击后跳转到物流追踪页面
+      $('#btn-entry-logistics').on('click', function() {
+        window.location.href = 'logistics.html';
+      });
+
+      // 打印面单按钮 - 点击后应实现：
+      // 1. 打开待发货订单选择弹窗
+      // 2. 选择订单后生成面单PDF
+      // 3. 调用打印功能
+      $('#btn-print-label').on('click', function() {
+        console.log('打印面单功能：需要选择待发货订单并生成打印面单');
+      });
+
+      // 待办事项点击事件 - 点击后应根据任务类型跳转到对应页面
+      $('#todo-list').on('click', '.todo-item', function() {
+        const id = $(this).data('id');
+        const type = $(this).find('.text-sm.font-medium').text();
+
+        // 根据任务类型跳转到不同页面
+        if (type.includes('订单')) {
+          window.location.href = 'orders.html';
+        } else if (type.includes('采购')) {
+          window.location.href = 'purchase.html';
+        } else if (type.includes('物流')) {
+          window.location.href = 'logistics.html';
+        } else if (type.includes('库存')) {
+          window.location.href = 'purchase.html';
+        } else {
+          window.location.href = 'orders.html';
+        }
+      });
+    });
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/jquery/jquery-3.7.1.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/lucide/lucide-1.11.0.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/tailwindcss/tailwindcss-browser-4.2.4.min.js"></script>
+
+  <style type="text/tailwindcss">
+    @theme {
+      /* === 品牌色 === */
+      --color-primary:              #2F6BFF;
+      --color-primary-container:    #E8F0FF;
+      --color-on-primary:           #ffffff;
+      /* === 背景 / 表面 === */
+      --color-background:                 #F6F8FB;
+      --color-surface-container-lowest:   #EEF1F6;
+      --color-surface:                    #FFFFFF;
+      --color-surface-container:          #EEF1F6;
+      --color-surface-container-high:     #E6EAF2;
+      --color-surface-container-highest:  #DDE3ED;
+      /* === 文字 === */
+      --color-on-surface:           #152033;
+      --color-on-surface-variant:   #637089;
+      /* === 功能色 === */
+      --color-success:  #16A37B;
+      --color-error:    #EF4444;
+      --color-warning:  #F59E0B;
+      /* === 边框 === */
+      --color-outline:          #E6EAF2;
+      --color-outline-variant:  #D1D5DB;
+      /* === 圆角 === */
+      --radius-sm:   0.25rem;
+      --radius-md:   0.375rem;
+      --radius-lg:   0.5rem;
+      --radius-xl:   0.75rem;
+      --radius-2xl:  1rem;
+      --radius-full: 9999px;
+      /* === 阴影 === */
+      --shadow-card:   0 2px 8px rgba(0,0,0,0.08);
+      --shadow-float:  0 10px 25px rgba(0,0,0,0.12);
+      --shadow-dialog: 0 25px 50px rgba(0,0,0,0.16);
+      /* === 字体 === */
+      --font-sans: "Inter", system-ui, sans-serif;
+    }
+  </style>
+
+  <!-- 图片兜底 -->
+  <script>
+    document.addEventListener('error', function (e) {
+      const img = e.target;
+      if (img.tagName !== 'IMG' || img.dataset.fallback) return;
+      img.dataset.fallback = '1';
+      const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const cat = img.getAttribute('data-category') || '其他';
+      const alt = img.getAttribute('alt') || '';
+      const label = esc(alt.length > 8 ? alt.slice(0, 8) + '…' : alt);
+      const icons = { '人物': '👤', '自然风景': '🏞', '动物': '🐾', '建筑城市': '🏙', '运动体育': '⚽', '交通工具': '🚗', '食物': '🍽', '服饰时尚': '👗', '商业科技': '💼', '游戏娱乐': '🎮', '艺术': '🎨', '其他': '🖼' };
+      const icon = icons[cat] || '🖼';
+      const w = img.width || 400, h = img.height || 300;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="45%" text-anchor="middle" font-size="${Math.min(w, h) * 0.18}" dominant-baseline="central">${icon}</text><text x="50%" y="68%" text-anchor="middle" font-size="${Math.min(w, h) * 0.07}" fill="%239ca3af" font-family="system-ui,sans-serif" dominant-baseline="central">${label}</text></svg>`;
+      img.src = 'data:image/svg+xml,' + svg;
+    }, true);
+  </script>
+</head>
+
+<body class="bg-background text-on-surface font-sans">
+
+  <!-- @nav:start 导航组件 -->
+  <header class="bg-surface sticky top-0 z-40 h-14 flex items-center justify-between px-6 border-b border-outline/50">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+        <i data-lucide="box" class="w-4 h-4 text-on-primary"></i>
+      </div>
+      <span class="font-semibold text-base">Ozon ERP</span>
+    </div>
+    <div class="flex items-center gap-4">
+      <button class="flex items-center gap-2 text-sm text-on-surface-variant hover:text-on-surface transition-colors">
+        <i data-lucide="bell" class="w-4 h-4"></i>
+        <span class="bg-error text-white text-xs px-1.5 py-0.5 rounded-full font-medium">3</span>
+      </button>
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-primary font-medium text-sm">初</div>
+        <span class="text-sm font-medium">小初</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="flex" style="height: calc(100vh - 3.5rem)">
+    <aside class="w-56 shrink-0 bg-surface border-r border-outline/50 overflow-y-auto">
+      <div class="p-3 space-y-0.5">
+        <a href="dashboard.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="layout-dashboard" class="w-4 h-4"></i>仪表盘
+        </a>
+        <a href="orders.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="shopping-cart" class="w-4 h-4"></i>订单管理
+        </a>
+        <a href="purchase.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="package" class="w-4 h-4"></i>采购管理
+        </a>
+        <a href="quick-entry.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="clipboard-list" class="w-4 h-4"></i>快捷录单
+        </a>
+        <a href="logistics.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="truck" class="w-4 h-4"></i>物流追踪
+        </a>
+        <a href="packaging.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="box" class="w-4 h-4"></i>打包流程
+        </a>
+        <a href="finance.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 text-primary font-medium text-sm" aria-current="page">
+          <i data-lucide="calculator" class="w-4 h-4"></i>财务核算
+        </a>
+      </div>
+    </aside>
+
+    <!-- @main-content:start -->
+    <main class="flex-1 min-w-0 overflow-y-auto bg-background p-6">
+      <!-- 页面标题 -->
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h1 class="text-2xl font-bold text-on-surface">财务核算</h1>
+          <p class="text-sm text-on-surface-variant mt-1">订单完结核算，计算真实净利润</p>
+        </div>
+        <button id="btn-export" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-2">
+          <i data-lucide="download" class="w-4 h-4"></i>导出报表
+        </button>
+      </div>
+
+      <!-- 筛选栏 -->
+      <div class="bg-surface rounded-lg shadow-card p-4 mb-6">
+        <div class="flex items-center gap-4 flex-wrap">
+          <!-- 时间范围选择 -->
+          <div class="flex items-center gap-2">
+            <span class="text-sm text-on-surface-variant">时间范围</span>
+            <div class="flex items-center gap-1">
+              <button id="filter-today" class="px-3 py-1.5 rounded-md text-sm font-medium bg-primary/10 text-primary">今日</button>
+              <button id="filter-week" class="px-3 py-1.5 rounded-md text-sm font-medium text-on-surface-variant hover:bg-surface-container transition-colors">本周</button>
+              <button id="filter-month" class="px-3 py-1.5 rounded-md text-sm font-medium text-on-surface-variant hover:bg-surface-container transition-colors">本月</button>
+              <button id="filter-custom" class="px-3 py-1.5 rounded-md text-sm font-medium text-on-surface-variant hover:bg-surface-container transition-colors inline-flex items-center gap-1">
+                <i data-lucide="calendar" class="w-3.5 h-3.5"></i>自定义
+              </button>
+            </div>
+          </div>
+          <!-- 订单状态筛选 -->
+          <div class="flex items-center gap-2">
+            <span class="text-sm text-on-surface-variant">核算状态</span>
+            <select id="filter-status" class="bg-surface-container border-none rounded-md px-3 py-1.5 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
+              <option value="all">全部状态</option>
+              <option value="completed">已核算</option>
+              <option value="pending">待核算</option>
+              <option value="disputed">有争议</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 核心财务指标卡片 -->
+      <div class="grid grid-cols-5 gap-4 mb-6">
+        <!-- 总销售额 -->
+        <div class="bg-surface rounded-lg shadow-card p-5">
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+              <i data-lucide="trending-up" class="w-4 h-4 text-primary"></i>
+            </div>
+            <span class="text-sm text-on-surface-variant">总销售额</span>
+          </div>
+          <div class="text-2xl font-bold text-on-surface">¥428,650</div>
+          <div class="text-xs text-on-surface-variant mt-2">占比 100%</div>
+        </div>
+        <!-- 总采购成本 -->
+        <div class="bg-surface rounded-lg shadow-card p-5">
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-8 h-8 bg-warning/10 rounded-lg flex items-center justify-center">
+              <i data-lucide="shopping-bag" class="w-4 h-4 text-warning"></i>
+            </div>
+            <span class="text-sm text-on-surface-variant">采购成本</span>
+          </div>
+          <div class="text-2xl font-bold text-on-surface">¥285,320</div>
+          <div class="text-xs text-on-surface-variant mt-2">占比 66.5%</div>
+        </div>
+        <!-- 物流成本 -->
+        <div class="bg-surface rounded-lg shadow-card p-5">
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+              <i data-lucide="truck" class="w-4 h-4 text-primary"></i>
+            </div>
+            <span class="text-sm text-on-surface-variant">物流成本</span>
+          </div>
+          <div class="text-2xl font-bold text-on-surface">¥42,580</div>
+          <div class="text-xs text-on-surface-variant mt-2">占比 9.9%</div>
+        </div>
+        <!-- 售后成本 -->
+        <div class="bg-surface rounded-lg shadow-card p-5">
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-8 h-8 bg-error/10 rounded-lg flex items-center justify-center">
+              <i data-lucide="rotate-ccw" class="w-4 h-4 text-error"></i>
+            </div>
+            <span class="text-sm text-on-surface-variant">售后成本</span>
+          </div>
+          <div class="text-2xl font-bold text-on-surface">¥18,450</div>
+          <div class="text-xs text-on-surface-variant mt-2">占比 4.3%</div>
+        </div>
+        <!-- 净利润（醒目显示） -->
+        <div class="bg-success/5 rounded-lg shadow-card p-5 border border-success/20">
+          <div class="flex items-center gap-2 mb-3">
+            <div class="w-8 h-8 bg-success/10 rounded-lg flex items-center justify-center">
+              <i data-lucide="wallet" class="w-4 h-4 text-success"></i>
+            </div>
+            <span class="text-sm text-on-surface-variant">净利润</span>
+          </div>
+          <div class="text-2xl font-bold text-success">¥82,300</div>
+          <div class="text-xs text-success/80 mt-2">利润率 19.2%</div>
+        </div>
+      </div>
+
+      <!-- 图表区域 -->
+      <div class="grid grid-cols-2 gap-6 mb-6">
+        <!-- 成本构成饼图 -->
+        <div class="bg-surface rounded-lg shadow-card p-5">
+          <h3 class="text-base font-semibold text-on-surface mb-4">成本构成</h3>
+          <div class="flex items-center gap-6">
+            <!-- 饼图模拟 -->
+            <div class="relative w-40 h-40">
+              <svg viewBox="0 0 100 100" class="w-full h-full -rotate-90">
+                <!-- 采购成本 66.5% -->
+                <circle cx="50" cy="50" r="40" fill="none" stroke="#F59E0B" stroke-width="20" stroke-dasharray="167.1 251.3" class="opacity-80"/>
+                <!-- 物流成本 9.9% -->
+                <circle cx="50" cy="50" r="40" fill="none" stroke="#2F6BFF" stroke-width="20" stroke-dasharray="24.9 251.3" stroke-dashoffset="-167.1" class="opacity-80"/>
+                <!-- 售后成本 4.3% -->
+                <circle cx="50" cy="50" r="40" fill="none" stroke="#EF4444" stroke-width="20" stroke-dasharray="10.8 251.3" stroke-dashoffset="-192" class="opacity-80"/>
+                <!-- 平台费用 19.3% -->
+                <circle cx="50" cy="50" r="40" fill="none" stroke="#637089" stroke-width="20" stroke-dasharray="48.5 251.3" stroke-dashoffset="-202.8" class="opacity-80"/>
+              </svg>
+            </div>
+            <!-- 图例 -->
+            <div class="flex-1 space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <div class="w-3 h-3 rounded-full bg-warning"></div>
+                  <span class="text-sm text-on-surface-variant">采购成本</span>
+                </div>
+                <span class="text-sm font-medium text-on-surface">66.5%</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <div class="w-3 h-3 rounded-full bg-primary"></div>
+                  <span class="text-sm text-on-surface-variant">物流成本</span>
+                </div>
+                <span class="text-sm font-medium text-on-surface">9.9%</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <div class="w-3 h-3 rounded-full bg-error"></div>
+                  <span class="text-sm text-on-surface-variant">售后成本</span>
+                </div>
+                <span class="text-sm font-medium text-on-surface">4.3%</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <div class="w-3 h-3 rounded-full bg-on-surface-variant"></div>
+                  <span class="text-sm text-on-surface-variant">平台费用</span>
+                </div>
+                <span class="text-sm font-medium text-on-surface">19.3%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 利润趋势折线图 -->
+        <div class="bg-surface rounded-lg shadow-card p-5">
+          <h3 class="text-base font-semibold text-on-surface mb-4">近30天净利润趋势</h3>
+          <div class="h-40">
+            <svg viewBox="0 0 300 120" class="w-full h-full">
+              <!-- 网格线 -->
+              <line x1="0" y1="0" x2="300" y2="0" stroke="#E6EAF2" stroke-width="1"/>
+              <line x1="0" y1="40" x2="300" y2="40" stroke="#E6EAF2" stroke-width="1"/>
+              <line x1="0" y1="80" x2="300" y2="80" stroke="#E6EAF2" stroke-width="1"/>
+              <line x1="0" y1="120" x2="300" y2="120" stroke="#E6EAF2" stroke-width="1"/>
+              <!-- 折线 -->
+              <polyline 
+                points="0,90 10,85 20,75 30,80 40,70 50,65 60,60 70,55 80,50 90,45 100,55 110,50 120,45 130,40 140,35 150,45 160,40 170,35 180,30 190,25 200,35 210,30 220,25 230,20 240,15 250,25 260,20 270,15 280,10 290,5 300,8"
+                fill="none" 
+                stroke="#16A37B" 
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <!-- 渐变填充 -->
+              <defs>
+                <linearGradient id="profitGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#16A37B" stop-opacity="0.3"/>
+                  <stop offset="100%" stop-color="#16A37B" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <polygon 
+                points="0,90 10,85 20,75 30,80 40,70 50,65 60,60 70,55 80,50 90,45 100,55 110,50 120,45 130,40 140,35 150,45 160,40 170,35 180,30 190,25 200,35 210,30 220,25 230,20 240,15 250,25 260,20 270,15 280,10 290,5 300,8 300,120 0,120"
+                fill="url(#profitGradient)"
+              />
+            </svg>
+          </div>
+          <div class="flex items-center justify-between text-xs text-on-surface-variant mt-2">
+            <span>1日</span>
+            <span>10日</span>
+            <span>20日</span>
+            <span>30日</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 订单核算明细列表 -->
+      <div class="bg-surface rounded-lg shadow-card overflow-hidden mb-6">
+        <div class="px-5 py-4 border-b border-outline/50">
+          <h3 class="text-base font-semibold text-on-surface">订单核算明细</h3>
+        </div>
+        <!-- 表头 -->
+        <div class="grid grid-cols-9 px-5 py-3 bg-surface-container text-xs font-semibold text-on-surface-variant">
+          <span>订单号</span>
+          <span>销售金额</span>
+          <span>采购金额</span>
+          <span>物流费用</span>
+          <span>售后退款</span>
+          <span>平台佣金</span>
+          <span>净利润</span>
+          <span>核算状态</span>
+          <span>操作</span>
+        </div>
+        <!-- 表格内容 -->
+        <div id="order-list" class="divide-y divide-outline-variant/50">
+          <!-- 列表-订单1 -->
+          <div class="order-item" data-id="ORD-2024-001">
+            <div class="grid grid-cols-9 px-5 py-4 hover:bg-surface-container/50 transition-colors items-center">
+              <span class="text-sm font-medium text-primary">ORD-2024-001</span>
+              <span class="text-sm text-on-surface">¥3,280.00</span>
+              <span class="text-sm text-on-surface">¥2,180.00</span>
+              <span class="text-sm text-on-surface">¥320.00</span>
+              <span class="text-sm text-on-surface">¥0.00</span>
+              <span class="text-sm text-on-surface">¥164.00</span>
+              <span class="text-sm font-semibold text-success">¥616.00</span>
+              <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success w-fit">已核算</span>
+              <button class="btn-expand text-primary text-sm font-medium hover:underline w-fit text-left">展开</button>
+            </div>
+            <!-- 展开详情 -->
+            <div class="expand-content hidden bg-surface-container-lowest px-5 py-4 text-sm">
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <div class="text-xs text-on-surface-variant mb-2">成本分解</div>
+                  <div class="space-y-1">
+                    <div class="flex justify-between"><span class="text-on-surface-variant">商品采购成本</span><span>¥2,180.00</span></div>
+                    <div class="flex justify-between"><span class="text-on-surface-variant">国际物流费</span><span>¥280.00</span></div>
+                    <div class="flex justify-between"><span class="text-on-surface-variant">打包材料费</span><span>¥40.00</span></div>
+                    <div class="flex justify-between"><span class="text-on-surface-variant">平台佣金(5%)</span><span>¥164.00</span></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="text-xs text-on-surface-variant mb-2">订单信息</div>
+                  <div class="space-y-1">
+                    <div class="flex justify-between"><span class="text-on-surface-variant">下单时间</span><span>2024-01-15 14:32</span></div>
+                    <div class="flex justify-between"><span class="text-on-surface-variant">完成时间</span><span>2024-01-18 09:15</span></div>
+                    <div class="flex justify-between"><span class="text-on-surface-variant">核算时间</span><span>2024-01-18 09:20</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- 列表-订单2 -->
+          <div class="order-item" data-id="ORD-2024-002">
+            <div class="grid grid-cols-9 px-5 py-4 hover:bg-surface-container/50 transition-colors items-center">
+              <span class="text-sm font-medium text-primary">ORD-2024-002</span>
+              <span class="text-sm text-on-surface">¥5,600.00</span>
+              <span class="text-sm text-on-surface">¥3,720.00</span>
+              <span class="text-sm text-on-surface">¥480.00</span>
+              <span class="text-sm text-error">¥580.00</span>
+              <span class="text-sm text-on-surface">¥280.00</span>
+              <span class="text-sm font-semibold text-success">¥540.00</span>
+              <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success w-fit">已核算</span>
+              <button class="btn-expand text-primary text-sm font-medium hover:underline w-fit text-left">展开</button>
+            </div>
+            <div class="expand-content hidden bg-surface-container-lowest px-5 py-4 text-sm">
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <div class="text-xs text-on-surface-variant mb-2">成本分解</div>
+                  <div class="space-y-1">
+                    <div class="flex justify-between"><span class="text-on-surface-variant">商品采购成本</span><span>¥3,720.00</span></div>
+                    <div class="flex justify-between"><span class="text-on-surface-variant">国际物流费</span><span>¥420.00</span></div>
+                    <div class="flex justify-between"><span class="text-on-surface-variant">打包材料费</span><span>¥60.00</span></div>
+                    <div class="flex justify-between"><span class="text-on-surface-variant">平台佣金(5%)</span><span>¥280.00</span></div>
+                    <div class="flex justify-between text-error"><span>售后退款</span><span>-¥580.00</span></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="text-xs text-on-surface-variant mb-2">订单信息</div>
+                  <div class="space-y-1">
+                    <div class="flex justify-between"><span class="text-on-surface-variant">下单时间</span><span>2024-01-12 10:18</span></div>
+                    <div class="flex justify-between"><span class="text-on-surface-variant">完成时间</span><span>2024-01-16 15:42</span></div>
+                    <div class="flex justify-between"><span class="text-on-surface-variant">核算时间</span><span>2024-01-16 15:50</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- 列表-订单3 -->
+          <div class="order-item" data-id="ORD-2024-003">
+            <div class="grid grid-cols-9 px-5 py-4 hover:bg-surface-container/50 transition-colors items-center">
+              <span class="text-sm font-medium text-primary">ORD-2024-003</span>
+              <span class="text-sm text-on-surface">¥1,200.00</span>
+              <span class="text-sm text-on-surface">¥850.00</span>
+              <span class="text-sm text-on-surface">¥150.00</span>
+              <span class="text-sm text-on-surface">¥0.00</span>
+              <span class="text-sm text-on-surface">¥60.00</span>
+              <span class="text-sm font-semibold text-success">¥140.00</span>
+              <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning w-fit">待核算</span>
+              <button class="btn-expand text-primary text-sm font-medium hover:underline w-fit text-left">展开</button>
+            </div>
+            <div class="expand-content hidden bg-surface-container-lowest px-5 py-4 text-sm">
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <div class="text-xs text-on-surface-variant mb-2">成本分解</div>
+                  <div class="space-y-1">
+                    <div class="flex justify-between"><span class="text-on-surface-variant">商品采购成本</span><span>¥850.00</span></div>
+                    <div class="flex justify-between"><span class="text-on-surface-variant">国际物流费</span><span>¥130.00</span></div>
+                    <div class="flex justify-between"><span class="text-on-surface-variant">打包材料费</span><span>¥20.00</span></div>
+                    <div class="flex justify-between"><span class="text-on-surface-variant">平台佣金(5%)</span><span>¥60.00</span></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="text-xs text-on-surface-variant mb-2">订单信息</div>
+                  <div class="space-y-1">
+                    <div class="flex justify-between"><span class="text-on-surface-variant">下单时间</span><span>2024-01-10 08:45</span></div>
+                    <div class="flex justify-between"><span class="text-on-surface-variant">完成时间</span><span>2024-01-13 12:30</span></div>
+                    <div class="flex justify-between"><span class="text-on-surface-variant">核算时间</span><span>--</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- 列表-订单4 -->
+          <div class="order-item" data-id="ORD-2024-004">
+            <div class="grid grid-cols-9 px-5 py-4 hover:bg-surface-container/50 transition-colors items-center">
+              <span class="text-sm font-medium text-primary">ORD-2024-004</span>
+              <span class="text-sm text-on-surface">¥8,960.00</span>
+              <span class="text-sm text-on-surface">¥6,200.00</span>
+              <span class="text-sm text-on-surface">¥680.00</span>
+              <span class="text-sm text-error">¥2,100.00</span>
+              <span class="text-sm text-on-surface">¥448.00</span>
+              <span class="text-sm font-semibold text-error">-¥468.00</span>
+              <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-error/15 text-error w-fit">有争议</span>
+              <button class="btn-expand text-primary text-sm font-medium hover:underline w-fit text-left">展开</button>
+            </div>
+            <div class="expand-content hidden bg-surface-container-lowest px-5 py-4 text-sm">
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <div class="text-xs text-on-surface-variant mb-2">成本分解</div>
+                  <div class="space-y-1">
+                    <div class="flex justify-between"><span class="text-on-surface-variant">商品采购成本</span><span>¥6,200.00</span></div>
+                    <div class="flex justify-between"><span class="text-on-surface-variant">国际物流费</span><span>¥600.00</span></div>
+                    <div class="flex justify-between"><span class="text-on-surface-variant">打包材料费</span><span>¥80.00</span></div>
+                    <div class="flex justify-between"><span class="text-on-surface-variant">平台佣金(5%)</span><span>¥448.00</span></div>
+                    <div class="flex justify-between text-error"><span>售后退款</span><span>-¥2,100.00</span></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="text-xs text-on-surface-variant mb-2">订单信息</div>
+                  <div class="space-y-1">
+                    <div class="flex justify-between"><span class="text-on-surface-variant">下单时间</span><span>2024-01-08 16:22</span></div>
+                    <div class="flex justify-between"><span class="text-on-surface-variant">完成时间</span><span>2024-01-12 11:08</span></div>
+                    <div class="flex justify-between"><span class="text-on-surface-variant">核算时间</span><span>2024-01-12 11:15</span></div>
+                    <div class="flex justify-between text-error"><span>争议原因</span><span>大额退款待审核</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- 列表-订单5 -->
+          <div class="order-item" data-id="ORD-2024-005">
+            <div class="grid grid-cols-9 px-5 py-4 hover:bg-surface-container/50 transition-colors items-center">
+              <span class="text-sm font-medium text-primary">ORD-2024-005</span>
+              <span class="text-sm text-on-surface">¥2,450.00</span>
+              <span class="text-sm text-on-surface">¥1,680.00</span>
+              <span class="text-sm text-on-surface">¥280.00</span>
+              <span class="text-sm text-on-surface">¥0.00</span>
+              <span class="text-sm text-on-surface">¥122.50</span>
+              <span class="text-sm font-semibold text-success">¥367.50</span>
+              <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success w-fit">已核算</span>
+              <button class="btn-expand text-primary text-sm font-medium hover:underline w-fit text-left">展开</button>
+            </div>
+            <div class="expand-content hidden bg-surface-container-lowest px-5 py-4 text-sm">
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <div class="text-xs text-on-surface-variant mb-2">成本分解</div>
+                  <div class="space-y-1">
+                    <div class="flex justify-between"><span class="text-on-surface-variant">商品采购成本</span><span>¥1,680.00</span></div>
+                    <div class="flex justify-between"><span class="text-on-surface-variant">国际物流费</span><span>¥250.00</span></div>
+                    <div class="flex justify-between"><span class="text-on-surface-variant">打包材料费</span><span>¥30.00</span></div>
+                    <div class="flex justify-between"><span class="text-on-surface-variant">平台佣金(5%)</span><span>¥122.50</span></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="text-xs text-on-surface-variant mb-2">订单信息</div>
+                  <div class="space-y-1">
+                    <div class="flex justify-between"><span class="text-on-surface-variant">下单时间</span><span>2024-01-07 09:55</span></div>
+                    <div class="flex justify-between"><span class="text-on-surface-variant">完成时间</span><span>2024-01-10 14:28</span></div>
+                    <div class="flex justify-between"><span class="text-on-surface-variant">核算时间</span><span>2024-01-10 14:35</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 售后成本统计 -->
+      <div class="bg-surface rounded-lg shadow-card p-5">
+        <h3 class="text-base font-semibold text-on-surface mb-4">售后成本统计</h3>
+        <div class="grid grid-cols-4 gap-6">
+          <div class="text-center">
+            <div class="text-2xl font-bold text-error mb-1">¥18,450</div>
+            <div class="text-sm text-on-surface-variant">退款金额</div>
+          </div>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-on-surface mb-1">¥3,680</div>
+            <div class="text-sm text-on-surface-variant">退货物流费</div>
+          </div>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-on-surface mb-1">¥2,150</div>
+            <div class="text-sm text-on-surface-variant">售后补偿</div>
+          </div>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-on-surface mb-1">156</div>
+            <div class="text-sm text-on-surface-variant">售后总数</div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+    <!-- @main-content:end -->
+  </div>
+  <!-- @nav:end 导航组件 -->
+
+  <script>
+    lucide.createIcons();
+
+    $(function() {
+      // 时间范围筛选
+      $('#filter-today').on('click', function() {
+        $('#filter-today, #filter-week, #filter-month, #filter-custom').removeClass('bg-primary/10 text-primary').addClass('text-on-surface-variant');
+        $(this).removeClass('text-on-surface-variant').addClass('bg-primary/10 text-primary');
+        console.log('筛选今日数据');
+      });
+
+      $('#filter-week').on('click', function() {
+        $('#filter-today, #filter-week, #filter-month, #filter-custom').removeClass('bg-primary/10 text-primary').addClass('text-on-surface-variant');
+        $(this).removeClass('text-on-surface-variant').addClass('bg-primary/10 text-primary');
+        console.log('筛选本周数据');
+      });
+
+      $('#filter-month').on('click', function() {
+        $('#filter-today, #filter-week, #filter-month, #filter-custom').removeClass('bg-primary/10 text-primary').addClass('text-on-surface-variant');
+        $(this).removeClass('text-on-surface-variant').addClass('bg-primary/10 text-primary');
+        console.log('筛选本月数据');
+      });
+
+      $('#filter-custom').on('click', function() {
+        // 自定义时间选择 - 应弹出日期选择器让用户选择开始和结束日期
+        // 选择后更新筛选条件并重新加载数据
+        console.log('打开自定义日期选择器');
+      });
+
+      // 核算状态筛选
+      $('#filter-status').on('change', function() {
+        const status = $(this).val();
+        console.log('筛选状态:', status);
+        // 根据状态筛选订单列表
+        // - all: 显示全部订单
+        // - completed: 只显示"已核算"
+        // - pending: 只显示"待核算"
+        // - disputed: 只显示"有争议"
+      });
+
+      // 展开订单详情
+      $('#order-list').on('click', '.btn-expand', function() {
+        const $btn = $(this);
+        const $expandContent = $btn.closest('.order-item').find('.expand-content');
+        
+        if ($expandContent.hasClass('hidden')) {
+          $expandContent.removeClass('hidden');
+          $btn.text('收起');
+        } else {
+          $expandContent.addClass('hidden');
+          $btn.text('展开');
+        }
+      });
+
+      // 导出报表
+      $('#btn-export').on('click', function() {
+        // 导出Excel报表 - 应实现：
+        // 1. 收集当前筛选条件
+        // 2. 调用后端接口生成Excel文件
+        // 3. 下载生成的报表文件
+        console.log('导出财务核算报表，包含所有订单明细和成本分解');
+        alert('正在导出财务核算报表...');
+      });
+    });
+  </script>
+</body>
+
+</html>
