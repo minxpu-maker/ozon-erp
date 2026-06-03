@@ -145,316 +145,536 @@
       <!-- 页面标题 -->
       <div class="mb-6">
         <h1 class="text-2xl font-bold text-on-surface">仪表盘</h1>
-        <p class="text-sm text-on-surface-variant mt-1">实时数据概览，掌握业务动态</p>
+        <p class="text-sm text-on-surface-variant mt-1">ERP系统首页 · 核心业务指标与流程状态</p>
       </div>
 
-      <!-- 顶部统计卡片区域 -->
-      <div class="grid grid-cols-4 gap-4 mb-6">
-        <!-- 统计卡片-今日订单数 -->
-        <div class="bg-surface rounded-lg shadow-card p-5">
-          <div class="flex items-center justify-between mb-3">
-            <span class="text-sm text-on-surface-variant">今日订单</span>
-            <div class="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-              <i data-lucide="shopping-cart" class="w-4 h-4 text-primary"></i>
-            </div>
-          </div>
-          <div class="flex items-end justify-between">
-            <div>
-              <span class="text-2xl font-bold text-on-surface">128</span>
-              <span class="text-sm text-on-surface-variant ml-1">单</span>
-            </div>
-            <div class="flex items-center gap-1 text-success text-xs">
-              <i data-lucide="trending-up" class="w-3 h-3"></i>
-              <span>+12.5%</span>
-            </div>
+      <!-- 业务流程可视化 -->
+      <section class="mb-8">
+        <h2 class="text-base font-semibold text-on-surface mb-4">业务流程</h2>
+        <div class="bg-surface rounded-xl shadow-card p-5">
+          <div class="flex items-center justify-between flex-wrap gap-4">
+            <!-- 流程节点1：订单同步 -->
+            <a href="orders.html" id="flow-sync" class="flex flex-col items-center p-4 rounded-lg bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer group min-w-[120px]">
+              <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center mb-2 group-hover:bg-primary/30 transition-colors">
+                <i data-lucide="refresh-cw" class="w-5 h-5 text-primary"></i>
+              </div>
+              <span class="text-xs text-on-surface-variant mb-1">订单同步</span>
+              <span class="text-lg font-bold text-on-surface">156<span class="text-xs font-normal text-on-surface-variant">笔</span></span>
+            </a>
+            
+            <i data-lucide="chevron-right" class="w-5 h-5 text-on-surface-variant/30 hidden sm:block"></i>
+            
+            <!-- 流程节点2：待采购 -->
+            <a href="purchase.html" id="flow-purchase" class="flex flex-col items-center p-4 rounded-lg bg-warning/10 hover:bg-warning/20 transition-colors cursor-pointer group min-w-[120px]">
+              <div class="w-10 h-10 rounded-full bg-warning/20 flex items-center justify-center mb-2 group-hover:bg-warning/30 transition-colors">
+                <i data-lucide="shopping-bag" class="w-5 h-5 text-warning"></i>
+              </div>
+              <span class="text-xs text-on-surface-variant mb-1">待采购任务</span>
+              <span class="text-lg font-bold text-warning">42<span class="text-xs font-normal text-on-surface-variant">笔</span></span>
+            </a>
+            
+            <i data-lucide="chevron-right" class="w-5 h-5 text-on-surface-variant/30 hidden sm:block"></i>
+            
+            <!-- 流程节点3：绑定录入 -->
+            <a href="quick-entry.html" id="flow-bind" class="flex flex-col items-center p-4 rounded-lg bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer group min-w-[120px]">
+              <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center mb-2 group-hover:bg-primary/30 transition-colors">
+                <i data-lucide="link" class="w-5 h-5 text-primary"></i>
+              </div>
+              <span class="text-xs text-on-surface-variant mb-1">待绑定采购</span>
+              <span class="text-lg font-bold text-on-surface">28<span class="text-xs font-normal text-on-surface-variant">笔</span></span>
+            </a>
+            
+            <i data-lucide="chevron-right" class="w-5 h-5 text-on-surface-variant/30 hidden sm:block"></i>
+            
+            <!-- 流程节点4：入库验货 -->
+            <a href="packaging.html" id="flow-inspect" class="flex flex-col items-center p-4 rounded-lg bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer group min-w-[120px]">
+              <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center mb-2 group-hover:bg-primary/30 transition-colors">
+                <i data-lucide="clipboard-check" class="w-5 h-5 text-primary"></i>
+              </div>
+              <span class="text-xs text-on-surface-variant mb-1">待入库验货</span>
+              <span class="text-lg font-bold text-on-surface">15<span class="text-xs font-normal text-on-surface-variant">笔</span></span>
+            </a>
+            
+            <i data-lucide="chevron-right" class="w-5 h-5 text-on-surface-variant/30 hidden sm:block"></i>
+            
+            <!-- 流程节点5：打包发货 -->
+            <a href="packaging.html" id="flow-pack" class="flex flex-col items-center p-4 rounded-lg bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer group min-w-[120px]">
+              <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center mb-2 group-hover:bg-primary/30 transition-colors">
+                <i data-lucide="package" class="w-5 h-5 text-primary"></i>
+              </div>
+              <span class="text-xs text-on-surface-variant mb-1">待打包发货</span>
+              <span class="text-lg font-bold text-on-surface">23<span class="text-xs font-normal text-on-surface-variant">笔</span></span>
+            </a>
+            
+            <i data-lucide="chevron-right" class="w-5 h-5 text-on-surface-variant/30 hidden sm:block"></i>
+            
+            <!-- 流程节点6：利润核算 -->
+            <a href="finance.html" id="flow-calc" class="flex flex-col items-center p-4 rounded-lg bg-success/10 hover:bg-success/20 transition-colors cursor-pointer group min-w-[120px]">
+              <div class="w-10 h-10 rounded-full bg-success/20 flex items-center justify-center mb-2 group-hover:bg-success/30 transition-colors">
+                <i data-lucide="calculator" class="w-5 h-5 text-success"></i>
+              </div>
+              <span class="text-xs text-on-surface-variant mb-1">待核算订单</span>
+              <span class="text-lg font-bold text-success">89<span class="text-xs font-normal text-on-surface-variant">笔</span></span>
+            </a>
           </div>
         </div>
+      </section>
 
-        <!-- 统计卡片-待处理采购 -->
-        <div class="bg-surface rounded-lg shadow-card p-5">
-          <div class="flex items-center justify-between mb-3">
-            <span class="text-sm text-on-surface-variant">待处理采购</span>
-            <div class="w-8 h-8 bg-warning/10 rounded-lg flex items-center justify-center">
-              <i data-lucide="package" class="w-4 h-4 text-warning"></i>
-            </div>
-          </div>
-          <div class="flex items-end justify-between">
-            <div>
-              <span class="text-2xl font-bold text-on-surface">23</span>
-              <span class="text-sm text-on-surface-variant ml-1">笔</span>
-            </div>
-            <div class="flex items-center gap-1 text-error text-xs">
-              <i data-lucide="trending-up" class="w-3 h-3"></i>
-              <span>+5.2%</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- 统计卡片-在途物流 -->
-        <div class="bg-surface rounded-lg shadow-card p-5">
-          <div class="flex items-center justify-between mb-3">
-            <span class="text-sm text-on-surface-variant">在途物流</span>
-            <div class="w-8 h-8 bg-success/10 rounded-lg flex items-center justify-center">
-              <i data-lucide="truck" class="w-4 h-4 text-success"></i>
-            </div>
-          </div>
-          <div class="flex items-end justify-between">
-            <div>
-              <span class="text-2xl font-bold text-on-surface">67</span>
-              <span class="text-sm text-on-surface-variant ml-1">件</span>
-            </div>
-            <div class="flex items-center gap-1 text-success text-xs">
-              <i data-lucide="trending-down" class="w-3 h-3"></i>
-              <span>-3.8%</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- 统计卡片-本月净利润 -->
-        <div class="bg-surface rounded-lg shadow-card p-5">
-          <div class="flex items-center justify-between mb-3">
-            <span class="text-sm text-on-surface-variant">本月净利润</span>
-            <div class="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-              <i data-lucide="wallet" class="w-4 h-4 text-primary"></i>
-            </div>
-          </div>
-          <div class="flex items-end justify-between">
-            <div>
-              <span class="text-2xl font-bold text-on-surface">¥86,420</span>
-            </div>
-            <div class="flex items-center gap-1 text-success text-xs">
-              <i data-lucide="trending-up" class="w-3 h-3"></i>
-              <span>+18.3%</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 中部内容区域 -->
-      <div class="flex gap-6">
-        <!-- 左侧图表区 -->
-        <div class="flex-1 space-y-6">
-          <!-- 近7天订单趋势图 -->
-          <div class="bg-surface rounded-lg shadow-card p-5">
-            <div class="flex items-center justify-between mb-4">
-              <h2 class="text-base font-semibold text-on-surface">近7天订单趋势</h2>
-              <span class="text-xs text-on-surface-variant">单位：单</span>
-            </div>
-            <!-- 折线图模拟 -->
-            <div class="relative h-48">
-              <svg class="w-full h-full" viewBox="0 0 700 180" preserveAspectRatio="none">
-                <!-- 网格线 -->
-                <line x1="0" y1="45" x2="700" y2="45" stroke="#E6EAF2" stroke-width="1"/>
-                <line x1="0" y1="90" x2="700" y2="90" stroke="#E6EAF2" stroke-width="1"/>
-                <line x1="0" y1="135" x2="700" y2="135" stroke="#E6EAF2" stroke-width="1"/>
-                <!-- 折线 -->
-                <polyline fill="none" stroke="#2F6BFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                  points="50,120 150,80 250,100 350,60 450,90 550,50 650,70"/>
-                <!-- 数据点 -->
-                <circle cx="50" cy="120" r="4" fill="#2F6BFF"/>
-                <circle cx="150" cy="80" r="4" fill="#2F6BFF"/>
-                <circle cx="250" cy="100" r="4" fill="#2F6BFF"/>
-                <circle cx="350" cy="60" r="4" fill="#2F6BFF"/>
-                <circle cx="450" cy="90" r="4" fill="#2F6BFF"/>
-                <circle cx="550" cy="50" r="4" fill="#2F6BFF"/>
-                <circle cx="650" cy="70" r="4" fill="#2F6BFF"/>
-                <!-- 渐变填充 -->
-                <defs>
-                  <linearGradient id="gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" style="stop-color:#2F6BFF;stop-opacity:0.2"/>
-                    <stop offset="100%" style="stop-color:#2F6BFF;stop-opacity:0"/>
-                  </linearGradient>
-                </defs>
-                <polygon fill="url(#gradient)"
-                  points="50,120 150,80 250,100 350,60 450,90 550,50 650,70 650,180 50,180"/>
-              </svg>
-              <!-- X轴标签 -->
-              <div class="absolute bottom-0 left-0 right-0 flex justify-between px-2 text-xs text-on-surface-variant">
-                <span>01/15</span>
-                <span>01/16</span>
-                <span>01/17</span>
-                <span>01/18</span>
-                <span>01/19</span>
-                <span>01/20</span>
-                <span>01/21</span>
+      <!-- 核心指标卡片 + 快捷操作 -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <!-- 核心指标卡片 -->
+        <div class="lg:col-span-2">
+          <h2 class="text-base font-semibold text-on-surface mb-4">核心指标</h2>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            <!-- 指标卡片1：今日已付款订单 -->
+            <div class="bg-surface rounded-xl shadow-card p-4">
+              <div class="flex items-center gap-2 mb-2">
+                <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <i data-lucide="credit-card" class="w-4 h-4 text-primary"></i>
+                </div>
+                <span class="text-xs text-on-surface-variant">今日已付款订单</span>
               </div>
-              <!-- Y轴标签 -->
-              <div class="absolute left-0 top-0 bottom-4 flex flex-col justify-between text-xs text-on-surface-variant">
-                <span>150</span>
-                <span>100</span>
-                <span>50</span>
+              <div class="flex items-baseline gap-1">
+                <span class="text-2xl font-bold text-on-surface">156</span>
+                <span class="text-sm text-on-surface-variant">笔</span>
               </div>
+              <span class="text-xs text-on-surface-variant mt-1 block">来自Ozon</span>
             </div>
-          </div>
-
-          <!-- 采购平台分布饼图 -->
-          <div class="bg-surface rounded-lg shadow-card p-5">
-            <div class="flex items-center justify-between mb-4">
-              <h2 class="text-base font-semibold text-on-surface">采购平台分布</h2>
-              <span class="text-xs text-on-surface-variant">本月采购来源</span>
+            
+            <!-- 指标卡片2：今日采购绑定 -->
+            <div class="bg-surface rounded-xl shadow-card p-4">
+              <div class="flex items-center gap-2 mb-2">
+                <div class="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center">
+                  <i data-lucide="link-2" class="w-4 h-4 text-success"></i>
+                </div>
+                <span class="text-xs text-on-surface-variant">今日采购绑定</span>
+              </div>
+              <div class="flex items-baseline gap-1">
+                <span class="text-2xl font-bold text-on-surface">98</span>
+                <span class="text-sm text-on-surface-variant">笔</span>
+              </div>
+              <span class="text-xs text-success mt-1 block">↑ 12% 较昨日</span>
             </div>
-            <div class="flex items-center gap-8">
-              <!-- 饼图模拟 -->
-              <div class="relative w-32 h-32">
-                <svg class="w-full h-full" viewBox="0 0 100 100">
-                  <!-- 1688占比62% -->
-                  <circle cx="50" cy="50" r="40" fill="none" stroke="#2F6BFF" stroke-width="20"
-                    stroke-dasharray="155.8 251.2" transform="rotate(-90 50 50)"/>
-                  <!-- 拼多多占比38% -->
-                  <circle cx="50" cy="50" r="40" fill="none" stroke="#16A37B" stroke-width="20"
-                    stroke-dasharray="95.4 251.2" stroke-dashoffset="-155.8" transform="rotate(-90 50 50)"/>
-                </svg>
-                <div class="absolute inset-0 flex items-center justify-center">
-                  <div class="text-center">
-                    <span class="text-lg font-bold text-on-surface">89</span>
-                    <span class="text-xs text-on-surface-variant block">笔</span>
-                  </div>
+            
+            <!-- 指标卡片3：今日验货合格 -->
+            <div class="bg-surface rounded-xl shadow-card p-4">
+              <div class="flex items-center gap-2 mb-2">
+                <div class="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center">
+                  <i data-lucide="check-circle" class="w-4 h-4 text-success"></i>
                 </div>
+                <span class="text-xs text-on-surface-variant">今日验货合格</span>
               </div>
-              <!-- 图例说明 -->
-              <div class="flex-1 space-y-3">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-2">
-                    <div class="w-3 h-3 rounded-sm bg-primary"></div>
-                    <span class="text-sm text-on-surface">1688</span>
-                  </div>
-                  <div class="text-right">
-                    <span class="text-sm font-semibold text-on-surface">55笔</span>
-                    <span class="text-xs text-on-surface-variant ml-2">62%</span>
-                  </div>
-                </div>
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-2">
-                    <div class="w-3 h-3 rounded-sm bg-success"></div>
-                    <span class="text-sm text-on-surface">拼多多</span>
-                  </div>
-                  <div class="text-right">
-                    <span class="text-sm font-semibold text-on-surface">34笔</span>
-                    <span class="text-xs text-on-surface-variant ml-2">38%</span>
-                  </div>
-                </div>
+              <div class="flex items-baseline gap-1">
+                <span class="text-2xl font-bold text-on-surface">76</span>
+                <span class="text-sm text-on-surface-variant">笔</span>
               </div>
+              <span class="text-xs text-success mt-1 block">合格率 98.7%</span>
             </div>
-          </div>
-        </div>
-
-        <!-- 右侧待办事项和快捷操作区 -->
-        <div class="w-80 space-y-6">
-          <!-- 快捷操作区 -->
-          <div class="bg-surface rounded-lg shadow-card p-5">
-            <h2 class="text-base font-semibold text-on-surface mb-4">快捷操作</h2>
-            <div class="grid grid-cols-2 gap-3">
-              <button id="btn-sync-orders" class="flex flex-col items-center gap-2 p-3 rounded-lg bg-surface-container hover:bg-surface-container-high transition-colors">
-                <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                  <i data-lucide="refresh-cw" class="w-5 h-5 text-primary"></i>
-                </div>
-                <span class="text-xs font-medium text-on-surface">同步订单</span>
-              </button>
-              <button id="btn-create-purchase" class="flex flex-col items-center gap-2 p-3 rounded-lg bg-surface-container hover:bg-surface-container-high transition-colors">
-                <div class="w-10 h-10 bg-warning/10 rounded-lg flex items-center justify-center">
-                  <i data-lucide="plus" class="w-5 h-5 text-warning"></i>
-                </div>
-                <span class="text-xs font-medium text-on-surface">创建采购</span>
-              </button>
-              <button id="btn-entry-logistics" class="flex flex-col items-center gap-2 p-3 rounded-lg bg-surface-container hover:bg-surface-container-high transition-colors">
-                <div class="w-10 h-10 bg-success/10 rounded-lg flex items-center justify-center">
-                  <i data-lucide="truck" class="w-5 h-5 text-success"></i>
-                </div>
-                <span class="text-xs font-medium text-on-surface">录入物流</span>
-              </button>
-              <button id="btn-print-label" class="flex flex-col items-center gap-2 p-3 rounded-lg bg-surface-container hover:bg-surface-container-high transition-colors">
-                <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                  <i data-lucide="printer" class="w-5 h-5 text-primary"></i>
-                </div>
-                <span class="text-xs font-medium text-on-surface">打印面单</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- 待办事项区 -->
-          <div class="bg-surface rounded-lg shadow-card p-5">
-            <div class="flex items-center justify-between mb-4">
-              <h2 class="text-base font-semibold text-on-surface">待办事项</h2>
-              <span class="text-xs text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full">5项待处理</span>
-            </div>
-            <div id="todo-list" class="space-y-3">
-              <!-- 待办事项-待确认订单 -->
-              <div class="todo-item flex items-start gap-3 p-3 rounded-lg bg-surface-container/50 hover:bg-surface-container transition-colors cursor-pointer" data-id="1">
-                <div class="w-8 h-8 bg-warning/10 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                  <i data-lucide="clock" class="w-4 h-4 text-warning"></i>
-                </div>
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2 mb-1">
-                    <span class="text-sm font-medium text-on-surface truncate">待确认订单</span>
-                    <span class="inline-flex items-center px-1.5 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning">待处理</span>
-                  </div>
-                  <div class="text-xs text-on-surface-variant">订单号：OZ-20240121-0088</div>
-                  <div class="text-xs text-on-surface-variant/70 mt-1">10分钟前</div>
-                </div>
-              </div>
-
-              <!-- 待办事项-待采购商品 -->
-              <div class="todo-item flex items-start gap-3 p-3 rounded-lg bg-surface-container/50 hover:bg-surface-container transition-colors cursor-pointer" data-id="2">
-                <div class="w-8 h-8 bg-error/10 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                  <i data-lucide="package-x" class="w-4 h-4 text-error"></i>
-                </div>
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2 mb-1">
-                    <span class="text-sm font-medium text-on-surface truncate">待采购商品</span>
-                    <span class="inline-flex items-center px-1.5 py-0.5 rounded-sm text-xs font-medium bg-error/15 text-error">紧急</span>
-                  </div>
-                  <div class="text-xs text-on-surface-variant">订单号：OZ-20240121-0092</div>
-                  <div class="text-xs text-on-surface-variant/70 mt-1">25分钟前</div>
-                </div>
-              </div>
-
-              <!-- 待办事项-异常物流 -->
-              <div class="todo-item flex items-start gap-3 p-3 rounded-lg bg-surface-container/50 hover:bg-surface-container transition-colors cursor-pointer" data-id="3">
-                <div class="w-8 h-8 bg-error/10 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                  <i data-lucide="alert-triangle" class="w-4 h-4 text-error"></i>
-                </div>
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2 mb-1">
-                    <span class="text-sm font-medium text-on-surface truncate">异常物流</span>
-                    <span class="inline-flex items-center px-1.5 py-0.5 rounded-sm text-xs font-medium bg-error/15 text-error">异常</span>
-                  </div>
-                  <div class="text-xs text-on-surface-variant">订单号：OZ-20240120-0075</div>
-                  <div class="text-xs text-on-surface-variant/70 mt-1">1小时前</div>
-                </div>
-              </div>
-
-              <!-- 待办事项-库存预警 -->
-              <div class="todo-item flex items-start gap-3 p-3 rounded-lg bg-surface-container/50 hover:bg-surface-container transition-colors cursor-pointer" data-id="4">
-                <div class="w-8 h-8 bg-warning/10 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-                  <i data-lucide="alert-circle" class="w-4 h-4 text-warning"></i>
-                </div>
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2 mb-1">
-                    <span class="text-sm font-medium text-on-surface truncate">库存预警</span>
-                    <span class="inline-flex items-center px-1.5 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning">预警</span>
-                  </div>
-                  <div class="text-xs text-on-surface-variant">SKU：SKU-A001-蓝色-L</div>
-                  <div class="text-xs text-on-surface-variant/70 mt-1">2小时前</div>
-                </div>
-              </div>
-
-              <!-- 待办事项-待发货 -->
-              <div class="todo-item flex items-start gap-3 p-3 rounded-lg bg-surface-container/50 hover:bg-surface-container transition-colors cursor-pointer" data-id="5">
-                <div class="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
+            
+            <!-- 指标卡片4：今日发货订单 -->
+            <div class="bg-surface rounded-xl shadow-card p-4">
+              <div class="flex items-center gap-2 mb-2">
+                <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
                   <i data-lucide="send" class="w-4 h-4 text-primary"></i>
                 </div>
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2 mb-1">
-                    <span class="text-sm font-medium text-on-surface truncate">待发货订单</span>
-                    <span class="inline-flex items-center px-1.5 py-0.5 rounded-sm text-xs font-medium bg-primary/15 text-primary">待发货</span>
-                  </div>
-                  <div class="text-xs text-on-surface-variant">订单号：OZ-20240121-0095</div>
-                  <div class="text-xs text-on-surface-variant/70 mt-1">3小时前</div>
+                <span class="text-xs text-on-surface-variant">今日发货订单</span>
+              </div>
+              <div class="flex items-baseline gap-1">
+                <span class="text-2xl font-bold text-on-surface">68</span>
+                <span class="text-sm text-on-surface-variant">笔</span>
+              </div>
+              <span class="text-xs text-on-surface-variant mt-1 block">平均时效 2.3h</span>
+            </div>
+            
+            <!-- 指标卡片5：本月真实净利润 -->
+            <div class="bg-surface rounded-xl shadow-card p-4 col-span-2 sm:col-span-1">
+              <div class="flex items-center gap-2 mb-2">
+                <div class="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center">
+                  <i data-lucide="trending-up" class="w-4 h-4 text-warning"></i>
                 </div>
+                <span class="text-xs text-on-surface-variant">本月真实净利润</span>
+              </div>
+              <div class="flex items-baseline gap-1">
+                <span class="text-xl font-bold text-on-surface">¥</span>
+                <span class="text-2xl font-bold text-on-surface">128,560</span>
+              </div>
+              <span class="text-xs text-on-surface-variant mt-1 block">仅计算已核算订单</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 快捷操作区 -->
+        <div>
+          <h2 class="text-base font-semibold text-on-surface mb-4">快捷操作</h2>
+          <div class="bg-surface rounded-xl shadow-card p-4 space-y-3">
+            <!-- 快捷操作1：同步Ozon订单 -->
+            <button id="btn-sync-ozon" class="w-full flex items-center gap-3 p-3 rounded-lg bg-primary text-on-primary hover:opacity-90 active:scale-[0.98] transition-all">
+              <div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
+                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+              </div>
+              <span class="text-sm font-medium">同步Ozon订单</span>
+            </button>
+            
+            <!-- 快捷操作2：快捷录单 -->
+            <a href="quick-entry.html" id="btn-quick-entry" class="w-full flex items-center gap-3 p-3 rounded-lg bg-surface-container hover:bg-surface-container-high active:scale-[0.98] transition-all">
+              <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <i data-lucide="clipboard-list" class="w-4 h-4 text-primary"></i>
+              </div>
+              <span class="text-sm font-medium text-on-surface">快捷录单</span>
+            </a>
+            
+            <!-- 快捷操作3：扫描验货 -->
+            <button id="btn-scan-inspect" class="w-full flex items-center gap-3 p-3 rounded-lg bg-surface-container hover:bg-surface-container-high active:scale-[0.98] transition-all">
+              <div class="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center">
+                <i data-lucide="scan" class="w-4 h-4 text-success"></i>
+              </div>
+              <span class="text-sm font-medium text-on-surface">扫描验货</span>
+            </button>
+            
+            <!-- 快捷操作4：打印面单 -->
+            <button id="btn-print-label" class="w-full flex items-center gap-3 p-3 rounded-lg bg-surface-container hover:bg-surface-container-high active:scale-[0.98] transition-all">
+              <div class="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center">
+                <i data-lucide="printer" class="w-4 h-4 text-warning"></i>
+              </div>
+              <span class="text-sm font-medium text-on-surface">打印面单</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 业务趋势图表 + 待办事项 -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <!-- 业务趋势图表 -->
+        <div>
+          <h2 class="text-base font-semibold text-on-surface mb-4">业务趋势</h2>
+          <div class="bg-surface rounded-xl shadow-card p-5">
+            <!-- 图表类型切换 -->
+            <div class="flex gap-2 mb-4">
+              <button id="chart-orders" class="px-3 py-1.5 text-sm font-medium rounded-md bg-primary text-on-primary">订单趋势</button>
+              <button id="chart-purchase" class="px-3 py-1.5 text-sm font-medium rounded-md bg-surface-container text-on-surface-variant hover:bg-surface-container-high transition-colors">采购金额</button>
+              <button id="chart-profit" class="px-3 py-1.5 text-sm font-medium rounded-md bg-surface-container text-on-surface-variant hover:bg-surface-container-high transition-colors">利润趋势</button>
+            </div>
+            
+            <!-- 订单趋势图（折线图模拟） -->
+            <div id="chart-orders-content" class="h-48 flex items-end gap-2 px-2">
+              <div class="flex-1 flex flex-col items-center">
+                <div class="w-full bg-primary/20 rounded-t relative" style="height: 60%">
+                  <div class="absolute -top-2 left-1/2 -translate-x-1/2 w-2 h-2 bg-primary rounded-full"></div>
+                </div>
+                <span class="text-xs text-on-surface-variant mt-2">周一</span>
+                <span class="text-xs font-medium text-on-surface">98</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center">
+                <div class="w-full bg-primary/20 rounded-t relative" style="height: 75%">
+                  <div class="absolute -top-2 left-1/2 -translate-x-1/2 w-2 h-2 bg-primary rounded-full"></div>
+                </div>
+                <span class="text-xs text-on-surface-variant mt-2">周二</span>
+                <span class="text-xs font-medium text-on-surface">123</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center">
+                <div class="w-full bg-primary/20 rounded-t relative" style="height: 55%">
+                  <div class="absolute -top-2 left-1/2 -translate-x-1/2 w-2 h-2 bg-primary rounded-full"></div>
+                </div>
+                <span class="text-xs text-on-surface-variant mt-2">周三</span>
+                <span class="text-xs font-medium text-on-surface">89</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center">
+                <div class="w-full bg-primary/20 rounded-t relative" style="height: 90%">
+                  <div class="absolute -top-2 left-1/2 -translate-x-1/2 w-2 h-2 bg-primary rounded-full"></div>
+                </div>
+                <span class="text-xs text-on-surface-variant mt-2">周四</span>
+                <span class="text-xs font-medium text-on-surface">145</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center">
+                <div class="w-full bg-primary/20 rounded-t relative" style="height: 80%">
+                  <div class="absolute -top-2 left-1/2 -translate-x-1/2 w-2 h-2 bg-primary rounded-full"></div>
+                </div>
+                <span class="text-xs text-on-surface-variant mt-2">周五</span>
+                <span class="text-xs font-medium text-on-surface">132</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center">
+                <div class="w-full bg-primary/20 rounded-t relative" style="height: 100%">
+                  <div class="absolute -top-2 left-1/2 -translate-x-1/2 w-2 h-2 bg-primary rounded-full"></div>
+                </div>
+                <span class="text-xs text-on-surface-variant mt-2">周六</span>
+                <span class="text-xs font-medium text-on-surface">156</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center">
+                <div class="w-full bg-primary rounded-t relative" style="height: 95%">
+                  <div class="absolute -top-2 left-1/2 -translate-x-1/2 w-2 h-2 bg-primary rounded-full"></div>
+                </div>
+                <span class="text-xs text-on-surface-variant mt-2">今日</span>
+                <span class="text-xs font-medium text-primary">156</span>
+              </div>
+            </div>
+            
+            <!-- 采购金额图（柱状图模拟 - 默认隐藏） -->
+            <div id="chart-purchase-content" class="h-48 hidden items-end gap-2 px-2">
+              <div class="flex-1 flex flex-col items-center">
+                <div class="w-full bg-success/60 rounded-t" style="height: 55%"></div>
+                <span class="text-xs text-on-surface-variant mt-2">周一</span>
+                <span class="text-xs font-medium text-on-surface">¥8.2k</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center">
+                <div class="w-full bg-success/60 rounded-t" style="height: 70%"></div>
+                <span class="text-xs text-on-surface-variant mt-2">周二</span>
+                <span class="text-xs font-medium text-on-surface">¥10.5k</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center">
+                <div class="w-full bg-success/60 rounded-t" style="height: 45%"></div>
+                <span class="text-xs text-on-surface-variant mt-2">周三</span>
+                <span class="text-xs font-medium text-on-surface">¥6.8k</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center">
+                <div class="w-full bg-success/60 rounded-t" style="height: 85%"></div>
+                <span class="text-xs text-on-surface-variant mt-2">周四</span>
+                <span class="text-xs font-medium text-on-surface">¥12.3k</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center">
+                <div class="w-full bg-success/60 rounded-t" style="height: 65%"></div>
+                <span class="text-xs text-on-surface-variant mt-2">周五</span>
+                <span class="text-xs font-medium text-on-surface">¥9.6k</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center">
+                <div class="w-full bg-success/60 rounded-t" style="height: 95%"></div>
+                <span class="text-xs text-on-surface-variant mt-2">周六</span>
+                <span class="text-xs font-medium text-on-surface">¥14.2k</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center">
+                <div class="w-full bg-success rounded-t" style="height: 80%"></div>
+                <span class="text-xs text-on-surface-variant mt-2">今日</span>
+                <span class="text-xs font-medium text-success">¥11.8k</span>
+              </div>
+            </div>
+            
+            <!-- 利润趋势图（折线图模拟 - 默认隐藏） -->
+            <div id="chart-profit-content" class="h-48 hidden items-end gap-2 px-2">
+              <div class="flex-1 flex flex-col items-center">
+                <div class="w-full bg-warning/20 rounded-t relative" style="height: 50%">
+                  <div class="absolute -top-2 left-1/2 -translate-x-1/2 w-2 h-2 bg-warning rounded-full"></div>
+                </div>
+                <span class="text-xs text-on-surface-variant mt-2">周一</span>
+                <span class="text-xs font-medium text-on-surface">¥5.1k</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center">
+                <div class="w-full bg-warning/20 rounded-t relative" style="height: 65%">
+                  <div class="absolute -top-2 left-1/2 -translate-x-1/2 w-2 h-2 bg-warning rounded-full"></div>
+                </div>
+                <span class="text-xs text-on-surface-variant mt-2">周二</span>
+                <span class="text-xs font-medium text-on-surface">¥6.8k</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center">
+                <div class="w-full bg-warning/20 rounded-t relative" style="height: 45%">
+                  <div class="absolute -top-2 left-1/2 -translate-x-1/2 w-2 h-2 bg-warning rounded-full"></div>
+                </div>
+                <span class="text-xs text-on-surface-variant mt-2">周三</span>
+                <span class="text-xs font-medium text-on-surface">¥4.5k</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center">
+                <div class="w-full bg-warning/20 rounded-t relative" style="height: 80%">
+                  <div class="absolute -top-2 left-1/2 -translate-x-1/2 w-2 h-2 bg-warning rounded-full"></div>
+                </div>
+                <span class="text-xs text-on-surface-variant mt-2">周四</span>
+                <span class="text-xs font-medium text-on-surface">¥8.2k</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center">
+                <div class="w-full bg-warning/20 rounded-t relative" style="height: 70%">
+                  <div class="absolute -top-2 left-1/2 -translate-x-1/2 w-2 h-2 bg-warning rounded-full"></div>
+                </div>
+                <span class="text-xs text-on-surface-variant mt-2">周五</span>
+                <span class="text-xs font-medium text-on-surface">¥7.3k</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center">
+                <div class="w-full bg-warning/20 rounded-t relative" style="height: 90%">
+                  <div class="absolute -top-2 left-1/2 -translate-x-1/2 w-2 h-2 bg-warning rounded-full"></div>
+                </div>
+                <span class="text-xs text-on-surface-variant mt-2">周六</span>
+                <span class="text-xs font-medium text-on-surface">¥9.5k</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center">
+                <div class="w-full bg-warning rounded-t relative" style="height: 75%">
+                  <div class="absolute -top-2 left-1/2 -translate-x-1/2 w-2 h-2 bg-warning rounded-full"></div>
+                </div>
+                <span class="text-xs text-on-surface-variant mt-2">今日</span>
+                <span class="text-xs font-medium text-warning">¥7.8k</span>
+              </div>
+            </div>
+            
+            <p class="text-xs text-on-surface-variant mt-4 text-center">近7天数据趋势</p>
+          </div>
+        </div>
+
+        <!-- 待办事项区 -->
+        <div>
+          <h2 class="text-base font-semibold text-on-surface mb-4">待办事项</h2>
+          <div class="bg-surface rounded-xl shadow-card p-5">
+            <div class="space-y-3">
+              <!-- 待办事项1：待采购任务 -->
+              <a href="purchase.html" id="todo-purchase" class="flex items-center justify-between p-3 rounded-lg bg-surface-container hover:bg-surface-container-high transition-colors cursor-pointer group">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-lg bg-warning/15 flex items-center justify-center">
+                    <i data-lucide="shopping-bag" class="w-4 h-4 text-warning"></i>
+                  </div>
+                  <div>
+                    <span class="text-sm font-medium text-on-surface">待采购任务</span>
+                    <p class="text-xs text-on-surface-variant">紧急 8笔 / 普通 34笔</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-lg font-bold text-warning">42</span>
+                  <i data-lucide="chevron-right" class="w-4 h-4 text-on-surface-variant/50 group-hover:text-on-surface-variant transition-colors"></i>
+                </div>
+              </a>
+              
+              <!-- 待办事项2：待绑定采购 -->
+              <a href="quick-entry.html" id="todo-bind" class="flex items-center justify-between p-3 rounded-lg bg-surface-container hover:bg-surface-container-high transition-colors cursor-pointer group">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <i data-lucide="link" class="w-4 h-4 text-primary"></i>
+                  </div>
+                  <div>
+                    <span class="text-sm font-medium text-on-surface">待绑定采购</span>
+                    <p class="text-xs text-on-surface-variant">已下单待录入快递单号</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-lg font-bold text-on-surface">28</span>
+                  <i data-lucide="chevron-right" class="w-4 h-4 text-on-surface-variant/50 group-hover:text-on-surface-variant transition-colors"></i>
+                </div>
+              </a>
+              
+              <!-- 待办事项3：异常验货 -->
+              <a href="packaging.html" id="todo-inspect-error" class="flex items-center justify-between p-3 rounded-lg bg-error/10 hover:bg-error/15 transition-colors cursor-pointer group">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-lg bg-error/20 flex items-center justify-center">
+                    <i data-lucide="alert-triangle" class="w-4 h-4 text-error"></i>
+                  </div>
+                  <div>
+                    <span class="text-sm font-medium text-error">异常验货</span>
+                    <p class="text-xs text-error/70">需处理售后工单</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-lg font-bold text-error">3</span>
+                  <i data-lucide="chevron-right" class="w-4 h-4 text-error/50 group-hover:text-error transition-colors"></i>
+                </div>
+              </a>
+              
+              <!-- 待办事项4：待核算订单 -->
+              <a href="finance.html" id="todo-calc" class="flex items-center justify-between p-3 rounded-lg bg-surface-container hover:bg-surface-container-high transition-colors cursor-pointer group">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center">
+                    <i data-lucide="calculator" class="w-4 h-4 text-success"></i>
+                  </div>
+                  <div>
+                    <span class="text-sm font-medium text-on-surface">待核算订单</span>
+                    <p class="text-xs text-on-surface-variant">售后期已结束</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-lg font-bold text-success">89</span>
+                  <i data-lucide="chevron-right" class="w-4 h-4 text-on-surface-variant/50 group-hover:text-on-surface-variant transition-colors"></i>
+                </div>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 硬件状态监控 + 系统公告 -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <!-- 硬件状态监控 -->
+        <div>
+          <h2 class="text-base font-semibold text-on-surface mb-4">硬件状态</h2>
+          <div class="bg-surface rounded-xl shadow-card p-5">
+            <div class="grid grid-cols-3 gap-4">
+              <!-- 硬件1：扫描枪 -->
+              <div id="hardware-scanner" class="flex flex-col items-center p-4 rounded-lg bg-success/10">
+                <div class="w-10 h-10 rounded-full bg-success/20 flex items-center justify-center mb-2">
+                  <i data-lucide="scan" class="w-5 h-5 text-success"></i>
+                </div>
+                <span class="text-sm font-medium text-on-surface">扫描枪</span>
+                <span class="text-xs text-success mt-1">在线</span>
+              </div>
+              
+              <!-- 硬件2：电子秤 -->
+              <div id="hardware-scale" class="flex flex-col items-center p-4 rounded-lg bg-error/10">
+                <div class="w-10 h-10 rounded-full bg-error/20 flex items-center justify-center mb-2">
+                  <i data-lucide="scale" class="w-5 h-5 text-error"></i>
+                </div>
+                <span class="text-sm font-medium text-on-surface">电子秤</span>
+                <span class="text-xs text-error mt-1">离线</span>
+              </div>
+              
+              <!-- 硬件3：打印机 -->
+              <div id="hardware-printer" class="flex flex-col items-center p-4 rounded-lg bg-success/10">
+                <div class="w-10 h-10 rounded-full bg-success/20 flex items-center justify-center mb-2">
+                  <i data-lucide="printer" class="w-5 h-5 text-success"></i>
+                </div>
+                <span class="text-sm font-medium text-on-surface">打印机</span>
+                <span class="text-xs text-success mt-1">在线</span>
+              </div>
+            </div>
+            
+            <!-- 硬件异常提示 -->
+            <div id="hardware-alert" class="mt-4 p-3 rounded-lg bg-error/10 flex items-center gap-3">
+              <i data-lucide="alert-circle" class="w-4 h-4 text-error"></i>
+              <span class="text-sm text-error">电子秤已离线，请检查设备连接</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 系统公告/通知 -->
+        <div>
+          <h2 class="text-base font-semibold text-on-surface mb-4">系统公告</h2>
+          <div class="bg-surface rounded-xl shadow-card p-5">
+            <div class="space-y-3">
+              <!-- 公告1 -->
+              <div class="p-3 rounded-lg bg-surface-container">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-primary/15 text-primary">公告</span>
+                  <span class="text-xs text-on-surface-variant">2024-01-15</span>
+                </div>
+                <p class="text-sm text-on-surface">系统将于本周六凌晨2:00-4:00进行维护升级，届时系统将暂停服务。</p>
+              </div>
+              
+              <!-- 公告2 -->
+              <div class="p-3 rounded-lg bg-surface-container">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">更新</span>
+                  <span class="text-xs text-on-surface-variant">2024-01-12</span>
+                </div>
+                <p class="text-sm text-on-surface">新增批量导入SKU功能，支持Excel模板导入，提升数据录入效率。</p>
+              </div>
+              
+              <!-- 异常提醒 -->
+              <div class="p-3 rounded-lg bg-error/10">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-error/15 text-error">异常</span>
+                  <span class="text-xs text-on-surface-variant">2024-01-15</span>
+                </div>
+                <p class="text-sm text-error">发现3笔异常验货订单需要处理，请及时跟进售后工单。</p>
+              </div>
+              
+              <!-- 公告3 -->
+              <div class="p-3 rounded-lg bg-surface-container">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-primary/15 text-primary">公告</span>
+                  <span class="text-xs text-on-surface-variant">2024-01-10</span>
+                </div>
+                <p class="text-sm text-on-surface">Ozon平台最新规则更新：退货周期调整为14天，请知悉。</p>
               </div>
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- 核心约束提示 -->
+      <div class="bg-surface-container rounded-xl p-4 flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+          <i data-lucide="info" class="w-4 h-4 text-primary"></i>
+        </div>
+        <p class="text-sm text-on-surface-variant">本系统为零库存模式，出单后采购。利润核算在售后期结束后进行。</p>
       </div>
     </main>
     <!-- @main-content:end -->
@@ -462,54 +682,68 @@
   <!-- @nav:end 导航组件 -->
 
   <script>
-    lucide.createIcons();
-
     $(function() {
-      // 快捷操作按钮事件
-
-      // 同步订单按钮 - 点击后应实现：
-      // 1. 显示同步进度弹窗
-      // 2. 调用API同步平台订单数据
-      // 3. 同步完成后刷新页面数据
-      $('#btn-sync-orders').on('click', function() {
-        console.log('同步订单功能：需要调用第三方平台API获取最新订单数据');
+      // 初始化 Lucide 图标
+      lucide.createIcons();
+      
+      // 图表切换功能
+      var chartButtons = ['#chart-orders', '#chart-purchase', '#chart-profit'];
+      var chartContents = ['#chart-orders-content', '#chart-purchase-content', '#chart-profit-content'];
+      
+      $(chartButtons.join(',')).on('click', function() {
+        var clickedId = '#' + $(this).attr('id');
+        var index = chartButtons.indexOf(clickedId);
+        
+        // 更新按钮样式
+        chartButtons.forEach(function(btn, i) {
+          if (i === index) {
+            $(btn).removeClass('bg-surface-container text-on-surface-variant').addClass('bg-primary text-on-primary');
+          } else {
+            $(btn).removeClass('bg-primary text-on-primary').addClass('bg-surface-container text-on-surface-variant');
+          }
+        });
+        
+        // 显示对应图表
+        chartContents.forEach(function(content, i) {
+          if (i === index) {
+            $(content).removeClass('hidden').addClass('flex');
+          } else {
+            $(content).removeClass('flex').addClass('hidden');
+          }
+        });
+        
+        // 重新渲染图标
+        lucide.createIcons();
       });
-
-      // 创建采购按钮 - 点击后跳转到采购管理页面
-      $('#btn-create-purchase').on('click', function() {
-        window.location.href = 'purchase.html';
+      
+      // 同步Ozon订单按钮
+      $('#btn-sync-ozon').on('click', function() {
+        console.log('触发同步Ozon订单操作');
+        // 后续实现：
+        // 1. 显示加载状态
+        // 2. 调用后端API同步订单
+        // 3. 同步完成后刷新页面数据
+        alert('正在同步Ozon订单，请稍候...');
       });
-
-      // 录入物流按钮 - 点击后跳转到物流追踪页面
-      $('#btn-entry-logistics').on('click', function() {
-        window.location.href = 'logistics.html';
+      
+      // 扫描验货按钮
+      $('#btn-scan-inspect').on('click', function() {
+        console.log('触发扫描验货操作');
+        // 后续实现：
+        // 1. 打开扫描模态框
+        // 2. 调用扫描枪设备
+        // 3. 根据扫描结果进行验货流程
+        alert('请使用扫描枪扫描商品条码');
       });
-
-      // 打印面单按钮 - 点击后应实现：
-      // 1. 打开待发货订单选择弹窗
-      // 2. 选择订单后生成面单PDF
-      // 3. 调用打印功能
+      
+      // 打印面单按钮
       $('#btn-print-label').on('click', function() {
-        console.log('打印面单功能：需要选择待发货订单并生成打印面单');
-      });
-
-      // 待办事项点击事件 - 点击后应根据任务类型跳转到对应页面
-      $('#todo-list').on('click', '.todo-item', function() {
-        const id = $(this).data('id');
-        const type = $(this).find('.text-sm.font-medium').text();
-
-        // 根据任务类型跳转到不同页面
-        if (type.includes('订单')) {
-          window.location.href = 'orders.html';
-        } else if (type.includes('采购')) {
-          window.location.href = 'purchase.html';
-        } else if (type.includes('物流')) {
-          window.location.href = 'logistics.html';
-        } else if (type.includes('库存')) {
-          window.location.href = 'purchase.html';
-        } else {
-          window.location.href = 'orders.html';
-        }
+        console.log('触发打印面单操作');
+        // 后续实现：
+        // 1. 弹出订单选择框
+        // 2. 选择要打印的订单
+        // 3. 调用打印机打印面单
+        alert('请选择要打印面单的订单');
       });
     });
   </script>

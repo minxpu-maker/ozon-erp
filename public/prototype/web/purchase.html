@@ -142,720 +142,859 @@
 
     <!-- @main-content:start -->
     <main class="flex-1 min-w-0 overflow-y-auto bg-background p-6">
-      <!-- 页面标题与操作区 -->
-      <div class="flex items-center justify-between mb-6">
-        <div>
-          <h1 class="text-2xl font-bold text-on-surface">采购管理</h1>
-          <p class="text-sm text-on-surface-variant mt-1">管理1688/拼多多采购任务，追踪采购进度</p>
-        </div>
-        <button id="btn-new-purchase" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-2">
-          <i data-lucide="plus" class="w-4 h-4"></i>新建采购任务
-        </button>
+      <!-- 页面标题 -->
+      <div class="mb-6">
+        <h1 class="text-2xl font-bold text-on-surface">采购管理</h1>
+        <p class="text-sm text-on-surface-variant mt-1">人机协同绑定模式 · 零库存采购流程</p>
       </div>
 
-      <!-- 统计卡片 -->
-      <div class="grid grid-cols-4 gap-4 mb-6">
-        <!-- 统计卡片-待采购 -->
-        <div class="bg-surface rounded-lg shadow-card p-5">
+      <!-- 业务流程说明区 -->
+      <div class="bg-surface rounded-lg shadow-card p-5 mb-6">
+        <div class="flex items-center gap-2 mb-4">
+          <i data-lucide="git-branch" class="w-4 h-4 text-primary"></i>
+          <span class="text-base font-semibold text-on-surface">业务流程</span>
+        </div>
+        <div class="flex items-center justify-between bg-surface-container rounded-lg p-4">
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-warning/15 rounded-lg flex items-center justify-center">
+            <div class="flex items-center justify-center w-10 h-10 bg-primary/10 rounded-lg">
+              <i data-lucide="download" class="w-5 h-5 text-primary"></i>
+            </div>
+            <div>
+              <div class="text-sm font-medium text-on-surface">订单同步</div>
+              <div class="text-xs text-on-surface-variant">Ozon已付款订单</div>
+            </div>
+          </div>
+          <i data-lucide="chevron-right" class="w-5 h-5 text-on-surface-variant/50"></i>
+          <div class="flex items-center gap-3">
+            <div class="flex items-center justify-center w-10 h-10 bg-warning/10 rounded-lg">
               <i data-lucide="clock" class="w-5 h-5 text-warning"></i>
             </div>
             <div>
-              <p class="text-xs text-on-surface-variant">待采购任务</p>
-              <p class="text-2xl font-bold text-on-surface">24</p>
+              <div class="text-sm font-medium text-on-surface">待采购</div>
+              <div class="text-xs text-on-surface-variant">等待人工下单</div>
             </div>
           </div>
-        </div>
-        <!-- 统计卡片-进行中 -->
-        <div class="bg-surface rounded-lg shadow-card p-5">
+          <i data-lucide="chevron-right" class="w-5 h-5 text-on-surface-variant/50"></i>
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-primary/15 rounded-lg flex items-center justify-center">
-              <i data-lucide="loader" class="w-5 h-5 text-primary"></i>
+            <div class="flex items-center justify-center w-10 h-10 bg-primary/10 rounded-lg">
+              <i data-lucide="shopping-bag" class="w-5 h-5 text-primary"></i>
             </div>
             <div>
-              <p class="text-xs text-on-surface-variant">进行中采购</p>
-              <p class="text-2xl font-bold text-on-surface">18</p>
+              <div class="text-sm font-medium text-on-surface">人工下单</div>
+              <div class="text-xs text-on-surface-variant">1688/拼多多</div>
             </div>
           </div>
-        </div>
-        <!-- 统计卡片-已完成 -->
-        <div class="bg-surface rounded-lg shadow-card p-5">
+          <i data-lucide="chevron-right" class="w-5 h-5 text-on-surface-variant/50"></i>
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-success/15 rounded-lg flex items-center justify-center">
-              <i data-lucide="check-circle" class="w-5 h-5 text-success"></i>
+            <div class="flex items-center justify-center w-10 h-10 bg-success/10 rounded-lg">
+              <i data-lucide="link" class="w-5 h-5 text-success"></i>
             </div>
             <div>
-              <p class="text-xs text-on-surface-variant">已完成采购</p>
-              <p class="text-2xl font-bold text-on-surface">156</p>
+              <div class="text-sm font-medium text-on-surface">绑定录入</div>
+              <div class="text-xs text-on-surface-variant">快递单号关联</div>
             </div>
           </div>
-        </div>
-        <!-- 统计卡片-今日金额 -->
-        <div class="bg-surface rounded-lg shadow-card p-5">
+          <i data-lucide="chevron-right" class="w-5 h-5 text-on-surface-variant/50"></i>
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-success/15 rounded-lg flex items-center justify-center">
-              <i data-lucide="coins" class="w-5 h-5 text-success"></i>
+            <div class="flex items-center justify-center w-10 h-10 bg-primary/10 rounded-lg">
+              <i data-lucide="package-check" class="w-5 h-5 text-primary"></i>
             </div>
             <div>
-              <p class="text-xs text-on-surface-variant">今日采购金额</p>
-              <p class="text-2xl font-bold text-on-surface">¥8,642</p>
+              <div class="text-sm font-medium text-on-surface">待入库</div>
+              <div class="text-xs text-on-surface-variant">仓库验货</div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- 筛选栏 -->
-      <div class="bg-surface rounded-lg shadow-card p-4 mb-6">
-        <div class="flex items-center gap-4 flex-wrap">
-          <!-- 任务状态筛选 -->
-          <div class="flex items-center gap-2">
-            <label class="text-sm text-on-surface-variant whitespace-nowrap">任务状态</label>
-            <select id="filter-status" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors min-w-[120px]">
-              <option value="">全部状态</option>
-              <option value="pending">待采购</option>
-              <option value="purchasing">采购中</option>
-              <option value="arrived">已到货</option>
-              <option value="cancelled">已取消</option>
-            </select>
-          </div>
-          <!-- 采购平台筛选 -->
-          <div class="flex items-center gap-2">
-            <label class="text-sm text-on-surface-variant whitespace-nowrap">采购平台</label>
-            <select id="filter-platform" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors min-w-[120px]">
-              <option value="">全部平台</option>
-              <option value="1688">1688</option>
-              <option value="pdd">拼多多</option>
-            </select>
-          </div>
-          <!-- 关键词搜索 -->
-          <div class="flex items-center gap-2 flex-1 min-w-[200px]">
-            <div class="relative flex-1">
-              <i data-lucide="search" class="w-4 h-4 text-on-surface-variant absolute left-3 top-1/2 -translate-y-1/2"></i>
-              <input id="filter-keyword" type="text" placeholder="搜索商品名称/SKU..." class="w-full bg-surface-container border-none rounded-md pl-9 pr-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
+      <!-- 重要提示区 -->
+      <div class="bg-error/5 border-l-4 border-error rounded-r-lg p-4 mb-6">
+        <div class="flex items-start gap-3">
+          <i data-lucide="alert-triangle" class="w-5 h-5 text-error shrink-0 mt-0.5"></i>
+          <div>
+            <div class="text-sm font-semibold text-error mb-1">重要提示</div>
+            <div class="text-sm text-on-surface-variant">
+              本系统为零库存模式，采购环节由人工在外部平台（1688/拼多多）下单，系统负责订单绑定与后续追踪。<span class="text-error font-medium">请勿设计与自动下单相关的RPA功能。</span>
             </div>
           </div>
-          <!-- 创建时间筛选 -->
-          <div class="flex items-center gap-2">
-            <label class="text-sm text-on-surface-variant whitespace-nowrap">创建时间</label>
-            <input id="filter-date-start" type="date" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
-            <span class="text-on-surface-variant">~</span>
-            <input id="filter-date-end" type="date" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
+        </div>
+      </div>
+
+      <!-- 顶部统计卡片 -->
+      <div class="grid grid-cols-4 gap-4 mb-6">
+        <!-- 待采购任务 -->
+        <div class="bg-surface rounded-lg shadow-card p-5">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-sm text-on-surface-variant">待采购任务</span>
+            <div class="w-8 h-8 bg-warning/10 rounded-lg flex items-center justify-center">
+              <i data-lucide="clock" class="w-4 h-4 text-warning"></i>
+            </div>
           </div>
-          <!-- 筛选按钮 -->
-          <button id="btn-filter" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 transition-all inline-flex items-center gap-2">
-            <i data-lucide="filter" class="w-4 h-4"></i>筛选
+          <div class="text-2xl font-bold text-on-surface">23<span class="text-sm font-normal text-on-surface-variant ml-1">笔</span></div>
+          <div class="text-xs text-on-surface-variant mt-1">来自Ozon已付款订单</div>
+        </div>
+        <!-- 已绑定采购 -->
+        <div class="bg-surface rounded-lg shadow-card p-5">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-sm text-on-surface-variant">已绑定采购</span>
+            <div class="w-8 h-8 bg-success/10 rounded-lg flex items-center justify-center">
+              <i data-lucide="link" class="w-4 h-4 text-success"></i>
+            </div>
+          </div>
+          <div class="text-2xl font-bold text-on-surface">156<span class="text-sm font-normal text-on-surface-variant ml-1">笔</span></div>
+          <div class="text-xs text-on-surface-variant mt-1">已完成快递单号绑定</div>
+        </div>
+        <!-- 待入库验货 -->
+        <div class="bg-surface rounded-lg shadow-card p-5">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-sm text-on-surface-variant">待入库验货</span>
+            <div class="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+              <i data-lucide="package-search" class="w-4 h-4 text-primary"></i>
+            </div>
+          </div>
+          <div class="text-2xl font-bold text-on-surface">8<span class="text-sm font-normal text-on-surface-variant ml-1">笔</span></div>
+          <div class="text-xs text-on-surface-variant mt-1">等待仓库扫描验货</div>
+        </div>
+        <!-- 今日采购金额 -->
+        <div class="bg-surface rounded-lg shadow-card p-5">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-sm text-on-surface-variant">今日采购金额</span>
+            <div class="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+              <i data-lucide="coins" class="w-4 h-4 text-primary"></i>
+            </div>
+          </div>
+          <div class="text-2xl font-bold text-primary">¥12,580</div>
+          <div class="text-xs text-success mt-1 flex items-center gap-1">
+            <i data-lucide="trending-up" class="w-3 h-3"></i>
+            较昨日 +18%
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab切换区域 -->
+      <div class="bg-surface rounded-lg shadow-card">
+        <!-- Tab头部 -->
+        <div class="flex items-center border-b border-outline/50">
+          <button id="tab-pending" class="px-5 py-3.5 text-sm font-medium text-primary border-b-2 border-primary bg-primary/5" data-tab="pending">
+            <i data-lucide="clock" class="w-4 h-4 inline-block mr-1.5 -mt-0.5"></i>待采购任务
+            <span class="ml-1.5 bg-primary/20 text-primary px-1.5 py-0.5 rounded text-xs">23</span>
           </button>
-          <button id="btn-reset-filter" class="bg-surface-container text-on-surface border-none px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high transition-all">重置</button>
+          <button id="tab-binding" class="px-5 py-3.5 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors" data-tab="binding">
+            <i data-lucide="link-2" class="w-4 h-4 inline-block mr-1.5 -mt-0.5"></i>采购绑定
+          </button>
+          <button id="tab-bound" class="px-5 py-3.5 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors" data-tab="bound">
+            <i data-lucide="check-circle" class="w-4 h-4 inline-block mr-1.5 -mt-0.5"></i>已绑定列表
+            <span class="ml-1.5 bg-surface-container text-on-surface-variant px-1.5 py-0.5 rounded text-xs">156</span>
+          </button>
+        </div>
+
+        <!-- Tab内容区：待采购任务 -->
+        <div id="content-pending" class="tab-content">
+          <!-- 搜索筛选栏 -->
+          <div class="p-4 border-b border-outline/50">
+            <div class="flex items-center gap-3">
+              <div class="relative flex-1 max-w-xs">
+                <i data-lucide="search" class="w-4 h-4 text-on-surface-variant absolute left-3 top-1/2 -translate-y-1/2"></i>
+                <input type="text" placeholder="搜索订单号/SKU..." class="w-full bg-surface-container border-none rounded-md pl-9 pr-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" />
+              </div>
+              <select class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30">
+                <option>全部状态</option>
+                <option>待采购</option>
+                <option>已下单待绑定</option>
+              </select>
+              <button class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all inline-flex items-center gap-2">
+                <i data-lucide="filter" class="w-4 h-4"></i>筛选
+              </button>
+            </div>
+          </div>
+
+          <!-- 表格 -->
+          <div class="overflow-x-auto">
+            <div class="min-w-[900px]">
+              <!-- 表头 -->
+              <div class="grid grid-cols-7 gap-4 px-5 py-3 bg-surface-container text-xs font-semibold text-on-surface-variant uppercase tracking-wide">
+                <span>Ozon订单号</span>
+                <span>商品信息</span>
+                <span>匹配货源</span>
+                <span>数量</span>
+                <span>状态</span>
+                <span>创建时间</span>
+                <span>操作</span>
+              </div>
+              <!-- 表格内容 -->
+              <div class="divide-y divide-outline-variant/30">
+                <!-- 列表项-1 -->
+                <div class="grid grid-cols-7 gap-4 px-5 py-4 hover:bg-surface-container/50 transition-colors items-center">
+                  <span class="text-sm font-medium text-primary">#OZ-20240115-001</span>
+                  <div class="flex items-center gap-2">
+                    <img src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100&h=100&fit=crop" alt="智能手表" class="w-10 h-10 rounded object-cover" data-category="商业科技">
+                    <div>
+                      <div class="text-sm font-medium text-on-surface">智能手表</div>
+                      <div class="text-xs text-on-surface-variant">SKU: SW-001</div>
+                    </div>
+                  </div>
+                  <a href="https://detail.1688.com/offer/123456.html" target="_blank" class="text-sm text-primary hover:underline flex items-center gap-1">
+                    <i data-lucide="external-link" class="w-3 h-3"></i>1688链接
+                  </a>
+                  <span class="text-sm text-on-surface">2</span>
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning">待采购</span>
+                  <span class="text-sm text-on-surface-variant">2024-01-15 09:30</span>
+                  <div class="flex items-center gap-2">
+                    <button id="btn-go-order-1" class="text-primary text-sm font-medium hover:underline">去下单</button>
+                    <button id="btn-mark-ordered-1" class="text-success text-sm font-medium hover:underline">标记已下单</button>
+                  </div>
+                </div>
+                <!-- 列表项-2 -->
+                <div class="grid grid-cols-7 gap-4 px-5 py-4 hover:bg-surface-container/50 transition-colors items-center">
+                  <span class="text-sm font-medium text-primary">#OZ-20240115-002</span>
+                  <div class="flex items-center gap-2">
+                    <img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=100&h=100&fit=crop" alt="无线耳机" class="w-10 h-10 rounded object-cover" data-category="商业科技">
+                    <div>
+                      <div class="text-sm font-medium text-on-surface">无线耳机</div>
+                      <div class="text-xs text-on-surface-variant">SKU: HE-003</div>
+                    </div>
+                  </div>
+                  <a href="https://mobile.yangkeduo.com/goods.html?goods_id=123456" target="_blank" class="text-sm text-primary hover:underline flex items-center gap-1">
+                    <i data-lucide="external-link" class="w-3 h-3"></i>拼多多链接
+                  </a>
+                  <span class="text-sm text-on-surface">1</span>
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning">待采购</span>
+                  <span class="text-sm text-on-surface-variant">2024-01-15 10:15</span>
+                  <div class="flex items-center gap-2">
+                    <button id="btn-go-order-2" class="text-primary text-sm font-medium hover:underline">去下单</button>
+                    <button id="btn-mark-ordered-2" class="text-success text-sm font-medium hover:underline">标记已下单</button>
+                  </div>
+                </div>
+                <!-- 列表项-3 -->
+                <div class="grid grid-cols-7 gap-4 px-5 py-4 hover:bg-surface-container/50 transition-colors items-center">
+                  <span class="text-sm font-medium text-primary">#OZ-20240115-003</span>
+                  <div class="flex items-center gap-2">
+                    <img src="https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?w=100&h=100&fit=crop" alt="手机壳" class="w-10 h-10 rounded object-cover" data-category="商业科技">
+                    <div>
+                      <div class="text-sm font-medium text-on-surface">手机壳</div>
+                      <div class="text-xs text-on-surface-variant">SKU: PC-012</div>
+                    </div>
+                  </div>
+                  <a href="https://detail.1688.com/offer/789012.html" target="_blank" class="text-sm text-primary hover:underline flex items-center gap-1">
+                    <i data-lucide="external-link" class="w-3 h-3"></i>1688链接
+                  </a>
+                  <span class="text-sm text-on-surface">5</span>
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-primary/15 text-primary">已下单待绑定</span>
+                  <span class="text-sm text-on-surface-variant">2024-01-15 11:20</span>
+                  <div class="flex items-center gap-2">
+                    <button id="btn-bind-tracking-3" class="bg-primary text-on-primary px-3 py-1.5 rounded text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">绑定快递单号</button>
+                  </div>
+                </div>
+                <!-- 列表项-4 -->
+                <div class="grid grid-cols-7 gap-4 px-5 py-4 hover:bg-surface-container/50 transition-colors items-center">
+                  <span class="text-sm font-medium text-primary">#OZ-20240114-008</span>
+                  <div class="flex items-center gap-2">
+                    <img src="https://images.unsplash.com/photo-1585386959984-a4155224a1ad?w=100&h=100&fit=crop" alt="数据线" class="w-10 h-10 rounded object-cover" data-category="商业科技">
+                    <div>
+                      <div class="text-sm font-medium text-on-surface">数据线套装</div>
+                      <div class="text-xs text-on-surface-variant">SKU: CB-007</div>
+                    </div>
+                  </div>
+                  <a href="https://mobile.yangkeduo.com/goods.html?goods_id=456789" target="_blank" class="text-sm text-primary hover:underline flex items-center gap-1">
+                    <i data-lucide="external-link" class="w-3 h-3"></i>拼多多链接
+                  </a>
+                  <span class="text-sm text-on-surface">3</span>
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning">待采购</span>
+                  <span class="text-sm text-on-surface-variant">2024-01-14 16:45</span>
+                  <div class="flex items-center gap-2">
+                    <button id="btn-go-order-4" class="text-primary text-sm font-medium hover:underline">去下单</button>
+                    <button id="btn-mark-ordered-4" class="text-success text-sm font-medium hover:underline">标记已下单</button>
+                  </div>
+                </div>
+                <!-- 列表项-5 -->
+                <div class="grid grid-cols-7 gap-4 px-5 py-4 hover:bg-surface-container/50 transition-colors items-center">
+                  <span class="text-sm font-medium text-primary">#OZ-20240114-006</span>
+                  <div class="flex items-center gap-2">
+                    <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=100&h=100&fit=crop" alt="运动鞋" class="w-10 h-10 rounded object-cover" data-category="服饰时尚">
+                    <div>
+                      <div class="text-sm font-medium text-on-surface">运动鞋</div>
+                      <div class="text-xs text-on-surface-variant">SKU: SH-023</div>
+                    </div>
+                  </div>
+                  <a href="https://detail.1688.com/offer/345678.html" target="_blank" class="text-sm text-primary hover:underline flex items-center gap-1">
+                    <i data-lucide="external-link" class="w-3 h-3"></i>1688链接
+                  </a>
+                  <span class="text-sm text-on-surface">1</span>
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-primary/15 text-primary">已下单待绑定</span>
+                  <span class="text-sm text-on-surface-variant">2024-01-14 14:30</span>
+                  <div class="flex items-center gap-2">
+                    <button id="btn-bind-tracking-5" class="bg-primary text-on-primary px-3 py-1.5 rounded text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">绑定快递单号</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 分页 -->
+          <div class="flex items-center justify-between px-5 py-4 border-t border-outline/50">
+            <span class="text-sm text-on-surface-variant">共 23 条记录</span>
+            <div class="flex items-center gap-1">
+              <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded transition-colors">上一页</button>
+              <button class="px-3 py-1.5 text-sm bg-primary text-on-primary rounded">1</button>
+              <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded transition-colors">2</button>
+              <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded transition-colors">3</button>
+              <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded transition-colors">下一页</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab内容区：采购绑定 -->
+        <div id="content-binding" class="tab-content hidden">
+          <div class="p-6">
+            <!-- 绑定说明 -->
+            <div class="bg-primary-container/30 rounded-lg p-4 mb-6">
+              <div class="flex items-start gap-3">
+                <i data-lucide="info" class="w-5 h-5 text-primary shrink-0 mt-0.5"></i>
+                <div>
+                  <div class="text-sm font-medium text-on-surface mb-1">绑定说明</div>
+                  <div class="text-sm text-on-surface-variant">运营人员在1688/拼多多下单后，在此绑定国内快递单号与Ozon订单。支持单条绑定和批量绑定两种方式。</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 绑定方式选择 -->
+            <div class="grid grid-cols-2 gap-6 mb-8">
+              <!-- 单条绑定 -->
+              <div class="bg-surface-container-lowest rounded-lg p-5 border border-outline/30">
+                <div class="flex items-center gap-2 mb-4">
+                  <div class="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                    <i data-lucide="link" class="w-4 h-4 text-primary"></i>
+                  </div>
+                  <span class="text-base font-semibold text-on-surface">单条绑定</span>
+                </div>
+                <p class="text-sm text-on-surface-variant mb-4">输入Ozon订单号和国内快递单号，逐一完成绑定。</p>
+                
+                <form id="single-bind-form" class="space-y-4">
+                  <div>
+                    <label class="block text-sm font-medium text-on-surface mb-1.5">Ozon订单号 *</label>
+                    <input type="text" id="input-ozon-order" placeholder="如：OZ-20240115-001" class="w-full bg-surface border-none rounded-md px-3 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-on-surface mb-1.5">国内快递单号 *</label>
+                    <input type="text" id="input-tracking-no" placeholder="请输入快递单号" class="w-full bg-surface border-none rounded-md px-3 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" />
+                  </div>
+                  <div class="grid grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-sm font-medium text-on-surface mb-1.5">采购平台 *</label>
+                      <select id="select-platform" class="w-full bg-surface border-none rounded-md px-3 py-2.5 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30">
+                        <option value="">请选择</option>
+                        <option value="1688">1688</option>
+                        <option value="pdd">拼多多</option>
+                        <option value="taobao">淘宝</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium text-on-surface mb-1.5">采购金额 *</label>
+                      <input type="text" id="input-amount" placeholder="¥ 0.00" class="w-full bg-surface border-none rounded-md px-3 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" />
+                    </div>
+                  </div>
+                  <button type="button" id="btn-single-bind" class="w-full bg-primary text-on-primary py-2.5 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">
+                    <i data-lucide="check" class="w-4 h-4 inline-block mr-1.5 -mt-0.5"></i>确认绑定
+                  </button>
+                </form>
+
+                <!-- 校验结果显示区 -->
+                <div id="validation-result" class="mt-4 hidden">
+                  <!-- 成功状态 -->
+                  <div id="validation-success" class="hidden bg-success/10 rounded-lg p-3">
+                    <div class="flex items-center gap-2 text-success">
+                      <i data-lucide="check-circle" class="w-5 h-5"></i>
+                      <span class="text-sm font-medium">校验通过</span>
+                    </div>
+                    <div class="text-xs text-success/80 mt-1 ml-7">快递单号格式正确，SKU信息匹配</div>
+                  </div>
+                  <!-- 失败状态 -->
+                  <div id="validation-error" class="hidden bg-error/10 rounded-lg p-3">
+                    <div class="flex items-center gap-2 text-error">
+                      <i data-lucide="x-circle" class="w-5 h-5"></i>
+                      <span class="text-sm font-medium">校验失败</span>
+                    </div>
+                    <div id="validation-error-msg" class="text-xs text-error/80 mt-1 ml-7">快递单号格式不正确</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 批量绑定 -->
+              <div class="bg-surface-container-lowest rounded-lg p-5 border border-outline/30">
+                <div class="flex items-center gap-2 mb-4">
+                  <div class="w-8 h-8 bg-success/10 rounded-lg flex items-center justify-center">
+                    <i data-lucide="layers" class="w-4 h-4 text-success"></i>
+                  </div>
+                  <span class="text-base font-semibold text-on-surface">批量绑定</span>
+                </div>
+                <p class="text-sm text-on-surface-variant mb-4">需要批量录入多条快递单号？跳转到快捷录单页面进行批量操作。</p>
+                
+                <div class="bg-surface rounded-lg p-4 mb-4">
+                  <div class="text-sm text-on-surface-variant mb-3">批量绑定支持：</div>
+                  <ul class="space-y-2 text-sm text-on-surface-variant">
+                    <li class="flex items-center gap-2">
+                      <i data-lucide="check" class="w-4 h-4 text-success"></i>
+                      批量粘贴快递单号
+                    </li>
+                    <li class="flex items-center gap-2">
+                      <i data-lucide="check" class="w-4 h-4 text-success"></i>
+                      自动识别快递公司
+                    </li>
+                    <li class="flex items-center gap-2">
+                      <i data-lucide="check" class="w-4 h-4 text-success"></i>
+                      一键匹配Ozon订单
+                    </li>
+                    <li class="flex items-center gap-2">
+                      <i data-lucide="check" class="w-4 h-4 text-success"></i>
+                      批量提交绑定
+                    </li>
+                  </ul>
+                </div>
+
+                <a href="quick-entry.html" id="btn-batch-bind" class="block w-full bg-success text-white py-2.5 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all text-center">
+                  <i data-lucide="arrow-right" class="w-4 h-4 inline-block mr-1.5 -mt-0.5"></i>跳转到快捷录单
+                </a>
+              </div>
+            </div>
+
+            <!-- 校验逻辑说明 -->
+            <div class="bg-surface-container-lowest rounded-lg p-5 border border-outline/30">
+              <div class="flex items-center gap-2 mb-3">
+                <i data-lucide="shield-check" class="w-4 h-4 text-primary"></i>
+                <span class="text-sm font-semibold text-on-surface">校验逻辑说明</span>
+              </div>
+              <div class="grid grid-cols-2 gap-4 text-sm">
+                <div class="flex items-start gap-2">
+                  <i data-lucide="check-circle-2" class="w-4 h-4 text-success shrink-0 mt-0.5"></i>
+                  <div>
+                    <span class="font-medium text-on-surface">快递单号格式校验</span>
+                    <div class="text-on-surface-variant text-xs mt-0.5">支持顺丰、圆通、中通、韵达、申通等主流快递</div>
+                  </div>
+                </div>
+                <div class="flex items-start gap-2">
+                  <i data-lucide="check-circle-2" class="w-4 h-4 text-success shrink-0 mt-0.5"></i>
+                  <div>
+                    <span class="font-medium text-on-surface">SKU一致性校验</span>
+                    <div class="text-on-surface-variant text-xs mt-0.5">快递包裹商品与Ozon订单商品是否匹配</div>
+                  </div>
+                </div>
+                <div class="flex items-start gap-2">
+                  <i data-lucide="alert-circle" class="w-4 h-4 text-warning shrink-0 mt-0.5"></i>
+                  <div>
+                    <span class="font-medium text-on-surface">校验失败提示</span>
+                    <div class="text-on-surface-variant text-xs mt-0.5">显示红色警告，需人工确认后可强制绑定</div>
+                  </div>
+                </div>
+                <div class="flex items-start gap-2">
+                  <i data-lucide="info" class="w-4 h-4 text-primary shrink-0 mt-0.5"></i>
+                  <div>
+                    <span class="font-medium text-on-surface">绑定时间记录</span>
+                    <div class="text-on-surface-variant text-xs mt-0.5">自动记录绑定操作时间和操作人</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab内容区：已绑定列表 -->
+        <div id="content-bound" class="tab-content hidden">
+          <!-- 搜索筛选栏 -->
+          <div class="p-4 border-b border-outline/50">
+            <div class="flex items-center gap-3">
+              <div class="relative flex-1 max-w-xs">
+                <i data-lucide="search" class="w-4 h-4 text-on-surface-variant absolute left-3 top-1/2 -translate-y-1/2"></i>
+                <input type="text" placeholder="搜索订单号/快递单号..." class="w-full bg-surface-container border-none rounded-md pl-9 pr-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" />
+              </div>
+              <select class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30">
+                <option>全部状态</option>
+                <option>待入库</option>
+                <option>已入库</option>
+                <option>异常</option>
+              </select>
+              <select class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30">
+                <option>全部平台</option>
+                <option>1688</option>
+                <option>拼多多</option>
+                <option>淘宝</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- 表格 -->
+          <div class="overflow-x-auto">
+            <div class="min-w-[1000px]">
+              <!-- 表头 -->
+              <div class="grid grid-cols-8 gap-4 px-5 py-3 bg-surface-container text-xs font-semibold text-on-surface-variant uppercase tracking-wide">
+                <span>Ozon订单号</span>
+                <span>国内快递单号</span>
+                <span>采购平台</span>
+                <span>采购金额</span>
+                <span>供应商</span>
+                <span>绑定时间</span>
+                <span>状态</span>
+                <span>操作</span>
+              </div>
+              <!-- 表格内容 -->
+              <div class="divide-y divide-outline-variant/30">
+                <!-- 列表项-1 -->
+                <div class="grid grid-cols-8 gap-4 px-5 py-4 hover:bg-surface-container/50 transition-colors items-center">
+                  <span class="text-sm font-medium text-primary">#OZ-20240115-001</span>
+                  <span class="text-sm text-on-surface font-mono">SF1234567890123</span>
+                  <div class="flex items-center gap-1.5">
+                    <span class="w-5 h-5 bg-orange-500/10 rounded flex items-center justify-center text-xs font-bold text-orange-600">橙</span>
+                    <span class="text-sm text-on-surface">1688</span>
+                  </div>
+                  <span class="text-sm font-semibold text-on-surface">¥168.00</span>
+                  <span class="text-sm text-on-surface-variant">深圳科技电子</span>
+                  <span class="text-sm text-on-surface-variant">2024-01-15 14:30</span>
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning">待入库</span>
+                  <div class="flex items-center gap-2">
+                    <button class="text-primary text-sm font-medium hover:underline">详情</button>
+                  </div>
+                </div>
+                <!-- 列表项-2 -->
+                <div class="grid grid-cols-8 gap-4 px-5 py-4 hover:bg-surface-container/50 transition-colors items-center">
+                  <span class="text-sm font-medium text-primary">#OZ-20240114-009</span>
+                  <span class="text-sm text-on-surface font-mono">YT9876543210987</span>
+                  <div class="flex items-center gap-1.5">
+                    <span class="w-5 h-5 bg-red-500/10 rounded flex items-center justify-center text-xs font-bold text-red-600">拼</span>
+                    <span class="text-sm text-on-surface">拼多多</span>
+                  </div>
+                  <span class="text-sm font-semibold text-on-surface">¥89.50</span>
+                  <span class="text-sm text-on-surface-variant">广州数码配件</span>
+                  <span class="text-sm text-on-surface-variant">2024-01-14 16:20</span>
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">已入库</span>
+                  <div class="flex items-center gap-2">
+                    <button class="text-primary text-sm font-medium hover:underline">详情</button>
+                  </div>
+                </div>
+                <!-- 列表项-3 -->
+                <div class="grid grid-cols-8 gap-4 px-5 py-4 hover:bg-surface-container/50 transition-colors items-center">
+                  <span class="text-sm font-medium text-primary">#OZ-20240114-007</span>
+                  <span class="text-sm text-on-surface font-mono">ZT4567891234567</span>
+                  <div class="flex items-center gap-1.5">
+                    <span class="w-5 h-5 bg-orange-500/10 rounded flex items-center justify-center text-xs font-bold text-orange-600">橙</span>
+                    <span class="text-sm text-on-surface">1688</span>
+                  </div>
+                  <span class="text-sm font-semibold text-on-surface">¥256.00</span>
+                  <span class="text-sm text-on-surface-variant">义乌小商品批发</span>
+                  <span class="text-sm text-on-surface-variant">2024-01-14 11:45</span>
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-error/15 text-error">异常</span>
+                  <div class="flex items-center gap-2">
+                    <button class="text-primary text-sm font-medium hover:underline">详情</button>
+                    <button class="text-error text-sm font-medium hover:underline">处理</button>
+                  </div>
+                </div>
+                <!-- 列表项-4 -->
+                <div class="grid grid-cols-8 gap-4 px-5 py-4 hover:bg-surface-container/50 transition-colors items-center">
+                  <span class="text-sm font-medium text-primary">#OZ-20240113-015</span>
+                  <span class="text-sm text-on-surface font-mono">YD5678902345678</span>
+                  <div class="flex items-center gap-1.5">
+                    <span class="w-5 h-5 bg-orange-500/10 rounded flex items-center justify-center text-xs font-bold text-orange-600">橙</span>
+                    <span class="text-sm text-on-surface">1688</span>
+                  </div>
+                  <span class="text-sm font-semibold text-on-surface">¥432.00</span>
+                  <span class="text-sm text-on-surface-variant">东莞服装工厂</span>
+                  <span class="text-sm text-on-surface-variant">2024-01-13 15:30</span>
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">已入库</span>
+                  <div class="flex items-center gap-2">
+                    <button class="text-primary text-sm font-medium hover:underline">详情</button>
+                  </div>
+                </div>
+                <!-- 列表项-5 -->
+                <div class="grid grid-cols-8 gap-4 px-5 py-4 hover:bg-surface-container/50 transition-colors items-center">
+                  <span class="text-sm font-medium text-primary">#OZ-20240113-012</span>
+                  <span class="text-sm text-on-surface font-mono">ST7890123456789</span>
+                  <div class="flex items-center gap-1.5">
+                    <span class="w-5 h-5 bg-blue-500/10 rounded flex items-center justify-center text-xs font-bold text-blue-600">淘</span>
+                    <span class="text-sm text-on-surface">淘宝</span>
+                  </div>
+                  <span class="text-sm font-semibold text-on-surface">¥78.00</span>
+                  <span class="text-sm text-on-surface-variant">杭州日用品</span>
+                  <span class="text-sm text-on-surface-variant">2024-01-13 10:15</span>
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning">待入库</span>
+                  <div class="flex items-center gap-2">
+                    <button class="text-primary text-sm font-medium hover:underline">详情</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 分页 -->
+          <div class="flex items-center justify-between px-5 py-4 border-t border-outline/50">
+            <span class="text-sm text-on-surface-variant">共 156 条记录</span>
+            <div class="flex items-center gap-1">
+              <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded transition-colors">上一页</button>
+              <button class="px-3 py-1.5 text-sm bg-primary text-on-primary rounded">1</button>
+              <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded transition-colors">2</button>
+              <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded transition-colors">3</button>
+              <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded transition-colors">...</button>
+              <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded transition-colors">16</button>
+              <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded transition-colors">下一页</button>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- 批量操作栏 -->
-      <div class="bg-surface rounded-lg shadow-card p-4 mb-4">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-4">
-            <label class="flex items-center gap-2 cursor-pointer">
-              <input id="checkbox-all" type="checkbox" class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30">
-              <span class="text-sm text-on-surface-variant">全选</span>
-            </label>
-            <span class="text-sm text-on-surface-variant">已选择 <span id="selected-count" class="font-medium text-primary">0</span> 项</span>
+      <!-- 绑定快递单号弹窗 -->
+      <div id="modal-bind-tracking" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-surface rounded-xl shadow-dialog max-w-md w-full max-h-[90vh] overflow-y-auto">
+          <div class="p-5 border-b border-outline/50">
+            <div class="flex items-center justify-between">
+              <h3 class="text-base font-semibold text-on-surface">绑定快递单号</h3>
+              <button id="btn-close-modal" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container transition-colors">
+                <i data-lucide="x" class="w-5 h-5 text-on-surface-variant"></i>
+              </button>
+            </div>
           </div>
-          <div class="flex items-center gap-2">
-            <button id="btn-batch-purchased" class="bg-surface-container text-on-surface border-none px-3 py-1.5 rounded-md text-sm font-medium hover:bg-surface-container-high transition-all inline-flex items-center gap-1.5 disabled:opacity-50" disabled>
-              <i data-lucide="check" class="w-3.5 h-3.5"></i>批量标记已采购
-            </button>
-            <button id="btn-batch-logistics" class="bg-surface-container text-on-surface border-none px-3 py-1.5 rounded-md text-sm font-medium hover:bg-surface-container-high transition-all inline-flex items-center gap-1.5 disabled:opacity-50" disabled>
-              <i data-lucide="truck" class="w-3.5 h-3.5"></i>批量更新物流
-            </button>
-            <button id="btn-batch-cancel" class="bg-surface-container text-error border-none px-3 py-1.5 rounded-md text-sm font-medium hover:bg-error/10 transition-all inline-flex items-center gap-1.5 disabled:opacity-50" disabled>
-              <i data-lucide="x" class="w-3.5 h-3.5"></i>批量取消
+          <div class="p-5">
+            <div class="bg-primary-container/20 rounded-lg p-3 mb-4">
+              <div class="text-xs text-on-surface-variant mb-1">Ozon订单号</div>
+              <div class="text-sm font-medium text-primary" id="modal-ozon-order">#OZ-20240115-003</div>
+            </div>
+            <form id="modal-bind-form" class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-on-surface mb-1.5">国内快递单号 *</label>
+                <input type="text" id="modal-tracking-no" placeholder="请输入快递单号" class="w-full bg-surface-container border-none rounded-md px-3 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-on-surface mb-1.5">快递公司 *</label>
+                <select id="modal-courier" class="w-full bg-surface-container border-none rounded-md px-3 py-2.5 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30">
+                  <option value="">请选择</option>
+                  <option value="sf">顺丰速运</option>
+                  <option value="yt">圆通速递</option>
+                  <option value="zt">中通快递</option>
+                  <option value="yd">韵达快递</option>
+                  <option value="st">申通快递</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-on-surface mb-1.5">采购平台 *</label>
+                <select id="modal-platform" class="w-full bg-surface-container border-none rounded-md px-3 py-2.5 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30">
+                  <option value="">请选择</option>
+                  <option value="1688">1688</option>
+                  <option value="pdd">拼多多</option>
+                  <option value="taobao">淘宝</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-on-surface mb-1.5">采购金额 *</label>
+                <input type="text" id="modal-amount" placeholder="¥ 0.00" class="w-full bg-surface-container border-none rounded-md px-3 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-on-surface mb-1.5">供应商（选填）</label>
+                <input type="text" id="modal-supplier" placeholder="供应商名称" class="w-full bg-surface-container border-none rounded-md px-3 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" />
+              </div>
+              
+              <!-- 校验结果 -->
+              <div id="modal-validation" class="hidden">
+                <div id="modal-validation-success" class="hidden bg-success/10 rounded-lg p-3">
+                  <div class="flex items-center gap-2 text-success">
+                    <i data-lucide="check-circle" class="w-5 h-5"></i>
+                    <span class="text-sm font-medium">校验通过</span>
+                  </div>
+                </div>
+                <div id="modal-validation-error" class="hidden bg-error/10 rounded-lg p-3">
+                  <div class="flex items-center gap-2 text-error">
+                    <i data-lucide="x-circle" class="w-5 h-5"></i>
+                    <span class="text-sm font-medium">校验失败</span>
+                  </div>
+                  <div id="modal-validation-error-msg" class="text-xs text-error/80 mt-1 ml-7">快递单号格式不正确</div>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="p-5 border-t border-outline/50 flex justify-end gap-3">
+            <button id="btn-cancel-modal" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all">取消</button>
+            <button id="btn-confirm-bind" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">
+              <i data-lucide="check" class="w-4 h-4 inline-block mr-1.5 -mt-0.5"></i>确认绑定
             </button>
           </div>
         </div>
       </div>
 
-      <!-- 采购任务列表 -->
-      <div class="bg-surface rounded-lg shadow-card overflow-hidden">
-        <!-- 表头 -->
-        <div class="grid grid-cols-12 gap-4 px-4 py-3 bg-surface-container text-xs font-semibold text-on-surface-variant uppercase tracking-wide items-center">
-          <div class="col-span-1"><span class="sr-only">选择</span></div>
-          <div class="col-span-2">关联Ozon订单</div>
-          <div class="col-span-3">商品信息</div>
-          <div class="col-span-1">采购平台</div>
-          <div class="col-span-1">采购状态</div>
-          <div class="col-span-1">采购金额</div>
-          <div class="col-span-2">供应商</div>
-          <div class="col-span-1">操作</div>
-        </div>
-        <!-- 表体 -->
-        <div id="purchase-list" class="divide-y divide-outline-variant/50">
-          <!-- 列表项-采购任务1：待采购状态 -->
-          <div class="purchase-item grid grid-cols-12 gap-4 px-4 py-4 hover:bg-surface-container/50 transition-colors items-center" data-id="1" data-status="pending">
-            <div class="col-span-1">
-              <input type="checkbox" class="checkbox-item w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30">
-            </div>
-            <div class="col-span-2">
-              <a href="orders.html?id=OZ-20241215-001" class="text-sm font-medium text-primary hover:underline">OZ-20241215-001</a>
-              <p class="text-xs text-on-surface-variant mt-0.5">2024/12/15</p>
-            </div>
-            <div class="col-span-3">
-              <div class="flex items-center gap-3">
-                <img src="https://images.unsplash.com/photo-1523275335664-d596e5e3b7e8?w=80&h=80&fit=crop" alt="运动手表" data-category="服饰时尚" class="w-12 h-12 rounded-md object-cover bg-surface-container">
-                <div class="min-w-0">
-                  <p class="text-sm font-medium text-on-surface truncate">智能运动手表</p>
-                  <p class="text-xs text-on-surface-variant">SKU: SW-PRO-001</p>
-                  <p class="text-xs text-on-surface-variant">数量: 2件</p>
-                </div>
-              </div>
-            </div>
-            <div class="col-span-1">
-              <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning">1688</span>
-            </div>
-            <div class="col-span-1">
-              <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning">待采购</span>
-            </div>
-            <div class="col-span-1">
-              <p class="text-sm font-semibold text-on-surface">¥268.00</p>
-            </div>
-            <div class="col-span-2">
-              <p class="text-sm text-on-surface">深圳优品电子</p>
-              <p class="text-xs text-on-surface-variant">未匹配货源</p>
-            </div>
-            <div class="col-span-1">
-              <div class="flex items-center gap-2">
-                <button class="btn-match-sku text-warning text-xs font-medium hover:underline" data-id="1">匹配SKU</button>
-              </div>
-            </div>
-          </div>
-          <!-- 列表项-采购任务2：采购中状态 -->
-          <div class="purchase-item grid grid-cols-12 gap-4 px-4 py-4 hover:bg-surface-container/50 transition-colors items-center" data-id="2" data-status="purchasing">
-            <div class="col-span-1">
-              <input type="checkbox" class="checkbox-item w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30">
-            </div>
-            <div class="col-span-2">
-              <a href="orders.html?id=OZ-20241214-003" class="text-sm font-medium text-primary hover:underline">OZ-20241214-003</a>
-              <p class="text-xs text-on-surface-variant mt-0.5">2024/12/14</p>
-            </div>
-            <div class="col-span-3">
-              <div class="flex items-center gap-3">
-                <img src="https://images.unsplash.com/photo-1505740426748-26cc8b1b6c79?w=80&h=80&fit=crop" alt="蓝牙耳机" data-category="商业科技" class="w-12 h-12 rounded-md object-cover bg-surface-container">
-                <div class="min-w-0">
-                  <p class="text-sm font-medium text-on-surface truncate">无线蓝牙耳机</p>
-                  <p class="text-xs text-on-surface-variant">SKU: BT-HP-002</p>
-                  <p class="text-xs text-on-surface-variant">数量: 5件</p>
-                </div>
-              </div>
-            </div>
-            <div class="col-span-1">
-              <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-primary/15 text-primary">拼多多</span>
-            </div>
-            <div class="col-span-1">
-              <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-primary/15 text-primary">采购中</span>
-            </div>
-            <div class="col-span-1">
-              <p class="text-sm font-semibold text-on-surface">¥89.50</p>
-            </div>
-            <div class="col-span-2">
-              <p class="text-sm text-on-surface">广州数码批发</p>
-              <a href="https://www.pinduoduo.com" target="_blank" class="text-xs text-primary hover:underline">查看商品链接</a>
-            </div>
-            <div class="col-span-1">
-              <div class="flex items-center gap-2">
-                <button class="btn-view text-primary text-xs font-medium hover:underline" data-id="2">查看</button>
-              </div>
-            </div>
-          </div>
-          <!-- 列表项-采购任务3：已到货状态 -->
-          <div class="purchase-item grid grid-cols-12 gap-4 px-4 py-4 hover:bg-surface-container/50 transition-colors items-center" data-id="3" data-status="arrived">
-            <div class="col-span-1">
-              <input type="checkbox" class="checkbox-item w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30">
-            </div>
-            <div class="col-span-2">
-              <a href="orders.html?id=OZ-20241213-002" class="text-sm font-medium text-primary hover:underline">OZ-20241213-002</a>
-              <p class="text-xs text-on-surface-variant mt-0.5">2024/12/13</p>
-            </div>
-            <div class="col-span-3">
-              <div class="flex items-center gap-3">
-                <img src="https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=80&h=80&fit=crop" alt="双肩背包" data-category="服饰时尚" class="w-12 h-12 rounded-md object-cover bg-surface-container">
-                <div class="min-w-0">
-                  <p class="text-sm font-medium text-on-surface truncate">时尚双肩背包</p>
-                  <p class="text-xs text-on-surface-variant">SKU: BP-FS-003</p>
-                  <p class="text-xs text-on-surface-variant">数量: 3件</p>
-                </div>
-              </div>
-            </div>
-            <div class="col-span-1">
-              <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning">1688</span>
-            </div>
-            <div class="col-span-1">
-              <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">已到货</span>
-            </div>
-            <div class="col-span-1">
-              <p class="text-sm font-semibold text-on-surface">¥156.00</p>
-            </div>
-            <div class="col-span-2">
-              <p class="text-sm text-on-surface">义乌箱包工厂</p>
-              <p class="text-xs text-on-surface-variant">物流: SF1234567890</p>
-            </div>
-            <div class="col-span-1">
-              <div class="flex items-center gap-2">
-                <button class="btn-view text-primary text-xs font-medium hover:underline" data-id="3">查看</button>
-              </div>
-            </div>
-          </div>
-          <!-- 列表项-采购任务4：待采购状态 -->
-          <div class="purchase-item grid grid-cols-12 gap-4 px-4 py-4 hover:bg-surface-container/50 transition-colors items-center" data-id="4" data-status="pending">
-            <div class="col-span-1">
-              <input type="checkbox" class="checkbox-item w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30">
-            </div>
-            <div class="col-span-2">
-              <a href="orders.html?id=OZ-20241215-002" class="text-sm font-medium text-primary hover:underline">OZ-20241215-002</a>
-              <p class="text-xs text-on-surface-variant mt-0.5">2024/12/15</p>
-            </div>
-            <div class="col-span-3">
-              <div class="flex items-center gap-3">
-                <img src="https://images.unsplash.com/photo-1526178626987-0aa468b27e5b?w=80&h=80&fit=crop" alt="太阳眼镜" data-category="服饰时尚" class="w-12 h-12 rounded-md object-cover bg-surface-container">
-                <div class="min-w-0">
-                  <p class="text-sm font-medium text-on-surface truncate">时尚太阳眼镜</p>
-                  <p class="text-xs text-on-surface-variant">SKU: SG-FS-004</p>
-                  <p class="text-xs text-on-surface-variant">数量: 10件</p>
-                </div>
-              </div>
-            </div>
-            <div class="col-span-1">
-              <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning">1688</span>
-            </div>
-            <div class="col-span-1">
-              <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning">待采购</span>
-            </div>
-            <div class="col-span-1">
-              <p class="text-sm font-semibold text-on-surface">¥45.00</p>
-            </div>
-            <div class="col-span-2">
-              <p class="text-sm text-on-surface">台州眼镜批发</p>
-              <a href="https://www.1688.com" target="_blank" class="text-xs text-primary hover:underline">查看商品链接</a>
-            </div>
-            <div class="col-span-1">
-              <div class="flex items-center gap-2">
-                <button class="btn-mark-purchased text-primary text-xs font-medium hover:underline" data-id="4">标记已采购</button>
-              </div>
-            </div>
-          </div>
-          <!-- 列表项-采购任务5：已取消状态 -->
-          <div class="purchase-item grid grid-cols-12 gap-4 px-4 py-4 hover:bg-surface-container/50 transition-colors items-center" data-id="5" data-status="cancelled">
-            <div class="col-span-1">
-              <input type="checkbox" class="checkbox-item w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30">
-            </div>
-            <div class="col-span-2">
-              <a href="orders.html?id=OZ-20241210-001" class="text-sm font-medium text-primary hover:underline">OZ-20241210-001</a>
-              <p class="text-xs text-on-surface-variant mt-0.5">2024/12/10</p>
-            </div>
-            <div class="col-span-3">
-              <div class="flex items-center gap-3">
-                <img src="https://images.unsplash.com/photo-1585388191323-494c0586d7e2?w=80&h=80&fit=crop" alt="保温杯" data-category="其他" class="w-12 h-12 rounded-md object-cover bg-surface-container">
-                <div class="min-w-0">
-                  <p class="text-sm font-medium text-on-surface truncate">不锈钢保温杯</p>
-                  <p class="text-xs text-on-surface-variant">SKU: TB-SS-005</p>
-                  <p class="text-xs text-on-surface-variant">数量: 8件</p>
-                </div>
-              </div>
-            </div>
-            <div class="col-span-1">
-              <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-primary/15 text-primary">拼多多</span>
-            </div>
-            <div class="col-span-1">
-              <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-surface-container-highest text-on-surface-variant">已取消</span>
-            </div>
-            <div class="col-span-1">
-              <p class="text-sm font-semibold text-on-surface-variant line-through">¥128.00</p>
-            </div>
-            <div class="col-span-2">
-              <p class="text-sm text-on-surface-variant">永康杯业工厂</p>
-              <p class="text-xs text-on-surface-variant">取消原因: 缺货</p>
-            </div>
-            <div class="col-span-1">
-              <div class="flex items-center gap-2">
-                <button class="btn-view text-on-surface-variant text-xs font-medium hover:underline" data-id="5">查看</button>
-              </div>
-            </div>
-          </div>
-          <!-- 列表项-采购任务6：采购中状态 -->
-          <div class="purchase-item grid grid-cols-12 gap-4 px-4 py-4 hover:bg-surface-container/50 transition-colors items-center" data-id="6" data-status="purchasing">
-            <div class="col-span-1">
-              <input type="checkbox" class="checkbox-item w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30">
-            </div>
-            <div class="col-span-2">
-              <a href="orders.html?id=OZ-20241214-005" class="text-sm font-medium text-primary hover:underline">OZ-20241214-005</a>
-              <p class="text-xs text-on-surface-variant mt-0.5">2024/12/14</p>
-            </div>
-            <div class="col-span-3">
-              <div class="flex items-center gap-3">
-                <img src="https://images.unsplash.com/photo-1542291023-1874-084c82f4a23?w=80&h=80&fit=crop" alt="运动鞋" data-category="服饰时尚" class="w-12 h-12 rounded-md object-cover bg-surface-container">
-                <div class="min-w-0">
-                  <p class="text-sm font-medium text-on-surface truncate">轻便运动鞋</p>
-                  <p class="text-xs text-on-surface-variant">SKU: SP-RT-006</p>
-                  <p class="text-xs text-on-surface-variant">数量: 4件</p>
-                </div>
-              </div>
-            </div>
-            <div class="col-span-1">
-              <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning">1688</span>
-            </div>
-            <div class="col-span-1">
-              <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-primary/15 text-primary">采购中</span>
-            </div>
-            <div class="col-span-1">
-              <p class="text-sm font-semibold text-on-surface">¥198.00</p>
-            </div>
-            <div class="col-span-2">
-              <p class="text-sm text-on-surface">莆田鞋业批发</p>
-              <a href="https://www.1688.com" target="_blank" class="text-xs text-primary hover:underline">查看商品链接</a>
-            </div>
-            <div class="col-span-1">
-              <div class="flex items-center gap-2">
-                <button class="btn-update-logistics text-primary text-xs font-medium hover:underline" data-id="6">更新物流</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 分页 -->
-      <div class="flex items-center justify-between mt-4">
-        <p class="text-sm text-on-surface-variant">共 156 条记录，当前显示 1-6 条</p>
-        <div class="flex items-center gap-2">
-          <button id="btn-prev-page" class="bg-surface-container text-on-surface border-none px-3 py-1.5 rounded-md text-sm font-medium hover:bg-surface-container-high transition-all disabled:opacity-50" disabled>上一页</button>
-          <span class="px-3 py-1.5 text-sm font-medium text-primary bg-primary/10 rounded-md">1</span>
-          <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">2</button>
-          <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">3</button>
-          <span class="text-on-surface-variant">...</span>
-          <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">26</button>
-          <button id="btn-next-page" class="bg-surface-container text-on-surface border-none px-3 py-1.5 rounded-md text-sm font-medium hover:bg-surface-container-high transition-all">下一页</button>
-        </div>
-      </div>
     </main>
     <!-- @main-content:end -->
   </div>
   <!-- @nav:end 导航组件 -->
 
-  <!-- SKU匹配弹窗 -->
-  <div id="modal-sku-match" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
-    <div class="bg-surface rounded-xl shadow-dialog max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-      <div class="p-6 border-b border-outline-variant/20">
-        <div class="flex items-center justify-between">
-          <h2 class="text-lg font-semibold text-on-surface">SKU智能匹配</h2>
-          <button id="btn-close-sku-modal" class="text-on-surface-variant hover:text-on-surface transition-colors">
-            <i data-lucide="x" class="w-5 h-5"></i>
-          </button>
-        </div>
-      </div>
-      <div class="p-6">
-        <!-- 商品信息 -->
-        <div class="bg-surface-container rounded-lg p-4 mb-6">
-          <div class="flex items-center gap-4">
-            <img src="https://images.unsplash.com/photo-1523275335664-d596e5e3b7e8?w=80&h=80&fit=crop" alt="运动手表" data-category="服饰时尚" class="w-16 h-16 rounded-md object-cover">
-            <div>
-              <p class="text-sm font-medium text-on-surface">智能运动手表</p>
-              <p class="text-xs text-on-surface-variant">SKU: SW-PRO-001 | 需采购: 2件</p>
-              <p class="text-xs text-on-surface-variant mt-1">Ozon订单: OZ-20241215-001</p>
-            </div>
-          </div>
-        </div>
-        <!-- 匹配结果 -->
-        <div class="mb-4">
-          <p class="text-sm font-medium text-on-surface mb-3">推荐匹配货源</p>
-          <div class="space-y-3">
-            <!-- 匹配项1 -->
-            <label class="block bg-surface-container rounded-lg p-4 cursor-pointer hover:bg-surface-container-high transition-colors">
-              <div class="flex items-start gap-3">
-                <input type="radio" name="sku-match" value="1" class="mt-1 w-4 h-4 text-primary focus:ring-primary/30" checked>
-                <div class="flex-1">
-                  <div class="flex items-center justify-between mb-2">
-                    <p class="text-sm font-medium text-on-surface">1688 - 深圳优品电子</p>
-                    <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">匹配度 98%</span>
-                  </div>
-                  <p class="text-xs text-on-surface-variant mb-1">SKU: SW-PRO-001-A | 库存: 156件</p>
-                  <p class="text-sm font-semibold text-primary">¥128.00/件</p>
-                </div>
-              </div>
-            </label>
-            <!-- 匹配项2 -->
-            <label class="block bg-surface-container rounded-lg p-4 cursor-pointer hover:bg-surface-container-high transition-colors">
-              <div class="flex items-start gap-3">
-                <input type="radio" name="sku-match" value="2" class="mt-1 w-4 h-4 text-primary focus:ring-primary/30">
-                <div class="flex-1">
-                  <div class="flex items-center justify-between mb-2">
-                    <p class="text-sm font-medium text-on-surface">拼多多 - 广州数码批发</p>
-                    <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning">匹配度 85%</span>
-                  </div>
-                  <p class="text-xs text-on-surface-variant mb-1">SKU: SW-PRO-B | 库存: 89件</p>
-                  <p class="text-sm font-semibold text-primary">¥135.00/件</p>
-                </div>
-              </div>
-            </label>
-          </div>
-        </div>
-        <!-- 操作按钮 -->
-        <div class="flex items-center justify-end gap-3 pt-4 border-t border-outline-variant/20">
-          <button id="btn-cancel-sku-match" class="bg-surface-container text-on-surface border-none px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high transition-all">取消</button>
-          <button id="btn-confirm-sku-match" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 transition-all">确认匹配</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 新建采购任务弹窗 -->
-  <div id="modal-new-purchase" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
-    <div class="bg-surface rounded-xl shadow-dialog max-w-xl w-full max-h-[90vh] overflow-y-auto">
-      <div class="p-6 border-b border-outline-variant/20">
-        <div class="flex items-center justify-between">
-          <h2 class="text-lg font-semibold text-on-surface">新建采购任务</h2>
-          <button id="btn-close-new-modal" class="text-on-surface-variant hover:text-on-surface transition-colors">
-            <i data-lucide="x" class="w-5 h-5"></i>
-          </button>
-        </div>
-      </div>
-      <div class="p-6">
-        <div class="space-y-4">
-          <!-- 关联Ozon订单 -->
-          <div>
-            <label class="block text-sm font-medium text-on-surface mb-1.5">关联Ozon订单</label>
-            <input type="text" placeholder="输入订单号，多个订单用逗号分隔" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
-          </div>
-          <!-- 采购平台 -->
-          <div>
-            <label class="block text-sm font-medium text-on-surface mb-1.5">采购平台</label>
-            <select class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
-              <option value="1688">1688</option>
-              <option value="pdd">拼多多</option>
-            </select>
-          </div>
-          <!-- 采购链接 -->
-          <div>
-            <label class="block text-sm font-medium text-on-surface mb-1.5">采购链接</label>
-            <input type="text" placeholder="粘贴1688或拼多多商品链接" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
-          </div>
-          <!-- 供应商 -->
-          <div>
-            <label class="block text-sm font-medium text-on-surface mb-1.5">供应商名称</label>
-            <input type="text" placeholder="输入供应商名称" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
-          </div>
-          <!-- 采购金额 -->
-          <div>
-            <label class="block text-sm font-medium text-on-surface mb-1.5">采购金额</label>
-            <div class="relative">
-              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-on-surface-variant">¥</span>
-              <input type="number" placeholder="0.00" class="w-full bg-surface-container border-none rounded-md pl-8 pr-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
-            </div>
-          </div>
-          <!-- 备注 -->
-          <div>
-            <label class="block text-sm font-medium text-on-surface mb-1.5">备注</label>
-            <textarea rows="3" placeholder="可选，填写采购备注信息" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors resize-none"></textarea>
-          </div>
-        </div>
-        <!-- 操作按钮 -->
-        <div class="flex items-center justify-end gap-3 pt-6">
-          <button id="btn-cancel-new-purchase" class="bg-surface-container text-on-surface border-none px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high transition-all">取消</button>
-          <button id="btn-confirm-new-purchase" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 transition-all">创建任务</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 批量更新物流弹窗 -->
-  <div id="modal-batch-logistics" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
-    <div class="bg-surface rounded-xl shadow-dialog max-w-md w-full max-h-[90vh] overflow-y-auto">
-      <div class="p-6 border-b border-outline-variant/20">
-        <div class="flex items-center justify-between">
-          <h2 class="text-lg font-semibold text-on-surface">批量更新物流单号</h2>
-          <button id="btn-close-logistics-modal" class="text-on-surface-variant hover:text-on-surface transition-colors">
-            <i data-lucide="x" class="w-5 h-5"></i>
-          </button>
-        </div>
-      </div>
-      <div class="p-6">
-        <div class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-on-surface mb-1.5">物流公司</label>
-            <select class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
-              <option value="sf">顺丰快递</option>
-              <option value="yt">圆通快递</option>
-              <option value="zt">中通快递</option>
-              <option value="sto">申通快递</option>
-              <option value="yd">韵达快递</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-on-surface mb-1.5">物流单号</label>
-            <input type="text" placeholder="输入物流单号" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
-          </div>
-        </div>
-        <div class="flex items-center justify-end gap-3 pt-6">
-          <button id="btn-cancel-logistics" class="bg-surface-container text-on-surface border-none px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high transition-all">取消</button>
-          <button id="btn-confirm-logistics" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 transition-all">确认更新</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <script>
-    lucide.createIcons();
-
     $(function() {
-      // 全选/取消全选
-      $('#checkbox-all').on('change', function() {
-        const checked = $(this).prop('checked');
-        $('.checkbox-item').prop('checked', checked);
-        updateSelectedCount();
+      // 初始化 Lucide 图标
+      lucide.createIcons();
+
+      // Tab 切换功能
+      var $tabs = $('[id^="tab-"]');
+      var $contents = $('.tab-content');
+
+      $tabs.on('click', function() {
+        var tab = $(this).data('tab');
+        
+        // 更新 tab 样式
+        $tabs.removeClass('text-primary border-b-2 border-primary bg-primary/5')
+             .addClass('text-on-surface-variant');
+        $(this).removeClass('text-on-surface-variant')
+               .addClass('text-primary border-b-2 border-primary bg-primary/5');
+        
+        // 切换内容区
+        $contents.addClass('hidden');
+        $('#content-' + tab).removeClass('hidden');
+        
+        // 重新渲染图标
+        lucide.createIcons();
       });
 
-      // 单项选择变化
-      $('#purchase-list').on('change', '.checkbox-item', function() {
-        updateSelectedCount();
-      });
-
-      // 更新已选择数量
-      function updateSelectedCount() {
-        const count = $('.checkbox-item:checked').length;
-        $('#selected-count').text(count);
-        const hasSelected = count > 0;
-        $('#btn-batch-purchased').prop('disabled', !hasSelected);
-        $('#btn-batch-logistics').prop('disabled', !hasSelected);
-        $('#btn-batch-cancel').prop('disabled', !hasSelected);
-      }
-
-      // 打开新建采购任务弹窗
-      $('#btn-new-purchase').on('click', function() {
-        $('#modal-new-purchase').removeClass('hidden');
-      });
-
-      // 关闭新建采购任务弹窗
-      $('#btn-close-new-modal, #btn-cancel-new-purchase').on('click', function() {
-        $('#modal-new-purchase').addClass('hidden');
-      });
-
-      // 确认新建采购任务
+      // 标记已下单功能
       // 点击后应实现：
-      // 1. 校验表单必填项（关联订单、采购链接）
-      // 2. 调用后端API创建采购任务
-      // 3. 成功后关闭弹窗，刷新列表，显示成功提示
-      $('#btn-confirm-new-purchase').on('click', function() {
-        console.log('创建采购任务：需校验表单并调用API');
-        $('#modal-new-purchase').addClass('hidden');
+      // 1. 将对应待采购任务的状态从"待采购"改为"已下单待绑定"
+      // 2. 更新表格中该行的状态显示
+      // 3. 操作按钮从"去下单/标记已下单"变为"绑定快递单号"
+      // 4. 后端应记录状态变更时间和操作人
+      $('[id^="btn-mark-ordered"]').on('click', function() {
+        console.log('标记已下单 - 后续应实现：更新任务状态为已下单待绑定');
+        alert('已标记为已下单待绑定');
       });
 
-      // 打开SKU匹配弹窗
-      $('#purchase-list').on('click', '.btn-match-sku', function() {
-        $('#modal-sku-match').removeClass('hidden');
-      });
-
-      // 关闭SKU匹配弹窗
-      $('#btn-close-sku-modal, #btn-cancel-sku-match').on('click', function() {
-        $('#modal-sku-match').addClass('hidden');
-      });
-
-      // 确认SKU匹配
+      // 去下单功能
       // 点击后应实现：
-      // 1. 获取选中的匹配货源
-      // 2. 更新采购任务的供应商、采购链接等信息
-      // 3. 成功后关闭弹窗，更新列表项状态
-      $('#btn-confirm-sku-match').on('click', function() {
-        console.log('确认SKU匹配：需更新采购任务信息');
-        $('#modal-sku-match').addClass('hidden');
+      // 1. 在新窗口打开对应的1688/拼多多商品链接
+      // 2. 用户在外部平台完成下单后，返回系统进行绑定操作
+      $('[id^="btn-go-order"]').on('click', function() {
+        console.log('去下单 - 后续应实现：跳转到外部采购平台');
+        alert('将跳转到外部采购平台进行下单');
       });
 
-      // 标记已采购
+      // 绑定快递单号 - 打开弹窗
       // 点击后应实现：
-      // 1. 更新采购任务状态为"采购中"
-      // 2. 刷新列表项显示
-      $('#purchase-list').on('click', '.btn-mark-purchased', function() {
-        console.log('标记已采购，任务ID:', $(this).data('id'));
+      // 1. 打开绑定弹窗
+      // 2. 自动填充对应的Ozon订单号
+      // 3. 用户填写快递单号、快递公司、采购平台、金额等信息
+      // 4. 提交后进行校验（快递单号格式、SKU一致性）
+      // 5. 校验通过后完成绑定，更新状态为"待入库"
+      $('[id^="btn-bind-tracking"]').on('click', function() {
+        var orderId = $(this).closest('[class*="grid"]').find('span:first').text();
+        $('#modal-ozon-order').text(orderId);
+        $('#modal-bind-tracking').removeClass('hidden');
+        lucide.createIcons();
       });
 
-      // 更新物流
-      // 点击后应实现：
-      // 1. 弹出物流单号输入框
-      // 2. 更新采购任务的物流信息
-      $('#purchase-list').on('click', '.btn-update-logistics', function() {
-        console.log('更新物流，任务ID:', $(this).data('id'));
+      // 关闭弹窗
+      $('#btn-close-modal, #btn-cancel-modal').on('click', function() {
+        $('#modal-bind-tracking').addClass('hidden');
+        // 清空表单
+        $('#modal-tracking-no').val('');
+        $('#modal-courier').val('');
+        $('#modal-platform').val('');
+        $('#modal-amount').val('');
+        $('#modal-supplier').val('');
+        $('#modal-validation').addClass('hidden');
+        $('#modal-validation-success').addClass('hidden');
+        $('#modal-validation-error').addClass('hidden');
       });
 
-      // 查看采购详情
-      // 点击后应实现：
-      // 1. 跳转到采购任务详情页或展开详情面板
-      $('#purchase-list').on('click', '.btn-view', function() {
-        console.log('查看采购详情，任务ID:', $(this).data('id'));
+      // 弹窗确认绑定
+      // 提交后应实现：
+      // 1. 校验快递单号格式（支持顺丰、圆通、中通、韵达、申通等主流快递）
+      // 2. 校验SKU一致性（快递包裹商品与Ozon订单商品是否匹配）
+      // 3. 校验成功显示绿色勾，失败显示红色叉+原因
+      // 4. 校验通过后保存绑定记录，更新状态为"待入库"
+      // 5. 关闭弹窗，刷新已绑定列表
+      $('#btn-confirm-bind').on('click', function() {
+        var trackingNo = $('#modal-tracking-no').val();
+        var courier = $('#modal-courier').val();
+        var platform = $('#modal-platform').val();
+        var amount = $('#modal-amount').val();
+        
+        // 简单校验
+        if (!trackingNo || !courier || !platform || !amount) {
+          alert('请填写完整信息');
+          return;
+        }
+        
+        // 显示校验结果
+        $('#modal-validation').removeClass('hidden');
+        
+        // 模拟校验成功（实际应该校验快递单号格式和SKU一致性）
+        var isValid = trackingNo.length >= 10;
+        
+        if (isValid) {
+          $('#modal-validation-success').removeClass('hidden');
+          $('#modal-validation-error').addClass('hidden');
+          
+          setTimeout(function() {
+            alert('绑定成功！');
+            $('#modal-bind-tracking').addClass('hidden');
+            // 切换到已绑定列表
+            $('#tab-bound').click();
+          }, 1000);
+        } else {
+          $('#modal-validation-success').addClass('hidden');
+          $('#modal-validation-error').removeClass('hidden');
+          $('#modal-validation-error-msg').text('快递单号格式不正确，请检查后重新输入');
+        }
+        
+        lucide.createIcons();
       });
 
-      // 批量标记已采购
-      // 点击后应实现：
-      // 1. 获取所有选中的采购任务ID
-      // 2. 批量更新状态为"采购中"
-      // 3. 刷新列表显示
-      $('#btn-batch-purchased').on('click', function() {
-        const selectedIds = [];
-        $('.checkbox-item:checked').each(function() {
-          selectedIds.push($(this).closest('.purchase-item').data('id'));
-        });
-        console.log('批量标记已采购，任务IDs:', selectedIds);
+      // 单条绑定表单提交
+      // 提交后应实现：
+      // 1. 校验所有必填字段
+      // 2. 校验快递单号格式
+      // 3. 校验Ozon订单号是否存在
+      // 4. 校验SKU一致性
+      // 5. 显示校验结果（成功绿色勾/失败红色叉+原因）
+      // 6. 校验通过后保存绑定记录
+      $('#btn-single-bind').on('click', function() {
+        var ozonOrder = $('#input-ozon-order').val();
+        var trackingNo = $('#input-tracking-no').val();
+        var platform = $('#select-platform').val();
+        var amount = $('#input-amount').val();
+        
+        // 简单校验
+        if (!ozonOrder || !trackingNo || !platform || !amount) {
+          alert('请填写完整信息');
+          return;
+        }
+        
+        // 显示校验结果
+        $('#validation-result').removeClass('hidden');
+        
+        // 模拟校验（实际应该校验格式和一致性）
+        var isValid = trackingNo.length >= 10 && ozonOrder.startsWith('OZ');
+        
+        if (isValid) {
+          $('#validation-success').removeClass('hidden');
+          $('#validation-error').addClass('hidden');
+          
+          setTimeout(function() {
+            alert('绑定成功！');
+            // 清空表单
+            $('#input-ozon-order').val('');
+            $('#input-tracking-no').val('');
+            $('#select-platform').val('');
+            $('#input-amount').val('');
+            $('#validation-result').addClass('hidden');
+          }, 1000);
+        } else {
+          $('#validation-success').addClass('hidden');
+          $('#validation-error').removeClass('hidden');
+          if (!ozonOrder.startsWith('OZ')) {
+            $('#validation-error-msg').text('Ozon订单号格式不正确');
+          } else {
+            $('#validation-error-msg').text('快递单号格式不正确，请检查后重新输入');
+          }
+        }
+        
+        lucide.createIcons();
       });
 
-      // 打开批量更新物流弹窗
-      $('#btn-batch-logistics').on('click', function() {
-        $('#modal-batch-logistics').removeClass('hidden');
-      });
-
-      // 关闭批量更新物流弹窗
-      $('#btn-close-logistics-modal, #btn-cancel-logistics').on('click', function() {
-        $('#modal-batch-logistics').addClass('hidden');
-      });
-
-      // 确认批量更新物流
-      // 点击后应实现：
-      // 1. 获取所有选中任务ID和输入的物流信息
-      // 2. 批量更新物流单号
-      // 3. 成功后关闭弹窗，刷新列表
-      $('#btn-confirm-logistics').on('click', function() {
-        console.log('批量更新物流：需获取选中任务并更新');
-        $('#modal-batch-logistics').addClass('hidden');
-      });
-
-      // 批量取消
-      // 点击后应实现：
-      // 1. 弹出确认对话框
-      // 2. 确认后批量更新状态为"已取消"
-      // 3. 刷新列表显示
-      $('#btn-batch-cancel').on('click', function() {
-        const selectedIds = [];
-        $('.checkbox-item:checked').each(function() {
-          selectedIds.push($(this).closest('.purchase-item').data('id'));
-        });
-        console.log('批量取消采购，任务IDs:', selectedIds);
-      });
-
-      // 筛选功能
-      // 点击后应实现：
-      // 1. 获取所有筛选条件
-      // 2. 调用API获取筛选结果
-      // 3. 更新列表显示
-      $('#btn-filter').on('click', function() {
-        const status = $('#filter-status').val();
-        const platform = $('#filter-platform').val();
-        const keyword = $('#filter-keyword').val();
-        const dateStart = $('#filter-date-start').val();
-        const dateEnd = $('#filter-date-end').val();
-        console.log('筛选采购任务:', { status, platform, keyword, dateStart, dateEnd });
-      });
-
-      // 重置筛选
-      $('#btn-reset-filter').on('click', function() {
-        $('#filter-status').val('');
-        $('#filter-platform').val('');
-        $('#filter-keyword').val('');
-        $('#filter-date-start').val('');
-        $('#filter-date-end').val('');
-        console.log('重置筛选条件');
+      // 点击弹窗背景关闭
+      $('#modal-bind-tracking').on('click', function(e) {
+        if (e.target === this) {
+          $('#btn-close-modal').click();
+        }
       });
     });
   </script>

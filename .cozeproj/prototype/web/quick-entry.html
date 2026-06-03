@@ -142,454 +142,445 @@
 
     <!-- @main-content:start -->
     <main class="flex-1 min-w-0 overflow-y-auto bg-background p-6">
-      <!-- 页面标题 -->
+      <!-- 页面标题区 -->
       <div class="mb-6">
-        <h1 class="text-2xl font-bold text-on-surface">快捷录单</h1>
-        <p class="text-sm text-on-surface-variant mt-1">批量录入采购完成信息，支持多种智能录入方式</p>
+        <h1 class="text-2xl font-bold text-on-surface">采购绑定录入</h1>
+        <p class="text-sm text-on-surface-variant mt-1">人工在1688/拼多多下单后，通过以下三种方式将国内快递单号与Ozon订单绑定</p>
       </div>
 
-      <!-- 录单方式选择区 -->
-      <div class="bg-surface rounded-xl shadow-card p-5 mb-6">
-        <h2 class="text-base font-semibold text-on-surface mb-4">选择录入方式</h2>
-        <div class="grid grid-cols-3 gap-4">
-          <!-- 方式一：复制粘贴录入 -->
-          <div id="method-paste" class="method-card bg-surface-container rounded-lg p-4 cursor-pointer border-2 border-primary transition-all">
-            <div class="flex items-center gap-3 mb-3">
-              <div class="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                <i data-lucide="clipboard" class="w-5 h-5 text-primary"></i>
-              </div>
-              <div>
-                <h3 class="text-sm font-semibold text-on-surface">复制粘贴录入</h3>
-                <p class="text-xs text-on-surface-variant">快速粘贴文本信息</p>
-              </div>
-            </div>
-            <div class="flex items-center gap-1 text-xs text-primary font-medium">
-              <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
-              <span>当前选择</span>
-            </div>
-          </div>
-
-          <!-- 方式二：截图识别录入 -->
-          <div id="method-ocr" class="method-card bg-surface-container rounded-lg p-4 cursor-pointer border-2 border-transparent hover:border-outline transition-all">
-            <div class="flex items-center gap-3 mb-3">
-              <div class="w-10 h-10 bg-surface-container-high rounded-lg flex items-center justify-center">
-                <i data-lucide="scan" class="w-5 h-5 text-on-surface-variant"></i>
-              </div>
-              <div>
-                <h3 class="text-sm font-semibold text-on-surface">截图识别录入</h3>
-                <p class="text-xs text-on-surface-variant">OCR智能识别</p>
-              </div>
-            </div>
-            <div class="flex items-center gap-1 text-xs text-on-surface-variant">
-              <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
-              <span>AI识别</span>
-            </div>
-          </div>
-
-          <!-- 方式三：表格导入录入 -->
-          <div id="method-import" class="method-card bg-surface-container rounded-lg p-4 cursor-pointer border-2 border-transparent hover:border-outline transition-all">
-            <div class="flex items-center gap-3 mb-3">
-              <div class="w-10 h-10 bg-surface-container-high rounded-lg flex items-center justify-center">
-                <i data-lucide="file-spreadsheet" class="w-5 h-5 text-on-surface-variant"></i>
-              </div>
-              <div>
-                <h3 class="text-sm font-semibold text-on-surface">表格导入录入</h3>
-                <p class="text-xs text-on-surface-variant">Excel/CSV文件</p>
-              </div>
-            </div>
-            <div class="flex items-center gap-1 text-xs text-on-surface-variant">
-              <i data-lucide="download" class="w-3.5 h-3.5"></i>
-              <span>支持模板下载</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 录入内容区 - 复制粘贴方式（默认显示） -->
-      <div id="panel-paste" class="entry-panel bg-surface rounded-xl shadow-card p-5 mb-6">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-base font-semibold text-on-surface">粘贴订单信息</h2>
-          <button id="btn-clear-paste" class="text-sm text-on-surface-variant hover:text-on-surface transition-colors flex items-center gap-1">
-            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-            清空
+      <!-- Tab 切换区 -->
+      <div class="bg-surface rounded-lg shadow-card mb-6">
+        <div class="flex border-b border-outline/50">
+          <button id="tab-paste" class="tab-btn flex items-center gap-2 px-5 py-3 text-sm font-medium text-primary border-b-2 border-primary bg-primary/5">
+            <i data-lucide="clipboard" class="w-4 h-4"></i>
+            单号粘贴录入
+          </button>
+          <button id="tab-ocr" class="tab-btn flex items-center gap-2 px-5 py-3 text-sm font-medium text-on-surface-variant border-b-2 border-transparent hover:text-on-surface hover:bg-surface-container/50 transition-colors">
+            <i data-lucide="scan" class="w-4 h-4"></i>
+            截图OCR识别
+          </button>
+          <button id="tab-excel" class="tab-btn flex items-center gap-2 px-5 py-3 text-sm font-medium text-on-surface-variant border-b-2 border-transparent hover:text-on-surface hover:bg-surface-container/50 transition-colors">
+            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+            Excel批量导入
           </button>
         </div>
-        <textarea id="paste-input" class="w-full h-40 bg-surface-container border-none rounded-lg px-4 py-3 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors resize-none" placeholder="粘贴订单信息，支持以下格式：&#10;&#10;格式1：Ozon订单号 | SKU | 数量 | 金额 | 平台 | 供应商 | 物流单号&#10;格式2：每行一条，用制表符或逗号分隔&#10;&#10;示例：&#10;OZ-2024011501 | SKU-A001 | 2 | 580.00 | 1688 | 深圳供应商A | SF123456789"></textarea>
-        <div class="flex items-center justify-between mt-4">
-          <div class="text-xs text-on-surface-variant">
-            <i data-lucide="info" class="w-3.5 h-3.5 inline mr-1"></i>
-            支持自动识别多种格式，智能匹配字段
-          </div>
-          <button id="btn-parse-paste" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-2">
-            <i data-lucide="wand-2" class="w-3.5 h-3.5"></i>
-            解析数据
-          </button>
-        </div>
-      </div>
 
-      <!-- 录入内容区 - 截图识别方式（默认隐藏） -->
-      <div id="panel-ocr" class="entry-panel bg-surface rounded-xl shadow-card p-5 mb-6 hidden">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-base font-semibold text-on-surface">上传截图</h2>
-          <button id="btn-clear-ocr" class="text-sm text-on-surface-variant hover:text-on-surface transition-colors flex items-center gap-1">
-            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-            清空
-          </button>
-        </div>
-        <div id="upload-area" class="border-2 border-dashed border-outline-variant rounded-lg p-8 text-center hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer">
-          <i data-lucide="image-plus" class="w-12 h-12 text-on-surface-variant/50 mx-auto mb-3"></i>
-          <p class="text-sm font-medium text-on-surface mb-1">拖拽图片到此处或点击上传</p>
-          <p class="text-xs text-on-surface-variant">支持 JPG、PNG 格式，单张最大 5MB</p>
-          <input type="file" id="file-input-ocr" class="hidden" accept="image/*" multiple>
-        </div>
-        <div id="preview-images" class="grid grid-cols-4 gap-3 mt-4 hidden">
-          <!-- 上传的图片预览会动态显示在这里 -->
-        </div>
-        <div class="flex items-center justify-between mt-4">
-          <div class="text-xs text-on-surface-variant">
-            <i data-lucide="sparkles" class="w-3.5 h-3.5 inline mr-1"></i>
-            AI 自动识别图片中的订单信息
-          </div>
-          <button id="btn-parse-ocr" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-2">
-            <i data-lucide="scan" class="w-3.5 h-3.5"></i>
-            开始识别
-          </button>
-        </div>
-      </div>
+        <!-- Tab 内容区：单号粘贴录入 -->
+        <div id="panel-paste" class="tab-panel p-5">
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-on-surface mb-2">粘贴数据</label>
+            <textarea id="paste-input" class="w-full h-48 bg-surface-container border-none rounded-md px-4 py-3 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors resize-none font-mono" placeholder="支持以下格式：
 
-      <!-- 录入内容区 - 表格导入方式（默认隐藏） -->
-      <div id="panel-import" class="entry-panel bg-surface rounded-xl shadow-card p-5 mb-6 hidden">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-base font-semibold text-on-surface">导入表格文件</h2>
-          <button id="btn-download-template" class="text-sm text-primary hover:underline flex items-center gap-1">
-            <i data-lucide="download" class="w-3.5 h-3.5"></i>
-            下载模板
-          </button>
-        </div>
-        <div id="import-area" class="border-2 border-dashed border-outline-variant rounded-lg p-8 text-center hover:border-primary/50 hover:bg-primary/5 transition-all cursor-pointer">
-          <i data-lucide="file-plus" class="w-12 h-12 text-on-surface-variant/50 mx-auto mb-3"></i>
-          <p class="text-sm font-medium text-on-surface mb-1">拖拽文件到此处或点击上传</p>
-          <p class="text-xs text-on-surface-variant">支持 Excel (.xlsx/.xls) 和 CSV 格式</p>
-          <input type="file" id="file-input-import" class="hidden" accept=".xlsx,.xls,.csv">
-        </div>
-        <div id="import-file-info" class="mt-4 hidden">
-          <div class="flex items-center gap-3 bg-surface-container rounded-lg px-4 py-3">
-            <i data-lucide="file-spreadsheet" class="w-5 h-5 text-success"></i>
-            <div class="flex-1">
-              <p id="import-file-name" class="text-sm font-medium text-on-surface">采购数据.xlsx</p>
-              <p id="import-file-size" class="text-xs text-on-surface-variant">25.6 KB · 15 条数据</p>
+格式A（推荐）：
+Ozon订单号,快递单号,采购平台,金额
+示例：123456789,SF1234567890,1688,88.50
+
+格式B（自动匹配）：
+直接粘贴快递单号（一行一个）
+系统将自动匹配最近的待绑定订单
+
+支持识别的快递：顺丰(SF)、圆通(YT)、中通(ZT)、韵达(YD)、申通(ST)、邮政(EMS)"></textarea>
+          </div>
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4 text-xs text-on-surface-variant">
+              <span class="inline-flex items-center gap-1"><i data-lucide="check-circle" class="w-3.5 h-3.5 text-success"></i>自动识别格式</span>
+              <span class="inline-flex items-center gap-1"><i data-lucide="check-circle" class="w-3.5 h-3.5 text-success"></i>智能分割数据</span>
+              <span class="inline-flex items-center gap-1"><i data-lucide="check-circle" class="w-3.5 h-3.5 text-success"></i>自动校验快递单号</span>
             </div>
-            <button id="btn-remove-file" class="text-on-surface-variant hover:text-error transition-colors">
-              <i data-lucide="x" class="w-4 h-4"></i>
+            <button id="btn-parse-paste" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-2">
+              <i data-lucide="sparkles" class="w-4 h-4"></i>
+              智能解析
             </button>
           </div>
         </div>
-        <div class="flex items-center justify-end mt-4">
-          <button id="btn-parse-import" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-2">
-            <i data-lucide="upload" class="w-3.5 h-3.5"></i>
-            导入数据
-          </button>
+
+        <!-- Tab 内容区：截图OCR识别 -->
+        <div id="panel-ocr" class="tab-panel p-5 hidden">
+          <div class="border-2 border-dashed border-outline-variant/50 rounded-lg p-8 text-center mb-4">
+            <div class="w-16 h-16 bg-surface-container-high rounded-full flex items-center justify-center mx-auto mb-4">
+              <i data-lucide="image-plus" class="w-8 h-8 text-on-surface-variant"></i>
+            </div>
+            <p class="text-sm font-medium text-on-surface mb-1">拖拽图片到此处，或点击上传</p>
+            <p class="text-xs text-on-surface-variant mb-4">支持 PNG、JPG、JPEG 格式，单次最多上传10张</p>
+            <input type="file" id="ocr-upload" class="hidden" accept=".png,.jpg,.jpeg" multiple />
+            <button id="btn-upload-ocr" class="bg-surface-container text-on-surface border-none px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all inline-flex items-center gap-2">
+              <i data-lucide="upload" class="w-4 h-4"></i>
+              选择图片
+            </button>
+          </div>
+          
+          <!-- OCR识别结果预览 -->
+          <div class="bg-surface-container-lowest rounded-lg p-4">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-sm font-medium text-on-surface">识别结果预览</span>
+              <span class="text-xs text-on-surface-variant">已识别 2 张图片</span>
+            </div>
+            <div class="space-y-2">
+              <!-- OCR结果项1 -->
+              <div class="bg-surface rounded-md p-3 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 bg-surface-container rounded flex items-center justify-center">
+                    <i data-lucide="image" class="w-5 h-5 text-on-surface-variant"></i>
+                  </div>
+                  <div>
+                    <p class="text-sm font-medium text-on-surface">screenshot_001.png</p>
+                    <p class="text-xs text-on-surface-variant">快递单号: SF1234567890</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">识别成功</span>
+                  <button class="text-primary text-sm font-medium hover:underline">编辑</button>
+                </div>
+              </div>
+              <!-- OCR结果项2 -->
+              <div class="bg-surface rounded-md p-3 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 bg-surface-container rounded flex items-center justify-center">
+                    <i data-lucide="image" class="w-5 h-5 text-on-surface-variant"></i>
+                  </div>
+                  <div>
+                    <p class="text-sm font-medium text-on-surface">screenshot_002.png</p>
+                    <p class="text-xs text-on-surface-variant">快递单号: YT9876543210</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">识别成功</span>
+                  <button class="text-primary text-sm font-medium hover:underline">编辑</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 内容区：Excel批量导入 -->
+        <div id="panel-excel" class="tab-panel p-5 hidden">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+              <button id="btn-download-template" class="bg-surface-container text-on-surface border-none px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all inline-flex items-center gap-2">
+                <i data-lucide="download" class="w-4 h-4"></i>
+                下载模板
+              </button>
+              <span class="text-xs text-on-surface-variant">必填列：Ozon订单号、快递单号、采购平台</span>
+            </div>
+          </div>
+          <div class="border-2 border-dashed border-outline-variant/50 rounded-lg p-8 text-center mb-4">
+            <div class="w-16 h-16 bg-surface-container-high rounded-full flex items-center justify-center mx-auto mb-4">
+              <i data-lucide="file-spreadsheet" class="w-8 h-8 text-on-surface-variant"></i>
+            </div>
+            <p class="text-sm font-medium text-on-surface mb-1">拖拽Excel文件到此处，或点击上传</p>
+            <p class="text-xs text-on-surface-variant mb-4">支持 .xlsx、.csv 格式</p>
+            <input type="file" id="excel-upload" class="hidden" accept=".xlsx,.csv" />
+            <button id="btn-upload-excel" class="bg-surface-container text-on-surface border-none px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all inline-flex items-center gap-2">
+              <i data-lucide="upload" class="w-4 h-4"></i>
+              选择文件
+            </button>
+          </div>
+          
+          <!-- 导入预览 -->
+          <div class="bg-surface-container-lowest rounded-lg p-4">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-sm font-medium text-on-surface">导入预览</span>
+              <span class="text-xs text-on-surface-variant">已解析 5 条数据</span>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="text-left text-xs font-semibold text-on-surface-variant uppercase tracking-wide">
+                    <th class="px-3 py-2">Ozon订单号</th>
+                    <th class="px-3 py-2">快递单号</th>
+                    <th class="px-3 py-2">采购平台</th>
+                    <th class="px-3 py-2">采购金额</th>
+                    <th class="px-3 py-2">供应商</th>
+                    <th class="px-3 py-2">状态</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-outline/30">
+                  <!-- Excel预览数据1 -->
+                  <tr class="hover:bg-surface/50">
+                    <td class="px-3 py-2 text-on-surface">123456789</td>
+                    <td class="px-3 py-2 text-on-surface">SF1234567890</td>
+                    <td class="px-3 py-2 text-on-surface">1688</td>
+                    <td class="px-3 py-2 text-on-surface-variant">¥88.50</td>
+                    <td class="px-3 py-2 text-on-surface-variant">义乌小商品批发</td>
+                    <td class="px-3 py-2"><span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">正常</span></td>
+                  </tr>
+                  <!-- Excel预览数据2 -->
+                  <tr class="hover:bg-surface/50">
+                    <td class="px-3 py-2 text-on-surface">123456790</td>
+                    <td class="px-3 py-2 text-on-surface">YT9876543210</td>
+                    <td class="px-3 py-2 text-on-surface">拼多多</td>
+                    <td class="px-3 py-2 text-on-surface-variant">¥56.00</td>
+                    <td class="px-3 py-2 text-on-surface-variant">—</td>
+                    <td class="px-3 py-2"><span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning">缺少供应商</span></td>
+                  </tr>
+                  <!-- Excel预览数据3 -->
+                  <tr class="hover:bg-surface/50 bg-error/5">
+                    <td class="px-3 py-2 text-on-surface">123456791</td>
+                    <td class="px-3 py-2 text-error">INVALID123</td>
+                    <td class="px-3 py-2 text-on-surface">1688</td>
+                    <td class="px-3 py-2 text-on-surface-variant">¥120.00</td>
+                    <td class="px-3 py-2 text-on-surface-variant">广州批发商</td>
+                    <td class="px-3 py-2"><span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-error/15 text-error">快递单号格式错误</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- 解析结果预览区 -->
-      <div class="bg-surface rounded-xl shadow-card p-5 mb-6">
+      <!-- 校验结果区 -->
+      <div id="validation-result" class="bg-surface rounded-lg shadow-card p-5 mb-6">
         <div class="flex items-center justify-between mb-4">
-          <div class="flex items-center gap-3">
-            <h2 class="text-base font-semibold text-on-surface">解析结果预览</h2>
-            <span id="result-count" class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-primary/15 text-primary">5 条数据</span>
+          <h3 class="text-base font-semibold text-on-surface">校验结果</h3>
+          <span id="validation-summary" class="text-sm text-on-surface-variant">待校验</span>
+        </div>
+        
+        <div class="grid grid-cols-4 gap-4 mb-4">
+          <!-- 校验项1：快递单号格式 -->
+          <div class="bg-surface-container-lowest rounded-lg p-4">
+            <div class="flex items-center gap-2 mb-2">
+              <div id="check-format-icon" class="w-5 h-5 rounded-full bg-success/15 flex items-center justify-center">
+                <i data-lucide="check" class="w-3 h-3 text-success"></i>
+              </div>
+              <span class="text-sm font-medium text-on-surface">快递单号格式</span>
+            </div>
+            <p id="check-format-text" class="text-xs text-success">全部通过</p>
           </div>
+          <!-- 校验项2：订单号存在性 -->
+          <div class="bg-surface-container-lowest rounded-lg p-4">
+            <div class="flex items-center gap-2 mb-2">
+              <div id="check-order-icon" class="w-5 h-5 rounded-full bg-warning/15 flex items-center justify-center">
+                <i data-lucide="alert-triangle" class="w-3 h-3 text-warning"></i>
+              </div>
+              <span class="text-sm font-medium text-on-surface">订单号存在性</span>
+            </div>
+            <p id="check-order-text" class="text-xs text-warning">2条订单不存在</p>
+          </div>
+          <!-- 校验项3：SKU一致性 -->
+          <div class="bg-surface-container-lowest rounded-lg p-4">
+            <div class="flex items-center gap-2 mb-2">
+              <div id="check-sku-icon" class="w-5 h-5 rounded-full bg-success/15 flex items-center justify-center">
+                <i data-lucide="check" class="w-3 h-3 text-success"></i>
+              </div>
+              <span class="text-sm font-medium text-on-surface">SKU一致性</span>
+            </div>
+            <p id="check-sku-text" class="text-xs text-success">全部匹配</p>
+          </div>
+          <!-- 校验项4：重复绑定 -->
+          <div class="bg-surface-container-lowest rounded-lg p-4">
+            <div class="flex items-center gap-2 mb-2">
+              <div id="check-duplicate-icon" class="w-5 h-5 rounded-full bg-success/15 flex items-center justify-center">
+                <i data-lucide="check" class="w-3 h-3 text-success"></i>
+              </div>
+              <span class="text-sm font-medium text-on-surface">重复绑定校验</span>
+            </div>
+            <p id="check-duplicate-text" class="text-xs text-success">无重复</p>
+          </div>
+        </div>
+
+        <!-- 失败原因列表 -->
+        <div id="validation-errors" class="bg-warning/5 border border-warning/20 rounded-lg p-4">
+          <div class="flex items-start gap-2">
+            <i data-lucide="alert-circle" class="w-4 h-4 text-warning mt-0.5"></i>
+            <div>
+              <p class="text-sm font-medium text-on-surface mb-1">发现 2 条数据需要处理</p>
+              <ul class="text-xs text-on-surface-variant space-y-1">
+                <li>• 订单号 123456799 不存在于系统中，请确认订单号是否正确</li>
+                <li>• 订单号 123456800 不存在于系统中，请确认订单号是否正确</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 数据预览表格 -->
+      <div class="bg-surface rounded-lg shadow-card overflow-hidden mb-6">
+        <div class="flex items-center justify-between px-5 py-4 border-b border-outline/50">
+          <h3 class="text-base font-semibold text-on-surface">数据预览</h3>
           <div class="flex items-center gap-2">
-            <button id="btn-select-all" class="text-sm text-on-surface-variant hover:text-on-surface transition-colors">全选</button>
-            <span class="text-outline-variant">|</span>
-            <button id="btn-deselect-all" class="text-sm text-on-surface-variant hover:text-on-surface transition-colors">取消全选</button>
+            <span class="text-xs text-on-surface-variant">共 5 条数据</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">3条可通过</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning">2条需处理</span>
           </div>
         </div>
         
-        <!-- 数据表格 -->
         <div class="overflow-x-auto">
-          <div class="min-w-[900px]">
-            <!-- 表头 -->
-            <div class="grid grid-cols-9 px-4 py-3 bg-surface-container text-xs font-semibold text-on-surface-variant uppercase tracking-wide rounded-t-lg">
-              <div class="flex items-center gap-2">
-                <input type="checkbox" id="check-all" class="w-4 h-4 rounded border-outline-variant bg-surface accent-primary">
-              </div>
-              <span>Ozon订单号</span>
-              <span>商品SKU</span>
-              <span>采购数量</span>
-              <span>采购金额</span>
-              <span>采购平台</span>
-              <span>供应商</span>
-              <span>物流单号</span>
-              <span>状态</span>
-            </div>
-            <!-- 表体 -->
-            <div id="result-table-body" class="divide-y divide-outline-variant/50">
-              <!-- 列表-数据1：正常数据 -->
-              <div class="grid grid-cols-9 px-4 py-3 hover:bg-surface-container/50 transition-colors items-center">
-                <div class="flex items-center">
-                  <input type="checkbox" class="row-checkbox w-4 h-4 rounded border-outline-variant bg-surface accent-primary" checked>
-                </div>
-                <span class="text-sm font-medium text-on-surface">OZ-2024011501</span>
-                <span class="text-sm text-on-surface-variant">SKU-A001</span>
-                <span class="text-sm text-on-surface-variant">2</span>
-                <span class="text-sm font-semibold text-on-surface">¥580.00</span>
-                <span class="text-sm text-on-surface-variant">1688</span>
-                <span class="text-sm text-on-surface-variant">深圳供应商A</span>
-                <span class="text-sm text-on-surface-variant">SF123456789</span>
-                <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs bg-success/15 text-success w-fit">正常</span>
-              </div>
-              <!-- 列表-数据2：正常数据 -->
-              <div class="grid grid-cols-9 px-4 py-3 hover:bg-surface-container/50 transition-colors items-center">
-                <div class="flex items-center">
-                  <input type="checkbox" class="row-checkbox w-4 h-4 rounded border-outline-variant bg-surface accent-primary" checked>
-                </div>
-                <span class="text-sm font-medium text-on-surface">OZ-2024011502</span>
-                <span class="text-sm text-on-surface-variant">SKU-B002</span>
-                <span class="text-sm text-on-surface-variant">5</span>
-                <span class="text-sm font-semibold text-on-surface">¥1,250.00</span>
-                <span class="text-sm text-on-surface-variant">淘宝</span>
-                <span class="text-sm text-on-surface-variant">广州供应商B</span>
-                <span class="text-sm text-on-surface-variant">YT987654321</span>
-                <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs bg-success/15 text-success w-fit">正常</span>
-              </div>
-              <!-- 列表-数据3：异常数据-订单号不存在 -->
-              <div class="grid grid-cols-9 px-4 py-3 bg-warning/5 hover:bg-warning/10 transition-colors items-center">
-                <div class="flex items-center">
-                  <input type="checkbox" class="row-checkbox w-4 h-4 rounded border-outline-variant bg-surface accent-primary">
-                </div>
-                <span class="text-sm font-medium text-on-surface">OZ-2024011599</span>
-                <span class="text-sm text-on-surface-variant">SKU-C003</span>
-                <span class="text-sm text-on-surface-variant">3</span>
-                <span class="text-sm font-semibold text-on-surface">¥890.00</span>
-                <span class="text-sm text-on-surface-variant">拼多多</span>
-                <span class="text-sm text-on-surface-variant">义乌供应商C</span>
-                <span class="text-sm text-on-surface-variant">ZT112233445</span>
-                <div class="flex items-center gap-1">
-                  <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs bg-warning/15 text-warning w-fit">异常</span>
-                  <button class="btn-fix-row text-xs text-primary hover:underline" data-row="3">修正</button>
-                </div>
-              </div>
-              <!-- 列表-数据4：异常数据-金额异常 -->
-              <div class="grid grid-cols-9 px-4 py-3 bg-warning/5 hover:bg-warning/10 transition-colors items-center">
-                <div class="flex items-center">
-                  <input type="checkbox" class="row-checkbox w-4 h-4 rounded border-outline-variant bg-surface accent-primary">
-                </div>
-                <span class="text-sm font-medium text-on-surface">OZ-2024011504</span>
-                <span class="text-sm text-on-surface-variant">SKU-D004</span>
-                <span class="text-sm text-on-surface-variant">1</span>
-                <span class="text-sm font-semibold text-error">¥58,000.00</span>
-                <span class="text-sm text-on-surface-variant">1688</span>
-                <span class="text-sm text-on-surface-variant">东莞供应商D</span>
-                <span class="text-sm text-on-surface-variant">SF556677889</span>
-                <div class="flex items-center gap-1">
-                  <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs bg-warning/15 text-warning w-fit">异常</span>
-                  <button class="btn-fix-row text-xs text-primary hover:underline" data-row="4">修正</button>
-                </div>
-              </div>
-              <!-- 列表-数据5：正常数据 -->
-              <div class="grid grid-cols-9 px-4 py-3 hover:bg-surface-container/50 transition-colors items-center">
-                <div class="flex items-center">
-                  <input type="checkbox" class="row-checkbox w-4 h-4 rounded border-outline-variant bg-surface accent-primary" checked>
-                </div>
-                <span class="text-sm font-medium text-on-surface">OZ-2024011505</span>
-                <span class="text-sm text-on-surface-variant">SKU-E005</span>
-                <span class="text-sm text-on-surface-variant">10</span>
-                <span class="text-sm font-semibold text-on-surface">¥2,350.00</span>
-                <span class="text-sm text-on-surface-variant">天猫</span>
-                <span class="text-sm text-on-surface-variant">杭州供应商E</span>
-                <span class="text-sm text-on-surface-variant">JD998877665</span>
-                <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs bg-success/15 text-success w-fit">正常</span>
-              </div>
-            </div>
-          </div>
+          <table class="w-full">
+            <thead>
+              <tr class="bg-surface-container text-xs font-semibold text-on-surface-variant uppercase tracking-wide">
+                <th class="px-4 py-3 text-left">Ozon订单号</th>
+                <th class="px-4 py-3 text-left">快递单号</th>
+                <th class="px-4 py-3 text-left">采购平台</th>
+                <th class="px-4 py-3 text-left">采购金额</th>
+                <th class="px-4 py-3 text-left">校验状态</th>
+                <th class="px-4 py-3 text-left">操作</th>
+              </tr>
+            </thead>
+            <tbody id="data-table-body" class="divide-y divide-outline/30">
+              <!-- 数据行1：校验通过 -->
+              <tr id="row-1" class="hover:bg-surface-container/50 transition-colors">
+                <td class="px-4 py-3 text-sm font-medium text-on-surface">123456789</td>
+                <td class="px-4 py-3 text-sm text-on-surface-variant">SF1234567890</td>
+                <td class="px-4 py-3 text-sm text-on-surface-variant">
+                  <span class="inline-flex items-center gap-1">
+                    <i data-lucide="shopping-bag" class="w-3.5 h-3.5"></i>
+                    1688
+                  </span>
+                </td>
+                <td class="px-4 py-3 text-sm font-semibold text-on-surface">¥88.50</td>
+                <td class="px-4 py-3">
+                  <span class="inline-flex items-center gap-1 text-success">
+                    <i data-lucide="check-circle" class="w-4 h-4"></i>
+                    <span class="text-xs font-medium">通过</span>
+                  </span>
+                </td>
+                <td class="px-4 py-3">
+                  <div class="flex items-center gap-2">
+                    <button class="text-primary text-sm font-medium hover:underline">详情</button>
+                    <button class="text-on-surface-variant text-sm font-medium hover:text-on-surface hover:underline">修正</button>
+                    <button id="btn-delete-1" class="text-error text-sm font-medium hover:underline">删除</button>
+                  </div>
+                </td>
+              </tr>
+              <!-- 数据行2：校验通过 -->
+              <tr id="row-2" class="hover:bg-surface-container/50 transition-colors">
+                <td class="px-4 py-3 text-sm font-medium text-on-surface">123456790</td>
+                <td class="px-4 py-3 text-sm text-on-surface-variant">YT9876543210</td>
+                <td class="px-4 py-3 text-sm text-on-surface-variant">
+                  <span class="inline-flex items-center gap-1">
+                    <i data-lucide="store" class="w-3.5 h-3.5"></i>
+                    拼多多
+                  </span>
+                </td>
+                <td class="px-4 py-3 text-sm font-semibold text-on-surface">¥56.00</td>
+                <td class="px-4 py-3">
+                  <span class="inline-flex items-center gap-1 text-success">
+                    <i data-lucide="check-circle" class="w-4 h-4"></i>
+                    <span class="text-xs font-medium">通过</span>
+                  </span>
+                </td>
+                <td class="px-4 py-3">
+                  <div class="flex items-center gap-2">
+                    <button class="text-primary text-sm font-medium hover:underline">详情</button>
+                    <button class="text-on-surface-variant text-sm font-medium hover:text-on-surface hover:underline">修正</button>
+                    <button id="btn-delete-2" class="text-error text-sm font-medium hover:underline">删除</button>
+                  </div>
+                </td>
+              </tr>
+              <!-- 数据行3：警告 -->
+              <tr id="row-3" class="hover:bg-surface-container/50 transition-colors bg-warning/5">
+                <td class="px-4 py-3 text-sm font-medium text-on-surface">123456791</td>
+                <td class="px-4 py-3 text-sm text-on-surface-variant">ZT5555666677</td>
+                <td class="px-4 py-3 text-sm text-on-surface-variant">
+                  <span class="inline-flex items-center gap-1">
+                    <i data-lucide="shopping-bag" class="w-3.5 h-3.5"></i>
+                    1688
+                  </span>
+                </td>
+                <td class="px-4 py-3 text-sm font-semibold text-on-surface">¥120.00</td>
+                <td class="px-4 py-3">
+                  <span class="inline-flex items-center gap-1 text-warning">
+                    <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                    <span class="text-xs font-medium">订单不存在</span>
+                  </span>
+                </td>
+                <td class="px-4 py-3">
+                  <div class="flex items-center gap-2">
+                    <button class="text-primary text-sm font-medium hover:underline">详情</button>
+                    <button class="text-on-surface-variant text-sm font-medium hover:text-on-surface hover:underline">修正</button>
+                    <button id="btn-delete-3" class="text-error text-sm font-medium hover:underline">删除</button>
+                  </div>
+                </td>
+              </tr>
+              <!-- 数据行4：校验通过 -->
+              <tr id="row-4" class="hover:bg-surface-container/50 transition-colors">
+                <td class="px-4 py-3 text-sm font-medium text-on-surface">123456792</td>
+                <td class="px-4 py-3 text-sm text-on-surface-variant">YD1111222333</td>
+                <td class="px-4 py-3 text-sm text-on-surface-variant">
+                  <span class="inline-flex items-center gap-1">
+                    <i data-lucide="shopping-bag" class="w-3.5 h-3.5"></i>
+                    1688
+                  </span>
+                </td>
+                <td class="px-4 py-3 text-sm font-semibold text-on-surface">¥78.00</td>
+                <td class="px-4 py-3">
+                  <span class="inline-flex items-center gap-1 text-success">
+                    <i data-lucide="check-circle" class="w-4 h-4"></i>
+                    <span class="text-xs font-medium">通过</span>
+                  </span>
+                </td>
+                <td class="px-4 py-3">
+                  <div class="flex items-center gap-2">
+                    <button class="text-primary text-sm font-medium hover:underline">详情</button>
+                    <button class="text-on-surface-variant text-sm font-medium hover:text-on-surface hover:underline">修正</button>
+                    <button id="btn-delete-4" class="text-error text-sm font-medium hover:underline">删除</button>
+                  </div>
+                </td>
+              </tr>
+              <!-- 数据行5：警告 -->
+              <tr id="row-5" class="hover:bg-surface-container/50 transition-colors bg-warning/5">
+                <td class="px-4 py-3 text-sm font-medium text-on-surface">123456799</td>
+                <td class="px-4 py-3 text-sm text-on-surface-variant">ST9999888877</td>
+                <td class="px-4 py-3 text-sm text-on-surface-variant">
+                  <span class="inline-flex items-center gap-1">
+                    <i data-lucide="store" class="w-3.5 h-3.5"></i>
+                    拼多多
+                  </span>
+                </td>
+                <td class="px-4 py-3 text-sm font-semibold text-on-surface">¥45.00</td>
+                <td class="px-4 py-3">
+                  <span class="inline-flex items-center gap-1 text-warning">
+                    <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                    <span class="text-xs font-medium">订单不存在</span>
+                  </span>
+                </td>
+                <td class="px-4 py-3">
+                  <div class="flex items-center gap-2">
+                    <button class="text-primary text-sm font-medium hover:underline">详情</button>
+                    <button class="text-on-surface-variant text-sm font-medium hover:text-on-surface hover:underline">修正</button>
+                    <button id="btn-delete-5" class="text-error text-sm font-medium hover:underline">删除</button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
-      <!-- 数据校验区 -->
-      <div class="bg-surface rounded-xl shadow-card p-5 mb-6">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-base font-semibold text-on-surface">数据校验</h2>
-          <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning">2 条异常</span>
-        </div>
-        <div id="validation-list" class="space-y-3">
-          <!-- 异常项1 -->
-          <div class="flex items-start gap-3 bg-warning/5 rounded-lg px-4 py-3">
-            <div class="w-6 h-6 bg-warning/15 rounded-full flex items-center justify-center shrink-0 mt-0.5">
-              <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-warning"></i>
-            </div>
-            <div class="flex-1">
-              <p class="text-sm font-medium text-on-surface">订单号不存在</p>
-              <p class="text-xs text-on-surface-variant mt-1">OZ-2024011599 在系统中不存在，请确认订单号是否正确</p>
-            </div>
-            <button class="btn-fix-validation text-sm text-primary hover:underline font-medium" data-type="order">修正</button>
-          </div>
-          <!-- 异常项2 -->
-          <div class="flex items-start gap-3 bg-warning/5 rounded-lg px-4 py-3">
-            <div class="w-6 h-6 bg-warning/15 rounded-full flex items-center justify-center shrink-0 mt-0.5">
-              <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-warning"></i>
-            </div>
-            <div class="flex-1">
-              <p class="text-sm font-medium text-on-surface">金额异常</p>
-              <p class="text-xs text-on-surface-variant mt-1">OZ-2024011504 采购金额 ¥58,000.00 远超商品正常价格区间，请核实</p>
-            </div>
-            <button class="btn-fix-validation text-sm text-primary hover:underline font-medium" data-type="amount">修正</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- 批量绑定确认 -->
-      <div class="bg-surface rounded-xl shadow-card p-5 mb-6">
+      <!-- 批量绑定确认区 -->
+      <div class="bg-surface rounded-lg shadow-card p-5 mb-6">
         <div class="flex items-center justify-between">
-          <div>
-            <h2 class="text-base font-semibold text-on-surface">批量绑定确认</h2>
-            <p class="text-sm text-on-surface-variant mt-1">已选择 <span id="selected-count" class="font-semibold text-primary">3</span> 条数据，其中 <span class="font-semibold text-success">2</span> 条正常，<span class="font-semibold text-warning">1</span> 条异常</p>
+          <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2">
+              <i data-lucide="info" class="w-4 h-4 text-on-surface-variant"></i>
+              <span class="text-sm text-on-surface-variant">已选择 <strong class="text-on-surface">3</strong> 条可绑定的数据</span>
+            </div>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" id="check-all" class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30" checked />
+              <span class="text-sm text-on-surface">仅绑定校验通过的数据</span>
+            </label>
           </div>
           <div class="flex items-center gap-3">
-            <button id="btn-cancel-bind" class="bg-surface-container text-on-surface border-none px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all">
+            <button class="bg-surface-container text-on-surface border-none px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all">
               取消
             </button>
-            <button id="btn-confirm-bind" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-2">
-              <i data-lucide="check" class="w-3.5 h-3.5"></i>
+            <button id="btn-bind" class="bg-primary text-on-primary px-6 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-2">
+              <i data-lucide="link" class="w-4 h-4"></i>
               确认绑定
             </button>
           </div>
         </div>
       </div>
 
-      <!-- 录单历史记录 -->
-      <div class="bg-surface rounded-xl shadow-card p-5">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-base font-semibold text-on-surface">录单历史记录</h2>
-          <button id="btn-view-all-history" class="text-sm text-primary hover:underline flex items-center gap-1">
-            查看全部
-            <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
-          </button>
+      <!-- 硬件集成提示 -->
+      <div class="bg-primary-container/30 rounded-lg p-4 flex items-start gap-3">
+        <div class="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center shrink-0">
+          <i data-lucide="scan-line" class="w-4 h-4 text-primary"></i>
         </div>
-        <div class="overflow-x-auto">
-          <div class="min-w-[600px]">
-            <!-- 表头 -->
-            <div class="grid grid-cols-5 px-4 py-3 bg-surface-container text-xs font-semibold text-on-surface-variant uppercase tracking-wide rounded-t-lg">
-              <span>录单时间</span>
-              <span>录入数量</span>
-              <span>录入方式</span>
-              <span>操作人</span>
-              <span>状态</span>
-            </div>
-            <!-- 表体 -->
-            <div id="history-table-body" class="divide-y divide-outline-variant/50">
-              <!-- 历史记录1 -->
-              <div class="grid grid-cols-5 px-4 py-3 hover:bg-surface-container/50 transition-colors items-center">
-                <span class="text-sm text-on-surface-variant">2024-01-15 14:32</span>
-                <span class="text-sm font-medium text-on-surface">12 条</span>
-                <div class="flex items-center gap-1">
-                  <i data-lucide="clipboard" class="w-3.5 h-3.5 text-on-surface-variant"></i>
-                  <span class="text-sm text-on-surface-variant">复制粘贴</span>
-                </div>
-                <span class="text-sm text-on-surface-variant">小初</span>
-                <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs bg-success/15 text-success w-fit">成功</span>
-              </div>
-              <!-- 历史记录2 -->
-              <div class="grid grid-cols-5 px-4 py-3 hover:bg-surface-container/50 transition-colors items-center">
-                <span class="text-sm text-on-surface-variant">2024-01-15 11:20</span>
-                <span class="text-sm font-medium text-on-surface">8 条</span>
-                <div class="flex items-center gap-1">
-                  <i data-lucide="scan" class="w-3.5 h-3.5 text-on-surface-variant"></i>
-                  <span class="text-sm text-on-surface-variant">截图识别</span>
-                </div>
-                <span class="text-sm text-on-surface-variant">小初</span>
-                <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs bg-success/15 text-success w-fit">成功</span>
-              </div>
-              <!-- 历史记录3 -->
-              <div class="grid grid-cols-5 px-4 py-3 hover:bg-surface-container/50 transition-colors items-center">
-                <span class="text-sm text-on-surface-variant">2024-01-14 16:45</span>
-                <span class="text-sm font-medium text-on-surface">25 条</span>
-                <div class="flex items-center gap-1">
-                  <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-on-surface-variant"></i>
-                  <span class="text-sm text-on-surface-variant">表格导入</span>
-                </div>
-                <span class="text-sm text-on-surface-variant">小初</span>
-                <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs bg-success/15 text-success w-fit">成功</span>
-              </div>
-              <!-- 历史记录4 -->
-              <div class="grid grid-cols-5 px-4 py-3 hover:bg-surface-container/50 transition-colors items-center">
-                <span class="text-sm text-on-surface-variant">2024-01-14 09:15</span>
-                <span class="text-sm font-medium text-on-surface">5 条</span>
-                <div class="flex items-center gap-1">
-                  <i data-lucide="clipboard" class="w-3.5 h-3.5 text-on-surface-variant"></i>
-                  <span class="text-sm text-on-surface-variant">复制粘贴</span>
-                </div>
-                <span class="text-sm text-on-surface-variant">小初</span>
-                <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs bg-warning/15 text-warning w-fit">部分成功</span>
-              </div>
-              <!-- 历史记录5 -->
-              <div class="grid grid-cols-5 px-4 py-3 hover:bg-surface-container/50 transition-colors items-center">
-                <span class="text-sm text-on-surface-variant">2024-01-13 15:30</span>
-                <span class="text-sm font-medium text-on-surface">18 条</span>
-                <div class="flex items-center gap-1">
-                  <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-on-surface-variant"></i>
-                  <span class="text-sm text-on-surface-variant">表格导入</span>
-                </div>
-                <span class="text-sm text-on-surface-variant">小初</span>
-                <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs bg-success/15 text-success w-fit">成功</span>
-              </div>
-              <!-- 历史记录6 -->
-              <div class="grid grid-cols-5 px-4 py-3 hover:bg-surface-container/50 transition-colors items-center">
-                <span class="text-sm text-on-surface-variant">2024-01-13 10:22</span>
-                <span class="text-sm font-medium text-on-surface">3 条</span>
-                <div class="flex items-center gap-1">
-                  <i data-lucide="scan" class="w-3.5 h-3.5 text-on-surface-variant"></i>
-                  <span class="text-sm text-on-surface-variant">截图识别</span>
-                </div>
-                <span class="text-sm text-on-surface-variant">小初</span>
-                <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs bg-error/15 text-error w-fit">失败</span>
-              </div>
-              <!-- 历史记录7 -->
-              <div class="grid grid-cols-5 px-4 py-3 hover:bg-surface-container/50 transition-colors items-center">
-                <span class="text-sm text-on-surface-variant">2024-01-12 17:50</span>
-                <span class="text-sm font-medium text-on-surface">20 条</span>
-                <div class="flex items-center gap-1">
-                  <i data-lucide="clipboard" class="w-3.5 h-3.5 text-on-surface-variant"></i>
-                  <span class="text-sm text-on-surface-variant">复制粘贴</span>
-                </div>
-                <span class="text-sm text-on-surface-variant">小初</span>
-                <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs bg-success/15 text-success w-fit">成功</span>
-              </div>
-              <!-- 历史记录8 -->
-              <div class="grid grid-cols-5 px-4 py-3 hover:bg-surface-container/50 transition-colors items-center">
-                <span class="text-sm text-on-surface-variant">2024-01-12 14:18</span>
-                <span class="text-sm font-medium text-on-surface">7 条</span>
-                <div class="flex items-center gap-1">
-                  <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-on-surface-variant"></i>
-                  <span class="text-sm text-on-surface-variant">表格导入</span>
-                </div>
-                <span class="text-sm text-on-surface-variant">小初</span>
-                <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs bg-success/15 text-success w-fit">成功</span>
-              </div>
-              <!-- 历史记录9 -->
-              <div class="grid grid-cols-5 px-4 py-3 hover:bg-surface-container/50 transition-colors items-center">
-                <span class="text-sm text-on-surface-variant">2024-01-11 16:33</span>
-                <span class="text-sm font-medium text-on-surface">15 条</span>
-                <div class="flex items-center gap-1">
-                  <i data-lucide="scan" class="w-3.5 h-3.5 text-on-surface-variant"></i>
-                  <span class="text-sm text-on-surface-variant">截图识别</span>
-                </div>
-                <span class="text-sm text-on-surface-variant">小初</span>
-                <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs bg-success/15 text-success w-fit">成功</span>
-              </div>
-              <!-- 历史记录10 -->
-              <div class="grid grid-cols-5 px-4 py-3 hover:bg-surface-container/50 transition-colors items-center">
-                <span class="text-sm text-on-surface-variant">2024-01-11 09:45</span>
-                <span class="text-sm font-medium text-on-surface">10 条</span>
-                <div class="flex items-center gap-1">
-                  <i data-lucide="clipboard" class="w-3.5 h-3.5 text-on-surface-variant"></i>
-                  <span class="text-sm text-on-surface-variant">复制粘贴</span>
-                </div>
-                <span class="text-sm text-on-surface-variant">小初</span>
-                <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs bg-success/15 text-success w-fit">成功</span>
-              </div>
-            </div>
-          </div>
+        <div>
+          <p class="text-sm font-medium text-on-surface">入库验货提示</p>
+          <p class="text-xs text-on-surface-variant mt-1">入库验货时请使用扫描枪扫描国内快递单号，系统将自动跳转至验货页面</p>
         </div>
       </div>
     </main>
@@ -597,276 +588,110 @@
   </div>
   <!-- @nav:end 导航组件 -->
 
-  <!-- 数据修正弹窗 -->
-  <div id="fix-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
-    <div class="bg-surface rounded-xl shadow-dialog max-w-lg w-full max-h-[90vh] overflow-y-auto p-6">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-base font-semibold text-on-surface">修正数据</h3>
-        <button id="btn-close-modal" class="text-on-surface-variant hover:text-on-surface transition-colors">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
-      <div class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium text-on-surface mb-1.5">Ozon订单号</label>
-          <input type="text" id="fix-order-no" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" value="OZ-2024011599">
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-on-surface mb-1.5">采购金额</label>
-          <input type="text" id="fix-amount" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" value="890.00">
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-on-surface mb-1.5">备注</label>
-          <textarea class="w-full h-20 bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors resize-none" placeholder="输入修正原因或备注信息"></textarea>
-        </div>
-      </div>
-      <div class="flex items-center justify-end gap-3 mt-6">
-        <button id="btn-cancel-fix" class="bg-surface-container text-on-surface border-none px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all">
-          取消
-        </button>
-        <button id="btn-save-fix" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">
-          保存修正
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 绑定成功提示 -->
-  <div id="success-toast" class="fixed top-6 right-6 bg-success text-white px-4 py-3 rounded-lg shadow-float flex items-center gap-2 z-50 hidden">
-    <i data-lucide="check-circle" class="w-5 h-5"></i>
-    <span class="text-sm font-medium">批量绑定成功！</span>
-  </div>
-
-  <script>lucide.createIcons();</script>
   <script>
     $(function() {
-      // 录单方式切换
-      var methods = ['paste', 'ocr', 'import'];
-      
-      $('#method-paste').on('click', function() {
-        switchMethod('paste');
+      lucide.createIcons();
+
+      // Tab 切换逻辑
+      var tabBtns = $('.tab-btn');
+      var tabPanels = $('.tab-panel');
+
+      tabBtns.on('click', function() {
+        var btn = $(this);
+        var tabId = btn.attr('id').replace('tab-', '');
+
+        // 切换按钮状态
+        tabBtns.removeClass('text-primary border-primary bg-primary/5').addClass('text-on-surface-variant border-transparent');
+        btn.removeClass('text-on-surface-variant border-transparent').addClass('text-primary border-primary bg-primary/5');
+
+        // 切换面板
+        tabPanels.addClass('hidden');
+        $('#panel-' + tabId).removeClass('hidden');
+
+        lucide.createIcons();
       });
-      
-      $('#method-ocr').on('click', function() {
-        switchMethod('ocr');
-      });
-      
-      $('#method-import').on('click', function() {
-        switchMethod('import');
-      });
-      
-      function switchMethod(targetMethod) {
-        // 更新方式卡片样式
-        methods.forEach(function(m) {
-          var $card = $('#method-' + m);
-          var $icon = $card.find('.w-10');
-          if (m === targetMethod) {
-            $card.removeClass('border-transparent').addClass('border-primary');
-            $icon.removeClass('bg-surface-container-high').addClass('bg-primary/10');
-            $icon.find('i').removeClass('text-on-surface-variant').addClass('text-primary');
-          } else {
-            $card.removeClass('border-primary').addClass('border-transparent');
-            $icon.removeClass('bg-primary/10').addClass('bg-surface-container-high');
-            $icon.find('i').removeClass('text-primary').addClass('text-on-surface-variant');
-          }
-        });
-        
-        // 切换面板显示
-        methods.forEach(function(m) {
-          if (m === targetMethod) {
-            $('#panel-' + m).removeClass('hidden');
-          } else {
-            $('#panel-' + m).addClass('hidden');
-          }
-        });
-      }
-      
-      // 清空粘贴内容
-      $('#btn-clear-paste').on('click', function() {
-        $('#paste-input').val('');
-      });
-      
-      // 解析粘贴数据 - 点击后应实现：
-      // 1. 读取文本框内容，按行分割
-      // 2. 根据分隔符（制表符/逗号/竖线）解析字段
-      // 3. 校验字段完整性，标记异常数据
-      // 4. 将解析结果渲染到预览表格
+
+      // 智能解析按钮
       $('#btn-parse-paste').on('click', function() {
-        console.log('解析粘贴数据，自动识别格式并填充预览表格');
+        console.log('智能解析粘贴内容');
+        // 后续应实现：
+        // 1. 获取 textarea 内容
+        // 2. 按行分割
+        // 3. 自动识别格式（逗号分隔或单号）
+        // 4. 验证快递单号格式
+        // 5. 匹配订单号
+        // 6. 更新数据预览表格
       });
-      
-      // 上传区域点击
-      $('#upload-area').on('click', function() {
-        $('#file-input-ocr').click();
+
+      // OCR 上传按钮
+      $('#btn-upload-ocr').on('click', function() {
+        $('#ocr-upload').click();
       });
-      
-      // 文件选择变化 - 点击后应实现：
-      // 1. 读取选择的图片文件
-      // 2. 生成缩略图预览
-      // 3. 显示图片预览区域
-      $('#file-input-ocr').on('change', function() {
-        console.log('处理图片上传，显示预览');
+
+      $('#ocr-upload').on('change', function() {
+        console.log('OCR图片已选择:', $(this).prop('files'));
+        // 后续应实现：
+        // 1. 读取图片文件
+        // 2. 调用OCR接口识别
+        // 3. 解析快递单号等信息
+        // 4. 更新识别结果预览区
       });
-      
-      // 拖拽上传 - 应实现拖拽事件处理：
-      // 1. dragover 时高亮上传区域
-      // 2. drop 时读取文件并显示预览
-      $('#upload-area').on('dragover', function(e) {
-        e.preventDefault();
-        $(this).addClass('border-primary bg-primary/5');
+
+      // Excel 上传按钮
+      $('#btn-upload-excel').on('click', function() {
+        $('#excel-upload').click();
       });
-      
-      $('#upload-area').on('dragleave', function() {
-        $(this).removeClass('border-primary bg-primary/5');
+
+      $('#excel-upload').on('change', function() {
+        console.log('Excel文件已选择:', $(this).prop('files'));
+        // 后续应实现：
+        // 1. 读取Excel文件
+        // 2. 解析必填列数据
+        // 3. 校验数据完整性
+        // 4. 更新导入预览表格
       });
-      
-      $('#upload-area').on('drop', function(e) {
-        e.preventDefault();
-        $(this).removeClass('border-primary bg-primary/5');
-        console.log('处理拖拽上传的文件');
-      });
-      
-      // OCR识别 - 点击后应实现：
-      // 1. 将上传的图片发送到OCR服务
-      // 2. 解析识别结果，提取订单信息
-      // 3. 填充预览表格
-      $('#btn-parse-ocr').on('click', function() {
-        console.log('调用OCR服务识别图片中的订单信息');
-      });
-      
-      // 清空OCR上传
-      $('#btn-clear-ocr').on('click', function() {
-        $('#preview-images').addClass('hidden').empty();
-        $('#file-input-ocr').val('');
-      });
-      
-      // 导入区域点击
-      $('#import-area').on('click', function() {
-        $('#file-input-import').click();
-      });
-      
-      // 导入文件选择 - 应实现：
-      // 1. 读取Excel/CSV文件
-      // 2. 解析表格数据
-      // 3. 显示文件信息和数据条数
-      $('#file-input-import').on('change', function() {
-        console.log('处理表格文件上传');
-        $('#import-file-info').removeClass('hidden');
-      });
-      
-      // 移除导入文件
-      $('#btn-remove-file').on('click', function() {
-        $('#import-file-info').addClass('hidden');
-        $('#file-input-import').val('');
-      });
-      
-      // 导入数据 - 点击后应实现：
-      // 1. 解析Excel/CSV文件内容
-      // 2. 校验字段格式
-      // 3. 填充预览表格
-      $('#btn-parse-import').on('click', function() {
-        console.log('解析表格文件并填充预览');
-      });
-      
-      // 下载模板 - 应实现：
-      // 1. 生成包含示例数据的Excel模板
-      // 2. 触发浏览器下载
+
+      // 下载模板按钮
       $('#btn-download-template').on('click', function() {
-        console.log('下载Excel导入模板');
+        console.log('下载Excel模板');
+        // 后续应实现：
+        // 1. 生成包含必填列标题的Excel模板
+        // 2. 触发浏览器下载
       });
-      
-      // 全选
-      $('#btn-select-all').on('click', function() {
-        $('.row-checkbox').prop('checked', true);
-        updateSelectedCount();
+
+      // 删除按钮事件
+      $('#data-table-body').on('click', '[id^="btn-delete-"]', function() {
+        var rowId = $(this).attr('id').replace('btn-delete-', '');
+        console.log('删除数据行:', rowId);
+        // 后续应实现：
+        // 1. 弹出确认对话框
+        // 2. 确认后从表格中移除该行
+        // 3. 更新统计数据
+        $('#row-' + rowId).fadeOut(300, function() {
+          $(this).remove();
+        });
       });
-      
-      // 取消全选
-      $('#btn-deselect-all').on('click', function() {
-        $('.row-checkbox').prop('checked', false);
-        updateSelectedCount();
+
+      // 批量绑定按钮
+      $('#btn-bind').on('click', function() {
+        console.log('执行批量绑定');
+        // 后续应实现：
+        // 1. 收集所有校验通过的数据
+        // 2. 调用后端API批量绑定
+        // 3. 显示绑定结果
+        // 4. 成功后跳转到采购管理页面
+
+        // 模拟成功跳转
+        if (confirm('确认绑定 3 条数据？绑定后将自动跳转至采购管理页面。')) {
+          alert('成功绑定 3 条数据！');
+          window.location.href = 'purchase.html';
+        }
       });
-      
+
       // 全选复选框
       $('#check-all').on('change', function() {
-        $('.row-checkbox').prop('checked', $(this).prop('checked'));
-        updateSelectedCount();
-      });
-      
-      // 行复选框变化
-      $('.row-checkbox').on('change', function() {
-        updateSelectedCount();
-      });
-      
-      function updateSelectedCount() {
-        var count = $('.row-checkbox:checked').length;
-        $('#selected-count').text(count);
-      }
-      
-      // 修正数据按钮
-      $('.btn-fix-row').on('click', function() {
-        var row = $(this).data('row');
-        console.log('打开第' + row + '行数据修正弹窗');
-        $('#fix-modal').removeClass('hidden');
-      });
-      
-      $('.btn-fix-validation').on('click', function() {
-        var type = $(this).data('type');
-        console.log('打开' + type + '类型异常的修正弹窗');
-        $('#fix-modal').removeClass('hidden');
-      });
-      
-      // 关闭弹窗
-      $('#btn-close-modal').on('click', function() {
-        $('#fix-modal').addClass('hidden');
-      });
-      
-      $('#btn-cancel-fix').on('click', function() {
-        $('#fix-modal').addClass('hidden');
-      });
-      
-      // 保存修正 - 点击后应实现：
-      // 1. 校正输入的数据
-      // 2. 更新预览表格对应行
-      // 3. 移除校验异常提示
-      // 4. 关闭弹窗
-      $('#btn-save-fix').on('click', function() {
-        console.log('保存数据修正，更新表格和校验状态');
-        $('#fix-modal').addClass('hidden');
-      });
-      
-      // 取消绑定
-      $('#btn-cancel-bind').on('click', function() {
-        // 清空所有输入和预览
-        $('#paste-input').val('');
-        console.log('取消绑定，清空所有输入');
-      });
-      
-      // 确认绑定 - 点击后应实现：
-      // 1. 收集选中的数据行
-      // 2. 校验所有数据是否正常
-      // 3. 如有异常，提示用户确认是否继续
-      // 4. 调用后端API批量绑定数据到Ozon订单
-      // 5. 显示成功提示，更新历史记录
-      $('#btn-confirm-bind').on('click', function() {
-        console.log('批量绑定采购信息到Ozon订单');
-        // 显示成功提示
-        $('#success-toast').removeClass('hidden');
-        setTimeout(function() {
-          $('#success-toast').addClass('hidden');
-        }, 3000);
-      });
-      
-      // 查看全部历史
-      $('#btn-view-all-history').on('click', function() {
-        console.log('跳转到完整的录单历史页面');
-      });
-      
-      // 点击弹窗外部关闭
-      $('#fix-modal').on('click', function(e) {
-        if ($(e.target).is('#fix-modal')) {
-          $(this).addClass('hidden');
-        }
+        console.log('全选状态:', $(this).prop('checked'));
+        // 后续应实现：控制表格中的复选框状态
       });
     });
   </script>
