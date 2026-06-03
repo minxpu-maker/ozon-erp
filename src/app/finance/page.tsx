@@ -26,8 +26,8 @@ const navItems = [
 ];
 
 export default function FinancePage() {
-  const [orders, setOrders] = useState<any[]>([]);
-  const [stats, setStats] = useState({ totalOrders: 0, totalRevenue: '0', totalCost: '0', totalProfit: '0' });
+  const [pendingOrders, setPendingOrders] = useState<any[]>([]);
+  const [settledRecords, setSettledRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { fetchData(); }, []);
@@ -37,11 +37,18 @@ export default function FinancePage() {
       const res = await fetch('/api/finance');
       const data = await res.json();
       if (data.success) {
-        setOrders(data.data.orders);
-        setStats(data.data.stats);
+        setPendingOrders(data.data.pendingOrders || []);
+        setSettledRecords(data.data.settledRecords || []);
       }
     } catch (error) { console.error('获取数据失败:', error); }
     finally { setLoading(false); }
+  };
+
+  // 计算统计数据
+  const stats = {
+    totalOrders: pendingOrders.length,
+    settledOrders: settledRecords.length,
+    totalProfit: settledRecords.reduce((sum, r) => sum + parseFloat(r.net_profit || '0'), 0).toFixed(2),
   };
 
   return (
@@ -77,60 +84,86 @@ export default function FinancePage() {
           </div>
 
           {/* 统计卡片 */}
-          <div className="grid grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-3 gap-4 mb-6">
             <div className="bg-white rounded-lg shadow-sm p-5 border border-[#E6EAF2]">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm text-[#637089]">已结算订单</span>
+                <span className="text-sm text-[#637089]">待核算订单</span>
                 <div className="w-8 h-8 bg-[#2F6BFF]/10 rounded-lg flex items-center justify-center"><Calculator className="w-4 h-4 text-[#2F6BFF]" /></div>
               </div>
               <div className="text-2xl font-bold text-[#152033]">{stats.totalOrders}<span className="text-sm font-normal text-[#637089] ml-1">笔</span></div>
             </div>
             <div className="bg-white rounded-lg shadow-sm p-5 border border-[#E6EAF2]">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm text-[#637089]">总收入</span>
+                <span className="text-sm text-[#637089]">已结算订单</span>
                 <div className="w-8 h-8 bg-green-500/10 rounded-lg flex items-center justify-center"><TrendingUp className="w-4 h-4 text-green-600" /></div>
               </div>
-              <div className="text-2xl font-bold text-[#152033]">¥{parseFloat(stats.totalRevenue).toFixed(2)}</div>
+              <div className="text-2xl font-bold text-[#152033]">{stats.settledOrders}<span className="text-sm font-normal text-[#637089] ml-1">笔</span></div>
             </div>
             <div className="bg-white rounded-lg shadow-sm p-5 border border-[#E6EAF2]">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm text-[#637089]">总成本</span>
-                <div className="w-8 h-8 bg-red-500/10 rounded-lg flex items-center justify-center"><TrendingDown className="w-4 h-4 text-red-600" /></div>
-              </div>
-              <div className="text-2xl font-bold text-[#152033]">¥{parseFloat(stats.totalCost).toFixed(2)}</div>
-            </div>
-            <div className="bg-white rounded-lg shadow-sm p-5 border border-[#E6EAF2]">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm text-[#637089]">净利润</span>
+                <span className="text-sm text-[#637089]">累计净利润</span>
                 <div className="w-8 h-8 bg-[#2F6BFF]/10 rounded-lg flex items-center justify-center"><DollarSign className="w-4 h-4 text-[#2F6BFF]" /></div>
               </div>
-              <div className="text-2xl font-bold text-green-600">¥{parseFloat(stats.totalProfit).toFixed(2)}</div>
+              <div className="text-2xl font-bold text-green-600">¥{stats.totalProfit}</div>
             </div>
           </div>
 
-          {/* 订单列表 */}
-          <div className="bg-white rounded-lg shadow-sm p-4 border border-[#E6EAF2]">
-            <h3 className="text-base font-semibold text-[#152033] mb-4">已结算订单</h3>
+          {/* 待核算订单 */}
+          <div className="bg-white rounded-lg shadow-sm p-4 border border-[#E6EAF2] mb-6">
+            <h3 className="text-base font-semibold text-[#152033] mb-4">待核算订单（售后期结束后可结算）</h3>
             {loading ? <div className="text-center py-8 text-[#637089]"><RefreshCw className="w-5 h-5 animate-spin mx-auto" /></div> :
-              orders.length === 0 ? <div className="text-center py-8 text-[#637089]">暂无已结算订单</div> :
+              pendingOrders.length === 0 ? <div className="text-center py-8 text-[#637089]">暂无待核算订单</div> :
               <table className="w-full">
                 <thead className="bg-[#F6F8FB]">
                   <tr>
                     <th className="text-left text-xs font-medium text-[#637089] px-4 py-3">订单号</th>
-                    <th className="text-left text-xs font-medium text-[#637089] px-4 py-3">店铺</th>
+                    <th className="text-left text-xs font-medium text-[#637089] px-4 py-3">发货单号</th>
                     <th className="text-left text-xs font-medium text-[#637089] px-4 py-3">买家</th>
-                    <th className="text-left text-xs font-medium text-[#637089] px-4 py-3">结算金额</th>
+                    <th className="text-left text-xs font-medium text-[#637089] px-4 py-3">订单金额</th>
                     <th className="text-left text-xs font-medium text-[#637089] px-4 py-3">发货时间</th>
+                    <th className="text-left text-xs font-medium text-[#637089] px-4 py-3">操作</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {orders.map((item) => (
-                    <tr key={item.order.id} className="border-t border-[#E6EAF2]">
-                      <td className="px-4 py-3 text-sm font-medium text-[#2F6BFF]">{item.order.ozonOrderId}</td>
-                      <td className="px-4 py-3"><span className="px-2 py-1 bg-[#2F6BFF]/10 text-[#2F6BFF] rounded text-xs">{item.shop?.name || '-'}</span></td>
-                      <td className="px-4 py-3 text-sm text-[#152033]">{item.order.buyerName}</td>
-                      <td className="px-4 py-3 text-sm font-medium text-[#152033]">¥{item.order.totalPrice}</td>
-                      <td className="px-4 py-3 text-sm text-[#637089]">{item.order.shippedAt ? new Date(item.order.shippedAt).toLocaleDateString('zh-CN') : '-'}</td>
+                  {pendingOrders.map((order) => (
+                    <tr key={order.id} className="border-t border-[#E6EAF2]">
+                      <td className="px-4 py-3 text-sm font-medium text-[#2F6BFF]">{order.ozon_order_id}</td>
+                      <td className="px-4 py-3 text-sm text-[#152033]">{order.ozon_posting_number}</td>
+                      <td className="px-4 py-3 text-sm text-[#152033]">{order.buyer_name || '-'}</td>
+                      <td className="px-4 py-3 text-sm font-medium text-[#152033]">¥{order.total_price}</td>
+                      <td className="px-4 py-3 text-sm text-[#637089]">{order.shipped_at ? new Date(order.shipped_at).toLocaleDateString('zh-CN') : '-'}</td>
+                      <td className="px-4 py-3"><button className="text-xs text-[#2F6BFF] hover:underline">核算</button></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>}
+          </div>
+
+          {/* 已结算记录 */}
+          <div className="bg-white rounded-lg shadow-sm p-4 border border-[#E6EAF2]">
+            <h3 className="text-base font-semibold text-[#152033] mb-4">已结算记录</h3>
+            {loading ? <div className="text-center py-8 text-[#637089]"><RefreshCw className="w-5 h-5 animate-spin mx-auto" /></div> :
+              settledRecords.length === 0 ? <div className="text-center py-8 text-[#637089]">暂无已结算记录</div> :
+              <table className="w-full">
+                <thead className="bg-[#F6F8FB]">
+                  <tr>
+                    <th className="text-left text-xs font-medium text-[#637089] px-4 py-3">订单号</th>
+                    <th className="text-left text-xs font-medium text-[#637089] px-4 py-3">结算金额</th>
+                    <th className="text-left text-xs font-medium text-[#637089] px-4 py-3">采购成本</th>
+                    <th className="text-left text-xs font-medium text-[#637089] px-4 py-3">运费</th>
+                    <th className="text-left text-xs font-medium text-[#637089] px-4 py-3">净利润</th>
+                    <th className="text-left text-xs font-medium text-[#637089] px-4 py-3">结算时间</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {settledRecords.map((record) => (
+                    <tr key={record.id} className="border-t border-[#E6EAF2]">
+                      <td className="px-4 py-3 text-sm font-medium text-[#2F6BFF]">{record.order_id}</td>
+                      <td className="px-4 py-3 text-sm text-[#152033]">¥{record.ozon_settlement_amount || '0'}</td>
+                      <td className="px-4 py-3 text-sm text-[#152033]">¥{record.purchase_cost || '0'}</td>
+                      <td className="px-4 py-3 text-sm text-[#152033]">¥{record.domestic_shipping_cost || '0'}</td>
+                      <td className="px-4 py-3 text-sm font-medium text-green-600">¥{record.net_profit || '0'}</td>
+                      <td className="px-4 py-3 text-sm text-[#637089]">{record.settled_at ? new Date(record.settled_at).toLocaleDateString('zh-CN') : '-'}</td>
                     </tr>
                   ))}
                 </tbody>
