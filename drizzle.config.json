@@ -1,0 +1,9 @@
+{
+  "$schema": "https://drizzle.team/drizzle-0.config.json",
+  "schema": "./src/storage/database/shared/schema.ts",
+  "out": "./drizzle",
+  "dialect": "postgresql",
+  "dbCredentials": {
+    "url": "${DATABASE_URL}"
+  }
+}
