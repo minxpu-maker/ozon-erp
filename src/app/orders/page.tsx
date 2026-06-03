@@ -85,14 +85,14 @@ interface Order {
   shippedAt: string | null;
 }
 
-// 状态映射
+// 状态映射 - 使用主系统企业风格色彩
 const statusMap: Record<string, { label: string; color: string }> = {
-  awaiting_packaging: { label: '待打包', color: 'bg-amber-100 text-amber-700' },
-  awaiting_deliver: { label: '待发货', color: 'bg-blue-100 text-blue-700' },
-  delivering: { label: '配送中', color: 'bg-purple-100 text-purple-700' },
-  delivered: { label: '已送达', color: 'bg-green-100 text-green-700' },
-  returned: { label: '已退货', color: 'bg-red-100 text-red-700' },
-  cancelled: { label: '已取消', color: 'bg-gray-100 text-gray-500' },
+  awaiting_packaging: { label: '待打包', color: 'bg-[#FFF7ED] text-[#C2410C]' }, // 橙色系-待处理
+  awaiting_deliver: { label: '待发货', color: 'bg-[#EFF6FF] text-[#2F6BFF]' }, // 品牌蓝
+  delivering: { label: '配送中', color: 'bg-[#EFF6FF] text-[#2F6BFF]' }, // 品牌蓝
+  delivered: { label: '已送达', color: 'bg-[#ECFDF5] text-[#16A37B]' }, // 成功绿
+  returned: { label: '已退货', color: 'bg-[#FEF2F2] text-[#DC2626]' }, // 红色
+  cancelled: { label: '已取消', color: 'bg-[#F3F4F6] text-[#637089]' }, // 次文本色
 };
 
 export default function OrdersPage() {
@@ -489,25 +489,25 @@ export default function OrdersPage() {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-[#637089]">采购绑定</span>
-                      <span className={detailOrder.isPurchaseBound ? 'text-green-600' : 'text-amber-600'}>
+                      <span className={detailOrder.isPurchaseBound ? 'text-[#16A37B]' : 'text-[#2F6BFF]'}>
                         {detailOrder.isPurchaseBound ? '已绑定' : '待绑定'}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-[#637089]">入库验货</span>
-                      <span className={detailOrder.isInspected ? 'text-green-600' : 'text-amber-600'}>
+                      <span className={detailOrder.isInspected ? 'text-[#16A37B]' : 'text-[#2F6BFF]'}>
                         {detailOrder.isInspected ? '已验货' : '待验货'}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-[#637089]">打包状态</span>
-                      <span className={detailOrder.isPacked ? 'text-green-600' : 'text-amber-600'}>
+                      <span className={detailOrder.isPacked ? 'text-[#16A37B]' : 'text-[#2F6BFF]'}>
                         {detailOrder.isPacked ? '已打包' : '待打包'}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-[#637089]">财务结算</span>
-                      <span className={detailOrder.isSettled ? 'text-green-600' : 'text-amber-600'}>
+                      <span className={detailOrder.isSettled ? 'text-[#16A37B]' : 'text-[#2F6BFF]'}>
                         {detailOrder.isSettled ? '已结算' : '待结算'}
                       </span>
                     </div>
