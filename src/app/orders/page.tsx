@@ -21,21 +21,12 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogClose,
-} from '@/components/ui/dialog';
-import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Search,
@@ -43,13 +34,9 @@ import {
   Download,
   Package,
   Truck,
-  Clock,
   CheckCircle2,
   XCircle,
-  AlertCircle,
-  CreditCard,
   Eye,
-  MoreHorizontal,
   Bell,
   LayoutDashboard,
   ShoppingCart,
@@ -64,54 +51,48 @@ import {
   UserCircle,
   Shield,
   Settings,
-  ChevronDown,
-  Calendar,
 } from 'lucide-react';
 import Link from 'next/link';
-import Image from 'next/image';
 
 // 订单状态类型
-type OrderStatus =
-  | 'awaiting_packaging'
-  | 'awaiting_delivering'
-  | 'delivered'
-  | 'returned'
+type OrderStatus = 
+  | 'awaiting_packaging' 
+  | 'awaiting_deliver' 
+  | 'delivering' 
+  | 'delivered' 
+  | 'returned' 
   | 'cancelled';
 
-// 订单数据类型
-interface OrderItem {
-  offer_id: string;
-  name: string;
-  quantity: number;
-  price: string;
-  image?: string;
-}
-
+// 订单数据类型 - 匹配API返回结构
 interface Order {
   id: string;
-  posting_number: string;
-  order_id: string;
-  order_number: string;
+  ozonOrderId: string;
+  postingNumber: string;
+  shopId: string;
+  shopName: string;
   status: OrderStatus;
-  items: OrderItem[];
-  buyer?: {
-    name: string;
-    phone?: string;
-  };
-  total_price: string;
-  created_at: string;
-  in_process_at: string;
-  warehouse_id?: string;
-  warehouse_name?: string;
+  buyerName: string | null;
+  buyerPhone: string | null;
+  recipientName: string | null;
+  recipientCity: string | null;
+  totalPrice: string;
+  trackingNumber: string | null;
+  isPurchaseBound: boolean;
+  isInspected: boolean;
+  isPacked: boolean;
+  isSettled: boolean;
+  createdAt: string;
+  shippedAt: string | null;
 }
 
 // 状态映射
-const statusMap: Record<OrderStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; color: string }> = {
-  awaiting_packaging: { label: '待打包', variant: 'secondary', color: 'text-amber-600' },
-  awaiting_delivering: { label: '待发货', variant: 'default', color: 'text-blue-600' },
-  delivered: { label: '已发货', variant: 'outline', color: 'text-green-600' },
-  returned: { label: '已退货', variant: 'destructive', color: 'text-red-600' },
-  cancelled: { label: '已取消', variant: 'destructive', color: 'text-gray-500' },
+const statusMap: Record<string, { label: string; color: string }> = {
+  awaiting_packaging: { label: '待打包', color: 'bg-amber-100 text-amber-700' },
+  awaiting_deliver: { label: '待发货', color: 'bg-blue-100 text-blue-700' },
+  delivering: { label: '配送中', color: 'bg-purple-100 text-purple-700' },
+  delivered: { label: '已送达', color: 'bg-green-100 text-green-700' },
+  returned: { label: '已退货', color: 'bg-red-100 text-red-700' },
+  cancelled: { label: '已取消', color: 'bg-gray-100 text-gray-500' },
 };
 
 export default function OrdersPage() {
@@ -121,11 +102,6 @@ export default function OrdersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
-  const [syncStatus, setSyncStatus] = useState<{
-    lastSync: string;
-    nextSync: string;
-    total: number;
-  } | null>(null);
 
   // 订单详情抽屉
   const [detailOrder, setDetailOrder] = useState<Order | null>(null);
@@ -140,24 +116,14 @@ export default function OrdersPage() {
 
       const res = await fetch(`/api/orders?${params.toString()}`);
       const data = await res.json();
-      setOrders(data.orders || []);
+      // 修复：API返回 data.data.orders
+      setOrders(data.data?.orders || []);
     } catch (error) {
       console.error('获取订单失败:', error);
     } finally {
       setLoading(false);
     }
   }, [searchTerm, statusFilter]);
-
-  // 获取同步状态
-  const fetchSyncStatus = async () => {
-    try {
-      const res = await fetch('/api/orders/sync-status');
-      const data = await res.json();
-      setSyncStatus(data);
-    } catch (error) {
-      console.error('获取同步状态失败:', error);
-    }
-  };
 
   // 同步订单
   const syncOrders = async () => {
@@ -171,7 +137,6 @@ export default function OrdersPage() {
       const data = await res.json();
       if (data.success) {
         fetchOrders();
-        fetchSyncStatus();
       }
     } catch (error) {
       console.error('同步订单失败:', error);
@@ -182,7 +147,6 @@ export default function OrdersPage() {
 
   useEffect(() => {
     fetchOrders();
-    fetchSyncStatus();
   }, [fetchOrders]);
 
   // 全选/取消全选
@@ -205,31 +169,40 @@ export default function OrdersPage() {
     setSelectedOrders(newSelected);
   };
 
+  const getStatusBadge = (status: string) => {
+    const info = statusMap[status] || { label: status, color: 'bg-gray-100 text-gray-500' };
+    return (
+      <span className={`px-2 py-1 rounded text-xs font-medium ${info.color}`}>
+        {info.label}
+      </span>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-[#F6F8FB]">
       {/* 顶部导航 */}
-      <header className="sticky top-0 z-40 h-14 flex items-center justify-between px-6 border-b border-[#E6EAF2]/50 bg-white">
+      <header className="sticky top-0 z-40 h-14 flex items-center justify-between px-6 border-b border-[#E6EAF2] bg-white">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-[#2F6BFF] rounded-lg flex items-center justify-center">
             <Box className="w-4 h-4 text-white" />
           </div>
-          <span className="font-semibold text-base">Ozon ERP</span>
+          <span className="font-semibold text-base text-[#152033]">Ozon ERP</span>
         </div>
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon-sm" className="relative">
+          <Button variant="ghost" size="icon" className="relative">
             <Bell className="w-4 h-4" />
             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center">3</span>
           </Button>
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-[#2F6BFF]/10 rounded-full flex items-center justify-center text-[#2F6BFF] font-medium text-sm">初</div>
-            <span className="text-sm font-medium">小初</span>
+            <span className="text-sm font-medium text-[#152033]">小初</span>
           </div>
         </div>
       </header>
 
       <div className="flex" style={{ height: 'calc(100vh - 3.5rem)' }}>
         {/* 侧边栏 */}
-        <aside className="w-56 shrink-0 bg-white border-r border-[#E6EAF2]/50 overflow-y-auto">
+        <aside className="w-56 shrink-0 bg-white border-r border-[#E6EAF2] overflow-y-auto">
           <div className="p-3 space-y-0.5">
             <Link href="/dashboard" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[#637089] hover:bg-[#EEF1F6] font-medium text-sm transition-colors">
               <LayoutDashboard className="w-4 h-4" />仪表盘
@@ -293,18 +266,10 @@ export default function OrdersPage() {
           {/* 页面标题 */}
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-2xl font-bold text-[#152033]">订单管理</h1>
-            {syncStatus && (
-              <div className="flex items-center gap-2 text-sm text-[#637089] bg-[#EEF1F6] px-4 py-2 rounded-lg">
-                <RefreshCw className="w-4 h-4" />
-                <span>最近同步: {syncStatus.lastSync}</span>
-                <span className="text-[#637089]/50">|</span>
-                <span>下次自动同步: {syncStatus.nextSync}</span>
-              </div>
-            )}
           </div>
 
           {/* 筛选栏 */}
-          <Card className="mb-4 shadow-sm">
+          <Card className="mb-4 shadow-sm border-[#E6EAF2]">
             <CardContent className="p-4">
               <div className="flex flex-wrap items-center gap-4">
                 <div className="flex-1 min-w-[200px] max-w-[300px]">
@@ -326,20 +291,20 @@ export default function OrdersPage() {
                   <SelectContent>
                     <SelectItem value="all">全部状态</SelectItem>
                     <SelectItem value="awaiting_packaging">待打包</SelectItem>
-                    <SelectItem value="awaiting_delivering">待发货</SelectItem>
-                    <SelectItem value="delivered">已发货</SelectItem>
-                    <SelectItem value="returned">已退货</SelectItem>
+                    <SelectItem value="awaiting_deliver">待发货</SelectItem>
+                    <SelectItem value="delivering">配送中</SelectItem>
+                    <SelectItem value="delivered">已送达</SelectItem>
                     <SelectItem value="cancelled">已取消</SelectItem>
                   </SelectContent>
                 </Select>
 
-                <Button onClick={syncOrders} disabled={syncing}>
-                  <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+                <Button onClick={syncOrders} disabled={syncing} className="bg-[#2F6BFF] hover:bg-[#2F6BFF]/90">
+                  <RefreshCw className={`w-4 h-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
                   {syncing ? '同步中...' : '同步订单'}
                 </Button>
 
-                <Button variant="outline">
-                  <Download className="w-4 h-4" />
+                <Button variant="outline" className="border-[#E6EAF2]">
+                  <Download className="w-4 h-4 mr-2" />
                   导出
                 </Button>
               </div>
@@ -350,14 +315,14 @@ export default function OrdersPage() {
           {selectedOrders.size > 0 && (
             <div className="bg-[#2F6BFF]/10 border border-[#2F6BFF]/20 rounded-lg px-4 py-2 mb-4 flex items-center gap-4">
               <span className="text-sm text-[#2F6BFF]">已选择 {selectedOrders.size} 条订单</span>
-              <Button size="sm" variant="outline">批量标记发货</Button>
-              <Button size="sm" variant="outline">创建采购任务</Button>
+              <Button size="sm" variant="outline" className="border-[#E6EAF2]">批量标记发货</Button>
+              <Button size="sm" variant="outline" className="border-[#E6EAF2]">创建采购任务</Button>
               <Button size="sm" variant="ghost" onClick={() => setSelectedOrders(new Set())}>取消选择</Button>
             </div>
           )}
 
           {/* 订单列表 */}
-          <Card className="shadow-sm">
+          <Card className="shadow-sm border-[#E6EAF2]">
             <Table>
               <TableHeader>
                 <TableRow className="bg-[#EEF1F6]/50">
@@ -368,9 +333,9 @@ export default function OrdersPage() {
                     />
                   </TableHead>
                   <TableHead>订单号</TableHead>
-                  <TableHead>商品信息</TableHead>
+                  <TableHead>发货单号</TableHead>
+                  <TableHead>店铺</TableHead>
                   <TableHead>买家</TableHead>
-                  <TableHead>订单金额</TableHead>
                   <TableHead>状态</TableHead>
                   <TableHead>下单时间</TableHead>
                   <TableHead className="w-24">操作</TableHead>
@@ -382,9 +347,9 @@ export default function OrdersPage() {
                     <TableRow key={i}>
                       <TableCell><Skeleton className="w-4 h-4" /></TableCell>
                       <TableCell><Skeleton className="w-32 h-4" /></TableCell>
-                      <TableCell><Skeleton className="w-48 h-4" /></TableCell>
+                      <TableCell><Skeleton className="w-32 h-4" /></TableCell>
                       <TableCell><Skeleton className="w-20 h-4" /></TableCell>
-                      <TableCell><Skeleton className="w-16 h-4" /></TableCell>
+                      <TableCell><Skeleton className="w-20 h-4" /></TableCell>
                       <TableCell><Skeleton className="w-16 h-4" /></TableCell>
                       <TableCell><Skeleton className="w-24 h-4" /></TableCell>
                       <TableCell><Skeleton className="w-16 h-4" /></TableCell>
@@ -412,40 +377,25 @@ export default function OrdersPage() {
                           onClick={() => setDetailOrder(order)}
                           className="text-[#2F6BFF] hover:underline font-medium"
                         >
-                          {order.posting_number}
+                          {order.ozonOrderId}
                         </button>
                       </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {order.items[0]?.image && (
-                            <div className="w-10 h-10 rounded bg-[#EEF1F6] overflow-hidden relative">
-                              <Image
-                                src={order.items[0].image}
-                                alt={order.items[0].name}
-                                fill
-                                className="object-cover"
-                              />
-                            </div>
-                          )}
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium truncate max-w-[200px]">
-                              {order.items[0]?.name || '-'}
-                            </p>
-                            <p className="text-xs text-[#637089]">
-                              {order.items.length > 1 ? `等${order.items.length}件商品` : `x${order.items[0]?.quantity || 1}`}
-                            </p>
-                          </div>
-                        </div>
+                      <TableCell className="text-sm text-[#637089]">
+                        {order.postingNumber}
                       </TableCell>
-                      <TableCell className="text-sm">{order.buyer?.name || '-'}</TableCell>
-                      <TableCell className="font-medium">¥{order.total_price}</TableCell>
                       <TableCell>
-                        <Badge variant={statusMap[order.status].variant} className={statusMap[order.status].color}>
-                          {statusMap[order.status].label}
-                        </Badge>
+                        <span className="px-2 py-0.5 rounded text-xs bg-blue-100 text-blue-700">
+                          {order.shopName}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {order.buyerName || '-'}
+                      </TableCell>
+                      <TableCell>
+                        {getStatusBadge(order.status)}
                       </TableCell>
                       <TableCell className="text-sm text-[#637089]">
-                        {new Date(order.created_at).toLocaleString('zh-CN', {
+                        {new Date(order.createdAt).toLocaleString('zh-CN', {
                           month: '2-digit',
                           day: '2-digit',
                           hour: '2-digit',
@@ -455,7 +405,7 @@ export default function OrdersPage() {
                       <TableCell>
                         <Button
                           variant="ghost"
-                          size="icon-sm"
+                          size="icon"
                           onClick={() => setDetailOrder(order)}
                         >
                           <Eye className="w-4 h-4" />
@@ -484,76 +434,98 @@ export default function OrdersPage() {
                   <h3 className="font-medium mb-3 text-[#152033]">基本信息</h3>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-[#637089]">订单号</span>
-                      <span className="font-medium">{detailOrder.posting_number}</span>
+                      <span className="text-[#637089]">Ozon订单号</span>
+                      <span className="font-medium">{detailOrder.ozonOrderId}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[#637089]">发货单号</span>
+                      <span className="font-medium">{detailOrder.postingNumber}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[#637089]">店铺</span>
+                      <span className="font-medium">{detailOrder.shopName}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-[#637089]">状态</span>
-                      <Badge variant={statusMap[detailOrder.status].variant}>
-                        {statusMap[detailOrder.status].label}
-                      </Badge>
+                      {getStatusBadge(detailOrder.status)}
                     </div>
                     <div className="flex justify-between">
                       <span className="text-[#637089]">下单时间</span>
-                      <span>{new Date(detailOrder.created_at).toLocaleString('zh-CN')}</span>
+                      <span>{new Date(detailOrder.createdAt).toLocaleString('zh-CN')}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-[#637089]">仓库</span>
-                      <span>{detailOrder.warehouse_name || '-'}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 商品列表 */}
-                <div>
-                  <h3 className="font-medium mb-3 text-[#152033]">商品列表</h3>
-                  <div className="space-y-3">
-                    {detailOrder.items.map((item, idx) => (
-                      <div key={idx} className="flex items-center gap-3 p-3 bg-[#F6F8FB] rounded-lg">
-                        {item.image && (
-                          <div className="w-12 h-12 rounded bg-white overflow-hidden relative">
-                            <Image src={item.image} alt={item.name} fill className="object-cover" />
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{item.name}</p>
-                          <p className="text-xs text-[#637089]">SKU: {item.offer_id}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-medium">¥{item.price}</p>
-                          <p className="text-xs text-[#637089]">x{item.quantity}</p>
-                        </div>
+                    {detailOrder.shippedAt && (
+                      <div className="flex justify-between">
+                        <span className="text-[#637089]">发货时间</span>
+                        <span>{new Date(detailOrder.shippedAt).toLocaleString('zh-CN')}</span>
                       </div>
-                    ))}
+                    )}
                   </div>
                 </div>
 
                 {/* 买家信息 */}
-                {detailOrder.buyer && (
+                <div>
+                  <h3 className="font-medium mb-3 text-[#152033]">买家信息</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-[#637089]">买家姓名</span>
+                      <span className="font-medium">{detailOrder.buyerName || '-'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[#637089]">联系电话</span>
+                      <span>{detailOrder.buyerPhone || '-'}</span>
+                    </div>
+                    {detailOrder.recipientCity && (
+                      <div className="flex justify-between">
+                        <span className="text-[#637089]">收货城市</span>
+                        <span>{detailOrder.recipientCity}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* 流程状态 */}
+                <div>
+                  <h3 className="font-medium mb-3 text-[#152033]">流程状态</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-[#637089]">采购绑定</span>
+                      <span className={detailOrder.isPurchaseBound ? 'text-green-600' : 'text-amber-600'}>
+                        {detailOrder.isPurchaseBound ? '已绑定' : '待绑定'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[#637089]">入库验货</span>
+                      <span className={detailOrder.isInspected ? 'text-green-600' : 'text-amber-600'}>
+                        {detailOrder.isInspected ? '已验货' : '待验货'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[#637089]">打包状态</span>
+                      <span className={detailOrder.isPacked ? 'text-green-600' : 'text-amber-600'}>
+                        {detailOrder.isPacked ? '已打包' : '待打包'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-[#637089]">财务结算</span>
+                      <span className={detailOrder.isSettled ? 'text-green-600' : 'text-amber-600'}>
+                        {detailOrder.isSettled ? '已结算' : '待结算'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 物流信息 */}
+                {detailOrder.trackingNumber && (
                   <div>
-                    <h3 className="font-medium mb-3 text-[#152033]">买家信息</h3>
+                    <h3 className="font-medium mb-3 text-[#152033]">物流信息</h3>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-[#637089]">姓名</span>
-                        <span>{detailOrder.buyer.name}</span>
+                        <span className="text-[#637089]">物流单号</span>
+                        <span className="font-medium">{detailOrder.trackingNumber}</span>
                       </div>
-                      {detailOrder.buyer.phone && (
-                        <div className="flex justify-between">
-                          <span className="text-[#637089]">电话</span>
-                          <span>{detailOrder.buyer.phone}</span>
-                        </div>
-                      )}
                     </div>
                   </div>
                 )}
-
-                {/* 金额信息 */}
-                <div className="border-t pt-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[#637089]">订单总额</span>
-                    <span className="text-xl font-bold text-[#152033]">¥{detailOrder.total_price}</span>
-                  </div>
-                </div>
               </div>
             </>
           )}
