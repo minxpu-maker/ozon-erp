@@ -137,10 +137,17 @@ export async function POST(request: NextRequest) {
             apiKey: shop.api_key,
           });
           
-          // 获取已付款待打包的订单
+          // 计算时间范围：最近30天
+          const now = new Date();
+          const since = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          const sinceStr = since.toISOString();
+          const toStr = now.toISOString();
+          
+          // 获取最近30天的订单（不限制状态）
           const response = await client.getFbsOrders({
             filter: {
-              status: 'awaiting_packaging',
+              since: sinceStr,
+              to: toStr,
             },
             limit: 100,
           });
@@ -163,11 +170,14 @@ export async function POST(request: NextRequest) {
               .where(eq(orders.ozon_posting_number, posting.posting_number))
               .limit(1);
 
+            // 获取Ozon订单状态
+            const ozonStatus = posting.status || 'unknown';
+            
             const orderRecord = {
               ozon_order_id: orderData.order_id?.toString() || '',
               ozon_posting_number: posting.posting_number,
               shop_id: shop.id,
-              status: 'awaiting_packaging',
+              status: ozonStatus,
               buyer_name: orderData.customer?.name || null,
               buyer_phone: orderData.customer?.phone || null,
               recipient_name: orderData.address?.recipient || null,
