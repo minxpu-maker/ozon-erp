@@ -35,7 +35,10 @@ export default function WmsPage() {
     try {
       const res = await fetch('/api/wms');
       const data = await res.json();
-      if (data.success) setLocations(data.data.locations);
+      if (data.success) {
+        const list = Array.isArray(data.data) ? data.data : (data.data?.locations || []);
+        setLocations(list);
+      }
     } catch (error) { console.error('获取库位失败:', error); }
     finally { setLoading(false); }
   };

@@ -26,7 +26,7 @@ const navItems = [
 ];
 
 export default function ReportsPage() {
-  const [stats, setStats] = useState({ totalOrders: 0, totalRevenue: '0', totalCost: '0', totalProfit: '0', orderGrowth: '0', profitGrowth: '0' });
+  const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { fetchStats(); }, []);
@@ -35,7 +35,10 @@ export default function ReportsPage() {
     try {
       const res = await fetch('/api/reports');
       const data = await res.json();
-      if (data.success) setStats(data.data.stats);
+      if (data.success) {
+        // API返回 data: { orderStats, purchaseStats, profitStats, orderTrend }
+        setStats(data.data);
+      }
     } catch (error) { console.error('获取报表失败:', error); }
     finally { setLoading(false); }
   };
@@ -79,30 +82,28 @@ export default function ReportsPage() {
                 <span className="text-sm text-[#637089]">总订单数</span>
                 <div className="w-8 h-8 bg-[#2F6BFF]/10 rounded-lg flex items-center justify-center"><BarChart2 className="w-4 h-4 text-[#2F6BFF]" /></div>
               </div>
-              <div className="text-2xl font-bold text-[#152033]">{stats.totalOrders}<span className="text-sm font-normal text-[#637089] ml-1">笔</span></div>
-              <div className="text-xs text-green-600 mt-1">↑ {stats.orderGrowth}%</div>
+              <div className="text-2xl font-bold text-[#152033]">{stats?.orderStats?.total || 0}<span className="text-sm font-normal text-[#637089] ml-1">笔</span></div>
             </div>
             <div className="bg-white rounded-lg shadow-sm p-5 border border-[#E6EAF2]">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm text-[#637089]">总收入</span>
+                <span className="text-sm text-[#637089]">订单总金额</span>
                 <div className="w-8 h-8 bg-green-500/10 rounded-lg flex items-center justify-center"><TrendingUp className="w-4 h-4 text-green-600" /></div>
               </div>
-              <div className="text-2xl font-bold text-[#152033]">¥{parseFloat(stats.totalRevenue).toFixed(2)}</div>
+              <div className="text-2xl font-bold text-[#152033]">¥{stats?.orderStats?.totalAmount || '0'}</div>
             </div>
             <div className="bg-white rounded-lg shadow-sm p-5 border border-[#E6EAF2]">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm text-[#637089]">总成本</span>
+                <span className="text-sm text-[#637089]">采购总额</span>
                 <div className="w-8 h-8 bg-red-500/10 rounded-lg flex items-center justify-center"><TrendingDown className="w-4 h-4 text-red-600" /></div>
               </div>
-              <div className="text-2xl font-bold text-[#152033]">¥{parseFloat(stats.totalCost).toFixed(2)}</div>
+              <div className="text-2xl font-bold text-[#152033]">¥{stats?.purchaseStats?.totalAmount || '0'}</div>
             </div>
             <div className="bg-white rounded-lg shadow-sm p-5 border border-[#E6EAF2]">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm text-[#637089]">净利润</span>
                 <div className="w-8 h-8 bg-[#2F6BFF]/10 rounded-lg flex items-center justify-center"><BarChart3 className="w-4 h-4 text-[#2F6BFF]" /></div>
               </div>
-              <div className="text-2xl font-bold text-green-600">¥{parseFloat(stats.totalProfit).toFixed(2)}</div>
-              <div className="text-xs text-green-600 mt-1">↑ {stats.profitGrowth}%</div>
+              <div className="text-2xl font-bold text-green-600">¥{stats?.profitStats?.totalProfit || '0'}</div>
             </div>
           </div>
 

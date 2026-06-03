@@ -37,7 +37,10 @@ export default function SkuManagementPage() {
       const params = search ? `?search=${search}` : '';
       const res = await fetch(`/api/sku-management${params}`);
       const data = await res.json();
-      if (data.success) setSkus(data.data.skus);
+      if (data.success) {
+        const list = Array.isArray(data.data) ? data.data : (data.data?.skus || []);
+        setSkus(list);
+      }
     } catch (error) { console.error('获取SKU失败:', error); }
     finally { setLoading(false); }
   };

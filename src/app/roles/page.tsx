@@ -35,7 +35,10 @@ export default function RolesPage() {
     try {
       const res = await fetch('/api/roles');
       const data = await res.json();
-      if (data.success) setRoles(data.data.roles);
+      if (data.success) {
+        const list = Array.isArray(data.data) ? data.data : (data.data?.roles || []);
+        setRoles(list);
+      }
     } catch (error) { console.error('获取角色失败:', error); }
     finally { setLoading(false); }
   };

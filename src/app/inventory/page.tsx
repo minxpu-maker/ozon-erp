@@ -35,7 +35,10 @@ export default function InventoryPage() {
     try {
       const res = await fetch('/api/inventory');
       const data = await res.json();
-      if (data.success) setItems(data.data.items);
+      if (data.success) {
+        const list = Array.isArray(data.data) ? data.data : (data.data?.items || []);
+        setItems(list);
+      }
     } catch (error) { console.error('获取库存失败:', error); }
     finally { setLoading(false); }
   };

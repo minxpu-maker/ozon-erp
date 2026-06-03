@@ -97,7 +97,9 @@ export default function PurchasePage() {
       const res = await fetch(`/api/purchase?${params}`);
       const data = await res.json();
       if (data.success) {
-        setTasks(data.data.tasks);
+        // API返回 data: [...] 或 data: { tasks: [...] }
+        const taskList = Array.isArray(data.data) ? data.data : (data.data?.tasks || []);
+        setTasks(taskList);
       }
     } catch (error) {
       console.error('获取采购任务失败:', error);

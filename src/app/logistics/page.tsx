@@ -37,7 +37,10 @@ export default function LogisticsPage() {
     try {
       const res = await fetch('/api/logistics');
       const data = await res.json();
-      if (data.success) setTasks(data.data.tasks);
+      if (data.success) {
+        const taskList = Array.isArray(data.data) ? data.data : (data.data?.tasks || []);
+        setTasks(taskList);
+      }
     } catch (error) { console.error('获取任务失败:', error); }
     finally { setLoading(false); }
   };

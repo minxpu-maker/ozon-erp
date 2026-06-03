@@ -35,7 +35,10 @@ export default function AccountsPage() {
     try {
       const res = await fetch('/api/accounts');
       const data = await res.json();
-      if (data.success) setAccounts(data.data.accounts);
+      if (data.success) {
+        const list = Array.isArray(data.data) ? data.data : (data.data?.accounts || []);
+        setAccounts(list);
+      }
     } catch (error) { console.error('获取账号失败:', error); }
     finally { setLoading(false); }
   };
