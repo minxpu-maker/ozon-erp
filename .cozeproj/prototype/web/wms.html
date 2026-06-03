@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/jquery/jquery-3.7.1.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/lucide/lucide-1.11.0.min.js"></script>
+  <script src="https://lf-code-agent.coze.cn/obj/x-ai-cn/cdn/tailwindcss/tailwindcss-browser-4.2.4.min.js"></script>
+
+  <style type="text/tailwindcss">
+    @theme {
+      /* === 品牌色 === */
+      --color-primary:              #2F6BFF;
+      --color-primary-container:    #E8F0FF;
+      --color-on-primary:           #ffffff;
+      /* === 背景 / 表面 === */
+      --color-background:                 #F6F8FB;
+      --color-surface-container-lowest:   #EEF1F6;
+      --color-surface:                    #FFFFFF;
+      --color-surface-container:          #EEF1F6;
+      --color-surface-container-high:     #E6EAF2;
+      --color-surface-container-highest:  #DDE3ED;
+      /* === 文字 === */
+      --color-on-surface:           #152033;
+      --color-on-surface-variant:   #637089;
+      /* === 功能色 === */
+      --color-success:  #16A37B;
+      --color-error:    #EF4444;
+      --color-warning:  #F59E0B;
+      /* === 边框 === */
+      --color-outline:          #E6EAF2;
+      --color-outline-variant:  #D1D5DB;
+      /* === 圆角 === */
+      --radius-sm:   0.25rem;
+      --radius-md:   0.375rem;
+      --radius-lg:   0.5rem;
+      --radius-xl:   0.75rem;
+      --radius-2xl:  1rem;
+      --radius-full: 9999px;
+      /* === 阴影 === */
+      --shadow-card:   0 2px 8px rgba(0,0,0,0.08);
+      --shadow-float:  0 10px 25px rgba(0,0,0,0.12);
+      --shadow-dialog: 0 25px 50px rgba(0,0,0,0.16);
+      /* === 字体 === */
+      --font-sans: "Inter", system-ui, sans-serif;
+    }
+  </style>
+
+  <!-- 图片兜底 -->
+  <script>
+    document.addEventListener('error', function (e) {
+      const img = e.target;
+      if (img.tagName !== 'IMG' || img.dataset.fallback) return;
+      img.dataset.fallback = '1';
+      const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const cat = img.getAttribute('data-category') || '其他';
+      const alt = img.getAttribute('alt') || '';
+      const label = esc(alt.length > 8 ? alt.slice(0, 8) + '…' : alt);
+      const icons = { '人物': '👤', '自然风景': '🏞', '动物': '🐾', '建筑城市': '🏙', '运动体育': '⚽', '交通工具': '🚗', '食物': '🍽', '服饰时尚': '👗', '商业科技': '💼', '游戏娱乐': '🎮', '艺术': '🎨', '其他': '🖼' };
+      const icon = icons[cat] || '🖼';
+      const w = img.width || 400, h = img.height || 300;
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="100%" height="100%" fill="%23f3f4f6"/><text x="50%" y="45%" text-anchor="middle" font-size="${Math.min(w, h) * 0.18}" dominant-baseline="central">${icon}</text><text x="50%" y="68%" text-anchor="middle" font-size="${Math.min(w, h) * 0.07}" fill="%239ca3af" font-family="system-ui,sans-serif" dominant-baseline="central">${label}</text></svg>`;
+      img.src = 'data:image/svg+xml,' + svg;
+    }, true);
+  </script>
+</head>
+
+<body class="bg-background text-on-surface font-sans">
+
+  <!-- @nav:start 导航组件 -->
+  <header class="bg-surface sticky top-0 z-40 h-14 flex items-center justify-between px-6 border-b border-outline/50">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+        <i data-lucide="box" class="w-4 h-4 text-on-primary"></i>
+      </div>
+      <span class="font-semibold text-base">Ozon ERP</span>
+    </div>
+    <div class="flex items-center gap-4">
+      <button class="flex items-center gap-2 text-sm text-on-surface-variant hover:text-on-surface transition-colors">
+        <i data-lucide="bell" class="w-4 h-4"></i>
+        <span class="bg-error text-white text-xs px-1.5 py-0.5 rounded-full font-medium">3</span>
+      </button>
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-primary font-medium text-sm">初</div>
+        <span class="text-sm font-medium">小初</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="flex" style="height: calc(100vh - 3.5rem)">
+    <aside class="w-56 shrink-0 bg-surface border-r border-outline/50 overflow-y-auto">
+      <div class="p-3 space-y-0.5">
+        <a href="dashboard.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="layout-dashboard" class="w-4 h-4"></i>仪表盘
+        </a>
+        <a href="orders.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="shopping-cart" class="w-4 h-4"></i>订单管理
+        </a>
+        <a href="purchase.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="package" class="w-4 h-4"></i>采购管理
+        </a>
+        <a href="quick-entry.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="clipboard-list" class="w-4 h-4"></i>快捷录单
+        </a>
+        <a href="logistics.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="truck" class="w-4 h-4"></i>物流追踪
+        </a>
+        <a href="packaging.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="box" class="w-4 h-4"></i>打包流程
+        </a>
+        <a href="finance.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="calculator" class="w-4 h-4"></i>财务核算
+        </a>
+        <div class="pt-3 pb-1">
+          <span class="px-3 text-xs font-medium text-on-surface-variant/60 uppercase tracking-wider">数据中心</span>
+        </div>
+        <a href="sku-management.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="database" class="w-4 h-4"></i>SKU管理
+        </a>
+        <a href="suppliers.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="users" class="w-4 h-4"></i>供应商管理
+        </a>
+        <a href="inventory.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="warehouse" class="w-4 h-4"></i>库存管理
+        </a>
+        <a href="wms.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 text-primary font-medium text-sm" aria-current="page">
+          <i data-lucide="container" class="w-4 h-4"></i>仓库管理
+        </a>
+        <a href="reports.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="bar-chart-3" class="w-4 h-4"></i>数据报表
+        </a>
+        <div class="pt-3 pb-1">
+          <span class="px-3 text-xs font-medium text-on-surface-variant/60 uppercase tracking-wider">系统</span>
+        </div>
+        <a href="accounts.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="user-circle" class="w-4 h-4"></i>账号管理
+        </a>
+        <a href="roles.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="shield" class="w-4 h-4"></i>角色权限
+        </a>
+        <a href="settings.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface font-medium text-sm transition-colors">
+          <i data-lucide="settings" class="w-4 h-4"></i>系统设置
+        </a>
+      </div>
+    </aside>
+
+    <!-- @main-content:start -->
+    <main class="flex-1 min-w-0 overflow-y-auto bg-background p-6">
+      <!-- 页面标题 -->
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h1 class="text-2xl font-bold text-on-surface">仓库管理</h1>
+          <p class="text-sm text-on-surface-variant mt-1">智能化WMS仓库管理系统</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <button id="btn-pda-scan" class="bg-surface-container text-on-surface border-none px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all inline-flex items-center gap-2">
+            <i data-lucide="scan" class="w-4 h-4"></i>PDA扫码
+          </button>
+          <button id="btn-move-record" class="bg-surface-container text-on-surface border-none px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all inline-flex items-center gap-2">
+            <i data-lucide="move" class="w-4 h-4"></i>移库记录
+          </button>
+        </div>
+      </div>
+
+      <!-- 仓库概览区 -->
+      <div class="grid grid-cols-4 gap-4 mb-6">
+        <!-- 概览卡片1：仓库利用率 -->
+        <div class="bg-surface rounded-lg shadow-card p-5">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-sm text-on-surface-variant">仓库利用率</span>
+            <i data-lucide="pie-chart" class="w-4 h-4 text-primary"></i>
+          </div>
+          <div class="text-3xl font-bold text-on-surface">78.5%</div>
+          <div class="mt-2 h-2 bg-surface-container rounded-full overflow-hidden">
+            <div class="h-full bg-primary rounded-full" style="width: 78.5%"></div>
+          </div>
+        </div>
+        <!-- 概览卡片2：库位总数 -->
+        <div class="bg-surface rounded-lg shadow-card p-5">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-sm text-on-surface-variant">库位总数</span>
+            <i data-lucide="grid-3x3" class="w-4 h-4 text-primary"></i>
+          </div>
+          <div class="text-3xl font-bold text-on-surface">2,580</div>
+          <div class="flex items-center gap-4 mt-2 text-xs">
+            <span class="text-success">已用: 2,025</span>
+            <span class="text-on-surface-variant">空闲: 555</span>
+          </div>
+        </div>
+        <!-- 概览卡片3：仓库数量 -->
+        <div class="bg-surface rounded-lg shadow-card p-5">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-sm text-on-surface-variant">仓库数量</span>
+            <i data-lucide="warehouse" class="w-4 h-4 text-primary"></i>
+          </div>
+          <div class="text-3xl font-bold text-on-surface">5</div>
+          <div class="flex items-center gap-4 mt-2 text-xs">
+            <span class="text-success">运营中: 4</span>
+            <span class="text-warning">维护中: 1</span>
+          </div>
+        </div>
+        <!-- 概览卡片4：待盘点任务 -->
+        <div class="bg-surface rounded-lg shadow-card p-5">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-sm text-on-surface-variant">待盘点任务</span>
+            <i data-lucide="clipboard-check" class="w-4 h-4 text-primary"></i>
+          </div>
+          <div class="text-3xl font-bold text-on-surface">8</div>
+          <div class="flex items-center gap-4 mt-2 text-xs">
+            <span class="text-warning">待执行: 5</span>
+            <span class="text-primary">执行中: 3</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 仓库可视化 -->
+      <div class="bg-surface rounded-lg shadow-card p-5 mb-6">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-base font-semibold text-on-surface">仓库平面布局</h2>
+          <select id="select-warehouse-view" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30">
+            <option value="wh001">主仓库 A</option>
+            <option value="wh002">主仓库 B</option>
+            <option value="wh003">中转仓</option>
+            <option value="wh004">退货仓</option>
+          </select>
+        </div>
+        <!-- 货架布局可视化 -->
+        <div class="bg-surface-container rounded-lg p-4">
+          <div class="grid grid-cols-8 gap-2">
+            <!-- 列-货架区域1 -->
+            <div class="col-span-1 flex flex-col gap-1">
+              <div class="text-xs text-on-surface-variant text-center mb-1">A区</div>
+              <div class="h-12 bg-success/30 rounded text-xs flex items-center justify-center text-success font-medium">A-01</div>
+              <div class="h-12 bg-success/30 rounded text-xs flex items-center justify-center text-success font-medium">A-02</div>
+              <div class="h-12 bg-primary/30 rounded text-xs flex items-center justify-center text-primary font-medium">A-03</div>
+              <div class="h-12 bg-error/30 rounded text-xs flex items-center justify-center text-error font-medium">A-04</div>
+            </div>
+            <!-- 列-通道 -->
+            <div class="col-span-1 flex items-center justify-center">
+              <div class="w-full h-full border-2 border-dashed border-outline-variant/30 rounded flex items-center justify-center text-xs text-on-surface-variant/50">通道</div>
+            </div>
+            <!-- 列-货架区域2 -->
+            <div class="col-span-1 flex flex-col gap-1">
+              <div class="text-xs text-on-surface-variant text-center mb-1">B区</div>
+              <div class="h-12 bg-primary/30 rounded text-xs flex items-center justify-center text-primary font-medium">B-01</div>
+              <div class="h-12 bg-error/30 rounded text-xs flex items-center justify-center text-error font-medium">B-02</div>
+              <div class="h-12 bg-success/30 rounded text-xs flex items-center justify-center text-success font-medium">B-03</div>
+              <div class="h-12 bg-primary/30 rounded text-xs flex items-center justify-center text-primary font-medium">B-04</div>
+            </div>
+            <!-- 列-通道 -->
+            <div class="col-span-1 flex items-center justify-center">
+              <div class="w-full h-full border-2 border-dashed border-outline-variant/30 rounded flex items-center justify-center text-xs text-on-surface-variant/50">通道</div>
+            </div>
+            <!-- 列-货架区域3 -->
+            <div class="col-span-1 flex flex-col gap-1">
+              <div class="text-xs text-on-surface-variant text-center mb-1">C区</div>
+              <div class="h-12 bg-error/30 rounded text-xs flex items-center justify-center text-error font-medium">C-01</div>
+              <div class="h-12 bg-primary/30 rounded text-xs flex items-center justify-center text-primary font-medium">C-02</div>
+              <div class="h-12 bg-success/30 rounded text-xs flex items-center justify-center text-success font-medium">C-03</div>
+              <div class="h-12 bg-error/30 rounded text-xs flex items-center justify-center text-error font-medium">C-04</div>
+            </div>
+            <!-- 列-通道 -->
+            <div class="col-span-1 flex items-center justify-center">
+              <div class="w-full h-full border-2 border-dashed border-outline-variant/30 rounded flex items-center justify-center text-xs text-on-surface-variant/50">通道</div>
+            </div>
+            <!-- 列-货架区域4 -->
+            <div class="col-span-1 flex flex-col gap-1">
+              <div class="text-xs text-on-surface-variant text-center mb-1">D区</div>
+              <div class="h-12 bg-success/30 rounded text-xs flex items-center justify-center text-success font-medium">D-01</div>
+              <div class="h-12 bg-success/30 rounded text-xs flex items-center justify-center text-success font-medium">D-02</div>
+              <div class="h-12 bg-primary/30 rounded text-xs flex items-center justify-center text-primary font-medium">D-03</div>
+              <div class="h-12 bg-success/30 rounded text-xs flex items-center justify-center text-success font-medium">D-04</div>
+            </div>
+            <!-- 图例 -->
+            <div class="col-span-1 flex flex-col justify-center gap-2 ml-4">
+              <div class="flex items-center gap-2 text-xs">
+                <div class="w-3 h-3 bg-success/30 rounded"></div>
+                <span class="text-on-surface-variant">空闲</span>
+              </div>
+              <div class="flex items-center gap-2 text-xs">
+                <div class="w-3 h-3 bg-primary/30 rounded"></div>
+                <span class="text-on-surface-variant">使用中</span>
+              </div>
+              <div class="flex items-center gap-2 text-xs">
+                <div class="w-3 h-3 bg-error/30 rounded"></div>
+                <span class="text-on-surface-variant">已满</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 功能Tab区 -->
+      <div class="bg-surface rounded-lg shadow-card overflow-hidden">
+        <!-- Tab导航 -->
+        <div class="flex border-b border-outline/50">
+          <button id="tab-warehouse" class="px-5 py-3 text-sm font-medium text-primary border-b-2 border-primary bg-primary/5">仓库配置</button>
+          <button id="tab-location" class="px-5 py-3 text-sm font-medium text-on-surface-variant hover:text-on-surface hover:bg-surface-container/50 transition-colors">库位管理</button>
+          <button id="tab-inventory-check" class="px-5 py-3 text-sm font-medium text-on-surface-variant hover:text-on-surface hover:bg-surface-container/50 transition-colors">智能盘点</button>
+          <button id="tab-location-recommend" class="px-5 py-3 text-sm font-medium text-on-surface-variant hover:text-on-surface hover:bg-surface-container/50 transition-colors">库位推荐</button>
+        </div>
+
+        <!-- Tab内容：仓库配置 -->
+        <div id="panel-warehouse" class="p-5">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <input type="text" placeholder="搜索仓库名称或编码" class="w-64 bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30">
+              <select class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30">
+                <option value="">全部状态</option>
+                <option value="active">运营中</option>
+                <option value="maintenance">维护中</option>
+                <option value="closed">已关闭</option>
+              </select>
+            </div>
+            <button id="btn-add-warehouse" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-2">
+              <i data-lucide="plus" class="w-4 h-4"></i>新增仓库
+            </button>
+          </div>
+
+          <!-- 仓库列表表格 -->
+          <div class="bg-surface rounded-lg shadow-card overflow-hidden">
+            <div class="grid grid-cols-8 px-4 py-3 bg-surface-container text-xs font-semibold text-on-surface-variant uppercase tracking-wide">
+              <span>仓库名称</span>
+              <span>仓库编码</span>
+              <span>地址</span>
+              <span>负责人</span>
+              <span>库位数</span>
+              <span>库存量</span>
+              <span>状态</span>
+              <span>操作</span>
+            </div>
+            <div id="warehouse-list" class="divide-y divide-outline-variant/50">
+              <!-- 列表-仓库1 -->
+              <div class="grid grid-cols-8 px-4 py-3 hover:bg-surface-container/50 transition-colors items-center">
+                <span class="text-sm font-medium text-on-surface">主仓库 A</span>
+                <span class="text-sm text-on-surface-variant">WH-A001</span>
+                <span class="text-sm text-on-surface-variant">深圳市南山区科技园</span>
+                <span class="text-sm text-on-surface-variant">张明</span>
+                <span class="text-sm text-on-surface-variant">800</span>
+                <span class="text-sm text-on-surface-variant">15,680</span>
+                <span><span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">运营中</span></span>
+                <div class="flex gap-2">
+                  <button class="text-primary text-sm font-medium hover:underline" onclick="editWarehouse('WH-A001')">编辑</button>
+                  <button class="text-primary text-sm font-medium hover:underline" onclick="openLocationManage('WH-A001')">库位管理</button>
+                  <button class="text-primary text-sm font-medium hover:underline" onclick="viewWarehouseDetail('WH-A001')">详情</button>
+                </div>
+              </div>
+              <!-- 列表-仓库2 -->
+              <div class="grid grid-cols-8 px-4 py-3 hover:bg-surface-container/50 transition-colors items-center">
+                <span class="text-sm font-medium text-on-surface">主仓库 B</span>
+                <span class="text-sm text-on-surface-variant">WH-B002</span>
+                <span class="text-sm text-on-surface-variant">深圳市宝安区西乡</span>
+                <span class="text-sm text-on-surface-variant">李华</span>
+                <span class="text-sm text-on-surface-variant">650</span>
+                <span class="text-sm text-on-surface-variant">12,350</span>
+                <span><span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">运营中</span></span>
+                <div class="flex gap-2">
+                  <button class="text-primary text-sm font-medium hover:underline" onclick="editWarehouse('WH-B002')">编辑</button>
+                  <button class="text-primary text-sm font-medium hover:underline" onclick="openLocationManage('WH-B002')">库位管理</button>
+                  <button class="text-primary text-sm font-medium hover:underline" onclick="viewWarehouseDetail('WH-B002')">详情</button>
+                </div>
+              </div>
+              <!-- 列表-仓库3 -->
+              <div class="grid grid-cols-8 px-4 py-3 hover:bg-surface-container/50 transition-colors items-center">
+                <span class="text-sm font-medium text-on-surface">中转仓</span>
+                <span class="text-sm text-on-surface-variant">WH-T003</span>
+                <span class="text-sm text-on-surface-variant">广州市白云区机场路</span>
+                <span class="text-sm text-on-surface-variant">王强</span>
+                <span class="text-sm text-on-surface-variant">480</span>
+                <span class="text-sm text-on-surface-variant">3,200</span>
+                <span><span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">运营中</span></span>
+                <div class="flex gap-2">
+                  <button class="text-primary text-sm font-medium hover:underline" onclick="editWarehouse('WH-T003')">编辑</button>
+                  <button class="text-primary text-sm font-medium hover:underline" onclick="openLocationManage('WH-T003')">库位管理</button>
+                  <button class="text-primary text-sm font-medium hover:underline" onclick="viewWarehouseDetail('WH-T003')">详情</button>
+                </div>
+              </div>
+              <!-- 列表-仓库4 -->
+              <div class="grid grid-cols-8 px-4 py-3 hover:bg-surface-container/50 transition-colors items-center">
+                <span class="text-sm font-medium text-on-surface">退货仓</span>
+                <span class="text-sm text-on-surface-variant">WH-R004</span>
+                <span class="text-sm text-on-surface-variant">深圳市龙岗区坂田</span>
+                <span class="text-sm text-on-surface-variant">刘芳</span>
+                <span class="text-sm text-on-surface-variant">350</span>
+                <span class="text-sm text-on-surface-variant">1,850</span>
+                <span><span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">运营中</span></span>
+                <div class="flex gap-2">
+                  <button class="text-primary text-sm font-medium hover:underline" onclick="editWarehouse('WH-R004')">编辑</button>
+                  <button class="text-primary text-sm font-medium hover:underline" onclick="openLocationManage('WH-R004')">库位管理</button>
+                  <button class="text-primary text-sm font-medium hover:underline" onclick="viewWarehouseDetail('WH-R004')">详情</button>
+                </div>
+              </div>
+              <!-- 列表-仓库5 -->
+              <div class="grid grid-cols-8 px-4 py-3 hover:bg-surface-container/50 transition-colors items-center">
+                <span class="text-sm font-medium text-on-surface">冷库</span>
+                <span class="text-sm text-on-surface-variant">WH-C005</span>
+                <span class="text-sm text-on-surface-variant">深圳市南山区蛇口</span>
+                <span class="text-sm text-on-surface-variant">陈伟</span>
+                <span class="text-sm text-on-surface-variant">300</span>
+                <span class="text-sm text-on-surface-variant">2,100</span>
+                <span><span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning">维护中</span></span>
+                <div class="flex gap-2">
+                  <button class="text-primary text-sm font-medium hover:underline" onclick="editWarehouse('WH-C005')">编辑</button>
+                  <button class="text-primary text-sm font-medium hover:underline" onclick="openLocationManage('WH-C005')">库位管理</button>
+                  <button class="text-primary text-sm font-medium hover:underline" onclick="viewWarehouseDetail('WH-C005')">详情</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab内容：库位管理 -->
+        <div id="panel-location" class="p-5 hidden">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <select id="select-location-warehouse" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30">
+                <option value="wh001">主仓库 A</option>
+                <option value="wh002">主仓库 B</option>
+                <option value="wh003">中转仓</option>
+                <option value="wh004">退货仓</option>
+              </select>
+              <select class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30">
+                <option value="">全部货架</option>
+                <option value="A">A区货架</option>
+                <option value="B">B区货架</option>
+                <option value="C">C区货架</option>
+                <option value="D">D区货架</option>
+              </select>
+              <select class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30">
+                <option value="">全部状态</option>
+                <option value="empty">空闲</option>
+                <option value="using">使用中</option>
+                <option value="full">已满</option>
+              </select>
+            </div>
+            <button id="btn-batch-location" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-2">
+              <i data-lucide="layers" class="w-4 h-4"></i>批量生成库位
+            </button>
+          </div>
+
+          <!-- 货架立体可视化 -->
+          <div class="bg-surface-container rounded-lg p-4 mb-4">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-sm font-medium text-on-surface">货架立体视图：A区-货架01</span>
+              <div class="flex items-center gap-2">
+                <button class="px-2 py-1 text-xs bg-surface rounded hover:bg-surface-container-high">← 上一货架</button>
+                <button class="px-2 py-1 text-xs bg-surface rounded hover:bg-surface-container-high">下一货架 →</button>
+              </div>
+            </div>
+            <div class="grid grid-cols-5 gap-4">
+              <!-- 层5 -->
+              <div class="col-span-5 flex gap-2">
+                <span class="w-8 text-xs text-on-surface-variant flex items-center">5层</span>
+                <div class="flex-1 grid grid-cols-5 gap-2">
+                  <div class="h-16 bg-success/30 rounded flex items-center justify-center text-xs text-success font-medium border-2 border-success/30 hover:border-success cursor-pointer" title="空闲 - 容积:2m³">A-01-5-01</div>
+                  <div class="h-16 bg-primary/30 rounded flex items-center justify-center text-xs text-primary font-medium border-2 border-primary/30 hover:border-primary cursor-pointer" title="使用中 - 已用:1.2m³/2m³">A-01-5-02</div>
+                  <div class="h-16 bg-error/30 rounded flex items-center justify-center text-xs text-error font-medium border-2 border-error/30 hover:border-error cursor-pointer" title="已满 - 容积:2m³">A-01-5-03</div>
+                  <div class="h-16 bg-success/30 rounded flex items-center justify-center text-xs text-success font-medium border-2 border-success/30 hover:border-success cursor-pointer">A-01-5-04</div>
+                  <div class="h-16 bg-primary/30 rounded flex items-center justify-center text-xs text-primary font-medium border-2 border-primary/30 hover:border-primary cursor-pointer">A-01-5-05</div>
+                </div>
+              </div>
+              <!-- 层4 -->
+              <div class="col-span-5 flex gap-2">
+                <span class="w-8 text-xs text-on-surface-variant flex items-center">4层</span>
+                <div class="flex-1 grid grid-cols-5 gap-2">
+                  <div class="h-16 bg-primary/30 rounded flex items-center justify-center text-xs text-primary font-medium border-2 border-primary/30 hover:border-primary cursor-pointer">A-01-4-01</div>
+                  <div class="h-16 bg-error/30 rounded flex items-center justify-center text-xs text-error font-medium border-2 border-error/30 hover:border-error cursor-pointer">A-01-4-02</div>
+                  <div class="h-16 bg-error/30 rounded flex items-center justify-center text-xs text-error font-medium border-2 border-error/30 hover:border-error cursor-pointer">A-01-4-03</div>
+                  <div class="h-16 bg-primary/30 rounded flex items-center justify-center text-xs text-primary font-medium border-2 border-primary/30 hover:border-primary cursor-pointer">A-01-4-04</div>
+                  <div class="h-16 bg-success/30 rounded flex items-center justify-center text-xs text-success font-medium border-2 border-success/30 hover:border-success cursor-pointer">A-01-4-05</div>
+                </div>
+              </div>
+              <!-- 层3 -->
+              <div class="col-span-5 flex gap-2">
+                <span class="w-8 text-xs text-on-surface-variant flex items-center">3层</span>
+                <div class="flex-1 grid grid-cols-5 gap-2">
+                  <div class="h-16 bg-error/30 rounded flex items-center justify-center text-xs text-error font-medium border-2 border-error/30 hover:border-error cursor-pointer">A-01-3-01</div>
+                  <div class="h-16 bg-success/30 rounded flex items-center justify-center text-xs text-success font-medium border-2 border-success/30 hover:border-success cursor-pointer">A-01-3-02</div>
+                  <div class="h-16 bg-primary/30 rounded flex items-center justify-center text-xs text-primary font-medium border-2 border-primary/30 hover:border-primary cursor-pointer">A-01-3-03</div>
+                  <div class="h-16 bg-error/30 rounded flex items-center justify-center text-xs text-error font-medium border-2 border-error/30 hover:border-error cursor-pointer">A-01-3-04</div>
+                  <div class="h-16 bg-primary/30 rounded flex items-center justify-center text-xs text-primary font-medium border-2 border-primary/30 hover:border-primary cursor-pointer">A-01-3-05</div>
+                </div>
+              </div>
+              <!-- 层2 -->
+              <div class="col-span-5 flex gap-2">
+                <span class="w-8 text-xs text-on-surface-variant flex items-center">2层</span>
+                <div class="flex-1 grid grid-cols-5 gap-2">
+                  <div class="h-16 bg-success/30 rounded flex items-center justify-center text-xs text-success font-medium border-2 border-success/30 hover:border-success cursor-pointer">A-01-2-01</div>
+                  <div class="h-16 bg-primary/30 rounded flex items-center justify-center text-xs text-primary font-medium border-2 border-primary/30 hover:border-primary cursor-pointer">A-01-2-02</div>
+                  <div class="h-16 bg-success/30 rounded flex items-center justify-center text-xs text-success font-medium border-2 border-success/30 hover:border-success cursor-pointer">A-01-2-03</div>
+                  <div class="h-16 bg-primary/30 rounded flex items-center justify-center text-xs text-primary font-medium border-2 border-primary/30 hover:border-primary cursor-pointer">A-01-2-04</div>
+                  <div class="h-16 bg-success/30 rounded flex items-center justify-center text-xs text-success font-medium border-2 border-success/30 hover:border-success cursor-pointer">A-01-2-05</div>
+                </div>
+              </div>
+              <!-- 层1 -->
+              <div class="col-span-5 flex gap-2">
+                <span class="w-8 text-xs text-on-surface-variant flex items-center">1层</span>
+                <div class="flex-1 grid grid-cols-5 gap-2">
+                  <div class="h-16 bg-primary/30 rounded flex items-center justify-center text-xs text-primary font-medium border-2 border-primary/30 hover:border-primary cursor-pointer">A-01-1-01</div>
+                  <div class="h-16 bg-error/30 rounded flex items-center justify-center text-xs text-error font-medium border-2 border-error/30 hover:border-error cursor-pointer">A-01-1-02</div>
+                  <div class="h-16 bg-primary/30 rounded flex items-center justify-center text-xs text-primary font-medium border-2 border-primary/30 hover:border-primary cursor-pointer">A-01-1-03</div>
+                  <div class="h-16 bg-success/30 rounded flex items-center justify-center text-xs text-success font-medium border-2 border-success/30 hover:border-success cursor-pointer">A-01-1-04</div>
+                  <div class="h-16 bg-error/30 rounded flex items-center justify-center text-xs text-error font-medium border-2 border-error/30 hover:border-error cursor-pointer">A-01-1-05</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 库位列表表格 -->
+          <div class="bg-surface rounded-lg shadow-card overflow-hidden">
+            <div class="grid grid-cols-7 px-4 py-3 bg-surface-container text-xs font-semibold text-on-surface-variant uppercase tracking-wide">
+              <span>库位编码</span>
+              <span>货架-排-层</span>
+              <span>容积(m³)</span>
+              <span>存放SKU数</span>
+              <span>状态</span>
+              <span>操作</span>
+            </div>
+            <div id="location-list" class="divide-y divide-outline-variant/50">
+              <!-- 列表-库位1 -->
+              <div class="grid grid-cols-7 px-4 py-3 hover:bg-surface-container/50 transition-colors items-center">
+                <span class="text-sm font-medium text-on-surface">A-01-1-01</span>
+                <span class="text-sm text-on-surface-variant">A区-01排-1层</span>
+                <span class="text-sm text-on-surface-variant">2.0 / 2.0</span>
+                <span class="text-sm text-on-surface-variant">3</span>
+                <span><span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-primary/15 text-primary">使用中</span></span>
+                <div class="flex gap-2">
+                  <button class="text-primary text-sm font-medium hover:underline">查看</button>
+                  <button class="text-primary text-sm font-medium hover:underline">调整</button>
+                </div>
+              </div>
+              <!-- 列表-库位2 -->
+              <div class="grid grid-cols-7 px-4 py-3 hover:bg-surface-container/50 transition-colors items-center">
+                <span class="text-sm font-medium text-on-surface">A-01-1-02</span>
+                <span class="text-sm text-on-surface-variant">A区-01排-1层</span>
+                <span class="text-sm text-on-surface-variant">2.0 / 2.0</span>
+                <span class="text-sm text-on-surface-variant">5</span>
+                <span><span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-error/15 text-error">已满</span></span>
+                <div class="flex gap-2">
+                  <button class="text-primary text-sm font-medium hover:underline">查看</button>
+                  <button class="text-primary text-sm font-medium hover:underline">调整</button>
+                </div>
+              </div>
+              <!-- 列表-库位3 -->
+              <div class="grid grid-cols-7 px-4 py-3 hover:bg-surface-container/50 transition-colors items-center">
+                <span class="text-sm font-medium text-on-surface">A-01-1-03</span>
+                <span class="text-sm text-on-surface-variant">A区-01排-1层</span>
+                <span class="text-sm text-on-surface-variant">1.2 / 2.0</span>
+                <span class="text-sm text-on-surface-variant">2</span>
+                <span><span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-primary/15 text-primary">使用中</span></span>
+                <div class="flex gap-2">
+                  <button class="text-primary text-sm font-medium hover:underline">查看</button>
+                  <button class="text-primary text-sm font-medium hover:underline">调整</button>
+                </div>
+              </div>
+              <!-- 列表-库位4 -->
+              <div class="grid grid-cols-7 px-4 py-3 hover:bg-surface-container/50 transition-colors items-center">
+                <span class="text-sm font-medium text-on-surface">A-01-1-04</span>
+                <span class="text-sm text-on-surface-variant">A区-01排-1层</span>
+                <span class="text-sm text-on-surface-variant">0 / 2.0</span>
+                <span class="text-sm text-on-surface-variant">0</span>
+                <span><span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">空闲</span></span>
+                <div class="flex gap-2">
+                  <button class="text-primary text-sm font-medium hover:underline">查看</button>
+                  <button class="text-primary text-sm font-medium hover:underline">调整</button>
+                </div>
+              </div>
+              <!-- 列表-库位5 -->
+              <div class="grid grid-cols-7 px-4 py-3 hover:bg-surface-container/50 transition-colors items-center">
+                <span class="text-sm font-medium text-on-surface">A-01-2-01</span>
+                <span class="text-sm text-on-surface-variant">A区-01排-2层</span>
+                <span class="text-sm text-on-surface-variant">0 / 2.0</span>
+                <span class="text-sm text-on-surface-variant">0</span>
+                <span><span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">空闲</span></span>
+                <div class="flex gap-2">
+                  <button class="text-primary text-sm font-medium hover:underline">查看</button>
+                  <button class="text-primary text-sm font-medium hover:underline">调整</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab内容：智能盘点 -->
+        <div id="panel-inventory-check" class="p-5 hidden">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <select class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30">
+                <option value="">全部类型</option>
+                <option value="full">全盘</option>
+                <option value="sample">抽盘</option>
+                <option value="cycle">循环盘</option>
+              </select>
+              <select class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30">
+                <option value="">全部状态</option>
+                <option value="pending">待执行</option>
+                <option value="running">执行中</option>
+                <option value="completed">已完成</option>
+                <option value="cancelled">已取消</option>
+              </select>
+            </div>
+            <button id="btn-new-check-task" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-2">
+              <i data-lucide="plus" class="w-4 h-4"></i>新建盘点任务
+            </button>
+          </div>
+
+          <!-- 盘点任务列表表格 -->
+          <div class="bg-surface rounded-lg shadow-card overflow-hidden">
+            <div class="grid grid-cols-7 px-4 py-3 bg-surface-container text-xs font-semibold text-on-surface-variant uppercase tracking-wide">
+              <span>任务编号</span>
+              <span>盘点类型</span>
+              <span>盘点范围</span>
+              <span>状态</span>
+              <span>创建时间</span>
+              <span>完成时间</span>
+              <span>操作</span>
+            </div>
+            <div id="check-task-list" class="divide-y divide-outline-variant/50">
+              <!-- 列表-盘点任务1 -->
+              <div class="grid grid-cols-7 px-4 py-3 hover:bg-surface-container/50 transition-colors items-center">
+                <span class="text-sm font-medium text-on-surface">PD20240115001</span>
+                <span><span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-primary/15 text-primary">全盘</span></span>
+                <span class="text-sm text-on-surface-variant">主仓库A 全部库位</span>
+                <span><span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-primary/15 text-primary">执行中</span></span>
+                <span class="text-sm text-on-surface-variant">2024-01-15 09:00</span>
+                <span class="text-sm text-on-surface-variant">-</span>
+                <div class="flex gap-2">
+                  <button class="text-primary text-sm font-medium hover:underline" onclick="viewCheckResult('PD20240115001')">查看结果</button>
+                </div>
+              </div>
+              <!-- 列表-盘点任务2 -->
+              <div class="grid grid-cols-7 px-4 py-3 hover:bg-surface-container/50 transition-colors items-center">
+                <span class="text-sm font-medium text-on-surface">PD20240114002</span>
+                <span><span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">抽盘</span></span>
+                <span class="text-sm text-on-surface-variant">A区 货架01-03</span>
+                <span><span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">已完成</span></span>
+                <span class="text-sm text-on-surface-variant">2024-01-14 14:00</span>
+                <span class="text-sm text-on-surface-variant">2024-01-14 16:30</span>
+                <div class="flex gap-2">
+                  <button class="text-primary text-sm font-medium hover:underline" onclick="viewCheckResult('PD20240114002')">查看结果</button>
+                  <button class="text-primary text-sm font-medium hover:underline" onclick="generateAdjust('PD20240114002')">生成调整单</button>
+                </div>
+              </div>
+              <!-- 列表-盘点任务3 -->
+              <div class="grid grid-cols-7 px-4 py-3 hover:bg-surface-container/50 transition-colors items-center">
+                <span class="text-sm font-medium text-on-surface">PD20240113003</span>
+                <span><span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning">循环盘</span></span>
+                <span class="text-sm text-on-surface-variant">主仓库B C区</span>
+                <span><span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-on-surface-variant/15 text-on-surface-variant">待执行</span></span>
+                <span class="text-sm text-on-surface-variant">2024-01-13 10:00</span>
+                <span class="text-sm text-on-surface-variant">-</span>
+                <div class="flex gap-2">
+                  <button class="text-primary text-sm font-medium hover:underline" onclick="startCheck('PD20240113003')">开始盘点</button>
+                  <button class="text-error text-sm font-medium hover:underline" onclick="cancelCheck('PD20240113003')">取消</button>
+                </div>
+              </div>
+              <!-- 列表-盘点任务4 -->
+              <div class="grid grid-cols-7 px-4 py-3 hover:bg-surface-container/50 transition-colors items-center">
+                <span class="text-sm font-medium text-on-surface">PD20240112004</span>
+                <span><span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-primary/15 text-primary">全盘</span></span>
+                <span class="text-sm text-on-surface-variant">中转仓 全部库位</span>
+                <span><span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">已完成</span></span>
+                <span class="text-sm text-on-surface-variant">2024-01-12 08:00</span>
+                <span class="text-sm text-on-surface-variant">2024-01-12 15:00</span>
+                <div class="flex gap-2">
+                  <button class="text-primary text-sm font-medium hover:underline" onclick="viewCheckResult('PD20240112004')">查看结果</button>
+                  <button class="text-primary text-sm font-medium hover:underline" onclick="generateAdjust('PD20240112004')">生成调整单</button>
+                </div>
+              </div>
+              <!-- 列表-盘点任务5 -->
+              <div class="grid grid-cols-7 px-4 py-3 hover:bg-surface-container/50 transition-colors items-center">
+                <span class="text-sm font-medium text-on-surface">PD20240111005</span>
+                <span><span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">抽盘</span></span>
+                <span class="text-sm text-on-surface-variant">退货仓 全部库位</span>
+                <span><span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-error/15 text-error">已取消</span></span>
+                <span class="text-sm text-on-surface-variant">2024-01-11 11:00</span>
+                <span class="text-sm text-on-surface-variant">-</span>
+                <div class="flex gap-2">
+                  <button class="text-on-surface-variant text-sm">-</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab内容：库位推荐 -->
+        <div id="panel-location-recommend" class="p-5 hidden">
+          <div class="grid grid-cols-3 gap-6">
+            <!-- 入库推荐 -->
+            <div class="bg-surface-container rounded-lg p-5">
+              <div class="flex items-center gap-2 mb-4">
+                <div class="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                  <i data-lucide="package-plus" class="w-4 h-4 text-primary"></i>
+                </div>
+                <h3 class="text-base font-semibold text-on-surface">入库推荐</h3>
+              </div>
+              <p class="text-sm text-on-surface-variant mb-4">输入SKU，系统推荐最优库位</p>
+              <div class="space-y-3">
+                <input id="input-inbound-sku" type="text" placeholder="输入SKU编码" class="w-full bg-surface border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30">
+                <button id="btn-recommend-inbound" class="w-full bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">推荐库位</button>
+              </div>
+              <!-- 推荐结果 -->
+              <div id="recommend-inbound-result" class="mt-4 space-y-2">
+                <div class="text-xs font-medium text-on-surface-variant mb-2">推荐库位（按优先级排序）：</div>
+                <!-- 推荐结果1 -->
+                <div class="bg-surface rounded-md p-3 flex items-center justify-between">
+                  <div>
+                    <div class="text-sm font-medium text-on-surface">A-02-3-01</div>
+                    <div class="text-xs text-on-surface-variant mt-0.5">空闲 | 容积: 2.0m³ | 周转率高区域</div>
+                  </div>
+                  <span class="text-xs font-medium text-success">推荐</span>
+                </div>
+                <!-- 推荐结果2 -->
+                <div class="bg-surface rounded-md p-3 flex items-center justify-between">
+                  <div>
+                    <div class="text-sm font-medium text-on-surface">B-01-2-03</div>
+                    <div class="text-xs text-on-surface-variant mt-0.5">空闲 | 容积: 1.8m³ | 同类商品聚集</div>
+                  </div>
+                  <span class="text-xs font-medium text-primary">备选</span>
+                </div>
+                <!-- 推荐结果3 -->
+                <div class="bg-surface rounded-md p-3 flex items-center justify-between">
+                  <div>
+                    <div class="text-sm font-medium text-on-surface">C-03-4-02</div>
+                    <div class="text-xs text-on-surface-variant mt-0.5">空闲 | 容积: 2.2m³ | 周转率中区域</div>
+                  </div>
+                  <span class="text-xs font-medium text-on-surface-variant">备选</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 出库路径优化 -->
+            <div class="bg-surface-container rounded-lg p-5">
+              <div class="flex items-center gap-2 mb-4">
+                <div class="w-8 h-8 bg-success/10 rounded-lg flex items-center justify-center">
+                  <i data-lucide="route" class="w-4 h-4 text-success"></i>
+                </div>
+                <h3 class="text-base font-semibold text-on-surface">出库路径优化</h3>
+              </div>
+              <p class="text-sm text-on-surface-variant mb-4">输入待出库SKU列表，推荐最优拣货路径</p>
+              <div class="space-y-3">
+                <textarea id="input-outbound-skus" placeholder="输入SKU编码（每行一个）" rows="3" class="w-full bg-surface border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"></textarea>
+                <button id="btn-optimize-route" class="w-full bg-success text-white px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">优化路径</button>
+              </div>
+              <!-- 路径结果 -->
+              <div id="optimize-route-result" class="mt-4">
+                <div class="text-xs font-medium text-on-surface-variant mb-2">推荐拣货路径：</div>
+                <div class="bg-surface rounded-md p-3 space-y-2">
+                  <div class="flex items-center gap-2 text-sm">
+                    <span class="w-5 h-5 bg-primary text-on-primary rounded-full flex items-center justify-center text-xs font-medium">1</span>
+                    <span class="text-on-surface">A-01-2-03</span>
+                    <span class="text-on-surface-variant text-xs">→ SKU: ITEM-001 x 5</span>
+                  </div>
+                  <div class="flex items-center gap-2 text-sm">
+                    <span class="w-5 h-5 bg-primary text-on-primary rounded-full flex items-center justify-center text-xs font-medium">2</span>
+                    <span class="text-on-surface">A-01-3-02</span>
+                    <span class="text-on-surface-variant text-xs">→ SKU: ITEM-002 x 3</span>
+                  </div>
+                  <div class="flex items-center gap-2 text-sm">
+                    <span class="w-5 h-5 bg-primary text-on-primary rounded-full flex items-center justify-center text-xs font-medium">3</span>
+                    <span class="text-on-surface">B-02-1-04</span>
+                    <span class="text-on-surface-variant text-xs">→ SKU: ITEM-003 x 2</span>
+                  </div>
+                  <div class="flex items-center gap-2 text-sm">
+                    <span class="w-5 h-5 bg-primary text-on-primary rounded-full flex items-center justify-center text-xs font-medium">4</span>
+                    <span class="text-on-surface">B-02-2-01</span>
+                    <span class="text-on-surface-variant text-xs">→ SKU: ITEM-004 x 8</span>
+                  </div>
+                  <div class="flex items-center gap-2 text-sm">
+                    <span class="w-5 h-5 bg-success text-white rounded-full flex items-center justify-center text-xs font-medium">✓</span>
+                    <span class="text-on-surface">打包区</span>
+                    <span class="text-on-surface-variant text-xs">→ 完成拣货</span>
+                  </div>
+                </div>
+                <div class="mt-2 text-xs text-success">预计拣货时间：12分钟 | 路径长度：85米</div>
+              </div>
+            </div>
+
+            <!-- 热销商品建议 -->
+            <div class="bg-surface-container rounded-lg p-5">
+              <div class="flex items-center gap-2 mb-4">
+                <div class="w-8 h-8 bg-warning/10 rounded-lg flex items-center justify-center">
+                  <i data-lucide="trending-up" class="w-4 h-4 text-warning"></i>
+                </div>
+                <h3 class="text-base font-semibold text-on-surface">热销商品建议</h3>
+              </div>
+              <p class="text-sm text-on-surface-variant mb-4">建议将热销商品放置于易取库位</p>
+              <!-- 热销商品列表 -->
+              <div class="space-y-2">
+                <!-- 热销商品1 -->
+                <div class="bg-surface rounded-md p-3">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-sm font-medium text-on-surface">SKU: ITEM-HOT001</span>
+                    <span class="text-xs font-medium text-warning">热销</span>
+                  </div>
+                  <div class="text-xs text-on-surface-variant">当前库位: C-05-4-03</div>
+                  <div class="text-xs text-success mt-1">建议移至: A-01-1-01 (出入频次高区域)</div>
+                </div>
+                <!-- 热销商品2 -->
+                <div class="bg-surface rounded-md p-3">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-sm font-medium text-on-surface">SKU: ITEM-HOT002</span>
+                    <span class="text-xs font-medium text-warning">热销</span>
+                  </div>
+                  <div class="text-xs text-on-surface-variant">当前库位: D-03-2-05</div>
+                  <div class="text-xs text-success mt-1">建议移至: A-01-1-02 (出入频次高区域)</div>
+                </div>
+                <!-- 热销商品3 -->
+                <div class="bg-surface rounded-md p-3">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-sm font-medium text-on-surface">SKU: ITEM-HOT003</span>
+                    <span class="text-xs font-medium text-warning">热销</span>
+                  </div>
+                  <div class="text-xs text-on-surface-variant">当前库位: B-04-3-01</div>
+                  <div class="text-xs text-success mt-1">建议移至: A-02-1-01 (出入频次高区域)</div>
+                </div>
+                <!-- 热销商品4 -->
+                <div class="bg-surface rounded-md p-3">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-sm font-medium text-on-surface">SKU: ITEM-HOT004</span>
+                    <span class="text-xs font-medium text-warning">热销</span>
+                  </div>
+                  <div class="text-xs text-on-surface-variant">当前库位: C-02-5-02</div>
+                  <div class="text-xs text-success mt-1">建议移至: A-02-1-03 (出入频次高区域)</div>
+                </div>
+              </div>
+              <button id="btn-apply-hot-suggest" class="w-full mt-3 bg-surface-container-high text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-highest active:scale-[0.98] transition-all">一键应用建议</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <!-- @main-content:end -->
+  </div>
+  <!-- @nav:end 导航组件 -->
+
+  <!-- 新建仓库弹窗 -->
+  <div id="modal-add-warehouse" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-surface rounded-xl shadow-dialog max-w-lg w-full max-h-[90vh] overflow-y-auto">
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-lg font-semibold text-on-surface">新增仓库</h3>
+          <button id="btn-close-add-warehouse" class="text-on-surface-variant hover:text-on-surface transition-colors">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-on-surface mb-1.5">仓库名称</label>
+            <input type="text" placeholder="请输入仓库名称" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-on-surface mb-1.5">仓库编码</label>
+            <input type="text" placeholder="请输入仓库编码" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-on-surface mb-1.5">地址</label>
+            <input type="text" placeholder="请输入仓库地址" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-on-surface mb-1.5">负责人</label>
+            <input type="text" placeholder="请输入负责人姓名" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-on-surface mb-1.5">备注</label>
+            <textarea placeholder="请输入备注信息" rows="3" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"></textarea>
+          </div>
+        </div>
+        <div class="flex justify-end gap-3 mt-6">
+          <button id="btn-cancel-add-warehouse" class="bg-surface-container text-on-surface border-none px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all">取消</button>
+          <button id="btn-confirm-add-warehouse" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">确定</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 新建盘点任务弹窗 -->
+  <div id="modal-new-check-task" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-surface rounded-xl shadow-dialog max-w-lg w-full max-h-[90vh] overflow-y-auto">
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-lg font-semibold text-on-surface">新建盘点任务</h3>
+          <button id="btn-close-new-check" class="text-on-surface-variant hover:text-on-surface transition-colors">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-on-surface mb-1.5">盘点类型</label>
+            <select class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30">
+              <option value="full">全盘</option>
+              <option value="sample">抽盘</option>
+              <option value="cycle">循环盘</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-on-surface mb-1.5">盘点范围</label>
+            <select class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30">
+              <option value="all">全仓库</option>
+              <option value="warehouse">指定仓库</option>
+              <option value="shelf">指定货架</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-on-surface mb-1.5">选择仓库</label>
+            <select class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30">
+              <option value="wh001">主仓库 A</option>
+              <option value="wh002">主仓库 B</option>
+              <option value="wh003">中转仓</option>
+              <option value="wh004">退货仓</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-on-surface mb-1.5">盘点方式</label>
+            <select class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30">
+              <option value="scan">逐件扫码</option>
+              <option value="batch">批量清点</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-on-surface mb-1.5">备注</label>
+            <textarea placeholder="请输入备注信息" rows="2" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"></textarea>
+          </div>
+        </div>
+        <div class="flex justify-end gap-3 mt-6">
+          <button id="btn-cancel-new-check" class="bg-surface-container text-on-surface border-none px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all">取消</button>
+          <button id="btn-confirm-new-check" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">创建任务</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 批量生成库位弹窗 -->
+  <div id="modal-batch-location" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-surface rounded-xl shadow-dialog max-w-lg w-full max-h-[90vh] overflow-y-auto">
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-lg font-semibold text-on-surface">批量生成库位</h3>
+          <button id="btn-close-batch-location" class="text-on-surface-variant hover:text-on-surface transition-colors">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-on-surface mb-1.5">选择仓库</label>
+            <select class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30">
+              <option value="wh001">主仓库 A</option>
+              <option value="wh002">主仓库 B</option>
+              <option value="wh003">中转仓</option>
+            </select>
+          </div>
+          <div class="grid grid-cols-3 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-on-surface mb-1.5">货架数</label>
+              <input type="number" value="10" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-on-surface mb-1.5">排数/货架</label>
+              <input type="number" value="5" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-on-surface mb-1.5">层数/排</label>
+              <input type="number" value="5" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-on-surface mb-1.5">单库位容积(m³)</label>
+            <input type="number" step="0.1" value="2.0" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30">
+          </div>
+          <div class="bg-surface-container rounded-md p-3">
+            <div class="text-sm text-on-surface-variant">将生成：<span class="font-medium text-on-surface">250</span> 个库位</div>
+            <div class="text-xs text-on-surface-variant mt-1">编码规则：货架号-排号-层号-库位号</div>
+          </div>
+        </div>
+        <div class="flex justify-end gap-3 mt-6">
+          <button id="btn-cancel-batch-location" class="bg-surface-container text-on-surface border-none px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all">取消</button>
+          <button id="btn-confirm-batch-location" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">生成库位</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 移库记录弹窗 -->
+  <div id="modal-move-record" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-surface rounded-xl shadow-dialog max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-lg font-semibold text-on-surface">移库记录</h3>
+          <button id="btn-close-move-record" class="text-on-surface-variant hover:text-on-surface transition-colors">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+        <!-- 移库记录列表 -->
+        <div class="bg-surface-container rounded-lg overflow-hidden">
+          <div class="grid grid-cols-7 px-4 py-3 bg-surface-container-high text-xs font-semibold text-on-surface-variant uppercase tracking-wide">
+            <span>移库单号</span>
+            <span>SKU编码</span>
+            <span>原库位</span>
+            <span>目标库位</span>
+            <span>数量</span>
+            <span>操作人</span>
+            <span>时间</span>
+          </div>
+          <div class="divide-y divide-outline-variant/50">
+            <!-- 列表-移库记录1 -->
+            <div class="grid grid-cols-7 px-4 py-3 hover:bg-surface/50 transition-colors items-center">
+              <span class="text-sm font-medium text-on-surface">MV20240115001</span>
+              <span class="text-sm text-on-surface-variant">ITEM-001</span>
+              <span class="text-sm text-on-surface-variant">C-05-4-03</span>
+              <span class="text-sm text-on-surface-variant">A-01-1-01</span>
+              <span class="text-sm text-on-surface-variant">50</span>
+              <span class="text-sm text-on-surface-variant">张明</span>
+              <span class="text-sm text-on-surface-variant">2024-01-15 10:30</span>
+            </div>
+            <!-- 列表-移库记录2 -->
+            <div class="grid grid-cols-7 px-4 py-3 hover:bg-surface/50 transition-colors items-center">
+              <span class="text-sm font-medium text-on-surface">MV20240115002</span>
+              <span class="text-sm text-on-surface-variant">ITEM-002</span>
+              <span class="text-sm text-on-surface-variant">D-03-2-05</span>
+              <span class="text-sm text-on-surface-variant">A-01-1-02</span>
+              <span class="text-sm text-on-surface-variant">30</span>
+              <span class="text-sm text-on-surface-variant">李华</span>
+              <span class="text-sm text-on-surface-variant">2024-01-15 11:00</span>
+            </div>
+            <!-- 列表-移库记录3 -->
+            <div class="grid grid-cols-7 px-4 py-3 hover:bg-surface/50 transition-colors items-center">
+              <span class="text-sm font-medium text-on-surface">MV20240114003</span>
+              <span class="text-sm text-on-surface-variant">ITEM-003</span>
+              <span class="text-sm text-on-surface-variant">B-04-3-01</span>
+              <span class="text-sm text-on-surface-variant">A-02-1-01</span>
+              <span class="text-sm text-on-surface-variant">25</span>
+              <span class="text-sm text-on-surface-variant">王强</span>
+              <span class="text-sm text-on-surface-variant">2024-01-14 14:20</span>
+            </div>
+            <!-- 列表-移库记录4 -->
+            <div class="grid grid-cols-7 px-4 py-3 hover:bg-surface/50 transition-colors items-center">
+              <span class="text-sm font-medium text-on-surface">MV20240114004</span>
+              <span class="text-sm text-on-surface-variant">ITEM-004</span>
+              <span class="text-sm text-on-surface-variant">C-02-5-02</span>
+              <span class="text-sm text-on-surface-variant">A-02-1-03</span>
+              <span class="text-sm text-on-surface-variant">100</span>
+              <span class="text-sm text-on-surface-variant">刘芳</span>
+              <span class="text-sm text-on-surface-variant">2024-01-14 16:45</span>
+            </div>
+            <!-- 列表-移库记录5 -->
+            <div class="grid grid-cols-7 px-4 py-3 hover:bg-surface/50 transition-colors items-center">
+              <span class="text-sm font-medium text-on-surface">MV20240113005</span>
+              <span class="text-sm text-on-surface-variant">ITEM-005</span>
+              <span class="text-sm text-on-surface-variant">A-01-2-03</span>
+              <span class="text-sm text-on-surface-variant">B-03-4-02</span>
+              <span class="text-sm text-on-surface-variant">80</span>
+              <span class="text-sm text-on-surface-variant">张明</span>
+              <span class="text-sm text-on-surface-variant">2024-01-13 09:15</span>
+            </div>
+          </div>
+        </div>
+        <div class="flex justify-end mt-4">
+          <button id="btn-close-move-record-footer" class="bg-surface-container text-on-surface border-none px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all">关闭</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PDA扫码弹窗 -->
+  <div id="modal-pda-scan" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-surface rounded-xl shadow-dialog max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-lg font-semibold text-on-surface">PDA扫码</h3>
+          <button id="btn-close-pda-scan" class="text-on-surface-variant hover:text-on-surface transition-colors">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-on-surface mb-1.5">扫码类型</label>
+            <div class="flex gap-2">
+              <button id="btn-scan-location" class="flex-1 bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium">库位扫码</button>
+              <button id="btn-scan-sku" class="flex-1 bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high">SKU扫码</button>
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-on-surface mb-1.5">扫描结果</label>
+            <div class="bg-surface-container rounded-md p-4 min-h-[120px] flex flex-col items-center justify-center">
+              <i data-lucide="scan-line" class="w-12 h-12 text-on-surface-variant/30 mb-2"></i>
+              <span class="text-sm text-on-surface-variant">等待扫码...</span>
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-on-surface mb-1.5">手动输入</label>
+            <input type="text" placeholder="输入库位编码或SKU编码" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30">
+          </div>
+        </div>
+        <div class="flex justify-end gap-3 mt-6">
+          <button id="btn-cancel-pda-scan" class="bg-surface-container text-on-surface border-none px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all">取消</button>
+          <button id="btn-confirm-pda-scan" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">确认</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    $(function() {
+      // 初始化Lucide图标
+      lucide.createIcons();
+
+      // Tab切换逻辑
+      var tabs = ['#tab-warehouse', '#tab-location', '#tab-inventory-check', '#tab-location-recommend'];
+      var panels = ['#panel-warehouse', '#panel-location', '#panel-inventory-check', '#panel-location-recommend'];
+
+      function switchTab(tabId) {
+        // 重置所有tab样式
+        tabs.forEach(function(tab, index) {
+          $(tab).removeClass('text-primary border-b-2 border-primary bg-primary/5');
+          $(tab).addClass('text-on-surface-variant');
+          $(panels[index]).addClass('hidden');
+        });
+        
+        // 激活当前tab
+        var activeIndex = tabs.indexOf(tabId);
+        $(tabId).removeClass('text-on-surface-variant');
+        $(tabId).addClass('text-primary border-b-2 border-primary bg-primary/5');
+        $(panels[activeIndex]).removeClass('hidden');
+        
+        // 重新初始化图标
+        lucide.createIcons();
+      }
+
+      $('#tab-warehouse').on('click', function() { switchTab('#tab-warehouse'); });
+      $('#tab-location').on('click', function() { switchTab('#tab-location'); });
+      $('#tab-inventory-check').on('click', function() { switchTab('#tab-inventory-check'); });
+      $('#tab-location-recommend').on('click', function() { switchTab('#tab-location-recommend'); });
+
+      // 新建仓库弹窗
+      $('#btn-add-warehouse').on('click', function() {
+        $('#modal-add-warehouse').removeClass('hidden');
+        lucide.createIcons();
+      });
+      $('#btn-close-add-warehouse, #btn-cancel-add-warehouse').on('click', function() {
+        $('#modal-add-warehouse').addClass('hidden');
+      });
+      $('#btn-confirm-add-warehouse').on('click', function() {
+        // 后续应实现：1. 校验表单数据 2. 调用API创建仓库 3. 刷新列表
+        console.log('新建仓库：提交表单数据');
+        $('#modal-add-warehouse').addClass('hidden');
+      });
+
+      // 新建盘点任务弹窗
+      $('#btn-new-check-task').on('click', function() {
+        $('#modal-new-check-task').removeClass('hidden');
+        lucide.createIcons();
+      });
+      $('#btn-close-new-check, #btn-cancel-new-check').on('click', function() {
+        $('#modal-new-check-task').addClass('hidden');
+      });
+      $('#btn-confirm-new-check').on('click', function() {
+        // 后续应实现：1. 校验表单数据 2. 调用API创建盘点任务 3. 刷新列表
+        console.log('新建盘点任务：提交表单数据');
+        $('#modal-new-check-task').addClass('hidden');
+      });
+
+      // 批量生成库位弹窗
+      $('#btn-batch-location').on('click', function() {
+        $('#modal-batch-location').removeClass('hidden');
+        lucide.createIcons();
+      });
+      $('#btn-close-batch-location, #btn-cancel-batch-location').on('click', function() {
+        $('#modal-batch-location').addClass('hidden');
+      });
+      $('#btn-confirm-batch-location').on('click', function() {
+        // 后续应实现：1. 校验输入参数 2. 调用API批量生成库位 3. 刷新库位列表
+        console.log('批量生成库位：提交生成请求');
+        $('#modal-batch-location').addClass('hidden');
+      });
+
+      // 移库记录弹窗
+      $('#btn-move-record').on('click', function() {
+        $('#modal-move-record').removeClass('hidden');
+        lucide.createIcons();
+      });
+      $('#btn-close-move-record, #btn-close-move-record-footer').on('click', function() {
+        $('#modal-move-record').addClass('hidden');
+      });
+
+      // PDA扫码弹窗
+      $('#btn-pda-scan').on('click', function() {
+        $('#modal-pda-scan').removeClass('hidden');
+        lucide.createIcons();
+      });
+      $('#btn-close-pda-scan, #btn-cancel-pda-scan').on('click', function() {
+        $('#modal-pda-scan').addClass('hidden');
+      });
+      $('#btn-confirm-pda-scan').on('click', function() {
+        // 后续应实现：1. 获取扫描结果或手动输入 2. 调用PDA扫码接口 3. 处理返回数据
+        console.log('PDA扫码：确认扫描');
+        $('#modal-pda-scan').addClass('hidden');
+      });
+
+      // 扫码类型切换
+      $('#btn-scan-location').on('click', function() {
+        $(this).removeClass('bg-surface-container text-on-surface').addClass('bg-primary text-on-primary');
+        $('#btn-scan-sku').removeClass('bg-primary text-on-primary').addClass('bg-surface-container text-on-surface');
+        console.log('切换到库位扫码模式');
+      });
+      $('#btn-scan-sku').on('click', function() {
+        $(this).removeClass('bg-surface-container text-on-surface').addClass('bg-primary text-on-primary');
+        $('#btn-scan-location').removeClass('bg-primary text-on-primary').addClass('bg-surface-container text-on-surface');
+        console.log('切换到SKU扫码模式');
+      });
+
+      // 库位推荐功能
+      $('#btn-recommend-inbound').on('click', function() {
+        var sku = $('#input-inbound-sku').val();
+        // 后续应实现：1. 校验SKU编码 2. 调用API获取推荐库位 3. 显示推荐结果
+        console.log('入库推荐：SKU=' + sku);
+      });
+
+      $('#btn-optimize-route').on('click', function() {
+        var skus = $('#input-outbound-skus').val();
+        // 后续应实现：1. 解析SKU列表 2. 调用路径优化API 3. 显示优化后的拣货路径
+        console.log('出库路径优化：SKU列表=' + skus);
+      });
+
+      $('#btn-apply-hot-suggest').on('click', function() {
+        // 后续应实现：1. 获取热销商品建议列表 2. 调用API批量调整库位 3. 更新显示
+        console.log('一键应用热销商品建议');
+      });
+
+      // 点击弹窗背景关闭
+      $('.fixed.inset-0').on('click', function(e) {
+        if (e.target === this) {
+          $(this).addClass('hidden');
+        }
+      });
+    });
+
+    // 仓库操作函数
+    function editWarehouse(code) {
+      // 后续应实现：1. 调用API获取仓库详情 2. 打开编辑弹窗并填充数据
+      console.log('编辑仓库：' + code);
+      $('#modal-add-warehouse').removeClass('hidden');
+      lucide.createIcons();
+    }
+
+    function openLocationManage(code) {
+      // 后续应实现：1. 切换到库位管理Tab 2. 筛选显示该仓库的库位
+      console.log('打开库位管理：' + code);
+      $('#tab-location').click();
+    }
+
+    function viewWarehouseDetail(code) {
+      // 后续应实现：1. 调用API获取仓库详情 2. 打开详情弹窗显示完整信息
+      console.log('查看仓库详情：' + code);
+    }
+
+    // 盘点操作函数
+    function startCheck(taskId) {
+      // 后续应实现：1. 调用API开始盘点任务 2. 跳转到盘点执行界面
+      // 盘点执行界面应包含：扫描SKU条码、显示账面数量、输入实盘数量、实时显示盘盈/盘亏
+      console.log('开始盘点：' + taskId);
+    }
+
+    function viewCheckResult(taskId) {
+      // 后续应实现：1. 调用API获取盘点结果 2. 显示盘盈商品列表和盘亏商品列表
+      console.log('查看盘点结果：' + taskId);
+    }
+
+    function cancelCheck(taskId) {
+      // 后续应实现：1. 确认取消操作 2. 调用API取消盘点任务 3. 刷新列表
+      console.log('取消盘点任务：' + taskId);
+    }
+
+    function generateAdjust(taskId) {
+      // 后续应实现：1. 调用API生成调整单 2. 自动创建入库/出库调整记录
+      console.log('生成调整单：' + taskId);
+    }
+  </script>
+</body>
+
+</html>

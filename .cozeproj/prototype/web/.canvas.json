@@ -111,6 +111,22 @@
       },
       "title": "角色权限",
       "size": "web"
+    },
+    {
+      "type": "html",
+      "options": {
+        "path": ".cozeproj/prototype/web/inventory.html"
+      },
+      "title": "库存管理",
+      "size": "web"
+    },
+    {
+      "type": "html",
+      "options": {
+        "path": ".cozeproj/prototype/web/wms.html"
+      },
+      "title": "仓库管理",
+      "size": "web"
     }
   ]
 }
