@@ -52,7 +52,7 @@ export default function QuickEntryPage() {
     try {
       const res = await fetch('/api/quick-entry');
       const data = await res.json();
-      if (data.success) setTasks(data.data.tasks);
+      if (data.success) setTasks(data.data || []);
     } catch (error) {
       console.error('获取任务失败:', error);
     } finally {

@@ -36,7 +36,7 @@ export default function PackagingPage() {
     try {
       const res = await fetch('/api/packaging');
       const data = await res.json();
-      if (data.success) setOrders(data.data.orders);
+      if (data.success) setOrders(data.data || []);
     } catch (error) { console.error('获取订单失败:', error); }
     finally { setLoading(false); }
   };
