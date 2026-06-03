@@ -396,6 +396,7 @@ export default function OrdersPage() {
                       </TableCell>
                       <TableCell className="text-sm text-[#637089]">
                         {new Date(order.createdAt).toLocaleString('zh-CN', {
+                          year: 'numeric',
                           month: '2-digit',
                           day: '2-digit',
                           hour: '2-digit',
@@ -451,7 +452,13 @@ export default function OrdersPage() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-[#637089]">下单时间</span>
-                      <span>{new Date(detailOrder.createdAt).toLocaleString('zh-CN')}</span>
+                      <span>{new Date(detailOrder.createdAt).toLocaleString('zh-CN', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      }).replace(/\//g, '/')}</span>
                     </div>
                     {detailOrder.shippedAt && (
                       <div className="flex justify-between">
