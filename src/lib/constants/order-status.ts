@@ -3,7 +3,9 @@
  * Ozon 订单状态定义和转换
  */
 
-import type { OzonPostingStatus } from '@/types/ozon';
+// 导入 OzonPostingStatus 枚举（作为值使用）
+import { OzonPostingStatus } from '@/types/ozon';
+export { OzonPostingStatus };
 
 // 状态配置类型
 interface StatusConfig {
@@ -17,7 +19,7 @@ interface StatusConfig {
 
 // Ozon FBS 订单状态配置
 export const ORDER_STATUS_CONFIG: Record<OzonPostingStatus, StatusConfig> = {
-  awaiting_packaging: {
+  [OzonPostingStatus.AWAITING_PACKAGING]: {
     label: '待打包',
     labelEn: 'Awaiting Packaging',
     color: 'text-orange-600',
@@ -25,7 +27,7 @@ export const ORDER_STATUS_CONFIG: Record<OzonPostingStatus, StatusConfig> = {
     description: '订单已付款，等待打包',
     order: 1,
   },
-  awaiting_delivery: {
+  [OzonPostingStatus.AWAITING_DELIVERY]: {
     label: '待发货',
     labelEn: 'Awaiting Delivery',
     color: 'text-blue-600',
@@ -33,7 +35,7 @@ export const ORDER_STATUS_CONFIG: Record<OzonPostingStatus, StatusConfig> = {
     description: '订单已打包，等待发货',
     order: 2,
   },
-  delivering: {
+  [OzonPostingStatus.DELIVERING]: {
     label: '配送中',
     labelEn: 'Delivering',
     color: 'text-purple-600',
@@ -41,7 +43,7 @@ export const ORDER_STATUS_CONFIG: Record<OzonPostingStatus, StatusConfig> = {
     description: '订单已发货，配送中',
     order: 3,
   },
-  delivered: {
+  [OzonPostingStatus.DELIVERED]: {
     label: '已送达',
     labelEn: 'Delivered',
     color: 'text-green-600',
@@ -49,7 +51,7 @@ export const ORDER_STATUS_CONFIG: Record<OzonPostingStatus, StatusConfig> = {
     description: '订单已送达客户',
     order: 4,
   },
-  cancelled: {
+  [OzonPostingStatus.CANCELLED]: {
     label: '已取消',
     labelEn: 'Cancelled',
     color: 'text-gray-600',
@@ -57,7 +59,7 @@ export const ORDER_STATUS_CONFIG: Record<OzonPostingStatus, StatusConfig> = {
     description: '订单已取消',
     order: 5,
   },
-  not_delivered: {
+  [OzonPostingStatus.NOT_DELIVERED]: {
     label: '未送达',
     labelEn: 'Not Delivered',
     color: 'text-red-600',

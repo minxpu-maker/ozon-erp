@@ -3,6 +3,7 @@
  * 前端调用订单相关接口
  */
 
+import React from 'react';
 import type { Order, OrderSyncResult, OzonPostingStatus } from '@/types/ozon';
 
 // API响应类型
@@ -169,19 +170,27 @@ export async function getLabel(
 }
 
 /**
+ * 批量发货（通过订单ID）
+ */
+export async function batchShip(params: { orderIds: number[] }): Promise<ApiResponse<{ success: boolean }>> {
+  const response = await fetch('/api/orders/ship', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'batchShip', ...params }),
+  });
+  return response.json();
+}
+
+/**
  * 导出订单
  */
-export async function exportOrders(params: OrderQueryParams & { format?: 'xlsx' | 'csv' }): Promise<Blob> {
-  const searchParams = new URLSearchParams();
-  
-  if (params.status) searchParams.set('status', params.status);
-  if (params.startDate) searchParams.set('startDate', params.startDate);
-  if (params.endDate) searchParams.set('endDate', params.endDate);
-  if (params.shopId) searchParams.set('shopId', params.shopId);
-  searchParams.set('format', params.format || 'xlsx');
-
-  const response = await fetch(`/api/orders/export?${searchParams.toString()}`);
-  return response.blob();
+export async function exportOrders(params: { orderIds: number[] }): Promise<ApiResponse<{ success: boolean; downloadUrl?: string }>> {
+  const response = await fetch('/api/orders/export', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  return response.json();
 }
 
 /**
@@ -270,5 +279,18 @@ export function useOrderSync() {
   };
 }
 
-// 需要React导入
-import React from 'react';
+// 导出统一的 API 对象
+export const ordersApi = {
+  getOrders,
+  syncOrders,
+  getSyncStatus,
+  getOrderById,
+  shipOrder,
+  deliverOrder,
+  batchDeliver,
+  batchShip,
+  getLabel,
+  exportOrders,
+  useOrders,
+  useOrderSync,
+};
