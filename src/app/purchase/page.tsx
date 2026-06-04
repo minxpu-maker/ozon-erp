@@ -97,8 +97,33 @@ export default function PurchasePage() {
       const res = await fetch(`/api/purchase?${params}`);
       const data = await res.json();
       if (data.success) {
-        // API返回 data: [...] 或 data: { tasks: [...] }
-        const taskList = Array.isArray(data.data) ? data.data : (data.data?.tasks || []);
+        // API返回 data: [{ task: {...}, order: {...} }] 或 data: { tasks: [...] }
+        const rawList = Array.isArray(data.data) ? data.data : (data.data?.tasks || []);
+        // 扁平化数据结构
+        const taskList = rawList.map((item: any) => ({
+          id: item.task?.id || item.id,
+          orderId: item.task?.order_id || item.orderId,
+          orderItemId: item.task?.order_item_id || item.orderItemId,
+          status: item.task?.status || item.status,
+          skuId: item.task?.sku_id || item.skuId,
+          skuCode: item.task?.sku_code || item.skuCode,
+          quantity: item.task?.quantity || item.quantity,
+          sourceType: item.task?.source_type || item.sourceType,
+          sourceUrl: item.task?.source_url || item.sourceUrl,
+          sourcePrice: item.task?.source_price || item.sourcePrice,
+          purchaseAmount: item.task?.purchase_amount || item.purchaseAmount,
+          shippingFee: item.task?.shipping_fee || item.shippingFee,
+          isBound: item.task?.is_bound ?? item.isBound ?? false,
+          domesticTrackingNumber: item.task?.domestic_tracking_number || item.domesticTrackingNumber,
+          boundAt: item.task?.bound_at || item.boundAt,
+          purchasedAt: item.task?.purchased_at || item.purchasedAt,
+          receivedAt: item.task?.received_at || item.receivedAt,
+          createdAt: item.task?.created_at || item.createdAt,
+          ozonOrderId: item.order?.ozon_order_id || item.ozonOrderId,
+          postingNumber: item.order?.ozon_posting_number || item.postingNumber,
+          buyerName: item.order?.buyer_name || item.buyerName,
+          shopName: item.order?.shop?.name || item.shopName,
+        }));
         setTasks(taskList);
       }
     } catch (error) {
