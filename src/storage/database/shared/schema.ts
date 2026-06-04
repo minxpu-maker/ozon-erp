@@ -597,5 +597,16 @@ export type Role = typeof roles.$inferSelect;
 export type InsertRole = typeof roles.$inferInsert;
 export type Account = typeof accounts.$inferSelect;
 export type InsertAccount = typeof accounts.$inferInsert;
+
+// 系统配置表 - 存储汇率等系统设置
+export const systemConfigs = pgTable("system_configs", {
+  key: varchar("key", { length: 64 }).primaryKey(),
+  value: text("value").notNull(),
+  description: varchar("description", { length: 256 }),
+  updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export type SystemConfig = typeof systemConfigs.$inferSelect;
+export type InsertSystemConfig = typeof systemConfigs.$inferInsert;
 export type OperationLog = typeof operationLogs.$inferSelect;
 export type InsertOperationLog = typeof operationLogs.$inferInsert;

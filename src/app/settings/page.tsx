@@ -51,10 +51,15 @@ export default function SettingsPage() {
   });
   const [testingShop, setTestingShop] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  
+  // 汇率相关状态
+  const [rubToCny, setRubToCny] = useState(0.08);
+  const [savingRate, setSavingRate] = useState(false);
 
   // 加载店铺列表
   useEffect(() => {
     loadShops();
+    loadExchangeRate();
   }, []);
 
   const loadShops = async () => {
@@ -69,6 +74,46 @@ export default function SettingsPage() {
       console.error('加载店铺列表失败:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 加载汇率配置
+  const loadExchangeRate = async () => {
+    try {
+      const res = await fetch('/api/system-config?key=rub_to_cny');
+      const data = await res.json();
+      if (data.success && data.data?.value) {
+        setRubToCny(parseFloat(data.data.value));
+      }
+    } catch (error) {
+      console.error('加载汇率失败:', error);
+    }
+  };
+
+  // 保存汇率配置
+  const saveExchangeRate = async () => {
+    setSavingRate(true);
+    try {
+      const res = await fetch('/api/system-config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          key: 'rub_to_cny',
+          value: rubToCny.toString(),
+          description: '卢布兑人民币汇率',
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('汇率保存成功');
+      } else {
+        alert('保存失败');
+      }
+    } catch (error) {
+      console.error('保存汇率失败:', error);
+      alert('保存失败');
+    } finally {
+      setSavingRate(false);
     }
   };
 
@@ -518,6 +563,35 @@ export default function SettingsPage() {
                 {/* System Section */}
                 {activeSection === 'system' && (
                   <div className="space-y-4">
+                    <div className="bg-card rounded-lg shadow-sm p-5">
+                      <h3 className="text-base font-semibold text-foreground mb-4">汇率设置</h3>
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between py-3 border-b border-border/20">
+                          <div>
+                            <p className="text-sm font-medium text-foreground">卢布兑人民币汇率</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">用于将订单金额从卢布转换为人民币显示，当前汇率：1 卢布 = {rubToCny} 人民币</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Input 
+                              type="number" 
+                              step="0.001"
+                              value={rubToCny}
+                              onChange={(e) => setRubToCny(parseFloat(e.target.value) || 0)}
+                              className="w-24 text-center" 
+                            />
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={saveExchangeRate}
+                              disabled={savingRate}
+                            >
+                              {savingRate ? '保存中...' : '保存'}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
                     <div className="bg-card rounded-lg shadow-sm p-5">
                       <h3 className="text-base font-semibold text-foreground mb-4">同步设置</h3>
                       <div className="space-y-4">

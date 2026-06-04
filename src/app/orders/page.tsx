@@ -102,9 +102,23 @@ export default function OrdersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
+  const [rubToCny, setRubToCny] = useState(0.08); // 卢布兑人民币汇率
 
   // 订单详情抽屉
   const [detailOrder, setDetailOrder] = useState<Order | null>(null);
+
+  // 获取汇率配置
+  const fetchExchangeRate = useCallback(async () => {
+    try {
+      const res = await fetch('/api/system-config?key=rub_to_cny');
+      const data = await res.json();
+      if (data.success && data.data?.value) {
+        setRubToCny(parseFloat(data.data.value));
+      }
+    } catch (error) {
+      console.error('获取汇率失败:', error);
+    }
+  }, []);
 
   // 获取订单列表
   const fetchOrders = useCallback(async () => {
@@ -147,7 +161,8 @@ export default function OrdersPage() {
 
   useEffect(() => {
     fetchOrders();
-  }, [fetchOrders]);
+    fetchExchangeRate();
+  }, [fetchOrders, fetchExchangeRate]);
 
   // 全选/取消全选
   const toggleSelectAll = () => {
@@ -394,7 +409,7 @@ export default function OrdersPage() {
                         {order.buyerName || '-'}
                       </TableCell>
                       <TableCell className="text-sm font-medium text-[#152033]">
-                        ¥{parseFloat(order.totalPrice || '0').toFixed(2)}
+                        ¥{(parseFloat(order.totalPrice || '0') * rubToCny).toFixed(2)}
                       </TableCell>
                       <TableCell>
                         {getStatusBadge(order.status)}
