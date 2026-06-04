@@ -87,6 +87,7 @@ export async function GET(request: NextRequest) {
       isPacked: order.is_packed,
       isSettled: order.is_settled,
       createdAt: order.created_at,
+      ozonCreatedAt: order.ozon_created_at,
       shippedAt: order.shipped_at,
     }));
 
@@ -246,8 +247,8 @@ export async function POST(request: NextRequest) {
               products_price: productsPrice.toFixed(2),
               delivery_price: deliveryPrice.toFixed(2),
               ozon_raw_data: orderData,
-              ozon_created_at: orderData.created_at ? new Date(orderData.created_at) : null,
-              ozon_updated_at: orderData.in_process_at ? new Date(orderData.in_process_at) : null,
+              ozon_created_at: orderData.in_process_at ? new Date(orderData.in_process_at) : (orderData.created_at ? new Date(orderData.created_at) : null),
+              ozon_updated_at: orderData.status_updated_at ? new Date(orderData.status_updated_at) : (orderData.in_process_at ? new Date(orderData.in_process_at) : null),
               updated_at: new Date(),
             };
 

@@ -16,6 +16,9 @@ export interface OzonOrder {
   order_id: number;
   order_number: string;
   status: string;
+  in_process_at?: string;
+  status_updated_at?: string;
+  created_at?: string;
   financial_data: {
     posting_services: {
       marketplace_service_name_fbo_fulfillment_amount: number;
@@ -88,8 +91,6 @@ export interface OzonOrder {
     recipient: string;
     phone: string;
   };
-  created_at: string;
-  in_process_at: string;
   tracking_number?: string;
   delivery_price?: string;
   shipments?: Array<{

@@ -82,6 +82,7 @@ interface Order {
   isPacked: boolean;
   isSettled: boolean;
   createdAt: string;
+  ozonCreatedAt: string | null;
   shippedAt: string | null;
 }
 
@@ -415,7 +416,7 @@ export default function OrdersPage() {
                         {getStatusBadge(order.status)}
                       </TableCell>
                       <TableCell className="text-sm text-[#637089]">
-                        {new Date(order.createdAt).toLocaleString('zh-CN', {
+                        {new Date(order.ozonCreatedAt || order.createdAt).toLocaleString('zh-CN', {
                           year: 'numeric',
                           month: '2-digit',
                           day: '2-digit',
@@ -472,7 +473,7 @@ export default function OrdersPage() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-[#637089]">下单时间</span>
-                      <span>{new Date(detailOrder.createdAt).toLocaleString('zh-CN', {
+                      <span>{new Date(detailOrder.ozonCreatedAt || detailOrder.createdAt).toLocaleString('zh-CN', {
                         year: 'numeric',
                         month: '2-digit',
                         day: '2-digit',
