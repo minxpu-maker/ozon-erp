@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, boolean, integer, numeric, jsonb, index, serial } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, boolean, integer, numeric, jsonb, index, serial, uuid } from "drizzle-orm/pg-core";
 
 // 系统健康检查表（必须保留）
 export const healthCheck = pgTable("health_check", {
@@ -607,6 +607,56 @@ export const systemConfigs = pgTable("system_configs", {
 });
 
 export type SystemConfig = typeof systemConfigs.$inferSelect;
+// 商品信息缓存表（来自Ozon商品库）
+export const ozonProducts = pgTable('ozon_products', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  shop_id: uuid('shop_id').notNull().references(() => shops.id),
+  
+  // Ozon商品信息
+  ozon_product_id: integer('ozon_product_id').notNull(),
+  offer_id: varchar('offer_id', { length: 128 }).notNull(),
+  name: varchar('name', { length: 512 }).notNull(),
+  description: text('description'),
+  
+  // 图片信息
+  main_image: text('main_image'), // 主图URL
+  images: jsonb('images').$type<string[]>().default([]), // 所有图片URL数组
+  
+  // 商品属性（颜色、尺寸等）
+  attributes: jsonb('attributes').$type<Array<{ name: string; value: string }>>().default([]),
+  
+  // 价格信息
+  price: varchar('price', { length: 32 }),
+  old_price: varchar('old_price', { length: 32 }),
+  marketing_price: varchar('marketing_price', { length: 32 }),
+  
+  // 库存信息
+  stock: integer('stock').default(0),
+  reserved: integer('reserved').default(0),
+  
+  // 商品状态
+  status: varchar('status', { length: 32 }).default('active'),
+  is_visible: boolean('is_visible').default(true),
+  
+  // 条形码
+  barcode: varchar('barcode', { length: 64 }),
+  
+  // 规格尺寸
+  weight: varchar('weight', { length: 32 }),
+  height: varchar('height', { length: 32 }),
+  width: varchar('width', { length: 32 }),
+  depth: varchar('depth', { length: 32 }),
+  
+  // 原始数据
+  raw_data: jsonb('raw_data').$type<Record<string, unknown>>(),
+  
+  created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export type OzonProduct = typeof ozonProducts.$inferSelect;
+export type InsertOzonProduct = typeof ozonProducts.$inferInsert;
+
 export type InsertSystemConfig = typeof systemConfigs.$inferInsert;
 export type OperationLog = typeof operationLogs.$inferSelect;
 export type InsertOperationLog = typeof operationLogs.$inferInsert;

@@ -51,7 +51,9 @@ import {
   UserCircle,
   Shield,
   Settings,
+  Image as ImageIcon,
 } from 'lucide-react';
+import { ProductImage } from '@/components/ui/image-viewer';
 import Link from 'next/link';
 
 // 订单状态类型
@@ -64,6 +66,13 @@ type OrderStatus =
   | 'cancelled';
 
 // 订单数据类型 - 匹配API返回结构
+interface ProductInfo {
+  mainImage: string | null;
+  name: string | null;
+  offerId: string | null;
+  sku: string | null;
+}
+
 interface Order {
   id: string;
   ozonOrderId: string;
@@ -84,6 +93,7 @@ interface Order {
   createdAt: string;
   ozonCreatedAt: string | null;
   shippedAt: string | null;
+  productInfo?: ProductInfo;
 }
 
 // 状态映射 - 使用主系统企业风格色彩
@@ -352,6 +362,7 @@ export default function OrdersPage() {
                   <TableHead>发货单号</TableHead>
                   <TableHead>店铺</TableHead>
                   <TableHead>买家</TableHead>
+                  <TableHead>商品信息</TableHead>
                   <TableHead>订单金额</TableHead>
                   <TableHead>状态</TableHead>
                   <TableHead>下单时间</TableHead>
@@ -368,6 +379,8 @@ export default function OrdersPage() {
                       <TableCell><Skeleton className="w-20 h-4" /></TableCell>
                       <TableCell><Skeleton className="w-20 h-4" /></TableCell>
                       <TableCell><Skeleton className="w-16 h-4" /></TableCell>
+                      <TableCell><Skeleton className="w-24 h-4" /></TableCell>
+                      <TableCell><Skeleton className="w-16 h-4" /></TableCell>
                       <TableCell><Skeleton className="w-16 h-4" /></TableCell>
                       <TableCell><Skeleton className="w-24 h-4" /></TableCell>
                       <TableCell><Skeleton className="w-16 h-4" /></TableCell>
@@ -375,7 +388,7 @@ export default function OrdersPage() {
                   ))
                 ) : orders.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-12 text-[#637089]">
+                    <TableCell colSpan={11} className="text-center py-12 text-[#637089]">
                       <Package className="w-12 h-12 mx-auto mb-4 opacity-30" />
                       <p>暂无订单数据</p>
                       <p className="text-sm mt-2">点击"同步订单"从Ozon获取订单</p>
@@ -408,6 +421,33 @@ export default function OrdersPage() {
                       </TableCell>
                       <TableCell className="text-sm">
                         {order.buyerName || '-'}
+                      </TableCell>
+                      <TableCell>
+                        {order.productInfo ? (
+                          <div className="flex items-center gap-2">
+                            {order.productInfo.mainImage ? (
+                              <ProductImage
+                                src={order.productInfo.mainImage}
+                                alt={order.productInfo.name || '商品图片'}
+                                className="w-10 h-10 rounded border border-[#E6EAF2] object-cover flex-shrink-0"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 rounded border border-[#E6EAF2] bg-[#F6F8FB] flex items-center justify-center flex-shrink-0">
+                                <ImageIcon className="w-4 h-4 text-[#637089]" />
+                              </div>
+                            )}
+                            <div className="min-w-0">
+                              <div className="text-xs text-[#152033] truncate max-w-[120px]" title={order.productInfo.name || undefined}>
+                                {order.productInfo.name || '-'}
+                              </div>
+                              <div className="text-xs text-[#637089]">
+                                {order.productInfo.offerId || order.productInfo.sku || '-'}
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-[#637089]">-</span>
+                        )}
                       </TableCell>
                       <TableCell className="text-sm font-medium text-[#152033]">
                         ¥{(parseFloat(order.totalPrice || '0') * rubToCny).toFixed(2)}

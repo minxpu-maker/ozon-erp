@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/storage/database/client';
-import { orders, orderItems, shops, orderSyncLogs, purchaseTasks } from '@/storage/database/shared/schema';
+import { orders, orderItems, shops, orderSyncLogs, purchaseTasks, ozonProducts } from '@/storage/database/shared/schema';
 import { eq, desc, and, gte, lte, like, or, inArray } from 'drizzle-orm';
 import { OzonApiClient } from '@/lib/ozon/client';
 import { rateLimiter, getRateLimitHeaders } from '@/lib/rate-limit/rate-limiter';
@@ -68,28 +68,77 @@ export async function GET(request: NextRequest) {
     
     const shopMap = new Map(shopList.map(s => [s.id, s]));
 
+    // 查询关联的商品信息（用于获取图片）
+    const offerIds = new Set<string>();
+    orderList.forEach(order => {
+      const rawData = order.ozon_raw_data as Record<string, unknown> | null;
+      const products = rawData?.products as Array<{ offer_id: string }> | undefined;
+      if (products) {
+        products.forEach(p => {
+          if (p.offer_id) offerIds.add(p.offer_id);
+        });
+      }
+    });
+
+    let productMap = new Map<string, { mainImage: string | null; name: string }>();
+    if (offerIds.size > 0) {
+      const productList = await db
+        .select()
+        .from(ozonProducts)
+        .where(inArray(ozonProducts.offer_id, [...offerIds]));
+      
+      productList.forEach(p => {
+        productMap.set(p.offer_id, {
+          mainImage: p.main_image,
+          name: p.name,
+        });
+      });
+    }
+
     // 组装返回数据
-    const result = orderList.map(order => ({
-      id: order.id,
-      ozonOrderId: order.ozon_order_id,
-      postingNumber: order.ozon_posting_number,
-      shopId: order.shop_id,
-      shopName: shopMap.get(order.shop_id)?.name || '',
-      status: order.status,
-      buyerName: order.buyer_name,
-      buyerPhone: order.buyer_phone,
-      recipientName: order.recipient_name,
-      recipientCity: order.recipient_city,
-      totalPrice: order.total_price,
-      trackingNumber: order.tracking_number,
-      isPurchaseBound: order.is_purchase_bound,
-      isInspected: order.is_inspected,
-      isPacked: order.is_packed,
-      isSettled: order.is_settled,
-      createdAt: order.created_at,
-      ozonCreatedAt: order.ozon_created_at,
-      shippedAt: order.shipped_at,
-    }));
+    const result = orderList.map(order => {
+      // 解析商品信息
+      const rawData = order.ozon_raw_data as Record<string, unknown> | null;
+      const rawProducts = rawData?.products as Array<{
+        sku: number;
+        name: string;
+        offer_id: string;
+        quantity: number;
+        price: string;
+      }> | undefined;
+      
+      const products = rawProducts ? rawProducts.map(p => ({
+        sku: p.sku,
+        name: p.name,
+        offerId: p.offer_id,
+        quantity: p.quantity,
+        price: p.price,
+        image: productMap.get(p.offer_id)?.mainImage || null,
+      })) : [];
+
+      return {
+        id: order.id,
+        ozonOrderId: order.ozon_order_id,
+        postingNumber: order.ozon_posting_number,
+        shopId: order.shop_id,
+        shopName: shopMap.get(order.shop_id)?.name || '',
+        status: order.status,
+        buyerName: order.buyer_name,
+        buyerPhone: order.buyer_phone,
+        recipientName: order.recipient_name,
+        recipientCity: order.recipient_city,
+        totalPrice: order.total_price,
+        trackingNumber: order.tracking_number,
+        isPurchaseBound: order.is_purchase_bound,
+        isInspected: order.is_inspected,
+        isPacked: order.is_packed,
+        isSettled: order.is_settled,
+        createdAt: order.created_at,
+        ozonCreatedAt: order.ozon_created_at,
+        shippedAt: order.shipped_at,
+        products,
+      };
+    });
 
     return NextResponse.json({
       success: true,

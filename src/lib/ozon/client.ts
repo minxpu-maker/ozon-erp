@@ -137,6 +137,62 @@ export interface OzonProduct {
   };
 }
 
+export interface OzonProductDetail {
+  id: number;
+  name: string;
+  offer_id: string;
+  barcode?: string;
+  description?: string;
+  default_image?: string;
+  images: Array<{
+    url: string;
+    is_main?: boolean;
+    order?: number;
+  }>;
+  attributes: Array<{
+    attribute_id: number;
+    name: string;
+    value: string;
+  }>;
+  color_image?: string;
+  primary_image?: string;
+  vat: string;
+  type_id: number;
+  sources: Array<{
+    source: string;
+    is_enabled: boolean;
+  }>;
+  status: {
+    value: string;
+  };
+  price: {
+    price: string;
+    marketing_price?: string;
+    old_price?: string;
+    premium_price?: string;
+  };
+  dimensions: {
+    weight: number;
+    height: number;
+    depth: number;
+    width: number;
+  };
+  variants?: Array<{
+    id: number;
+    offer_id: string;
+    name: string;
+    color_image?: string;
+    barcode?: string;
+    default_image?: string;
+    images?: Array<string>;
+    attributes?: Array<{
+      attribute_id: number;
+      name: string;
+      value: string;
+    }>;
+  }>;
+}
+
 export interface OzonPackageLabel {
   id: number;
   url: string;
@@ -300,6 +356,42 @@ export class OzonApiClient {
         items: OzonProduct[];
       };
     }>('/v3/product/info/list', {
+      product_id: productIds,
+    });
+  }
+
+  /**
+   * 获取商品详情（含图片）
+   * POST /v2/product/info
+   */
+  async getProductDetail(offerIds: string[]): Promise<{
+    result: {
+      items: OzonProductDetail[];
+    };
+  }> {
+    return this.request<{
+      result: {
+        items: OzonProductDetail[];
+      };
+    }>('/v2/product/info', {
+      offer_id: offerIds,
+    });
+  }
+
+  /**
+   * 按product_id获取商品详情（含图片）
+   * POST /v2/product/info
+   */
+  async getProductDetailByIds(productIds: number[]): Promise<{
+    result: {
+      items: OzonProductDetail[];
+    };
+  }> {
+    return this.request<{
+      result: {
+        items: OzonProductDetail[];
+      };
+    }>('/v2/product/info', {
       product_id: productIds,
     });
   }
