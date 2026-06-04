@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/storage/database/client';
 import { systemConfigs } from '@/storage/database/shared/schema';
 import { eq } from 'drizzle-orm';
+import { cache, CacheKeys } from '@/lib/cache/memory-cache';
 
 // 默认汇率配置
 const DEFAULT_CONFIGS = {
@@ -16,6 +17,13 @@ export async function GET(request: NextRequest) {
     const key = searchParams.get('key');
 
     if (key) {
+      // 尝试从缓存获取
+      const cacheKey = `system-config:${key}`;
+      const cached = cache.get<{ key: string; value: string; description?: string }>(cacheKey);
+      if (cached) {
+        return NextResponse.json({ success: true, data: cached });
+      }
+
       // 获取单个配置
       const result = await db
         .select()
@@ -24,18 +32,22 @@ export async function GET(request: NextRequest) {
         .limit(1);
 
       if (result.length > 0) {
+        // 缓存5分钟
+        cache.set(cacheKey, result[0], 300);
         return NextResponse.json({ success: true, data: result[0] });
       }
 
       // 返回默认值
       if (DEFAULT_CONFIGS[key as keyof typeof DEFAULT_CONFIGS]) {
+        const defaultData = {
+          key,
+          value: DEFAULT_CONFIGS[key as keyof typeof DEFAULT_CONFIGS],
+          description: '默认值',
+        };
+        cache.set(cacheKey, defaultData, 300);
         return NextResponse.json({
           success: true,
-          data: {
-            key,
-            value: DEFAULT_CONFIGS[key as keyof typeof DEFAULT_CONFIGS],
-            description: '默认值',
-          },
+          data: defaultData,
         });
       }
 
@@ -89,6 +101,9 @@ export async function POST(request: NextRequest) {
         description,
       });
     }
+
+    // 清除缓存
+    cache.delete(`system-config:${key}`);
 
     return NextResponse.json({ success: true, message: '配置更新成功' });
   } catch (error) {

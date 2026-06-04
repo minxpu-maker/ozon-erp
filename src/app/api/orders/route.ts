@@ -3,6 +3,7 @@ import { db } from '@/storage/database/client';
 import { orders, orderItems, shops, orderSyncLogs } from '@/storage/database/shared/schema';
 import { eq, desc, and, gte, lte, like, or, inArray } from 'drizzle-orm';
 import { OzonApiClient } from '@/lib/ozon/client';
+import { rateLimiter, getRateLimitHeaders } from '@/lib/rate-limit/rate-limiter';
 
 // GET /api/orders - 获取订单列表
 export async function GET(request: NextRequest) {
@@ -117,6 +118,22 @@ export async function POST(request: NextRequest) {
     const { action, shopId } = body;
 
     if (action === 'sync') {
+      // 限流检查：每分钟最多5次同步
+      const rateLimitResult = rateLimiter.check('orders:sync');
+      if (!rateLimitResult.allowed) {
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: '同步频率过高，请稍后再试',
+            resetAt: rateLimitResult.resetAt,
+          },
+          { 
+            status: 429,
+            headers: getRateLimitHeaders(rateLimitResult),
+          }
+        );
+      }
+
       // 同步指定店铺或所有活跃店铺的订单
       const shopList = shopId
         ? await db.select().from(shops).where(eq(shops.id, shopId))
