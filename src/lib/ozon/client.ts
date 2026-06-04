@@ -30,6 +30,15 @@ export interface OzonOrder {
         };
       }>;
     };
+    products?: Array<{
+      price: number;
+      payout?: number;
+      quantity: number;
+      product_id: number;
+      customer_price?: number;
+      currency_code?: string;
+      commission_amount?: number;
+    }>;
   };
   customer: {
     customer_id: number;
@@ -57,6 +66,20 @@ export interface OzonOrder {
     }>;
     sku: number;
   }>;
+  products?: Array<{
+    sku: number;
+    name: string;
+    price: string;
+    offer_id: string;
+    quantity: number;
+    dimensions?: {
+      width: string;
+      height: string;
+      length: string;
+      weight: string;
+    };
+    currency_code?: string;
+  }>;
   address?: {
     address_line: string;
     city: string;
@@ -68,6 +91,7 @@ export interface OzonOrder {
   created_at: string;
   in_process_at: string;
   tracking_number?: string;
+  delivery_price?: string;
   shipments?: Array<{
     posting_number: string;
     items: Array<{

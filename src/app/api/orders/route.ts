@@ -173,6 +173,47 @@ export async function POST(request: NextRequest) {
             // 获取Ozon订单状态
             const ozonStatus = posting.status || 'unknown';
             
+            // 计算订单金额
+            let totalPrice = 0;
+            let productsPrice = 0;
+            let deliveryPrice = 0;
+            
+            // Ozon API返回的商品在 products 数组中，不在 items 中
+            // 从 products 数组计算商品总价
+            if (orderData.products && Array.isArray(orderData.products)) {
+              for (const product of orderData.products) {
+                // price 是字符串格式 "12.0000"
+                const productPrice = typeof product.price === 'string' 
+                  ? parseFloat(product.price) 
+                  : (product.price || 0);
+                const quantity = product.quantity || 1;
+                productsPrice += productPrice * quantity;
+              }
+            }
+            
+            // 从 financial_data 获取更准确的价格信息（如果有）
+            if (orderData.financial_data?.products && Array.isArray(orderData.financial_data.products)) {
+              let financialPrice = 0;
+              for (const fp of orderData.financial_data.products) {
+                // customer_price 是客户实际支付的价格（卢布）
+                const price = fp.customer_price || fp.price || 0;
+                const qty = fp.quantity || 1;
+                financialPrice += price * qty;
+              }
+              // 如果 financial_data 有价格，优先使用
+              if (financialPrice > 0) {
+                productsPrice = financialPrice;
+              }
+            }
+            
+            // 从 delivery_price 获取运费
+            if (orderData.delivery_price) {
+              deliveryPrice = parseFloat(orderData.delivery_price) || 0;
+            }
+
+            // 总价 = 商品价格
+            totalPrice = productsPrice;
+
             const orderRecord = {
               ozon_order_id: orderData.order_id?.toString() || '',
               ozon_posting_number: posting.posting_number,
@@ -184,9 +225,9 @@ export async function POST(request: NextRequest) {
               recipient_phone: orderData.address?.phone || null,
               recipient_city: orderData.address?.city || null,
               recipient_address: orderData.address?.address_line || null,
-              total_price: '0',
-              products_price: '0',
-              delivery_price: '0',
+              total_price: totalPrice.toFixed(2),
+              products_price: productsPrice.toFixed(2),
+              delivery_price: deliveryPrice.toFixed(2),
               ozon_raw_data: orderData,
               ozon_created_at: orderData.created_at ? new Date(orderData.created_at) : null,
               ozon_updated_at: orderData.in_process_at ? new Date(orderData.in_process_at) : null,

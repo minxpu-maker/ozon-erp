@@ -336,6 +336,7 @@ export default function OrdersPage() {
                   <TableHead>发货单号</TableHead>
                   <TableHead>店铺</TableHead>
                   <TableHead>买家</TableHead>
+                  <TableHead>订单金额</TableHead>
                   <TableHead>状态</TableHead>
                   <TableHead>下单时间</TableHead>
                   <TableHead className="w-24">操作</TableHead>
@@ -351,13 +352,14 @@ export default function OrdersPage() {
                       <TableCell><Skeleton className="w-20 h-4" /></TableCell>
                       <TableCell><Skeleton className="w-20 h-4" /></TableCell>
                       <TableCell><Skeleton className="w-16 h-4" /></TableCell>
+                      <TableCell><Skeleton className="w-16 h-4" /></TableCell>
                       <TableCell><Skeleton className="w-24 h-4" /></TableCell>
                       <TableCell><Skeleton className="w-16 h-4" /></TableCell>
                     </TableRow>
                   ))
                 ) : orders.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-12 text-[#637089]">
+                    <TableCell colSpan={9} className="text-center py-12 text-[#637089]">
                       <Package className="w-12 h-12 mx-auto mb-4 opacity-30" />
                       <p>暂无订单数据</p>
                       <p className="text-sm mt-2">点击"同步订单"从Ozon获取订单</p>
@@ -390,6 +392,9 @@ export default function OrdersPage() {
                       </TableCell>
                       <TableCell className="text-sm">
                         {order.buyerName || '-'}
+                      </TableCell>
+                      <TableCell className="text-sm font-medium text-[#152033]">
+                        ¥{parseFloat(order.totalPrice || '0').toFixed(2)}
                       </TableCell>
                       <TableCell>
                         {getStatusBadge(order.status)}
