@@ -141,8 +141,21 @@ export default function OrdersPage() {
 
       const res = await fetch(`/api/orders?${params.toString()}`);
       const data = await res.json();
-      // 修复：API返回 data.data.orders
-      setOrders(data.data?.orders || []);
+      // 修复：API返回 data.data.orders，并将products数组转换为productInfo
+      const ordersData = data.data?.orders || [];
+      const processedOrders = ordersData.map((order: any) => ({
+        ...order,
+        // 将products数组的第一个元素转换为productInfo
+        productInfo: order.products && order.products.length > 0 ? {
+          name: order.products[0].name,
+          sku: order.products[0].sku,
+          offerId: order.products[0].offerId,
+          quantity: order.products[0].quantity,
+          price: order.products[0].price,
+          mainImage: order.products[0].image,
+        } : undefined,
+      }));
+      setOrders(processedOrders);
     } catch (error) {
       console.error('获取订单失败:', error);
     } finally {
