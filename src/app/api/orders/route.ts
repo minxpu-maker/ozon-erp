@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/storage/database/client';
-import { orders, orderItems, shops, orderSyncLogs } from '@/storage/database/shared/schema';
+import { orders, orderItems, shops, orderSyncLogs, purchaseTasks } from '@/storage/database/shared/schema';
 import { eq, desc, and, gte, lte, like, or, inArray } from 'drizzle-orm';
 import { OzonApiClient } from '@/lib/ozon/client';
 import { rateLimiter, getRateLimitHeaders } from '@/lib/rate-limit/rate-limiter';
@@ -252,18 +252,87 @@ export async function POST(request: NextRequest) {
               updated_at: new Date(),
             };
 
+            let orderId: string;
             if (existing.length > 0) {
               await db
                 .update(orders)
                 .set(orderRecord)
                 .where(eq(orders.id, existing[0].id));
+              orderId = existing[0].id;
               updated++;
             } else {
-              await db.insert(orders).values({
+              const [newOrder] = await db.insert(orders).values({
                 ...orderRecord,
                 created_at: new Date(),
-              });
+              }).returning({ id: orders.id });
+              orderId = newOrder.id;
               created++;
+            }
+
+            // 处理订单商品和采购任务
+            if (orderData.products && Array.isArray(orderData.products)) {
+              for (const product of orderData.products) {
+                const productPrice = typeof product.price === 'string' 
+                  ? parseFloat(product.price) 
+                  : (product.price || 0);
+                const quantity = product.quantity || 1;
+                
+                // 检查订单商品是否已存在
+                const existingItem = await db
+                  .select()
+                  .from(orderItems)
+                  .where(and(
+                    eq(orderItems.order_id, orderId),
+                    eq(orderItems.sku, product.offer_id || product.name || 'unknown')
+                  ))
+                  .limit(1);
+
+                let orderItemId: string;
+                if (existingItem.length > 0) {
+                  await db
+                    .update(orderItems)
+                    .set({
+                      name: product.name || existingItem[0].name,
+                      quantity: quantity,
+                      price: productPrice.toFixed(2),
+                      ozon_offer_id: product.offer_id || null,
+                      updated_at: new Date(),
+                    })
+                    .where(eq(orderItems.id, existingItem[0].id));
+                  orderItemId = existingItem[0].id;
+                } else {
+                  const [newItem] = await db.insert(orderItems).values({
+                    order_id: orderId,
+                    sku: product.offer_id || product.name || 'unknown',
+                    name: product.name || 'Unknown Product',
+                    quantity: quantity,
+                    price: productPrice.toFixed(2),
+                    ozon_offer_id: product.offer_id || null,
+                  }).returning({ id: orderItems.id });
+                  orderItemId = newItem.id;
+                }
+
+                // 如果订单状态是"待发货"，自动创建采购任务
+                if (ozonStatus === 'awaiting_deliver') {
+                  // 检查是否已存在采购任务
+                  const existingTask = await db
+                    .select()
+                    .from(purchaseTasks)
+                    .where(eq(purchaseTasks.order_item_id, orderItemId))
+                    .limit(1);
+
+                  if (existingTask.length === 0) {
+                    // 创建采购任务
+                    await db.insert(purchaseTasks).values({
+                      order_id: orderId,
+                      order_item_id: orderItemId,
+                      status: 'pending',
+                      sku_code: product.offer_id || product.name || 'unknown',
+                      quantity: quantity,
+                    });
+                  }
+                }
+              }
             }
           }
 
