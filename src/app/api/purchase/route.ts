@@ -38,12 +38,48 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// 创建采购任务
+// 创建采购任务或绑定快递单号
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { orderId, orderItemId, skuCode, quantity, sourceType, sourceUrl, sourcePrice } = body;
+    const { action, taskId, trackingNumber, orderId, orderItemId, skuCode, quantity, sourceType, sourceUrl, sourcePrice } = body;
 
+    // 绑定快递单号操作
+    if (action === 'bindTracking') {
+      if (!taskId || !trackingNumber) {
+        return NextResponse.json({ success: false, error: '缺少任务ID或快递单号' }, { status: 400 });
+      }
+
+      // 更新采购任务状态
+      const [updatedTask] = await db.update(schema.purchaseTasks)
+        .set({
+          domestic_tracking_number: trackingNumber,
+          status: 'purchased',
+          is_bound: true,
+          purchased_at: new Date(),
+          updated_at: new Date(),
+        })
+        .where(eq(schema.purchaseTasks.id, taskId))
+        .returning();
+
+      // 更新关联订单的采购绑定状态
+      if (updatedTask.order_id) {
+        await db.update(schema.orders)
+          .set({
+            is_purchase_bound: true,
+            purchase_bound_at: new Date(),
+          })
+          .where(eq(schema.orders.id, updatedTask.order_id));
+      }
+
+      return NextResponse.json({ 
+        success: true, 
+        data: updatedTask, 
+        message: '快递单号绑定成功，订单已流转至入库验货模块' 
+      });
+    }
+
+    // 创建采购任务
     const [task] = await db.insert(schema.purchaseTasks).values({
       order_id: orderId,
       order_item_id: orderItemId || '',
@@ -62,7 +98,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, data: task, message: '采购任务创建成功' });
   } catch (error) {
-    console.error('创建采购任务失败:', error);
-    return NextResponse.json({ success: false, error: '创建采购任务失败' }, { status: 500 });
+    console.error('操作失败:', error);
+    return NextResponse.json({ success: false, error: '操作失败' }, { status: 500 });
   }
 }

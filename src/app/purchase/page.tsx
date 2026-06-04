@@ -27,7 +27,6 @@ import {
   GitBranch,
   Download,
   ShoppingBag,
-  AlertTriangle,
   ChevronRight,
   Eye,
 } from 'lucide-react';
@@ -83,6 +82,9 @@ export default function PurchasePage() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
   const [search, setSearch] = useState('');
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [trackingInput, setTrackingInput] = useState('');
+  const [binding, setBinding] = useState(false);
 
   useEffect(() => {
     fetchTasks();
@@ -131,6 +133,53 @@ export default function PurchasePage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // 绑定快递单号
+  const bindTrackingNumber = async (taskId: string) => {
+    if (!trackingInput.trim()) {
+      alert('请输入快递单号');
+      return;
+    }
+    
+    setBinding(true);
+    try {
+      const res = await fetch('/api/purchase', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'bindTracking',
+          taskId,
+          trackingNumber: trackingInput.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(data.message);
+        setEditingTaskId(null);
+        setTrackingInput('');
+        fetchTasks(); // 刷新列表
+      } else {
+        alert(data.error || '绑定失败');
+      }
+    } catch (error) {
+      console.error('绑定快递单号失败:', error);
+      alert('绑定失败');
+    } finally {
+      setBinding(false);
+    }
+  };
+
+  // 开始编辑快递单号
+  const startEditing = (taskId: string) => {
+    setEditingTaskId(taskId);
+    setTrackingInput('');
+  };
+
+  // 取消编辑
+  const cancelEditing = () => {
+    setEditingTaskId(null);
+    setTrackingInput('');
   };
 
   const getStatusBadge = (status: string) => {
@@ -260,20 +309,6 @@ export default function PurchasePage() {
             </div>
           </div>
 
-          {/* 重要提示区 */}
-          <div className="bg-red-50 border-l-4 border-red-500 rounded-r-lg p-4 mb-6">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-              <div>
-                <div className="text-sm font-semibold text-red-600 mb-1">重要提示</div>
-                <div className="text-sm text-[#637089]">
-                  本系统为零库存模式，采购环节由人工在外部平台（1688/拼多多）下单，系统负责订单绑定与后续追踪。
-                  <span className="text-red-600 font-medium">请勿设计与自动下单相关的RPA功能。</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
           {/* 统计卡片 */}
           <div className="grid grid-cols-4 gap-4 mb-6">
             {[
@@ -390,8 +425,41 @@ export default function PurchasePage() {
                         {task.sourceType === '1688' ? '1688' : task.sourceType === 'pdd' ? '拼多多' : '-'}
                       </td>
                       <td className="px-4 py-3">{getStatusBadge(task.status)}</td>
-                      <td className="px-4 py-3 text-sm text-[#152033]">
-                        {task.domesticTrackingNumber || '-'}
+                      <td className="px-4 py-3">
+                        {task.status === 'pending' && editingTaskId === task.id ? (
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={trackingInput}
+                              onChange={(e) => setTrackingInput(e.target.value)}
+                              placeholder="输入快递单号"
+                              className="w-32 px-2 py-1 text-sm border border-[#E6EAF2] rounded focus:outline-none focus:ring-1 focus:ring-[#2F6BFF]"
+                              autoFocus
+                            />
+                            <button
+                              onClick={() => bindTrackingNumber(task.id)}
+                              disabled={binding}
+                              className="px-2 py-1 text-xs bg-[#2F6BFF] text-white rounded hover:bg-[#2F6BFF]/90 disabled:opacity-50"
+                            >
+                              {binding ? '绑定中...' : '确认'}
+                            </button>
+                            <button
+                              onClick={cancelEditing}
+                              className="px-2 py-1 text-xs text-[#637089] hover:text-[#152033]"
+                            >
+                              取消
+                            </button>
+                          </div>
+                        ) : task.status === 'pending' ? (
+                          <button
+                            onClick={() => startEditing(task.id)}
+                            className="text-sm text-[#2F6BFF] hover:underline"
+                          >
+                            + 录入单号
+                          </button>
+                        ) : (
+                          <span className="text-sm text-[#152033]">{task.domesticTrackingNumber || '-'}</span>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <button className="p-1.5 rounded hover:bg-[#F6F8FB] transition-colors">
