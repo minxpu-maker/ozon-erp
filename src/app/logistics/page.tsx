@@ -156,6 +156,39 @@ export default function LogisticsPage() {
                 </div>
               </div>
 
+              {/* 商品信息 */}
+              {currentTask.product && (
+                <div className="border border-[#E6EAF2] rounded-lg p-4 mb-4">
+                  <h4 className="text-sm font-semibold text-[#152033] mb-3 flex items-center gap-2">
+                    <Package className="w-4 h-4 text-[#2F6BFF]" />
+                    商品信息
+                  </h4>
+                  <div className="flex items-start gap-4">
+                    <div className="w-20 h-20 rounded-lg bg-[#F6F8FB] flex items-center justify-center overflow-hidden flex-shrink-0">
+                      {currentTask.product.image_url ? (
+                        <img 
+                          src={currentTask.product.image_url} 
+                          alt={currentTask.product.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <Package className="w-8 h-8 text-[#637089]" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-[#152033] mb-1" title={currentTask.product.name}>
+                        {currentTask.product.name}
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div><span className="text-xs text-[#637089]">SKU</span><div className="text-sm text-[#152033]">{currentTask.product.offer_id}</div></div>
+                        <div><span className="text-xs text-[#637089]">数量</span><div className="text-sm text-[#152033]">{currentTask.product.quantity}</div></div>
+                        <div><span className="text-xs text-[#637089]">单价</span><div className="text-sm text-[#152033]">¥{currentTask.product.price}</div></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* 操作按钮 */}
               <div className="flex items-center gap-4 pt-2">
                 <button onClick={() => handleInspection('pass')}
@@ -182,6 +215,7 @@ export default function LogisticsPage() {
               <table className="w-full">
                 <thead className="bg-[#F6F8FB]">
                   <tr>
+                    <th className="text-left text-xs font-medium text-[#637089] px-4 py-3">商品信息</th>
                     <th className="text-left text-xs font-medium text-[#637089] px-4 py-3">快递单号</th>
                     <th className="text-left text-xs font-medium text-[#637089] px-4 py-3">SKU编码</th>
                     <th className="text-left text-xs font-medium text-[#637089] px-4 py-3">关联订单</th>
@@ -191,6 +225,29 @@ export default function LogisticsPage() {
                 <tbody>
                   {tasks.map((item) => (
                     <tr key={item.task?.id || item.id} className="border-t border-[#E6EAF2]">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-10 h-10 rounded bg-[#F6F8FB] flex items-center justify-center overflow-hidden flex-shrink-0">
+                            {item.product?.image_url ? (
+                              <img 
+                                src={item.product.image_url} 
+                                alt={item.product?.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <Package className="w-5 h-5 text-[#637089]" />
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-sm text-[#152033] truncate max-w-[150px]" title={item.product?.name || '-'}>
+                              {item.product?.name || '-'}
+                            </div>
+                            <div className="text-xs text-[#637089]">
+                              {item.product?.price ? `¥${item.product.price}` : '-'}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
                       <td className="px-4 py-3 text-sm font-medium text-[#2F6BFF]">{item.task?.domestic_tracking_number || '-'}</td>
                       <td className="px-4 py-3 text-sm text-[#152033]">{item.task?.sku_code || '-'}</td>
                       <td className="px-4 py-3">

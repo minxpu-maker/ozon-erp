@@ -31,6 +31,15 @@ import {
   Eye,
 } from 'lucide-react';
 
+interface ProductInfo {
+  sku: number;
+  name: string;
+  offer_id: string;
+  quantity: number;
+  price: string;
+  image_url?: string;
+}
+
 interface PurchaseTask {
   id: string;
   orderId: string;
@@ -54,6 +63,7 @@ interface PurchaseTask {
   postingNumber: string | null;
   buyerName: string | null;
   shopName: string | null;
+  product: ProductInfo | null;
 }
 
 const navItems = [
@@ -99,7 +109,7 @@ export default function PurchasePage() {
       const res = await fetch(`/api/purchase?${params}`);
       const data = await res.json();
       if (data.success) {
-        // API返回 data: [{ task: {...}, order: {...} }] 或 data: { tasks: [...] }
+        // API返回 data: [{ task: {...}, order: {...}, product: {...} }] 或 data: { tasks: [...] }
         const rawList = Array.isArray(data.data) ? data.data : (data.data?.tasks || []);
         // 扁平化数据结构
         const taskList = rawList.map((item: any) => ({
@@ -125,6 +135,7 @@ export default function PurchasePage() {
           postingNumber: item.order?.ozon_posting_number || item.postingNumber,
           buyerName: item.order?.buyer_name || item.buyerName,
           shopName: item.order?.shop?.name || item.shopName,
+          product: item.product || null,
         }));
         setTasks(taskList);
       }
@@ -390,6 +401,7 @@ export default function PurchasePage() {
             <table className="w-full">
               <thead className="bg-[#F6F8FB]">
                 <tr>
+                  <th className="text-left text-xs font-medium text-[#637089] px-4 py-3">商品信息</th>
                   <th className="text-left text-xs font-medium text-[#637089] px-4 py-3">SKU编码</th>
                   <th className="text-left text-xs font-medium text-[#637089] px-4 py-3">数量</th>
                   <th className="text-left text-xs font-medium text-[#637089] px-4 py-3">关联订单</th>
@@ -402,19 +414,42 @@ export default function PurchasePage() {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-[#637089]">
+                    <td colSpan={8} className="px-4 py-8 text-center text-[#637089]">
                       <RefreshCw className="w-5 h-5 animate-spin mx-auto" />
                     </td>
                   </tr>
                 ) : tasks.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-[#637089]">
+                    <td colSpan={8} className="px-4 py-8 text-center text-[#637089]">
                       暂无采购任务
                     </td>
                   </tr>
                 ) : (
                   tasks.map((task) => (
                     <tr key={task.id} className="border-t border-[#E6EAF2]">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-10 h-10 rounded bg-[#F6F8FB] flex items-center justify-center overflow-hidden flex-shrink-0">
+                            {task.product?.image_url ? (
+                              <img 
+                                src={task.product.image_url} 
+                                alt={task.product.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <Package className="w-5 h-5 text-[#637089]" />
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-sm text-[#152033] truncate max-w-[200px]" title={task.product?.name || '-'}>
+                              {task.product?.name || '-'}
+                            </div>
+                            <div className="text-xs text-[#637089]">
+                              {task.product?.price ? `¥${task.product.price}` : '-'}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
                       <td className="px-4 py-3 text-sm font-medium text-[#152033]">{task.skuCode}</td>
                       <td className="px-4 py-3 text-sm text-[#152033]">{task.quantity}</td>
                       <td className="px-4 py-3">
