@@ -3,8 +3,10 @@ import { Pool } from 'pg';
 import * as schema from './shared/schema';
 
 // 数据库连接池优化配置
+const connectionString = process.env.DATABASE_URL || process.env.PGDATABASE_URL;
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString,
   // 最大连接数：生产环境50，开发环境20
   max: process.env.COZE_PROJECT_ENV === 'PROD' ? 50 : 20,
   // 最小连接数：保持一定数量的空闲连接

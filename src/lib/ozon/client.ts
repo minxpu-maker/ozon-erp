@@ -137,6 +137,48 @@ export interface OzonProduct {
   };
 }
 
+// v3/product/info/list 返回的商品信息（包含图片）
+export interface OzonProductInfo {
+  id: number;
+  name: string;
+  offer_id: string;
+  barcode?: string;
+  price?: string;
+  old_price?: string;
+  marketing_price?: string;
+  premium_price?: string;
+  buybox_price?: string;
+  category_id?: number;
+  category_name?: string;
+  created_at?: string;
+  images?: string[]; // 图片URL数组
+  primary_image?: string; // 主图URL
+  status?: {
+    state?: string;
+    state_name?: string;
+  };
+  stocks?: {
+    coming?: number;
+    present?: number;
+    reserved?: number;
+  };
+  sources?: Array<{
+    source: string;
+    is_enabled: boolean;
+  }>;
+  vat?: string;
+  visibility?: {
+    has_price?: boolean;
+    is_visible?: boolean;
+  };
+  dimensions?: {
+    weight?: number;
+    height?: number;
+    depth?: number;
+    width?: number;
+  };
+}
+
 export interface OzonProductDetail {
   id: number;
   name: string;
@@ -343,7 +385,7 @@ export class OzonApiClient {
   }
 
   /**
-   * 获取商品信息列表
+   * 获取商品信息列表（含图片）
    * POST /v3/product/info/list
    */
   async getProductInfo(productIds: number[]): Promise<{
@@ -358,6 +400,39 @@ export class OzonApiClient {
     }>('/v3/product/info/list', {
       product_id: productIds,
     });
+  }
+
+  /**
+   * 按offer_id获取商品信息列表（含图片）
+   * POST /v3/product/info/list
+   */
+  async getProductInfoByOfferId(offerIds: string[]): Promise<{
+    result: {
+      items: OzonProductInfo[];
+    };
+  }> {
+    const response = await this.request<{
+      result?: {
+        items?: OzonProductInfo[];
+      };
+      items?: OzonProductInfo[];
+    }>('/v3/product/info/list', {
+      offer_id: offerIds,
+    });
+    
+    // 处理不同的响应结构
+    console.log('[Ozon API] /v3/product/info/list response:', JSON.stringify(response).substring(0, 500));
+    
+    // 有些版本的API可能直接返回items而不是result.items
+    if (response.result?.items) {
+      return response as { result: { items: OzonProductInfo[] } };
+    } else if ((response as any).items) {
+      return { result: { items: (response as any).items } };
+    }
+    
+    // 返回空数组而不是抛出错误
+    console.warn('[Ozon API] Unexpected response structure:', response);
+    return { result: { items: [] } };
   }
 
   /**

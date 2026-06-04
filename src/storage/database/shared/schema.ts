@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, boolean, integer, numeric, jsonb, index, serial, uuid } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, boolean, integer, numeric, jsonb, index, serial, uuid, bigint } from "drizzle-orm/pg-core";
 
 // 系统健康检查表（必须保留）
 export const healthCheck = pgTable("health_check", {
@@ -613,7 +613,7 @@ export const ozonProducts = pgTable('ozon_products', {
   shop_id: uuid('shop_id').notNull().references(() => shops.id),
   
   // Ozon商品信息
-  ozon_product_id: integer('ozon_product_id').notNull(),
+  ozon_product_id: bigint('ozon_product_id', { mode: 'number' }).notNull(),
   offer_id: varchar('offer_id', { length: 128 }).notNull(),
   name: varchar('name', { length: 512 }).notNull(),
   description: text('description'),

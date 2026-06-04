@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/storage/database/client';
 import { shops, orderItems, ozonProducts } from '@/storage/database/shared/schema';
-import { eq, inArray } from 'drizzle-orm';
+import { eq, inArray, sql } from 'drizzle-orm';
 import { createOzonClient } from '@/lib/ozon/client';
 
 // 获取商品信息
@@ -9,6 +9,39 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const offerId = searchParams.get('offerId');
   const orderId = searchParams.get('orderId');
+  const checkDb = searchParams.get('checkDb');
+  
+  // 检查数据库连接和RLS状态
+  if (checkDb) {
+    try {
+      const rlsStatus = await db.execute(sql`
+        SELECT relname, relrowsecurity, relforcerowsecurity 
+        FROM pg_class WHERE relname = 'ozon_products'
+      `);
+      const policies = await db.execute(sql`
+        SELECT polname, polcmd FROM pg_policy WHERE polrelid = 'ozon_products'::regclass
+      `);
+      const count = await db.execute(sql`SELECT COUNT(*) as cnt FROM ozon_products`);
+      
+      // 测试INSERT
+      const testOfferId = `test-${Date.now()}`;
+      await db.execute(sql`
+        INSERT INTO ozon_products (shop_id, ozon_product_id, offer_id, name, status, is_visible)
+        VALUES ('8275dd99-f8fe-4560-a63a-774d15a03bbf', 99999, ${testOfferId}, 'Test From API', 'active', true)
+      `);
+      const afterInsert = await db.execute(sql`SELECT COUNT(*) as cnt FROM ozon_products`);
+      
+      // 清理测试数据
+      await db.execute(sql`DELETE FROM ozon_products WHERE offer_id = ${testOfferId}`);
+      
+      return NextResponse.json({ 
+        success: true, 
+        data: { rlsStatus, policies, count, afterInsert, testOfferId } 
+      });
+    } catch (error) {
+      return NextResponse.json({ success: false, error: String(error) });
+    }
+  }
   
   try {
     // 根据offerId查询单个商品
@@ -164,6 +197,7 @@ export async function POST(request: NextRequest) {
       
       const offerIds = Array.from(offerIdSet);
       let synced = 0;
+      const errors: string[] = [];
       
       // 对每个店铺尝试获取商品信息
       for (const shop of allShops) {
@@ -173,20 +207,26 @@ export async function POST(request: NextRequest) {
             apiKey: shop.api_key,
           });
           
-          // 批量获取商品信息（按offer_id）
-          const productInfos = await client.getProductDetail(offerIds);
+          console.log(`[同步商品图片] 店铺: ${shop.name}, offer_ids: ${offerIds.join(', ')}`);
+          
+          // 使用v3/product/info/list接口获取商品信息（包含图片）
+          const productInfos = await client.getProductInfoByOfferId(offerIds);
+          
+          console.log(`[同步商品图片] 获取到 ${productInfos.result.items.length} 个商品`);
           
           // 保存商品图片信息
           for (const info of productInfos.result.items) {
-            // 提取图片URL - OzonProductDetail.default_image 是 string 类型
+            // 提取图片URL - images是string数组
             let mainImageUrl: string | null = null;
-            if (info.default_image) {
-              mainImageUrl = info.default_image;
-            } else if (info.images && info.images.length > 0) {
-              mainImageUrl = info.images[0].url;
+            if (info.images && info.images.length > 0) {
+              mainImageUrl = info.images[0];
+            } else if (info.primary_image) {
+              mainImageUrl = info.primary_image;
             }
             
-            const imageUrls = (info.images || []).map(img => img.url);
+            const imageUrls = info.images || [];
+            
+            console.log(`[同步商品图片] 商品 ${info.offer_id}: 主图=${mainImageUrl}, 图片数=${imageUrls.length}`);
             
             // 检查是否已存在
             const existing = await db.select()
@@ -201,46 +241,46 @@ export async function POST(request: NextRequest) {
                   main_image: mainImageUrl,
                   images: imageUrls as any,
                   name: info.name || existing[0].name,
+                  price: info.price || existing[0].price,
                   updated_at: new Date(),
                 })
                 .where(eq(ozonProducts.id, existing[0].id));
+              synced++;
             } else {
-              // 插入
-              await db.insert(ozonProducts).values({
-                shop_id: shop.id,
-                ozon_product_id: info.id || 0,
-                offer_id: info.offer_id,
-                name: info.name || '',
-                description: null,
-                main_image: mainImageUrl,
-                images: imageUrls as any,
-                attributes: [],
-                price: null,
-                old_price: null,
-                marketing_price: null,
-                stock: 0,
-                reserved: 0,
-                status: 'active',
-                is_visible: true,
-                barcode: null,
-                weight: null,
-                height: null,
-                width: null,
-                depth: null,
-                raw_data: info as any,
-              });
+              // 使用原生SQL UPSERT
+              try {
+                const insertResult = await db.execute(sql`
+                  INSERT INTO ozon_products (shop_id, ozon_product_id, offer_id, name, status, is_visible, main_image, images, price, old_price)
+                  VALUES (${shop.id}, ${info.id}, ${info.offer_id}, ${info.name || ''}, 'active', true, ${mainImageUrl}, ${JSON.stringify(imageUrls)}::jsonb, ${info.price || null}, ${info.old_price || null})
+                  ON CONFLICT (offer_id) DO UPDATE SET
+                    name = COALESCE(EXCLUDED.name, ozon_products.name),
+                    main_image = EXCLUDED.main_image,
+                    images = EXCLUDED.images,
+                    price = EXCLUDED.price,
+                    old_price = EXCLUDED.old_price,
+                    updated_at = now()
+                `);
+                console.log(`[同步商品图片] 商品 ${info.offer_id} 保存成功, 结果:`, insertResult.rowCount);
+                synced++;
+              } catch (insertError) {
+                console.error(`[同步商品图片] 商品 ${info.offer_id} 插入失败:`, insertError);
+                throw insertError;
+              }
             }
             synced++;
           }
         } catch (error) {
-          console.error(`同步店铺 ${shop.name} 商品图片失败:`, error);
+          const errorMsg = `同步店铺 ${shop.name} 商品图片失败: ${error instanceof Error ? error.message : String(error)}`;
+          console.error(errorMsg);
+          console.error('[同步商品图片] 完整错误:', error);
+          errors.push(errorMsg);
         }
       }
       
       return NextResponse.json({
         success: true,
-        data: { synced },
-        message: `同步了 ${synced} 个商品图片`
+        data: { synced, errors },
+        message: `同步了 ${synced} 个商品图片${errors.length > 0 ? '，部分失败' : ''}`
       });
     }
     
