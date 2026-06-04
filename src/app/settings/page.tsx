@@ -55,6 +55,7 @@ export default function SettingsPage() {
   // 汇率相关状态
   const [rubToCny, setRubToCny] = useState(0.08);
   const [savingRate, setSavingRate] = useState(false);
+  const [fetchingRate, setFetchingRate] = useState(false);
 
   // 加载店铺列表
   useEffect(() => {
@@ -114,6 +115,36 @@ export default function SettingsPage() {
       alert('保存失败');
     } finally {
       setSavingRate(false);
+    }
+  };
+
+  // 获取实时汇率
+  const fetchRealtimeRate = async () => {
+    setFetchingRate(true);
+    try {
+      const res = await fetch('/api/exchange-rate');
+      const data = await res.json();
+      if (data.success && data.rate) {
+        setRubToCny(data.rate);
+        // 自动保存
+        await fetch('/api/system-config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            key: 'rub_to_cny',
+            value: data.rate.toString(),
+            description: '卢布兑人民币汇率',
+          }),
+        });
+        alert(`实时汇率获取成功：1 卢布 = ${data.rate} 人民币`);
+      } else {
+        alert('获取实时汇率失败');
+      }
+    } catch (error) {
+      console.error('获取实时汇率失败:', error);
+      alert('获取实时汇率失败');
+    } finally {
+      setFetchingRate(false);
     }
   };
 
@@ -587,8 +618,19 @@ export default function SettingsPage() {
                             >
                               {savingRate ? '保存中...' : '保存'}
                             </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={fetchRealtimeRate}
+                              disabled={fetchingRate}
+                            >
+                              {fetchingRate ? '获取中...' : '获取实时汇率'}
+                            </Button>
                           </div>
                         </div>
+                        <p className="text-xs text-muted-foreground">
+                          提示：点击"获取实时汇率"按钮可自动获取最新的卢布兑人民币汇率
+                        </p>
                       </div>
                     </div>
 
