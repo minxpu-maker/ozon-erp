@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/storage/database/client';
 import * as schema from '@/storage/database/shared/schema';
 import { sql, desc } from 'drizzle-orm';
+import { cache } from '@/lib/cache/memory-cache';
+
+// 缓存时间：60秒
+const CACHE_TTL = 60;
 
 // 获取报表数据
 export async function GET(request: NextRequest) {
@@ -10,6 +14,15 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type') || 'overview';
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
+
+    // 生成缓存key
+    const cacheKey = `reports:${type}:${startDate || 'none'}:${endDate || 'none'}`;
+    
+    // 尝试从缓存获取
+    const cachedData = cache.get(cacheKey);
+    if (cachedData) {
+      return NextResponse.json({ success: true, data: cachedData, cached: true });
+    }
 
     // 获取订单统计
     const orderStats = await db.select({
@@ -45,6 +58,9 @@ export async function GET(request: NextRequest) {
       profitStats: profitStats[0] || { total: 0, totalProfit: '0' },
       orderTrend,
     };
+
+    // 存入缓存
+    cache.set(cacheKey, reportData, CACHE_TTL);
 
     return NextResponse.json({ success: true, data: reportData });
   } catch (error) {

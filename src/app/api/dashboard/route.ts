@@ -2,9 +2,19 @@ import { NextResponse } from 'next/server';
 import { db } from '@/storage/database/client';
 import * as schema from '@/storage/database/shared/schema';
 import { eq, and, sql, count, desc } from 'drizzle-orm';
+import { cache } from '@/lib/cache/memory-cache';
+
+// 缓存时间：30秒
+const CACHE_TTL = 30;
 
 export async function GET() {
   try {
+    // 尝试从缓存获取
+    const cachedData = cache.get('dashboard');
+    if (cachedData) {
+      return NextResponse.json({ success: true, data: cachedData, cached: true });
+    }
+
     // 获取各项统计数据
     const [
       totalOrders,
@@ -118,6 +128,9 @@ export async function GET() {
       })),
       shopStatus,
     };
+
+    // 存入缓存
+    cache.set('dashboard', dashboardData, CACHE_TTL);
 
     return NextResponse.json({ success: true, data: dashboardData });
   } catch (error) {

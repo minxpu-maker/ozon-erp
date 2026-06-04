@@ -4,6 +4,10 @@ import { orders, orderItems, shops, orderSyncLogs, purchaseTasks, ozonProducts }
 import { eq, desc, and, gte, lte, like, or, inArray } from 'drizzle-orm';
 import { OzonApiClient } from '@/lib/ozon/client';
 import { rateLimiter, getRateLimitHeaders } from '@/lib/rate-limit/rate-limiter';
+import { cache } from '@/lib/cache/memory-cache';
+
+// 订单列表缓存时间：30秒
+const ORDERS_CACHE_TTL = 30;
 
 // GET /api/orders - 获取订单列表
 export async function GET(request: NextRequest) {
@@ -16,6 +20,18 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
+
+    // 生成缓存key（仅对无搜索条件的请求缓存）
+    const shouldCache = !search && page === 1;
+    const cacheKey = shouldCache ? `orders:list:${status || 'all'}:${shopId || 'all'}` : null;
+    
+    // 尝试从缓存获取
+    if (cacheKey) {
+      const cachedData = cache.get(cacheKey);
+      if (cachedData) {
+        return NextResponse.json({ success: true, data: cachedData, cached: true });
+      }
+    }
 
     // 构建查询条件
     const conditions = [];
@@ -140,17 +156,24 @@ export async function GET(request: NextRequest) {
       };
     });
 
+    const responseData = {
+      orders: result,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+
+    // 存入缓存
+    if (cacheKey) {
+      cache.set(cacheKey, responseData, ORDERS_CACHE_TTL);
+    }
+
     return NextResponse.json({
       success: true,
-      data: {
-        orders: result,
-        pagination: {
-          page,
-          limit,
-          total,
-          totalPages: Math.ceil(total / limit),
-        },
-      },
+      data: responseData,
     });
   } catch (error) {
     console.error('获取订单列表失败:', error);
