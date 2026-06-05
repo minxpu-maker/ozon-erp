@@ -92,21 +92,29 @@ function extractFinancialData(order: any): OrderFinancialData | null {
     currency: string;
   }> = [];
 
-  // 检查是否有应计费用数据
-  const accruals = order.ozon_raw_data?.accruals || [];
-  for (const acc of accruals) {
-    const amount = Math.abs(parseFloat(acc.amount || '0'));
-    if (acc.type === 'acquiring' || acc.typeName?.includes('收单')) {
-      acquiringFee += amount;
-    } else {
-      otherFees += amount;
+  // 优先从 _accruals 字段获取（订单同步时已获取）
+  const syncAccruals = order.ozon_raw_data?._accruals;
+  if (syncAccruals) {
+    acquiringFee = syncAccruals.acquiringFee || 0;
+    otherFees = syncAccruals.otherFees || 0;
+    console.log(`[Finance] 订单 ${order.ozon_posting_number} 从同步数据获取收单费: ${acquiringFee} RUB`);
+  } else {
+    // 兼容旧数据：从 accruals 字段获取
+    const accruals = order.ozon_raw_data?.accruals || [];
+    for (const acc of accruals) {
+      const amount = Math.abs(parseFloat(acc.amount || '0'));
+      if (acc.type === 'acquiring' || acc.typeName?.includes('收单')) {
+        acquiringFee += amount;
+      } else {
+        otherFees += amount;
+      }
+      accrualsDetails.push({
+        type: acc.type || '',
+        typeName: acc.typeName || '',
+        amount: parseFloat(acc.amount || '0'),
+        currency: acc.currency || 'RUB',
+      });
     }
-    accrualsDetails.push({
-      type: acc.type || '',
-      typeName: acc.typeName || '',
-      amount: parseFloat(acc.amount || '0'),
-      currency: acc.currency || 'RUB',
-    });
   }
 
   return {

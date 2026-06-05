@@ -324,6 +324,17 @@ export async function POST(request: NextRequest) {
             }
           }
 
+          // 批量获取收单费用
+          const postingNumbers = postings.map(p => p.posting_number);
+          let accrualsMap = new Map<string, { acquiringFee: number; otherFees: number }>();
+          try {
+            console.log(`[订单同步] 获取 ${postingNumbers.length} 个订单的收单费用...`);
+            accrualsMap = await client.batchGetOrderAccruals(postingNumbers);
+            console.log(`[订单同步] 成功获取 ${accrualsMap.size} 个订单的收单费用`);
+          } catch (err) {
+            console.error('[订单同步] 获取收单费用失败:', err);
+          }
+
           // 第二轮：处理订单数据
           for (const { posting, orderData } of orderDataList) {
 
@@ -378,6 +389,10 @@ export async function POST(request: NextRequest) {
             // 总价 = 商品价格
             totalPrice = productsPrice;
 
+            // 获取收单费用
+            const accruals = accrualsMap.get(posting.posting_number) || { acquiringFee: 0, otherFees: 0 };
+            console.log(`[订单同步] 订单 ${posting.posting_number} 收单费: ${accruals.acquiringFee} RUB`);
+
             const orderRecord = {
               ozon_order_id: orderData.order_id?.toString() || '',
               ozon_posting_number: posting.posting_number,
@@ -392,7 +407,14 @@ export async function POST(request: NextRequest) {
               total_price: totalPrice.toFixed(2),
               products_price: productsPrice.toFixed(2),
               delivery_price: deliveryPrice.toFixed(2),
-              ozon_raw_data: orderData,
+              ozon_raw_data: {
+                ...orderData,
+                _accruals: {
+                  acquiringFee: accruals.acquiringFee,
+                  otherFees: accruals.otherFees,
+                  fetchedAt: new Date().toISOString(),
+                },
+              },
               ozon_created_at: orderData.in_process_at ? new Date(orderData.in_process_at) : (orderData.created_at ? new Date(orderData.created_at) : null),
               ozon_updated_at: orderData.status_updated_at ? new Date(orderData.status_updated_at) : (orderData.in_process_at ? new Date(orderData.in_process_at) : null),
               updated_at: new Date(),

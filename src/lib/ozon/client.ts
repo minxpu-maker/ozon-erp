@@ -580,61 +580,77 @@ export class OzonApiClient {
   }
 
   /**
-   * 获取应计费用列表（收单业务费用等）
-   * POST /v3/finance/cash-flow-statement/list
-   * 文档: https://docs.ozon.ru/api/seller/#operation/FinanceAPI_GetCashFlowStatementList
+   * 获取财务交易列表（包含收单费用等）
+   * POST /v3/finance/transaction/list
+   * 文档: https://docs.ozon.ru/api/seller/#operation/FinanceAPI_GetTransactionsList
    */
-  async getAccruals(params: {
+  async getFinanceTransactions(params: {
     filter?: {
       date?: {
         from: string;
         to: string;
       };
       posting_number?: string;
-      transaction_type?: string;
+      operation_type?: string;
     };
     page?: number;
     page_size?: number;
   } = {}): Promise<{
     result: {
       operations: Array<{
-        id: number;
-        posting_number: string;
-        order_id: number;
+        operation_id: number;
         operation_type: string;
         operation_type_name: string;
-        amount: string;
-        currency_code: string;
-        date: string;
-        product_id?: number;
-        product_name?: string;
-        sku?: number;
-        offer_id?: string;
+        operation_date: string;
+        amount: number;
+        type: string;
+        posting?: {
+          posting_number: string;
+          order_date: string;
+          delivery_schema: string;
+          warehouse_id: number;
+        };
+        items?: Array<{
+          name: string;
+          sku: number;
+        }>;
+        services?: Array<{
+          name: string;
+          price: number;
+        }>;
       }>;
       page_count: number;
-      total_operations_count: number;
+      row_count: number;
     };
   }> {
     return this.request<{
       result: {
         operations: Array<{
-          id: number;
-          posting_number: string;
-          order_id: number;
+          operation_id: number;
           operation_type: string;
           operation_type_name: string;
-          amount: string;
-          currency_code: string;
-          date: string;
-          product_id?: number;
-          product_name?: string;
-          sku?: number;
-          offer_id?: string;
+          operation_date: string;
+          amount: number;
+          type: string;
+          posting?: {
+            posting_number: string;
+            order_date: string;
+            delivery_schema: string;
+            warehouse_id: number;
+          };
+          items?: Array<{
+            name: string;
+            sku: number;
+          }>;
+          services?: Array<{
+            name: string;
+            price: number;
+          }>;
         }>;
         page_count: number;
-        total_operations_count: number;
+        row_count: number;
       };
-    }>('/v3/finance/cash-flow-statement/list', {
+    }>('/v3/finance/transaction/list', {
       filter: params.filter || {},
       page: params.page || 1,
       page_size: params.page_size || 1000,
@@ -656,12 +672,28 @@ export class OzonApiClient {
     }>;
   }> {
     try {
-      const response = await this.getAccruals({
+      // 先尝试按订单号查询
+      let response = await this.getFinanceTransactions({
         filter: {
           posting_number: postingNumber,
         },
         page_size: 100,
       });
+
+      // 如果没有结果，按日期范围查询最近的交易
+      if (!response.result?.operations?.length) {
+        const now = new Date();
+        const from = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); // 30天前
+        response = await this.getFinanceTransactions({
+          filter: {
+            date: {
+              from: from.toISOString(),
+              to: now.toISOString(),
+            },
+          },
+          page_size: 1000,
+        });
+      }
 
       const operations = response.result?.operations || [];
       let acquiringFee = 0;
@@ -673,24 +705,30 @@ export class OzonApiClient {
         currency: string;
       }> = [];
 
-      for (const op of operations) {
-        const amount = parseFloat(op.amount || '0');
+      // 筛选出与当前订单相关的交易
+      const orderOps = operations.filter(op => 
+        op.posting?.posting_number === postingNumber ||
+        op.posting?.posting_number === postingNumber.replace(/-\d+$/, '') // 处理订单号格式差异
+      );
+
+      for (const op of orderOps) {
+        const amount = Math.abs(op.amount || 0);
         
-        // 收单业务费用 (Ozon Bank收单费)
-        if (op.operation_type_name?.includes('收单') || 
-            op.operation_type_name?.toLowerCase().includes('acquiring') ||
-            op.operation_type === 'MarketplaceServiceAcquiring') {
-          acquiringFee += Math.abs(amount);
-        } else if (amount < 0) {
+        // 收单业务费用 (MarketplaceRedistributionOfAcquiringOperation = Оплата эквайринга)
+        if (op.operation_type === 'MarketplaceRedistributionOfAcquiringOperation' ||
+            op.operation_type_name?.includes('эквайринг') ||
+            op.operation_type_name?.includes('收单')) {
+          acquiringFee += amount;
+        } else if (op.amount < 0) {
           // 其他负数金额为费用
-          otherFees += Math.abs(amount);
+          otherFees += amount;
         }
 
         details.push({
           type: op.operation_type,
           typeName: op.operation_type_name,
-          amount: amount,
-          currency: op.currency_code,
+          amount: op.amount,
+          currency: 'RUB',
         });
       }
 
@@ -707,6 +745,66 @@ export class OzonApiClient {
         details: [],
       };
     }
+  }
+
+  /**
+   * 批量获取多笔订单的收单费用
+   * 用于订单同步时批量获取
+   */
+  async batchGetOrderAccruals(postingNumbers: string[]): Promise<Map<string, {
+    acquiringFee: number;
+    otherFees: number;
+  }>> {
+    const result = new Map<string, { acquiringFee: number; otherFees: number }>();
+    
+    try {
+      // 获取最近30天的财务交易
+      const now = new Date();
+      const from = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      
+      const response = await this.getFinanceTransactions({
+        filter: {
+          date: {
+            from: from.toISOString(),
+            to: now.toISOString(),
+          },
+        },
+        page_size: 1000,
+      });
+
+      const operations = response.result?.operations || [];
+
+      // 按订单号分组统计
+      for (const op of operations) {
+        const opPostingNumber = op.posting?.posting_number;
+        if (!opPostingNumber) continue;
+
+        // 查找匹配的订单号（处理格式差异）
+        const matchedNumber = postingNumbers.find(pn => 
+          pn === opPostingNumber || 
+          pn.replace(/-\d+$/, '') === opPostingNumber ||
+          opPostingNumber.replace(/-\d+$/, '') === pn.replace(/-\d+$/, '')
+        );
+
+        if (!matchedNumber) continue;
+
+        const existing = result.get(matchedNumber) || { acquiringFee: 0, otherFees: 0 };
+        const amount = Math.abs(op.amount || 0);
+
+        if (op.operation_type === 'MarketplaceRedistributionOfAcquiringOperation' ||
+            op.operation_type_name?.includes('эквайринг')) {
+          existing.acquiringFee += amount;
+        } else if (op.amount < 0) {
+          existing.otherFees += amount;
+        }
+
+        result.set(matchedNumber, existing);
+      }
+    } catch (error) {
+      console.error('[Ozon API] Failed to batch get order accruals:', error);
+    }
+
+    return result;
   }
 
   /**
