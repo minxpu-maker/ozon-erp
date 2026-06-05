@@ -168,7 +168,7 @@ export default function FinancePage() {
           </div>
 
           {/* 日期汇总卡片 */}
-          {dateSummaries && (
+          {dateSummaries?.daily && dateSummaries?.weekly && dateSummaries?.monthly && dateSummaries?.yearly && (
             <div className="grid grid-cols-4 gap-4 mb-6">
               <div className="bg-white rounded-lg shadow-sm p-4 border border-[#E6EAF2]">
                 <div className="flex items-center gap-2 mb-3">
@@ -178,22 +178,22 @@ export default function FinancePage() {
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-[#637089]">订单数</span>
-                    <span className="font-medium">{dateSummaries.daily.orders}笔</span>
+                    <span className="font-medium">{dateSummaries.daily.orders ?? 0}笔</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-[#637089]">收入</span>
-                    <span className="font-medium">¥{dateSummaries.daily.revenue.toFixed(2)}</span>
+                    <span className="font-medium">¥{(dateSummaries.daily.revenue ?? 0).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-[#637089]">利润</span>
-                    <span className={`font-medium ${dateSummaries.daily.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      ¥{dateSummaries.daily.profit.toFixed(2)}
+                    <span className={`font-medium ${(dateSummaries.daily.profit ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      ¥{(dateSummaries.daily.profit ?? 0).toFixed(2)}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm border-t border-[#E6EAF2] pt-2">
                     <span className="text-[#637089]">利润率</span>
-                    <span className={`font-medium ${dateSummaries.daily.profitRate >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {dateSummaries.daily.profitRate.toFixed(1)}%
+                    <span className={`font-medium ${(dateSummaries.daily.profitRate ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {(dateSummaries.daily.profitRate ?? 0).toFixed(1)}%
                     </span>
                   </div>
                 </div>
@@ -206,22 +206,22 @@ export default function FinancePage() {
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-[#637089]">订单数</span>
-                    <span className="font-medium">{dateSummaries.weekly.orders}笔</span>
+                    <span className="font-medium">{dateSummaries.weekly.orders ?? 0}笔</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-[#637089]">收入</span>
-                    <span className="font-medium">¥{dateSummaries.weekly.revenue.toFixed(2)}</span>
+                    <span className="font-medium">¥{(dateSummaries.weekly.revenue ?? 0).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-[#637089]">利润</span>
-                    <span className={`font-medium ${dateSummaries.weekly.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      ¥{dateSummaries.weekly.profit.toFixed(2)}
+                    <span className={`font-medium ${(dateSummaries.weekly.profit ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      ¥{(dateSummaries.weekly.profit ?? 0).toFixed(2)}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm border-t border-[#E6EAF2] pt-2">
                     <span className="text-[#637089]">利润率</span>
-                    <span className={`font-medium ${dateSummaries.weekly.profitRate >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {dateSummaries.weekly.profitRate.toFixed(1)}%
+                    <span className={`font-medium ${(dateSummaries.weekly.profitRate ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {(dateSummaries.weekly.profitRate ?? 0).toFixed(1)}%
                     </span>
                   </div>
                 </div>
@@ -234,22 +234,22 @@ export default function FinancePage() {
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-[#637089]">订单数</span>
-                    <span className="font-medium">{dateSummaries.monthly.orders}笔</span>
+                    <span className="font-medium">{dateSummaries.monthly.orders ?? 0}笔</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-[#637089]">收入</span>
-                    <span className="font-medium">¥{dateSummaries.monthly.revenue.toFixed(2)}</span>
+                    <span className="font-medium">¥{(dateSummaries.monthly.revenue ?? 0).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-[#637089]">利润</span>
-                    <span className={`font-medium ${dateSummaries.monthly.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      ¥{dateSummaries.monthly.profit.toFixed(2)}
+                    <span className={`font-medium ${(dateSummaries.monthly.profit ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      ¥{(dateSummaries.monthly.profit ?? 0).toFixed(2)}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm border-t border-[#E6EAF2] pt-2">
                     <span className="text-[#637089]">利润率</span>
-                    <span className={`font-medium ${dateSummaries.monthly.profitRate >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {dateSummaries.monthly.profitRate.toFixed(1)}%
+                    <span className={`font-medium ${(dateSummaries.monthly.profitRate ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {(dateSummaries.monthly.profitRate ?? 0).toFixed(1)}%
                     </span>
                   </div>
                 </div>
@@ -262,22 +262,22 @@ export default function FinancePage() {
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-[#637089]">订单数</span>
-                    <span className="font-medium">{dateSummaries.yearly.orders}笔</span>
+                    <span className="font-medium">{dateSummaries.yearly.orders ?? 0}笔</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-[#637089]">收入</span>
-                    <span className="font-medium">¥{dateSummaries.yearly.revenue.toFixed(2)}</span>
+                    <span className="font-medium">¥{(dateSummaries.yearly.revenue ?? 0).toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-[#637089]">利润</span>
-                    <span className={`font-medium ${dateSummaries.yearly.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      ¥{dateSummaries.yearly.profit.toFixed(2)}
+                    <span className={`font-medium ${(dateSummaries.yearly.profit ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      ¥{(dateSummaries.yearly.profit ?? 0).toFixed(2)}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm border-t border-[#E6EAF2] pt-2">
                     <span className="text-[#637089]">利润率</span>
-                    <span className={`font-medium ${dateSummaries.yearly.profitRate >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {dateSummaries.yearly.profitRate.toFixed(1)}%
+                    <span className={`font-medium ${(dateSummaries.yearly.profitRate ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {(dateSummaries.yearly.profitRate ?? 0).toFixed(1)}%
                     </span>
                   </div>
                 </div>
