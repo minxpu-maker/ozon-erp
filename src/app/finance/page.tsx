@@ -28,8 +28,22 @@ export default function FinancePage() {
   const [pendingOrders, setPendingOrders] = useState<any[]>([]);
   const [settledRecords, setSettledRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [exchangeRate, setExchangeRate] = useState(0.08); // 默认汇率
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { 
+    fetchExchangeRate();
+    fetchData(); 
+  }, []);
+
+  const fetchExchangeRate = async () => {
+    try {
+      const res = await fetch('/api/system-config?key=rub_to_cny');
+      const data = await res.json();
+      if (data.success && data.data?.value) {
+        setExchangeRate(parseFloat(data.data.value));
+      }
+    } catch (error) { console.error('获取汇率失败:', error); }
+  };
 
   const fetchData = async () => {
     try {
@@ -43,11 +57,18 @@ export default function FinancePage() {
     finally { setLoading(false); }
   };
 
+  // 格式化人民币金额
+  const formatCNY = (rub: string | number) => {
+    const rubNum = typeof rub === 'string' ? parseFloat(rub) : rub;
+    return (rubNum * exchangeRate).toFixed(2);
+  };
+
   // 计算统计数据
   const stats = {
     totalOrders: pendingOrders.length,
     settledOrders: settledRecords.length,
     totalProfit: settledRecords.reduce((sum, r) => sum + parseFloat(r.net_profit || '0'), 0).toFixed(2),
+    totalAmount: pendingOrders.reduce((sum, o) => sum + parseFloat(o.total_price || '0') * exchangeRate, 0).toFixed(2),
   };
 
   return (
@@ -129,7 +150,7 @@ export default function FinancePage() {
                       <td className="px-4 py-3 text-sm font-medium text-[#2F6BFF]">{order.ozon_order_id}</td>
                       <td className="px-4 py-3 text-sm text-[#152033]">{order.ozon_posting_number}</td>
                       <td className="px-4 py-3 text-sm text-[#152033]">{order.buyer_name || '-'}</td>
-                      <td className="px-4 py-3 text-sm font-medium text-[#152033]">¥{order.total_price}</td>
+                      <td className="px-4 py-3 text-sm font-medium text-[#152033]">¥{formatCNY(order.total_price)}</td>
                       <td className="px-4 py-3 text-sm text-[#637089]">{order.shipped_at ? new Date(order.shipped_at).toLocaleDateString('zh-CN') : '-'}</td>
                       <td className="px-4 py-3"><button className="text-xs text-[#2F6BFF] hover:underline">核算</button></td>
                     </tr>
