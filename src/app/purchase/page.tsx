@@ -91,6 +91,7 @@ interface Order {
   isPacked: boolean;
   createdAt: string;
   ozonCreatedAt: string | null;
+  purchasePrice?: number; // 采购价（人民币）
   productInfo?: ProductInfo;
   products?: Array<{
     sku: number;
@@ -161,6 +162,34 @@ export default function PurchasePage() {
 
   // 订单详情抽屉
   const [detailOrder, setDetailOrder] = useState<Order | null>(null);
+  const [editingPurchasePrice, setEditingPurchasePrice] = useState<string>('');
+  const [savingPrice, setSavingPrice] = useState(false);
+
+  // 更新采购价
+  const updatePurchasePrice = async (orderId: string, price: number) => {
+    setSavingPrice(true);
+    try {
+      const res = await fetch('/api/orders/purchase-price', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, purchasePrice: price }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        // 更新本地状态
+        setOrders(prev => prev.map(o => 
+          o.id === orderId ? { ...o, purchasePrice: price } : o
+        ));
+        if (detailOrder?.id === orderId) {
+          setDetailOrder(prev => prev ? { ...prev, purchasePrice: price } : null);
+        }
+      }
+    } catch (error) {
+      console.error('更新采购价失败:', error);
+    } finally {
+      setSavingPrice(false);
+    }
+  };
 
   // 获取实时汇率
   const fetchExchangeRate = useCallback(async () => {
@@ -413,9 +442,9 @@ export default function PurchasePage() {
                     <TableHead className="text-[#637089]">发货单号</TableHead>
                     <TableHead className="text-[#637089]">商品</TableHead>
                     <TableHead className="text-[#637089]">店铺</TableHead>
-                    <TableHead className="text-[#637089]">买家</TableHead>
                     <TableHead className="text-[#637089]">状态</TableHead>
-                    <TableHead className="text-[#637089]">金额</TableHead>
+                    <TableHead className="text-[#637089]">销售金额</TableHead>
+                    <TableHead className="text-[#637089]">采购价</TableHead>
                     <TableHead className="text-[#637089]">下单时间</TableHead>
                     <TableHead className="w-12"></TableHead>
                   </TableRow>
@@ -490,6 +519,13 @@ export default function PurchasePage() {
                         <TableCell className="text-[#152033] font-medium">
                           ¥{(parseFloat(order.totalPrice || '0') * rubToCny).toFixed(2)}
                         </TableCell>
+                        <TableCell>
+                          {order.purchasePrice ? (
+                            <span className="text-[#16A37B] font-medium">¥{order.purchasePrice.toFixed(2)}</span>
+                          ) : (
+                            <span className="text-[#637089] text-sm">未录入</span>
+                          )}
+                        </TableCell>
                         <TableCell className="text-[#637089] text-sm">
                           {order.ozonCreatedAt 
                             ? new Date(order.ozonCreatedAt).toLocaleString('zh-CN', {
@@ -561,7 +597,58 @@ export default function PurchasePage() {
                     </span>
                   </p>
                 </div>
+                <div>
+                  <label className="text-sm text-[#637089]">采购价 (¥)</label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={editingPurchasePrice}
+                      onChange={(e) => setEditingPurchasePrice(e.target.value)}
+                      placeholder="输入采购价"
+                      className="w-32 h-8"
+                    />
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        const price = parseFloat(editingPurchasePrice);
+                        if (!isNaN(price) && price >= 0) {
+                          updatePurchasePrice(detailOrder.id, price);
+                        }
+                      }}
+                      disabled={savingPrice || !editingPurchasePrice}
+                    >
+                      {savingPrice ? '保存中...' : '保存'}
+                    </Button>
+                  </div>
+                  {detailOrder.purchasePrice ? (
+                    <p className="text-xs text-[#16A37B] mt-1">已录入: ¥{detailOrder.purchasePrice.toFixed(2)}</p>
+                  ) : null}
+                </div>
               </div>
+              
+              {/* 利润预估 */}
+              {detailOrder.purchasePrice ? (
+                <div className="border-t border-[#E6EAF2] pt-4">
+                  <label className="text-sm text-[#637089]">利润预估</label>
+                  <div className="mt-2 p-3 bg-[#ECFDF5] rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[#637089]">销售收入</span>
+                      <span className="font-medium">¥{(parseFloat(detailOrder.totalPrice || '0') * rubToCny).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between items-center mt-1">
+                      <span className="text-[#637089]">采购成本</span>
+                      <span className="font-medium text-red-500">-¥{detailOrder.purchasePrice.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between items-center mt-2 pt-2 border-t border-[#E6EAF2]">
+                      <span className="text-[#152033] font-medium">预估利润</span>
+                      <span className={`font-bold ${(parseFloat(detailOrder.totalPrice || '0') * rubToCny - detailOrder.purchasePrice) >= 0 ? 'text-[#16A37B]' : 'text-red-500'}`}>
+                        ¥{(parseFloat(detailOrder.totalPrice || '0') * rubToCny - detailOrder.purchasePrice).toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
               
               <div className="border-t border-[#E6EAF2] pt-4">
                 <label className="text-sm text-[#637089]">商品信息</label>

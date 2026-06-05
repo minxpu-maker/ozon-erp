@@ -82,6 +82,9 @@ export const orders = pgTable(
     is_settled: boolean("is_settled").default(false).notNull(),
     settled_at: timestamp("settled_at", { withTimezone: true }),
     
+    // 采购价格（人民币）
+    purchase_price: numeric("purchase_price", { precision: 12, scale: 2 }).default("0"),
+    
     // Ozon原始数据
     ozon_raw_data: jsonb("ozon_raw_data"),
     

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { LayoutDashboard, ShoppingCart, Package, ClipboardList, Truck, Calculator, PackageSearch, Warehouse, Database, Users, BarChart3, UserCircle, Shield, Settings, RefreshCw, TrendingUp, TrendingDown, DollarSign, ChevronDown, ChevronUp, Receipt, Percent, Banknote, Tag, X, Check } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Package, ClipboardList, Truck, Calculator, PackageSearch, Warehouse, Database, Users, BarChart3, UserCircle, Shield, Settings, RefreshCw, TrendingUp, TrendingDown, DollarSign, ChevronDown, ChevronUp, Receipt, Percent, Banknote, Tag, X, Check, Calendar, CalendarDays, CalendarRange, CalendarClock } from 'lucide-react';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: '仪表盘' },
@@ -32,6 +32,7 @@ export default function FinancePage() {
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [settlingOrderId, setSettlingOrderId] = useState<number | null>(null);
   const [apiStats, setApiStats] = useState<any>(null);
+  const [dateSummaries, setDateSummaries] = useState<any>(null);
 
   useEffect(() => { 
     fetchExchangeRate();
@@ -56,6 +57,10 @@ export default function FinancePage() {
         setPendingOrders(data.data.pendingOrders || []);
         setSettledRecords(data.data.settledRecords || []);
         setApiStats(data.data.stats || null);
+        setDateSummaries(data.data.dateSummaries || null);
+        if (data.data.exchangeRate) {
+          setExchangeRate(data.data.exchangeRate);
+        }
       }
     } catch (error) { console.error('获取数据失败:', error); }
     finally { setLoading(false); }
@@ -79,7 +84,7 @@ export default function FinancePage() {
       });
       const data = await res.json();
       if (data.success) {
-        alert(`利润核算完成！净利润: ¥${formatCNY(data.data.netProfit)}`);
+        alert(`利润核算完成！净利润: ¥${data.data.netProfit.toFixed(2)}`);
         fetchData();
       } else {
         alert('核算失败: ' + data.error);
@@ -97,8 +102,10 @@ export default function FinancePage() {
     settledOrders: settledRecords.length,
     totalProfit: settledRecords.reduce((sum, r) => sum + parseFloat(r.net_profit || '0'), 0).toFixed(2),
     totalAmount: pendingOrders.reduce((sum, o) => sum + (o.financialData?.totalRevenue || parseFloat(o.total_price || '0')) * exchangeRate, 0).toFixed(2),
-    totalCommission: apiStats?.totalCommission ? (apiStats.totalCommission * exchangeRate).toFixed(2) : pendingOrders.reduce((sum, o) => sum + (o.financialData?.totalCommission || 0) * exchangeRate, 0).toFixed(2),
-    totalAcquiringFee: apiStats?.totalAcquiringFee ? (apiStats.totalAcquiringFee * exchangeRate).toFixed(2) : pendingOrders.reduce((sum, o) => sum + (o.financialData?.acquiringFee || 0) * exchangeRate, 0).toFixed(2),
+    totalCommission: apiStats?.totalCommission ? apiStats.totalCommission.toFixed(2) : pendingOrders.reduce((sum, o) => sum + (o.financialData?.totalCommission || 0) * exchangeRate, 0).toFixed(2),
+    totalAcquiringFee: apiStats?.totalAcquiringFee ? apiStats.totalAcquiringFee.toFixed(2) : pendingOrders.reduce((sum, o) => sum + (o.financialData?.acquiringFee || 0) * exchangeRate, 0).toFixed(2),
+    totalPurchasePrice: apiStats?.totalPurchasePrice || pendingOrders.reduce((sum, o) => sum + (o.financialData?.purchasePrice || 0), 0).toFixed(2),
+    totalEstimatedProfit: apiStats?.totalEstimatedProfit || pendingOrders.reduce((sum, o) => sum + (o.financialData?.estimatedProfit || 0), 0).toFixed(2),
   };
 
   // 状态颜色
@@ -157,11 +164,129 @@ export default function FinancePage() {
         <main className="flex-1 min-w-0 overflow-y-auto bg-[#F6F8FB] p-6">
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-[#152033]">利润核算</h1>
-            <p className="text-sm text-[#637089] mt-1">售后期结束后计算真实净利润 = Ozon结算金额 - 平台佣金 - 采购成本 - 运费 - 包材费 - 售后损失</p>
+            <p className="text-sm text-[#637089] mt-1">售后期结束后计算真实净利润 = Ozon结算金额 - 平台佣金 - 收单费 - 采购成本 - 运费</p>
           </div>
 
+          {/* 日期汇总卡片 */}
+          {dateSummaries && (
+            <div className="grid grid-cols-4 gap-4 mb-6">
+              <div className="bg-white rounded-lg shadow-sm p-4 border border-[#E6EAF2]">
+                <div className="flex items-center gap-2 mb-3">
+                  <Calendar className="w-4 h-4 text-[#2F6BFF]" />
+                  <span className="text-sm font-medium text-[#152033]">今日汇总</span>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-[#637089]">订单数</span>
+                    <span className="font-medium">{dateSummaries.daily.orders}笔</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-[#637089]">收入</span>
+                    <span className="font-medium">¥{dateSummaries.daily.revenue.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-[#637089]">利润</span>
+                    <span className={`font-medium ${dateSummaries.daily.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      ¥{dateSummaries.daily.profit.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm border-t border-[#E6EAF2] pt-2">
+                    <span className="text-[#637089]">利润率</span>
+                    <span className={`font-medium ${dateSummaries.daily.profitRate >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {dateSummaries.daily.profitRate.toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white rounded-lg shadow-sm p-4 border border-[#E6EAF2]">
+                <div className="flex items-center gap-2 mb-3">
+                  <CalendarDays className="w-4 h-4 text-[#2F6BFF]" />
+                  <span className="text-sm font-medium text-[#152033]">本周汇总</span>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-[#637089]">订单数</span>
+                    <span className="font-medium">{dateSummaries.weekly.orders}笔</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-[#637089]">收入</span>
+                    <span className="font-medium">¥{dateSummaries.weekly.revenue.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-[#637089]">利润</span>
+                    <span className={`font-medium ${dateSummaries.weekly.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      ¥{dateSummaries.weekly.profit.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm border-t border-[#E6EAF2] pt-2">
+                    <span className="text-[#637089]">利润率</span>
+                    <span className={`font-medium ${dateSummaries.weekly.profitRate >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {dateSummaries.weekly.profitRate.toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white rounded-lg shadow-sm p-4 border border-[#E6EAF2]">
+                <div className="flex items-center gap-2 mb-3">
+                  <CalendarRange className="w-4 h-4 text-[#2F6BFF]" />
+                  <span className="text-sm font-medium text-[#152033]">本月汇总</span>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-[#637089]">订单数</span>
+                    <span className="font-medium">{dateSummaries.monthly.orders}笔</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-[#637089]">收入</span>
+                    <span className="font-medium">¥{dateSummaries.monthly.revenue.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-[#637089]">利润</span>
+                    <span className={`font-medium ${dateSummaries.monthly.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      ¥{dateSummaries.monthly.profit.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm border-t border-[#E6EAF2] pt-2">
+                    <span className="text-[#637089]">利润率</span>
+                    <span className={`font-medium ${dateSummaries.monthly.profitRate >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {dateSummaries.monthly.profitRate.toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white rounded-lg shadow-sm p-4 border border-[#E6EAF2]">
+                <div className="flex items-center gap-2 mb-3">
+                  <CalendarClock className="w-4 h-4 text-[#2F6BFF]" />
+                  <span className="text-sm font-medium text-[#152033]">本年汇总</span>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-[#637089]">订单数</span>
+                    <span className="font-medium">{dateSummaries.yearly.orders}笔</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-[#637089]">收入</span>
+                    <span className="font-medium">¥{dateSummaries.yearly.revenue.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-[#637089]">利润</span>
+                    <span className={`font-medium ${dateSummaries.yearly.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      ¥{dateSummaries.yearly.profit.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm border-t border-[#E6EAF2] pt-2">
+                    <span className="text-[#637089]">利润率</span>
+                    <span className={`font-medium ${dateSummaries.yearly.profitRate >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {dateSummaries.yearly.profitRate.toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* 统计卡片 */}
-          <div className="grid grid-cols-5 gap-4 mb-6">
+          <div className="grid grid-cols-6 gap-4 mb-6">
             <div className="bg-white rounded-lg shadow-sm p-5 border border-[#E6EAF2]">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm text-[#637089]">待核算订单</span>
@@ -182,6 +307,13 @@ export default function FinancePage() {
                 <div className="w-8 h-8 bg-purple-500/10 rounded-lg flex items-center justify-center"><Banknote className="w-4 h-4 text-purple-600" /></div>
               </div>
               <div className="text-2xl font-bold text-purple-600">¥{stats.totalAcquiringFee}</div>
+            </div>
+            <div className="bg-white rounded-lg shadow-sm p-5 border border-[#E6EAF2]">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm text-[#637089]">累计采购成本</span>
+                <div className="w-8 h-8 bg-cyan-500/10 rounded-lg flex items-center justify-center"><ShoppingCart className="w-4 h-4 text-cyan-600" /></div>
+              </div>
+              <div className="text-2xl font-bold text-cyan-600">¥{stats.totalPurchasePrice}</div>
             </div>
             <div className="bg-white rounded-lg shadow-sm p-5 border border-[#E6EAF2]">
               <div className="flex items-center justify-between mb-3">
@@ -219,17 +351,14 @@ export default function FinancePage() {
                         <div className="flex-shrink-0 w-6">
                           {isExpanded ? <ChevronUp className="w-4 h-4 text-[#637089]" /> : <ChevronDown className="w-4 h-4 text-[#637089]" />}
                         </div>
-                        <div className="flex-1 grid grid-cols-6 gap-4 items-center">
+                        <div className="flex-1 grid grid-cols-8 gap-4 items-center">
                           <div className="text-sm font-medium text-[#2F6BFF]">{order.ozon_order_id}</div>
                           <div className="text-sm text-[#152033]">{order.ozon_posting_number}</div>
                           <div className="text-sm text-[#152033]">{order.buyer_name || '-'}</div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-[#152033]">¥{fd ? formatCNY(fd.totalRevenue) : formatCNY(order.total_price)}</span>
-                            {fd && fd.totalCommission > 0 && (
-                              <span className="text-xs text-orange-600">(-佣金¥{formatCNY(fd.totalCommission)})</span>
-                            )}
-                          </div>
-                          <div className="text-sm text-[#637089]">{order.shipped_at ? new Date(order.shipped_at).toLocaleDateString('zh-CN') : '-'}</div>
+                          <div className="text-sm font-medium text-[#152033]">¥{fd ? (fd.totalRevenue * exchangeRate).toFixed(2) : formatCNY(order.total_price)}</div>
+                          <div className="text-sm text-cyan-600 font-medium">¥{fd?.purchasePrice?.toFixed(2) || '0'}</div>
+                          <div className={`text-sm font-medium ${fd?.estimatedProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>¥{fd?.estimatedProfit?.toFixed(2) || '0'}</div>
+                          <div className={`text-sm font-medium ${fd?.profitRate >= 0 ? 'text-green-600' : 'text-red-600'}`}>{fd?.profitRate?.toFixed(1) || '0'}%</div>
                           <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
                             <button 
                               onClick={() => handleSettle(order.id)}
@@ -254,50 +383,38 @@ export default function FinancePage() {
                               <div className="space-y-2">
                                 <div className="flex justify-between text-sm">
                                   <span className="text-[#637089]">客户实际支付</span>
-                                  <span className="font-medium text-[#152033]">{fd.totalRevenue.toFixed(2)} RUB (¥{formatCNY(fd.totalRevenue)})</span>
+                                  <span className="font-medium text-[#152033]">{fd.totalRevenue.toFixed(2)} RUB (¥{(fd.totalRevenue * exchangeRate).toFixed(2)})</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
                                   <span className="text-[#637089]">平台佣金</span>
-                                  <span className="font-medium text-orange-600">-{fd.totalCommission.toFixed(2)} RUB (¥{formatCNY(fd.totalCommission)})</span>
+                                  <span className="font-medium text-orange-600">-{fd.totalCommission.toFixed(2)} RUB (¥{(fd.totalCommission * exchangeRate).toFixed(2)})</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
                                   <span className="text-[#637089]">收单业务费</span>
-                                  <span className="font-medium text-purple-600">-{fd.acquiringFee?.toFixed(2) || '0'} RUB (¥{formatCNY(fd.acquiringFee || 0)})</span>
+                                  <span className="font-medium text-purple-600">-{(fd.acquiringFee || 0).toFixed(2)} RUB (¥{((fd.acquiringFee || 0) * exchangeRate).toFixed(2)})</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
-                                  <span className="text-[#637089]">折扣金额</span>
-                                  <span className="font-medium text-[#637089]">-{fd.totalDiscount.toFixed(2)} RUB (¥{formatCNY(fd.totalDiscount)})</span>
+                                  <span className="text-[#637089]">采购成本</span>
+                                  <span className="font-medium text-cyan-600">-¥{(fd.purchasePrice || 0).toFixed(2)}</span>
                                 </div>
                                 <div className="flex justify-between text-sm border-t border-[#E6EAF2] pt-2">
-                                  <span className="text-[#637089]">实际结算金额</span>
-                                  <span className="font-semibold text-green-600">{fd.totalPayout.toFixed(2)} RUB (¥{formatCNY(fd.totalPayout)})</span>
+                                  <span className="text-[#637089] font-medium">预估利润</span>
+                                  <span className={`font-bold ${fd.estimatedProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>¥{fd.estimatedProfit.toFixed(2)}</span>
                                 </div>
-                                {/* 应计费用明细 */}
-                                {fd.accrualsDetails && fd.accrualsDetails.length > 0 && (
-                                  <div className="mt-3 pt-3 border-t border-[#E6EAF2]">
-                                    <div className="text-xs font-medium text-[#637089] mb-2">应计费用明细</div>
-                                    <div className="space-y-1">
-                                      {fd.accrualsDetails.map((acc: any, idx: number) => (
-                                        <div key={idx} className="flex justify-between text-xs">
-                                          <span className="text-[#637089]">{acc.typeName || acc.type}</span>
-                                          <span className={acc.amount < 0 ? 'text-red-600' : 'text-green-600'}>
-                                            {acc.amount.toFixed(2)} {acc.currency}
-                                          </span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-[#637089] font-medium">利润率</span>
+                                  <span className={`font-bold ${fd.profitRate >= 0 ? 'text-green-600' : 'text-red-600'}`}>{fd.profitRate.toFixed(1)}%</span>
+                                </div>
                               </div>
                             </div>
                             
                             {/* 右侧：商品明细 */}
                             <div>
                               <h4 className="text-sm font-semibold text-[#152033] mb-3 flex items-center gap-2">
-                                <Tag className="w-4 h-4" /> 商品明细 ({fd.products.length}件)
+                                <Tag className="w-4 h-4" /> 商品明细 ({fd.products?.length || 0}件)
                               </h4>
                               <div className="space-y-3 max-h-48 overflow-y-auto">
-                                {fd.products.map((product: any, idx: number) => (
+                                {fd.products?.map((product: any, idx: number) => (
                                   <div key={idx} className="bg-white rounded-lg p-3 border border-[#E6EAF2]">
                                     <div className="text-sm font-medium text-[#152033] mb-2 line-clamp-1">{product.productName}</div>
                                     <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
@@ -316,14 +433,6 @@ export default function FinancePage() {
                                       <div className="flex justify-between">
                                         <span className="text-[#637089]">佣金</span>
                                         <span className="text-orange-600">{product.commissionAmount.toFixed(2)} RUB ({product.commissionPercent}%)</span>
-                                      </div>
-                                      <div className="flex justify-between">
-                                        <span className="text-[#637089]">折扣</span>
-                                        <span className="text-[#637089]">{product.totalDiscountValue.toFixed(2)} RUB</span>
-                                      </div>
-                                      <div className="flex justify-between">
-                                        <span className="text-[#637089]">结算</span>
-                                        <span className="text-green-600 font-medium">{product.payout.toFixed(2)} RUB</span>
                                       </div>
                                     </div>
                                   </div>
@@ -361,22 +470,29 @@ export default function FinancePage() {
                     <th className="text-left text-xs font-medium text-[#637089] px-4 py-3">采购成本</th>
                     <th className="text-left text-xs font-medium text-[#637089] px-4 py-3">运费</th>
                     <th className="text-left text-xs font-medium text-[#637089] px-4 py-3">净利润</th>
+                    <th className="text-left text-xs font-medium text-[#637089] px-4 py-3">利润率</th>
                     <th className="text-left text-xs font-medium text-[#637089] px-4 py-3">结算时间</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {settledRecords.map((record) => (
-                    <tr key={record.id} className="border-t border-[#E6EAF2]">
-                      <td className="px-4 py-3 text-sm font-medium text-[#2F6BFF]">{record.order_id}</td>
-                      <td className="px-4 py-3 text-sm text-[#152033]">¥{record.ozon_settlement_amount || '0'}</td>
-                      <td className="px-4 py-3 text-sm text-orange-600">¥{record.ozon_commission || '0'}</td>
-                      <td className="px-4 py-3 text-sm text-purple-600">¥{record.other_cost || '0'}</td>
-                      <td className="px-4 py-3 text-sm text-[#152033]">¥{record.purchase_cost || '0'}</td>
-                      <td className="px-4 py-3 text-sm text-[#152033]">¥{record.domestic_shipping_cost || '0'}</td>
-                      <td className="px-4 py-3 text-sm font-medium text-green-600">¥{record.net_profit || '0'}</td>
-                      <td className="px-4 py-3 text-sm text-[#637089]">{record.settled_at ? new Date(record.settled_at).toLocaleDateString('zh-CN') : '-'}</td>
-                    </tr>
-                  ))}
+                  {settledRecords.map((record) => {
+                    const revenue = parseFloat(record.ozon_settlement_amount || '0') * exchangeRate;
+                    const netProfit = parseFloat(record.net_profit || '0');
+                    const profitRate = revenue > 0 ? (netProfit / revenue) * 100 : 0;
+                    return (
+                      <tr key={record.id} className="border-t border-[#E6EAF2]">
+                        <td className="px-4 py-3 text-sm font-medium text-[#2F6BFF]">{record.order_id}</td>
+                        <td className="px-4 py-3 text-sm text-[#152033]">¥{(parseFloat(record.ozon_settlement_amount || '0') * exchangeRate).toFixed(2)}</td>
+                        <td className="px-4 py-3 text-sm text-orange-600">¥{(parseFloat(record.ozon_commission || '0') * exchangeRate).toFixed(2)}</td>
+                        <td className="px-4 py-3 text-sm text-purple-600">¥{(parseFloat(record.other_cost || '0') * exchangeRate).toFixed(2)}</td>
+                        <td className="px-4 py-3 text-sm text-cyan-600">¥{record.purchase_cost || '0'}</td>
+                        <td className="px-4 py-3 text-sm text-[#152033]">¥{record.domestic_shipping_cost || '0'}</td>
+                        <td className={`px-4 py-3 text-sm font-medium ${netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>¥{netProfit.toFixed(2)}</td>
+                        <td className={`px-4 py-3 text-sm font-medium ${profitRate >= 0 ? 'text-green-600' : 'text-red-600'}`}>{profitRate.toFixed(1)}%</td>
+                        <td className="px-4 py-3 text-sm text-[#637089]">{record.settled_at ? new Date(record.settled_at).toLocaleDateString('zh-CN') : '-'}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>}
           </div>
