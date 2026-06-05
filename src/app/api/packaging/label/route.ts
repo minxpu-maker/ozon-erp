@@ -54,9 +54,24 @@ export async function POST(request: NextRequest) {
     // 获取面单
     const result = await ozonClient.getPackageLabel(postingNumbers);
 
+    // 下载PDF并转换为base64
+    let pdfBase64 = null;
+    if (result.fileUrl) {
+      try {
+        const pdfResponse = await fetch(result.fileUrl);
+        if (pdfResponse.ok) {
+          const pdfBuffer = await pdfResponse.arrayBuffer();
+          pdfBase64 = Buffer.from(pdfBuffer).toString('base64');
+        }
+      } catch (downloadError) {
+        console.error('下载PDF失败:', downloadError);
+      }
+    }
+
     return NextResponse.json({
       success: true,
       data: {
+        pdfBase64,
         fileUrl: result.fileUrl,
         printedCount: result.printedCount,
         unprintedCount: result.unprintedCount,

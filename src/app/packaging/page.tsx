@@ -99,17 +99,35 @@ export default function PackagingPage() {
         throw new Error(data.error || '获取面单失败');
       }
 
-      // 获取面单PDF URL并打开新窗口打印
-      const { fileUrl, printedPostingsCount } = data.data;
+      const { pdfBase64, fileUrl } = data.data;
       
-      if (!fileUrl) {
-        throw new Error('未获取到面单下载链接');
-      }
-
-      // 打开新窗口加载PDF
-      const printWindow = window.open(fileUrl, '_blank');
-      if (printWindow) {
-        // PDF会自动加载，浏览器提供打印选项
+      if (pdfBase64) {
+        // 使用base64直接打印
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+          printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head><title>打印面单</title></head>
+            <body style="margin:0;padding:0;">
+              <embed width="100%" height="100%" 
+                src="data:application/pdf;base64,${pdfBase64}" 
+                type="application/pdf" 
+                id="pdfEmbed">
+            </body>
+            </html>
+          `);
+          printWindow.document.close();
+          // 延迟调用打印
+          setTimeout(() => {
+            printWindow.print();
+          }, 500);
+        }
+      } else if (fileUrl) {
+        // 降级：直接打开PDF URL
+        window.open(fileUrl, '_blank');
+      } else {
+        throw new Error('未获取到面单');
       }
 
       setPrintSuccess(true);
