@@ -373,18 +373,6 @@ export class OzonApiClient {
   }
 
   /**
-   * 获取面单PDF
-   * POST /v1/posting/fbs/package-label/get
-   */
-  async getPackageLabel(params: {
-    posting_number: string;
-  }): Promise<{ result: OzonPackageLabel[] }> {
-    return this.request<{ result: OzonPackageLabel[] }>('/v1/posting/fbs/package-label/get', {
-      posting_number: params.posting_number,
-    });
-  }
-
-  /**
    * 获取商品信息列表（含图片）
    * POST /v3/product/info/list
    */
@@ -506,6 +494,89 @@ export class OzonApiClient {
       'awaits_cancellation_by_user': '等待用户取消',
     };
     return statusMap[status] || status;
+  }
+
+  /**
+   * 获取FBS订单面单（PDF）
+   * 文档: https://docs.ozon.ru/api/seller/#operation/PostingAPI_GetPackageLabel
+   */
+  async getPackageLabel(postingNumbers: string[]): Promise<{
+    fileUrl: string; // 面单PDF下载链接
+    printedCount: number;
+    unprintedCount: number;
+  }> {
+    // 步骤1: 创建面单任务
+    const createResponse = await fetch(`${OZON_API_BASE_URL}/v2/posting/fbs/package-label/create`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Client-Id': this.config.clientId,
+        'Api-Key': this.config.apiKey,
+      },
+      body: JSON.stringify({
+        posting_numbers: postingNumbers,
+      }),
+    });
+
+    if (!createResponse.ok) {
+      const errorText = await createResponse.text();
+      throw new OzonApiError(
+        `Failed to create package label task: ${createResponse.status}`,
+        createResponse.status,
+        errorText
+      );
+    }
+
+    const createResult = await createResponse.json() as { result: { tasks: { task_id: number; task_type: string }[] } };
+    const taskId = createResult.result?.tasks?.[0]?.task_id;
+
+    if (!taskId) {
+      throw new OzonApiError('No task_id in response', 500, JSON.stringify(createResult));
+    }
+
+    // 步骤2: 获取任务结果（面单PDF）
+    const resultResponse = await fetch(`${OZON_API_BASE_URL}/v1/posting/fbs/package-label/get`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Client-Id': this.config.clientId,
+        'Api-Key': this.config.apiKey,
+      },
+      body: JSON.stringify({
+        task_id: taskId,
+      }),
+    });
+
+    if (!resultResponse.ok) {
+      const errorText = await resultResponse.text();
+      throw new OzonApiError(
+        `Failed to get package label PDF: ${resultResponse.status}`,
+        resultResponse.status,
+        errorText
+      );
+    }
+
+    // 解析响应获取文件URL
+    const result = await resultResponse.json() as {
+      result: {
+        error: string;
+        status: string;
+        file_url: string;
+        printed_postings_count: number;
+        unprinted_postings_count: number;
+        unprinted_postings: string[];
+      }
+    };
+    
+    if (!result.result?.file_url) {
+      throw new OzonApiError('No file_url in response', 500, JSON.stringify(result));
+    }
+    
+    return {
+      fileUrl: result.result.file_url,
+      printedCount: result.result.printed_postings_count,
+      unprintedCount: result.result.unprinted_postings_count,
+    };
   }
 
   /**
