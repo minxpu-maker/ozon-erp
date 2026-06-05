@@ -105,11 +105,11 @@ export default function PackagingPage() {
                 </thead>
                 <tbody>
                   {orders.map((item) => (
-                    <tr key={item.order.id} className="border-t border-[#E6EAF2]">
-                      <td className="px-4 py-3 text-sm font-medium text-[#2F6BFF]">{item.order.ozonOrderId}</td>
-                      <td className="px-4 py-3 text-sm text-[#152033]">{item.order.ozonPostingNumber}</td>
-                      <td className="px-4 py-3"><span className="px-2 py-1 bg-[#2F6BFF]/10 text-[#2F6BFF] rounded text-xs">{item.shop?.name || '-'}</span></td>
-                      <td className="px-4 py-3 text-sm text-[#152033]">{item.order.buyerName}</td>
+                    <tr key={item.id} className="border-t border-[#E6EAF2]">
+                      <td className="px-4 py-3 text-sm font-medium text-[#2F6BFF]">{item.ozon_order_id}</td>
+                      <td className="px-4 py-3 text-sm text-[#152033]">{item.ozon_posting_number}</td>
+                      <td className="px-4 py-3"><span className="px-2 py-1 bg-[#2F6BFF]/10 text-[#2F6BFF] rounded text-xs">TIANTAN</span></td>
+                      <td className="px-4 py-3 text-sm text-[#152033]">{item.buyer_name}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <button className="flex items-center gap-1 px-3 py-1.5 bg-[#2F6BFF] text-white rounded text-xs hover:bg-[#2F6BFF]/90">
