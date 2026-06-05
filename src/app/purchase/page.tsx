@@ -1,13 +1,46 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import { useState, useEffect, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
-  LayoutDashboard,
-  ShoppingCart,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
+import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Search,
+  RefreshCw,
+  Download,
   Package,
-  ClipboardList,
   Truck,
+  CheckCircle2,
+  XCircle,
+  Eye,
+  Bell,
+  LayoutDashboard,
+  ClipboardList,
+  Box,
   Calculator,
   PackageSearch,
   Warehouse,
@@ -17,58 +50,88 @@ import {
   UserCircle,
   Shield,
   Settings,
-  RefreshCw,
+  Image as ImageIcon,
+  ShoppingCart,
   Clock,
   CheckCircle,
-  XCircle,
-  Box,
-  Search,
   Link2,
-  GitBranch,
-  Download,
-  ShoppingBag,
-  ChevronRight,
-  Eye,
 } from 'lucide-react';
+import { ProductImage } from '@/components/ui/image-viewer';
+import Link from 'next/link';
 
+// 采购状态类型 - 从Ozon订单状态映射
+type PurchaseStatus = 
+  | 'pending_purchase'   // 待采购 (Ozon: awaiting_deliver)
+  | 'purchasing'         // 采购中
+  | 'purchased'          // 已采购 (Ozon: delivering)
+  | 'delivered'          // 已送达 (Ozon: delivered)
+  | 'cancelled';         // 已取消
+
+// 订单数据类型
 interface ProductInfo {
-  sku: number;
-  name: string;
-  offer_id: string;
-  quantity: number;
-  price: string;
-  image_url?: string;
+  mainImage: string | null;
+  name: string | null;
+  offerId: string | null;
+  sku: string | null;
 }
 
-interface PurchaseTask {
+interface Order {
   id: string;
-  orderId: string;
-  orderItemId: string;
-  status: string;
-  skuId: string | null;
-  skuCode: string;
-  quantity: number;
-  sourceType: string | null;
-  sourceUrl: string | null;
-  sourcePrice: string | null;
-  purchaseAmount: string | null;
-  shippingFee: string | null;
-  isBound: boolean;
-  domesticTrackingNumber: string | null;
-  boundAt: string | null;
-  purchasedAt: string | null;
-  receivedAt: string | null;
-  createdAt: string;
-  ozonOrderId: string | null;
-  postingNumber: string | null;
+  ozonOrderId: string;
+  postingNumber: string;
+  shopId: string;
+  shopName: string;
+  status: string; // Ozon原始状态
+  purchaseStatus: PurchaseStatus; // 采购状态
   buyerName: string | null;
-  shopName: string | null;
-  product: ProductInfo | null;
+  totalPrice: string;
+  trackingNumber: string | null;
+  isPurchaseBound: boolean;
+  isInspected: boolean;
+  isPacked: boolean;
+  createdAt: string;
+  ozonCreatedAt: string | null;
+  productInfo?: ProductInfo;
+  products?: Array<{
+    sku: number;
+    name: string;
+    offerId: string;
+    quantity: number;
+    price: string;
+    image: string | null;
+  }>;
 }
 
+// Ozon状态到采购状态的映射
+const ozonToPurchaseStatus = (ozonStatus: string): PurchaseStatus => {
+  switch (ozonStatus) {
+    case 'awaiting_deliver':
+    case 'awaiting_packaging':
+      return 'pending_purchase';
+    case 'delivering':
+      return 'purchased';
+    case 'delivered':
+      return 'delivered';
+    case 'cancelled':
+    case 'returned':
+      return 'cancelled';
+    default:
+      return 'pending_purchase';
+  }
+};
+
+// 采购状态显示映射
+const purchaseStatusMap: Record<PurchaseStatus, { label: string; color: string }> = {
+  pending_purchase: { label: '待采购', color: 'bg-[#FFF7ED] text-[#C2410C]' },
+  purchasing: { label: '采购中', color: 'bg-[#EFF6FF] text-[#2F6BFF]' },
+  purchased: { label: '已采购', color: 'bg-[#EFF6FF] text-[#2F6BFF]' },
+  delivered: { label: '已送达', color: 'bg-[#ECFDF5] text-[#16A37B]' },
+  cancelled: { label: '已取消', color: 'bg-[#F3F4F6] text-[#637089]' },
+};
+
+// 侧边栏导航
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: '仪表盘' },
-  { href: '/orders', icon: ShoppingCart, label: '订单管理' },
   { href: '/purchase', icon: Package, label: '采购管理', active: true },
   { href: '/quick-entry', icon: ClipboardList, label: '快捷录单' },
   { href: '/logistics', icon: Truck, label: '入库验货' },
@@ -81,434 +144,451 @@ const navItems = [
   { href: '/sku-management', icon: Database, label: 'SKU管理' },
   { href: '/suppliers', icon: Users, label: '供应商管理' },
   { href: '/reports', icon: BarChart3, label: '数据报表' },
-  { type: 'divider', label: '系统' },
+  { type: 'divider', label: '系统管理' },
   { href: '/accounts', icon: UserCircle, label: '账号管理' },
   { href: '/roles', icon: Shield, label: '角色权限' },
   { href: '/settings', icon: Settings, label: '系统设置' },
 ];
 
 export default function PurchasePage() {
-  const [tasks, setTasks] = useState<PurchaseTask[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [search, setSearch] = useState('');
-  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
-  const [trackingInput, setTrackingInput] = useState('');
-  const [binding, setBinding] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
+  const [rubToCny, setRubToCny] = useState(0.08);
 
-  useEffect(() => {
-    fetchTasks();
-  }, [statusFilter, search]);
+  // 订单详情抽屉
+  const [detailOrder, setDetailOrder] = useState<Order | null>(null);
 
-  const fetchTasks = async () => {
+  // 获取汇率配置
+  const fetchExchangeRate = useCallback(async () => {
     try {
-      const params = new URLSearchParams();
-      if (statusFilter !== 'all') params.set('status', statusFilter);
-      if (search) params.set('search', search);
-
-      const res = await fetch(`/api/purchase?${params}`);
+      const res = await fetch('/api/system-config?key=rub_to_cny');
       const data = await res.json();
-      if (data.success) {
-        // API返回 data: [{ task: {...}, order: {...}, product: {...} }] 或 data: { tasks: [...] }
-        const rawList = Array.isArray(data.data) ? data.data : (data.data?.tasks || []);
-        // 扁平化数据结构
-        const taskList = rawList.map((item: any) => ({
-          id: item.task?.id || item.id,
-          orderId: item.task?.order_id || item.orderId,
-          orderItemId: item.task?.order_item_id || item.orderItemId,
-          status: item.task?.status || item.status,
-          skuId: item.task?.sku_id || item.skuId,
-          skuCode: item.task?.sku_code || item.skuCode,
-          quantity: item.task?.quantity || item.quantity,
-          sourceType: item.task?.source_type || item.sourceType,
-          sourceUrl: item.task?.source_url || item.sourceUrl,
-          sourcePrice: item.task?.source_price || item.sourcePrice,
-          purchaseAmount: item.task?.purchase_amount || item.purchaseAmount,
-          shippingFee: item.task?.shipping_fee || item.shippingFee,
-          isBound: item.task?.is_bound ?? item.isBound ?? false,
-          domesticTrackingNumber: item.task?.domestic_tracking_number || item.domesticTrackingNumber,
-          boundAt: item.task?.bound_at || item.boundAt,
-          purchasedAt: item.task?.purchased_at || item.purchasedAt,
-          receivedAt: item.task?.received_at || item.receivedAt,
-          createdAt: item.task?.created_at || item.createdAt,
-          ozonOrderId: item.order?.ozon_order_id || item.ozonOrderId,
-          postingNumber: item.order?.ozon_posting_number || item.postingNumber,
-          buyerName: item.order?.buyer_name || item.buyerName,
-          shopName: item.order?.shop?.name || item.shopName,
-          product: item.product || null,
-        }));
-        setTasks(taskList);
+      if (data.success && data.data?.value) {
+        setRubToCny(parseFloat(data.data.value));
       }
     } catch (error) {
-      console.error('获取采购任务失败:', error);
+      console.error('获取汇率失败:', error);
+    }
+  }, []);
+
+  // 获取订单列表（从采购视角）
+  const fetchOrders = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (searchTerm) params.set('search', searchTerm);
+      if (statusFilter !== 'all') params.set('status', statusFilter);
+
+      const res = await fetch(`/api/orders?${params.toString()}`);
+      const data = await res.json();
+      const ordersData = data.data?.orders || [];
+      
+      // 处理订单数据，添加采购状态
+      const processedOrders = ordersData.map((order: any) => ({
+        ...order,
+        purchaseStatus: ozonToPurchaseStatus(order.status),
+        productInfo: order.products?.[0] ? {
+          mainImage: order.products[0].image,
+          name: order.products[0].name,
+          offerId: order.products[0].offerId,
+          sku: String(order.products[0].sku),
+        } : null,
+      }));
+      
+      setOrders(processedOrders);
+    } catch (error) {
+      console.error('获取订单失败:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchTerm, statusFilter]);
 
-  // 绑定快递单号
-  const bindTrackingNumber = async (taskId: string) => {
-    if (!trackingInput.trim()) {
-      alert('请输入快递单号');
-      return;
-    }
-    
-    setBinding(true);
+  // 同步订单
+  const syncOrders = async () => {
+    setSyncing(true);
     try {
-      const res = await fetch('/api/purchase', {
+      const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'bindTracking',
-          taskId,
-          trackingNumber: trackingInput.trim(),
-        }),
+        body: JSON.stringify({ action: 'sync' }),
       });
       const data = await res.json();
       if (data.success) {
-        alert(data.message);
-        setEditingTaskId(null);
-        setTrackingInput('');
-        fetchTasks(); // 刷新列表
+        const results = data.data?.results || [];
+        const totalFetched = results.reduce((sum: number, r: any) => sum + (r.fetched || 0), 0);
+        const totalCreated = results.reduce((sum: number, r: any) => sum + (r.created || 0), 0);
+        const totalUpdated = results.reduce((sum: number, r: any) => sum + (r.updated || 0), 0);
+        alert(`同步成功！获取 ${totalFetched} 条，新增 ${totalCreated} 条，更新 ${totalUpdated} 条`);
+        fetchOrders();
       } else {
-        alert(data.error || '绑定失败');
+        alert(data.error || '同步失败');
       }
     } catch (error) {
-      console.error('绑定快递单号失败:', error);
-      alert('绑定失败');
+      console.error('同步订单失败:', error);
+      alert('同步失败');
     } finally {
-      setBinding(false);
+      setSyncing(false);
     }
   };
 
-  // 开始编辑快递单号
-  const startEditing = (taskId: string) => {
-    setEditingTaskId(taskId);
-    setTrackingInput('');
-  };
-
-  // 取消编辑
-  const cancelEditing = () => {
-    setEditingTaskId(null);
-    setTrackingInput('');
-  };
-
-  const getStatusBadge = (status: string) => {
-    const statusMap: Record<string, { label: string; bg: string; text: string }> = {
-      pending: { label: '待采购', bg: 'bg-amber-100', text: 'text-amber-700' },
-      purchased: { label: '已下单', bg: 'bg-blue-100', text: 'text-blue-700' },
-      received: { label: '已收货', bg: 'bg-green-100', text: 'text-green-700' },
-      cancelled: { label: '已取消', bg: 'bg-gray-100', text: 'text-gray-600' },
-    };
-    const s = statusMap[status] || { label: status, bg: 'bg-gray-100', text: 'text-gray-600' };
-    return (
-      <span className={`px-2 py-1 rounded text-xs font-medium ${s.bg} ${s.text}`}>{s.label}</span>
-    );
+  // 导出
+  const handleExport = () => {
+    alert('导出功能开发中');
   };
 
   // 统计数据
   const stats = {
-    pending: tasks.filter((t) => t.status === 'pending').length,
-    purchased: tasks.filter((t) => t.status === 'purchased').length,
-    received: tasks.filter((t) => t.status === 'received').length,
-    cancelled: tasks.filter((t) => t.status === 'cancelled').length,
+    total: orders.length,
+    pendingPurchase: orders.filter(o => o.purchaseStatus === 'pending_purchase').length,
+    purchased: orders.filter(o => o.purchaseStatus === 'purchased').length,
+    delivered: orders.filter(o => o.purchaseStatus === 'delivered').length,
   };
 
+  useEffect(() => {
+    fetchExchangeRate();
+    fetchOrders();
+  }, [fetchExchangeRate, fetchOrders]);
+
   return (
-    <div className="min-h-screen bg-[#F6F8FB]">
-      {/* 顶部导航 */}
-      <header className="bg-white sticky top-0 z-40 h-14 flex items-center justify-between px-6 border-b border-[#E6EAF2]">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-[#2F6BFF] rounded-lg flex items-center justify-center">
-            <Box className="w-4 h-4 text-white" />
-          </div>
-          <span className="font-semibold text-base text-[#152033]">Ozon ERP</span>
-        </div>
-        <div className="flex items-center gap-4">
+    <div className="min-h-screen bg-[#F6F8FB] flex">
+      {/* 侧边栏 */}
+      <aside className="w-56 bg-white border-r border-[#E6EAF2] flex-shrink-0">
+        <div className="p-4 border-b border-[#E6EAF2]">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-[#2F6BFF]/10 rounded-full flex items-center justify-center text-[#2F6BFF] font-medium text-sm">
-              管
-            </div>
-            <span className="text-sm font-medium text-[#152033]">管理员</span>
+            <Package className="w-6 h-6 text-[#2F6BFF]" />
+            <span className="font-semibold text-[#152033]">Ozon ERP</span>
           </div>
         </div>
-      </header>
-
-      <div className="flex" style={{ height: 'calc(100vh - 3.5rem)' }}>
-        {/* 左侧导航 */}
-        <aside className="w-56 shrink-0 bg-white border-r border-[#E6EAF2] overflow-y-auto">
-          <div className="p-3 space-y-0.5">
-            {navItems.map((item, idx) => {
-              if (item.type === 'divider') {
-                return (
-                  <div key={idx} className="pt-3 pb-1">
-                    <span className="px-3 text-xs font-medium text-[#637089]/60 uppercase tracking-wider">
-                      {item.label}
-                    </span>
-                  </div>
-                );
-              }
-              const Icon = item.icon!;
+        <nav className="p-3">
+          {navItems.map((item, idx) => {
+            if (item.type === 'divider') {
               return (
-                <Link
-                  key={item.href!}
-                  href={item.href!}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition-colors ${
-                    item.active
-                      ? 'bg-[#2F6BFF]/10 text-[#2F6BFF]'
-                      : 'text-[#637089] hover:bg-[#EEF1F6] hover:text-[#152033]'
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  {item.label}
-                </Link>
+                <div key={idx} className="mt-4 mb-2 px-2">
+                  <span className="text-xs text-[#637089]">{item.label}</span>
+                </div>
               );
-            })}
-          </div>
-        </aside>
+            }
+            const Icon = item.icon!;
+            const isActive = item.active || false;
+            return (
+              <Link
+                key={item.href}
+                href={item.href!}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${
+                  isActive
+                    ? 'bg-[#EFF6FF] text-[#2F6BFF] font-medium'
+                    : 'text-[#637089] hover:bg-[#F6F8FB]'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+      </aside>
 
-        {/* 主内容区 */}
-        <main className="flex-1 min-w-0 overflow-y-auto bg-[#F6F8FB] p-6">
+      {/* 主内容 */}
+      <main className="flex-1 p-6">
+        <div className="max-w-7xl mx-auto">
           {/* 页面标题 */}
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-[#152033]">采购管理</h1>
-            <p className="text-sm text-[#637089] mt-1">人机协同绑定模式 · 零库存采购流程</p>
-          </div>
-
-          {/* 业务流程说明区 */}
-          <div className="bg-white rounded-lg shadow-sm p-5 mb-6 border border-[#E6EAF2]">
-            <div className="flex items-center gap-2 mb-4">
-              <GitBranch className="w-4 h-4 text-[#2F6BFF]" />
-              <span className="text-base font-semibold text-[#152033]">业务流程</span>
-            </div>
-            <div className="flex items-center justify-between bg-[#EEF1F6] rounded-lg p-4 flex-wrap gap-4">
-              {[
-                { icon: Download, label: '订单同步', sub: 'Ozon已付款订单' },
-                { icon: Clock, label: '待采购', sub: '等待人工下单', color: 'warning' },
-                { icon: ShoppingBag, label: '人工下单', sub: '1688/拼多多' },
-                { icon: Link2, label: '绑定录入', sub: '快递单号关联', color: 'success' },
-                { icon: CheckCircle, label: '待入库', sub: '仓库验货' },
-              ].map((step, idx) => {
-                const Icon = step.icon;
-                const bgColor =
-                  step.color === 'warning'
-                    ? 'bg-amber-500/10'
-                    : step.color === 'success'
-                    ? 'bg-green-500/10'
-                    : 'bg-[#2F6BFF]/10';
-                const textColor =
-                  step.color === 'warning'
-                    ? 'text-amber-600'
-                    : step.color === 'success'
-                    ? 'text-green-600'
-                    : 'text-[#2F6BFF]';
-                return (
-                  <div key={idx} className="flex items-center gap-2">
-                    <div className="flex items-center gap-3">
-                      <div className={`flex items-center justify-center w-10 h-10 ${bgColor} rounded-lg`}>
-                        <Icon className={`w-5 h-5 ${textColor}`} />
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium text-[#152033]">{step.label}</div>
-                        <div className="text-xs text-[#637089]">{step.sub}</div>
-                      </div>
-                    </div>
-                    {idx < 4 && <ChevronRight className="w-5 h-5 text-[#637089]/50" />}
-                  </div>
-                );
-              })}
-            </div>
+            <h1 className="text-2xl font-semibold text-[#152033]">采购管理</h1>
+            <p className="text-[#637089] mt-1">同步Ozon订单，管理待采购商品</p>
           </div>
 
           {/* 统计卡片 */}
           <div className="grid grid-cols-4 gap-4 mb-6">
-            {[
-              { label: '待采购任务', value: stats.pending, icon: Clock, color: 'warning' },
-              { label: '已绑定采购', value: stats.purchased, icon: CheckCircle, color: 'success' },
-              { label: '已收货入库', value: stats.received, icon: Package, color: 'primary' },
-              { label: '已取消', value: stats.cancelled, icon: XCircle, color: 'gray' },
-            ].map((stat, idx) => {
-              const Icon = stat.icon;
-              const bgColor =
-                stat.color === 'warning'
-                  ? 'bg-amber-500/10'
-                  : stat.color === 'success'
-                  ? 'bg-green-500/10'
-                  : stat.color === 'primary'
-                  ? 'bg-[#2F6BFF]/10'
-                  : 'bg-gray-200';
-              const textColor =
-                stat.color === 'warning'
-                  ? 'text-amber-600'
-                  : stat.color === 'success'
-                  ? 'text-green-600'
-                  : stat.color === 'primary'
-                  ? 'text-[#2F6BFF]'
-                  : 'text-gray-600';
-              return (
-                <div key={idx} className="bg-white rounded-lg shadow-sm p-5 border border-[#E6EAF2]">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm text-[#637089]">{stat.label}</span>
-                    <div className={`w-8 h-8 ${bgColor} rounded-lg flex items-center justify-center`}>
-                      <Icon className={`w-4 h-4 ${textColor}`} />
-                    </div>
+            <Card className="bg-white border-none shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-[#637089]">待采购</p>
+                    <p className="text-2xl font-semibold text-[#152033] mt-1">{stats.pendingPurchase}</p>
                   </div>
-                  <div className="text-2xl font-bold text-[#152033]">
-                    {stat.value}
-                    <span className="text-sm font-normal text-[#637089] ml-1">笔</span>
+                  <div className="w-10 h-10 rounded-full bg-[#FFF7ED] flex items-center justify-center">
+                    <Clock className="w-5 h-5 text-[#C2410C]" />
                   </div>
                 </div>
-              );
-            })}
+              </CardContent>
+            </Card>
+            <Card className="bg-white border-none shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-[#637089]">已采购</p>
+                    <p className="text-2xl font-semibold text-[#152033] mt-1">{stats.purchased}</p>
+                  </div>
+                  <div className="w-10 h-10 rounded-full bg-[#EFF6FF] flex items-center justify-center">
+                    <ShoppingCart className="w-5 h-5 text-[#2F6BFF]" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-white border-none shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-[#637089]">已送达</p>
+                    <p className="text-2xl font-semibold text-[#152033] mt-1">{stats.delivered}</p>
+                  </div>
+                  <div className="w-10 h-10 rounded-full bg-[#ECFDF5] flex items-center justify-center">
+                    <CheckCircle className="w-5 h-5 text-[#16A37B]" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-white border-none shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-[#637089]">订单总数</p>
+                    <p className="text-2xl font-semibold text-[#152033] mt-1">{stats.total}</p>
+                  </div>
+                  <div className="w-10 h-10 rounded-full bg-[#F6F8FB] flex items-center justify-center">
+                    <Package className="w-5 h-5 text-[#637089]" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
-          {/* 筛选栏 */}
-          <div className="bg-white rounded-lg shadow-sm p-4 mb-4 border border-[#E6EAF2]">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 flex-1">
-                <Search className="w-4 h-4 text-[#637089]" />
-                <input
-                  type="text"
-                  placeholder="搜索SKU编码..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="flex-1 text-sm text-[#152033] placeholder:text-[#637089]/50 outline-none"
-                />
+          {/* 操作栏 */}
+          <Card className="bg-white border-none shadow-sm mb-6">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="relative flex-1 max-w-md">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#637089]" />
+                    <Input
+                      placeholder="搜索订单号..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-9 bg-[#F6F8FB] border-[#E6EAF2]"
+                    />
+                  </div>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-36 bg-[#F6F8FB] border-[#E6EAF2]">
+                      <SelectValue placeholder="全部状态" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">全部状态</SelectItem>
+                      <SelectItem value="awaiting_deliver">待采购</SelectItem>
+                      <SelectItem value="delivering">已采购</SelectItem>
+                      <SelectItem value="delivered">已送达</SelectItem>
+                      <SelectItem value="cancelled">已取消</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={syncOrders}
+                    disabled={syncing}
+                    className="bg-[#2F6BFF] hover:bg-[#2F6BFF]/90"
+                  >
+                    <RefreshCw className={`w-4 h-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
+                    {syncing ? '同步中...' : '同步订单'}
+                  </Button>
+                  <Button variant="outline" onClick={handleExport} className="border-[#E6EAF2]">
+                    <Download className="w-4 h-4 mr-2" />
+                    导出
+                  </Button>
+                </div>
               </div>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 rounded-lg border border-[#E6EAF2] text-sm text-[#152033] outline-none"
-              >
-                <option value="all">全部状态</option>
-                <option value="pending">待采购</option>
-                <option value="purchased">已下单</option>
-                <option value="received">已收货</option>
-                <option value="cancelled">已取消</option>
-              </select>
-              <button
-                onClick={fetchTasks}
-                className="flex items-center gap-2 px-4 py-2 bg-[#2F6BFF] text-white rounded-lg text-sm font-medium hover:bg-[#2F6BFF]/90 transition-colors"
-              >
-                <RefreshCw className="w-4 h-4" />
-                刷新
-              </button>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
-          {/* 任务列表 */}
-          <div className="bg-white rounded-xl shadow-sm border border-[#E6EAF2] overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-[#F6F8FB]">
-                <tr>
-                  <th className="text-left text-xs font-medium text-[#637089] px-4 py-3">商品信息</th>
-                  <th className="text-left text-xs font-medium text-[#637089] px-4 py-3">SKU编码</th>
-                  <th className="text-left text-xs font-medium text-[#637089] px-4 py-3">数量</th>
-                  <th className="text-left text-xs font-medium text-[#637089] px-4 py-3">关联订单</th>
-                  <th className="text-left text-xs font-medium text-[#637089] px-4 py-3">货源平台</th>
-                  <th className="text-left text-xs font-medium text-[#637089] px-4 py-3">状态</th>
-                  <th className="text-left text-xs font-medium text-[#637089] px-4 py-3">国内快递单号</th>
-                  <th className="text-left text-xs font-medium text-[#637089] px-4 py-3">操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan={8} className="px-4 py-8 text-center text-[#637089]">
-                      <RefreshCw className="w-5 h-5 animate-spin mx-auto" />
-                    </td>
-                  </tr>
-                ) : tasks.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="px-4 py-8 text-center text-[#637089]">
-                      暂无采购任务
-                    </td>
-                  </tr>
-                ) : (
-                  tasks.map((task) => (
-                    <tr key={task.id} className="border-t border-[#E6EAF2]">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-10 h-10 rounded bg-[#F6F8FB] flex items-center justify-center overflow-hidden flex-shrink-0">
-                            {task.product?.image_url ? (
-                              <img 
-                                src={task.product.image_url} 
-                                alt={task.product.name}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <Package className="w-5 h-5 text-[#637089]" />
-                            )}
-                          </div>
-                          <div className="min-w-0">
-                            <div className="text-sm text-[#152033] truncate max-w-[200px]" title={task.product?.name || '-'}>
-                              {task.product?.name || '-'}
-                            </div>
-                            <div className="text-xs text-[#637089]">
-                              {task.product?.price ? `¥${task.product.price}` : '-'}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-sm font-medium text-[#152033]">{task.skuCode}</td>
-                      <td className="px-4 py-3 text-sm text-[#152033]">{task.quantity}</td>
-                      <td className="px-4 py-3">
-                        <div className="text-sm text-[#2F6BFF]">{task.ozonOrderId || '-'}</div>
-                        <div className="text-xs text-[#637089]">{task.postingNumber || ''}</div>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-[#152033]">
-                        {task.sourceType === '1688' ? '1688' : task.sourceType === 'pdd' ? '拼多多' : '-'}
-                      </td>
-                      <td className="px-4 py-3">{getStatusBadge(task.status)}</td>
-                      <td className="px-4 py-3">
-                        {task.status === 'pending' && editingTaskId === task.id ? (
+          {/* 订单列表 */}
+          <Card className="bg-white border-none shadow-sm">
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-b border-[#E6EAF2] hover:bg-transparent">
+                    <TableHead className="w-12"></TableHead>
+                    <TableHead className="text-[#637089]">订单号</TableHead>
+                    <TableHead className="text-[#637089]">发货单号</TableHead>
+                    <TableHead className="text-[#637089]">商品</TableHead>
+                    <TableHead className="text-[#637089]">店铺</TableHead>
+                    <TableHead className="text-[#637089]">买家</TableHead>
+                    <TableHead className="text-[#637089]">状态</TableHead>
+                    <TableHead className="text-[#637089]">金额</TableHead>
+                    <TableHead className="text-[#637089]">下单时间</TableHead>
+                    <TableHead className="w-12"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {loading ? (
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <TableRow key={i} className="border-b border-[#E6EAF2]">
+                        <TableCell><Skeleton className="w-4 h-4" /></TableCell>
+                        <TableCell><Skeleton className="w-24 h-4" /></TableCell>
+                        <TableCell><Skeleton className="w-28 h-4" /></TableCell>
+                        <TableCell><Skeleton className="w-32 h-4" /></TableCell>
+                        <TableCell><Skeleton className="w-16 h-4" /></TableCell>
+                        <TableCell><Skeleton className="w-20 h-4" /></TableCell>
+                        <TableCell><Skeleton className="w-16 h-4" /></TableCell>
+                        <TableCell><Skeleton className="w-16 h-4" /></TableCell>
+                        <TableCell><Skeleton className="w-24 h-4" /></TableCell>
+                        <TableCell><Skeleton className="w-4 h-4" /></TableCell>
+                      </TableRow>
+                    ))
+                  ) : orders.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={10} className="text-center py-12 text-[#637089]">
+                        <Package className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                        <p>暂无订单数据</p>
+                        <p className="text-sm mt-1">点击"同步订单"获取Ozon订单</p>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    orders.map((order) => (
+                      <TableRow key={order.id} className="border-b border-[#E6EAF2]">
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedOrders.has(order.id)}
+                            onCheckedChange={(checked) => {
+                              const newSelected = new Set(selectedOrders);
+                              if (checked) newSelected.add(order.id);
+                              else newSelected.delete(order.id);
+                              setSelectedOrders(newSelected);
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-[#2F6BFF] font-medium">{order.ozonOrderId}</span>
+                        </TableCell>
+                        <TableCell className="text-[#152033]">{order.postingNumber}</TableCell>
+                        <TableCell>
                           <div className="flex items-center gap-2">
-                            <input
-                              type="text"
-                              value={trackingInput}
-                              onChange={(e) => setTrackingInput(e.target.value)}
-                              placeholder="输入快递单号"
-                              className="w-32 px-2 py-1 text-sm border border-[#E6EAF2] rounded focus:outline-none focus:ring-1 focus:ring-[#2F6BFF]"
-                              autoFocus
-                            />
-                            <button
-                              onClick={() => bindTrackingNumber(task.id)}
-                              disabled={binding}
-                              className="px-2 py-1 text-xs bg-[#2F6BFF] text-white rounded hover:bg-[#2F6BFF]/90 disabled:opacity-50"
-                            >
-                              {binding ? '绑定中...' : '确认'}
-                            </button>
-                            <button
-                              onClick={cancelEditing}
-                              className="px-2 py-1 text-xs text-[#637089] hover:text-[#152033]"
-                            >
-                              取消
-                            </button>
+                            {order.productInfo?.mainImage ? (
+                              <ProductImage src={order.productInfo.mainImage} size="sm" />
+                            ) : (
+                              <div className="w-8 h-8 rounded bg-[#F6F8FB] flex items-center justify-center">
+                                <ImageIcon className="w-4 h-4 text-[#637089]" />
+                              </div>
+                            )}
+                            <span className="truncate max-w-[120px] text-sm text-[#152033]">
+                              {order.productInfo?.name || '-'}
+                            </span>
                           </div>
-                        ) : task.status === 'pending' ? (
-                          <button
-                            onClick={() => startEditing(task.id)}
-                            className="text-sm text-[#2F6BFF] hover:underline"
+                        </TableCell>
+                        <TableCell>
+                          <Badge className="bg-[#EFF6FF] text-[#2F6BFF] hover:bg-[#EFF6FF]">
+                            {order.shopName}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-[#152033]">{order.buyerName || '-'}</TableCell>
+                        <TableCell>
+                          <Badge className={purchaseStatusMap[order.purchaseStatus].color}>
+                            {purchaseStatusMap[order.purchaseStatus].label}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-[#152033] font-medium">
+                          ¥{(parseFloat(order.totalPrice || '0') * rubToCny).toFixed(2)}
+                        </TableCell>
+                        <TableCell className="text-[#637089] text-sm">
+                          {order.ozonCreatedAt 
+                            ? new Date(order.ozonCreatedAt).toLocaleString('zh-CN', {
+                                year: 'numeric',
+                                month: '2-digit',
+                                day: '2-digit',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              }).replace(/\//g, '/')
+                            : '-'}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setDetailOrder(order)}
+                            className="text-[#637089] hover:text-[#152033]"
                           >
-                            + 录入单号
-                          </button>
-                        ) : (
-                          <span className="text-sm text-[#152033]">{task.domesticTrackingNumber || '-'}</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        <button className="p-1.5 rounded hover:bg-[#F6F8FB] transition-colors">
-                          <Eye className="w-4 h-4 text-[#637089]" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </main>
-      </div>
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+
+      {/* 订单详情抽屉 */}
+      <Sheet open={!!detailOrder} onOpenChange={() => setDetailOrder(null)}>
+        <SheetContent className="w-[500px] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="text-[#152033]">订单详情</SheetTitle>
+          </SheetHeader>
+          {detailOrder && (
+            <div className="mt-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm text-[#637089]">订单号</label>
+                  <p className="text-[#152033] font-medium">{detailOrder.ozonOrderId}</p>
+                </div>
+                <div>
+                  <label className="text-sm text-[#637089]">发货单号</label>
+                  <p className="text-[#152033]">{detailOrder.postingNumber}</p>
+                </div>
+                <div>
+                  <label className="text-sm text-[#637089]">店铺</label>
+                  <p className="text-[#152033]">{detailOrder.shopName}</p>
+                </div>
+                <div>
+                  <label className="text-sm text-[#637089]">采购状态</label>
+                  <Badge className={purchaseStatusMap[detailOrder.purchaseStatus].color}>
+                    {purchaseStatusMap[detailOrder.purchaseStatus].label}
+                  </Badge>
+                </div>
+                <div>
+                  <label className="text-sm text-[#637089]">买家</label>
+                  <p className="text-[#152033]">{detailOrder.buyerName || '-'}</p>
+                </div>
+                <div>
+                  <label className="text-sm text-[#637089]">金额</label>
+                  <p className="text-[#152033] font-medium">
+                    ¥{(parseFloat(detailOrder.totalPrice || '0') * rubToCny).toFixed(2)}
+                    <span className="text-[#637089] text-sm ml-1">
+                      ({detailOrder.totalPrice} 卢布)
+                    </span>
+                  </p>
+                </div>
+              </div>
+              
+              <div className="border-t border-[#E6EAF2] pt-4">
+                <label className="text-sm text-[#637089]">商品信息</label>
+                {detailOrder.products?.map((product, idx) => (
+                  <div key={idx} className="mt-2 p-3 bg-[#F6F8FB] rounded-lg">
+                    <div className="flex items-start gap-3">
+                      {product.image ? (
+                        <ProductImage src={product.image} size="md" />
+                      ) : (
+                        <div className="w-12 h-12 rounded bg-white flex items-center justify-center">
+                          <ImageIcon className="w-6 h-6 text-[#637089]" />
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <p className="text-sm text-[#152033]">{product.name}</p>
+                        <p className="text-xs text-[#637089] mt-1">
+                          SKU: {product.sku} | 数量: {product.quantity} | 单价: {product.price} 卢布
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

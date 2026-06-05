@@ -6,7 +6,6 @@ import { LayoutDashboard, ShoppingCart, Package, ClipboardList, Truck, Calculato
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: '仪表盘' },
-  { href: '/orders', icon: ShoppingCart, label: '订单管理' },
   { href: '/purchase', icon: Package, label: '采购管理' },
   { href: '/quick-entry', icon: ClipboardList, label: '快捷录单' },
   { href: '/logistics', icon: Truck, label: '入库验货', active: true },
