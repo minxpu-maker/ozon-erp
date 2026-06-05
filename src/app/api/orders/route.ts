@@ -246,12 +246,86 @@ export async function POST(request: NextRequest) {
           let created = 0;
           let updated = 0;
 
+          // 收集所有订单的offer_id，用于批量获取商品图片
+          const allOfferIds = new Set<string>();
+          const orderDataList: { posting: typeof postings[0]; orderData: any }[] = [];
+
+          // 第一轮：获取所有订单详情并收集offer_id
           for (const posting of postings) {
-            // 获取订单详情
             const detailResponse = await client.getFbsOrder(posting.posting_number);
-            
             const orderData = detailResponse.result;
             if (!orderData) continue;
+
+            orderDataList.push({ posting, orderData });
+
+            // 收集offer_id
+            if (orderData.products && Array.isArray(orderData.products)) {
+              for (const product of orderData.products) {
+                if (product.offer_id) {
+                  allOfferIds.add(product.offer_id);
+                }
+              }
+            }
+          }
+
+          // 批量获取商品图片
+          const productImageMap = new Map<string, string>();
+          if (allOfferIds.size > 0) {
+            try {
+              console.log(`[订单同步] 获取 ${allOfferIds.size} 个商品的图片信息...`);
+              const productInfoResponse = await client.getProductInfoByOfferId([...allOfferIds]);
+              const productItems = productInfoResponse.result?.items || [];
+              
+              for (const item of productItems) {
+                // primary_image 可能是字符串或数组，需要正确处理
+                let mainImage: string | null = null;
+                const primaryImg = item.primary_image as unknown;
+                if (typeof primaryImg === 'string') {
+                  mainImage = primaryImg;
+                } else if (Array.isArray(primaryImg) && primaryImg.length > 0) {
+                  mainImage = String(primaryImg[0]);
+                }
+                if (!mainImage && item.images && item.images.length > 0) {
+                  mainImage = item.images[0];
+                }
+                
+                if (mainImage) {
+                  productImageMap.set(item.offer_id, mainImage);
+                }
+                // 更新或插入到ozon_products表
+                const existingProduct = await db
+                  .select()
+                  .from(ozonProducts)
+                  .where(eq(ozonProducts.offer_id, item.offer_id))
+                  .limit(1);
+                
+                if (existingProduct.length > 0) {
+                  await db
+                    .update(ozonProducts)
+                    .set({
+                      name: item.name,
+                      main_image: mainImage,
+                      updated_at: new Date(),
+                    })
+                    .where(eq(ozonProducts.offer_id, item.offer_id));
+                } else {
+                  await db.insert(ozonProducts).values({
+                    shop_id: shop.id,
+                    ozon_product_id: item.id,
+                    offer_id: item.offer_id,
+                    name: item.name,
+                    main_image: mainImage,
+                  });
+                }
+              }
+              console.log(`[订单同步] 成功获取 ${productImageMap.size} 个商品图片`);
+            } catch (err) {
+              console.error('[订单同步] 获取商品图片失败:', err);
+            }
+          }
+
+          // 第二轮：处理订单数据
+          for (const { posting, orderData } of orderDataList) {
 
             // 检查订单是否已存在
             const existing = await db
