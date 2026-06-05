@@ -1,60 +1,90 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
+
+// 汇率缓存（5分钟）
+let cachedRate: { rate: number; timestamp: number } | null = null;
+const CACHE_TTL = 5 * 60 * 1000; // 5分钟
+
+interface ExchangeRateResponse {
+  result: string;
+  base_code: string;
+  rates: Record<string, number>;
+  time_last_update_utc: string;
+}
 
 /**
- * 获取实时汇率 API
- * 使用免费的汇率API获取卢布兑人民币的实时汇率
+ * 获取实时汇率（卢布兑人民币）
  */
-export async function GET(request: NextRequest) {
+async function getExchangeRate(): Promise<number> {
+  // 检查缓存
+  if (cachedRate && Date.now() - cachedRate.timestamp < CACHE_TTL) {
+    return cachedRate.rate;
+  }
+
   try {
-    // 使用 exchangerate-api 或其他免费汇率API
-    // 这里使用一个可靠的汇率数据源
-    const response = await fetch(
-      'https://api.exchangerate-api.com/v4/latest/RUB',
-      { next: { revalidate: 3600 } } // 缓存1小时
-    );
-    
+    // 使用免费的汇率API
+    const response = await fetch('https://open.er-api.com/v6/latest/RUB', {
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
+
     if (!response.ok) {
-      // 备用方案：使用固定汇率（基于最新市场数据）
-      // 2024年6月 卢布兑人民币汇率约 0.092
-      return NextResponse.json({
-        success: true,
-        rate: 0.092,
-        source: 'fallback',
-        message: '使用备用汇率数据',
-      });
+      throw new Error(`汇率API请求失败: ${response.status}`);
     }
-    
-    const data = await response.json();
-    
-    // 获取人民币汇率
-    const cnyRate = data.rates?.CNY;
-    
-    if (cnyRate) {
-      return NextResponse.json({
-        success: true,
-        rate: parseFloat(cnyRate.toFixed(6)),
-        source: 'exchangerate-api',
-        updated_at: data.date,
-      });
+
+    const data: ExchangeRateResponse = await response.json();
+
+    if (data.result !== 'success' || !data.rates?.CNY) {
+      throw new Error('汇率数据格式错误');
     }
-    
-    // 如果API返回的数据不包含CNY，使用备用汇率
-    return NextResponse.json({
-      success: true,
-      rate: 0.092,
-      source: 'fallback',
-      message: 'API数据不完整，使用备用汇率',
-    });
-    
+
+    const rate = data.rates.CNY;
+
+    // 更新缓存
+    cachedRate = {
+      rate,
+      timestamp: Date.now(),
+    };
+
+    console.log(`[汇率] 获取实时汇率成功: 1 RUB = ${rate} CNY`);
+    return rate;
   } catch (error) {
-    console.error('获取实时汇率失败:', error);
-    
-    // 发生错误时返回备用汇率
+    console.error('[汇率] 获取实时汇率失败:', error);
+
+    // 如果有缓存，使用缓存值
+    if (cachedRate) {
+      console.log('[汇率] 使用缓存汇率:', cachedRate.rate);
+      return cachedRate.rate;
+    }
+
+    // 否则返回一个备用值
+    console.log('[汇率] 使用备用汇率: 0.09');
+    return 0.09;
+  }
+}
+
+export async function GET() {
+  try {
+    const rate = await getExchangeRate();
+
     return NextResponse.json({
       success: true,
-      rate: 0.092,
-      source: 'fallback',
-      message: '获取实时汇率失败，使用备用汇率',
+      data: {
+        from: 'RUB',
+        to: 'CNY',
+        rate,
+        description: '1 卢布 = ' + rate.toFixed(4) + ' 人民币',
+        source: 'exchangerate-api.com',
+        cached: cachedRate ? Date.now() - cachedRate.timestamp < CACHE_TTL : false,
+      },
     });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: '获取汇率失败',
+      },
+      { status: 500 }
+    );
   }
 }

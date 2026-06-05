@@ -28,7 +28,7 @@ export default function FinancePage() {
   const [pendingOrders, setPendingOrders] = useState<any[]>([]);
   const [settledRecords, setSettledRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [exchangeRate, setExchangeRate] = useState(0.08); // 默认汇率
+  const [exchangeRate, setExchangeRate] = useState(0.09); // 默认汇率
 
   useEffect(() => { 
     fetchExchangeRate();
@@ -37,10 +37,10 @@ export default function FinancePage() {
 
   const fetchExchangeRate = async () => {
     try {
-      const res = await fetch('/api/system-config?key=rub_to_cny');
+      const res = await fetch('/api/exchange-rate');
       const data = await res.json();
-      if (data.success && data.data?.value) {
-        setExchangeRate(parseFloat(data.data.value));
+      if (data.success && data.data?.rate) {
+        setExchangeRate(data.data.rate);
       }
     } catch (error) { console.error('获取汇率失败:', error); }
   };

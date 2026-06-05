@@ -162,13 +162,13 @@ export default function PurchasePage() {
   // 订单详情抽屉
   const [detailOrder, setDetailOrder] = useState<Order | null>(null);
 
-  // 获取汇率配置
+  // 获取实时汇率
   const fetchExchangeRate = useCallback(async () => {
     try {
-      const res = await fetch('/api/system-config?key=rub_to_cny');
+      const res = await fetch('/api/exchange-rate');
       const data = await res.json();
-      if (data.success && data.data?.value) {
-        setRubToCny(parseFloat(data.data.value));
+      if (data.success && data.data?.rate) {
+        setRubToCny(data.data.rate);
       }
     } catch (error) {
       console.error('获取汇率失败:', error);
