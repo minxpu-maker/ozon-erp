@@ -580,6 +580,136 @@ export class OzonApiClient {
   }
 
   /**
+   * 获取应计费用列表（收单业务费用等）
+   * POST /v3/finance/cash-flow-statement/list
+   * 文档: https://docs.ozon.ru/api/seller/#operation/FinanceAPI_GetCashFlowStatementList
+   */
+  async getAccruals(params: {
+    filter?: {
+      date?: {
+        from: string;
+        to: string;
+      };
+      posting_number?: string;
+      transaction_type?: string;
+    };
+    page?: number;
+    page_size?: number;
+  } = {}): Promise<{
+    result: {
+      operations: Array<{
+        id: number;
+        posting_number: string;
+        order_id: number;
+        operation_type: string;
+        operation_type_name: string;
+        amount: string;
+        currency_code: string;
+        date: string;
+        product_id?: number;
+        product_name?: string;
+        sku?: number;
+        offer_id?: string;
+      }>;
+      page_count: number;
+      total_operations_count: number;
+    };
+  }> {
+    return this.request<{
+      result: {
+        operations: Array<{
+          id: number;
+          posting_number: string;
+          order_id: number;
+          operation_type: string;
+          operation_type_name: string;
+          amount: string;
+          currency_code: string;
+          date: string;
+          product_id?: number;
+          product_name?: string;
+          sku?: number;
+          offer_id?: string;
+        }>;
+        page_count: number;
+        total_operations_count: number;
+      };
+    }>('/v3/finance/cash-flow-statement/list', {
+      filter: params.filter || {},
+      page: params.page || 1,
+      page_size: params.page_size || 1000,
+    });
+  }
+
+  /**
+   * 获取订单的应计费用（收单业务费用等）
+   * 通过posting_number筛选
+   */
+  async getOrderAccruals(postingNumber: string): Promise<{
+    acquiringFee: number; // 收单业务费用
+    otherFees: number; // 其他费用
+    details: Array<{
+      type: string;
+      typeName: string;
+      amount: number;
+      currency: string;
+    }>;
+  }> {
+    try {
+      const response = await this.getAccruals({
+        filter: {
+          posting_number: postingNumber,
+        },
+        page_size: 100,
+      });
+
+      const operations = response.result?.operations || [];
+      let acquiringFee = 0;
+      let otherFees = 0;
+      const details: Array<{
+        type: string;
+        typeName: string;
+        amount: number;
+        currency: string;
+      }> = [];
+
+      for (const op of operations) {
+        const amount = parseFloat(op.amount || '0');
+        
+        // 收单业务费用 (Ozon Bank收单费)
+        if (op.operation_type_name?.includes('收单') || 
+            op.operation_type_name?.toLowerCase().includes('acquiring') ||
+            op.operation_type === 'MarketplaceServiceAcquiring') {
+          acquiringFee += Math.abs(amount);
+        } else if (amount < 0) {
+          // 其他负数金额为费用
+          otherFees += Math.abs(amount);
+        }
+
+        details.push({
+          type: op.operation_type,
+          typeName: op.operation_type_name,
+          amount: amount,
+          currency: op.currency_code,
+        });
+      }
+
+      return {
+        acquiringFee,
+        otherFees,
+        details,
+      };
+    } catch (error) {
+      console.error('[Ozon API] Failed to get order accruals:', error);
+      return {
+        acquiringFee: 0,
+        otherFees: 0,
+        details: [],
+      };
+    }
+  }
+
+  /**
    * 映射Ozon订单状态到ERP状态
    */
   static mapOzonStatusToErp(ozonStatus: string): string {

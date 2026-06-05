@@ -98,6 +98,7 @@ export default function FinancePage() {
     totalProfit: settledRecords.reduce((sum, r) => sum + parseFloat(r.net_profit || '0'), 0).toFixed(2),
     totalAmount: pendingOrders.reduce((sum, o) => sum + (o.financialData?.totalRevenue || parseFloat(o.total_price || '0')) * exchangeRate, 0).toFixed(2),
     totalCommission: apiStats?.totalCommission ? (apiStats.totalCommission * exchangeRate).toFixed(2) : pendingOrders.reduce((sum, o) => sum + (o.financialData?.totalCommission || 0) * exchangeRate, 0).toFixed(2),
+    totalAcquiringFee: apiStats?.totalAcquiringFee ? (apiStats.totalAcquiringFee * exchangeRate).toFixed(2) : pendingOrders.reduce((sum, o) => sum + (o.financialData?.acquiringFee || 0) * exchangeRate, 0).toFixed(2),
   };
 
   // 状态颜色
@@ -160,7 +161,7 @@ export default function FinancePage() {
           </div>
 
           {/* 统计卡片 */}
-          <div className="grid grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-5 gap-4 mb-6">
             <div className="bg-white rounded-lg shadow-sm p-5 border border-[#E6EAF2]">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm text-[#637089]">待核算订单</span>
@@ -174,6 +175,13 @@ export default function FinancePage() {
                 <div className="w-8 h-8 bg-orange-500/10 rounded-lg flex items-center justify-center"><Percent className="w-4 h-4 text-orange-600" /></div>
               </div>
               <div className="text-2xl font-bold text-orange-600">¥{stats.totalCommission}</div>
+            </div>
+            <div className="bg-white rounded-lg shadow-sm p-5 border border-[#E6EAF2]">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm text-[#637089]">累计收单费</span>
+                <div className="w-8 h-8 bg-purple-500/10 rounded-lg flex items-center justify-center"><Banknote className="w-4 h-4 text-purple-600" /></div>
+              </div>
+              <div className="text-2xl font-bold text-purple-600">¥{stats.totalAcquiringFee}</div>
             </div>
             <div className="bg-white rounded-lg shadow-sm p-5 border border-[#E6EAF2]">
               <div className="flex items-center justify-between mb-3">
@@ -253,6 +261,10 @@ export default function FinancePage() {
                                   <span className="font-medium text-orange-600">-{fd.totalCommission.toFixed(2)} RUB (¥{formatCNY(fd.totalCommission)})</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
+                                  <span className="text-[#637089]">收单业务费</span>
+                                  <span className="font-medium text-purple-600">-{fd.acquiringFee?.toFixed(2) || '0'} RUB (¥{formatCNY(fd.acquiringFee || 0)})</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
                                   <span className="text-[#637089]">折扣金额</span>
                                   <span className="font-medium text-[#637089]">-{fd.totalDiscount.toFixed(2)} RUB (¥{formatCNY(fd.totalDiscount)})</span>
                                 </div>
@@ -260,6 +272,22 @@ export default function FinancePage() {
                                   <span className="text-[#637089]">实际结算金额</span>
                                   <span className="font-semibold text-green-600">{fd.totalPayout.toFixed(2)} RUB (¥{formatCNY(fd.totalPayout)})</span>
                                 </div>
+                                {/* 应计费用明细 */}
+                                {fd.accrualsDetails && fd.accrualsDetails.length > 0 && (
+                                  <div className="mt-3 pt-3 border-t border-[#E6EAF2]">
+                                    <div className="text-xs font-medium text-[#637089] mb-2">应计费用明细</div>
+                                    <div className="space-y-1">
+                                      {fd.accrualsDetails.map((acc: any, idx: number) => (
+                                        <div key={idx} className="flex justify-between text-xs">
+                                          <span className="text-[#637089]">{acc.typeName || acc.type}</span>
+                                          <span className={acc.amount < 0 ? 'text-red-600' : 'text-green-600'}>
+                                            {acc.amount.toFixed(2)} {acc.currency}
+                                          </span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             </div>
                             
@@ -329,6 +357,7 @@ export default function FinancePage() {
                     <th className="text-left text-xs font-medium text-[#637089] px-4 py-3">订单ID</th>
                     <th className="text-left text-xs font-medium text-[#637089] px-4 py-3">结算金额</th>
                     <th className="text-left text-xs font-medium text-[#637089] px-4 py-3">平台佣金</th>
+                    <th className="text-left text-xs font-medium text-[#637089] px-4 py-3">收单费</th>
                     <th className="text-left text-xs font-medium text-[#637089] px-4 py-3">采购成本</th>
                     <th className="text-left text-xs font-medium text-[#637089] px-4 py-3">运费</th>
                     <th className="text-left text-xs font-medium text-[#637089] px-4 py-3">净利润</th>
@@ -341,6 +370,7 @@ export default function FinancePage() {
                       <td className="px-4 py-3 text-sm font-medium text-[#2F6BFF]">{record.order_id}</td>
                       <td className="px-4 py-3 text-sm text-[#152033]">¥{record.ozon_settlement_amount || '0'}</td>
                       <td className="px-4 py-3 text-sm text-orange-600">¥{record.ozon_commission || '0'}</td>
+                      <td className="px-4 py-3 text-sm text-purple-600">¥{record.other_cost || '0'}</td>
                       <td className="px-4 py-3 text-sm text-[#152033]">¥{record.purchase_cost || '0'}</td>
                       <td className="px-4 py-3 text-sm text-[#152033]">¥{record.domestic_shipping_cost || '0'}</td>
                       <td className="px-4 py-3 text-sm font-medium text-green-600">¥{record.net_profit || '0'}</td>

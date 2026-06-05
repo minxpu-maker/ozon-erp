@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/storage/database/client';
 import * as schema from '@/storage/database/shared/schema';
 import { eq, desc } from 'drizzle-orm';
+import { createOzonClient } from '@/lib/ozon/client';
 
 // 财务明细类型定义
 interface FinancialDetail {
@@ -28,8 +29,16 @@ interface OrderFinancialData {
   totalCommission: number; // 总佣金
   totalPayout: number; // 总结算金额
   totalDiscount: number; // 总折扣
+  acquiringFee: number; // 收单业务费用
+  otherFees: number; // 其他费用
   currency: string;
   products: FinancialDetail[];
+  accrualsDetails?: Array<{ // 应计费用明细
+    type: string;
+    typeName: string;
+    amount: number;
+    currency: string;
+  }>;
 }
 
 // 从订单raw_data中提取财务明细
@@ -73,6 +82,33 @@ function extractFinancialData(order: any): OrderFinancialData | null {
     totalRevenue += detail.customerPrice * detail.quantity;
   }
 
+  // 从 ozon_raw_data 中提取应计费用（如果有）
+  let acquiringFee = 0;
+  let otherFees = 0;
+  const accrualsDetails: Array<{
+    type: string;
+    typeName: string;
+    amount: number;
+    currency: string;
+  }> = [];
+
+  // 检查是否有应计费用数据
+  const accruals = order.ozon_raw_data?.accruals || [];
+  for (const acc of accruals) {
+    const amount = Math.abs(parseFloat(acc.amount || '0'));
+    if (acc.type === 'acquiring' || acc.typeName?.includes('收单')) {
+      acquiringFee += amount;
+    } else {
+      otherFees += amount;
+    }
+    accrualsDetails.push({
+      type: acc.type || '',
+      typeName: acc.typeName || '',
+      amount: parseFloat(acc.amount || '0'),
+      currency: acc.currency || 'RUB',
+    });
+  }
+
   return {
     ozonOrderId: order.ozon_order_id,
     postingNumber: order.ozon_posting_number,
@@ -82,9 +118,32 @@ function extractFinancialData(order: any): OrderFinancialData | null {
     totalCommission,
     totalPayout,
     totalDiscount,
+    acquiringFee,
+    otherFees,
     currency: 'RUB',
     products,
+    accrualsDetails: accrualsDetails.length > 0 ? accrualsDetails : undefined,
   };
+}
+
+// 获取Ozon应计费用（收单业务费用）
+async function fetchOrderAccruals(postingNumber: string): Promise<{
+  acquiringFee: number;
+  otherFees: number;
+  details: Array<{
+    type: string;
+    typeName: string;
+    amount: number;
+    currency: string;
+  }>;
+}> {
+  try {
+    const ozon = createOzonClient();
+    return await ozon.getOrderAccruals(postingNumber);
+  } catch (error) {
+    console.error('[Finance API] Failed to fetch accruals:', error);
+    return { acquiringFee: 0, otherFees: 0, details: [] };
+  }
 }
 
 // 获取财务核算列表
@@ -92,6 +151,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const shopId = searchParams.get('shopId');
+    const withAccruals = searchParams.get('withAccruals') === 'true';
 
     // 获取未结算的订单
     const orders = await db.select().from(schema.orders)
@@ -99,13 +159,30 @@ export async function GET(request: NextRequest) {
       .orderBy(desc(schema.orders.created_at));
 
     // 提取财务明细
-    const pendingOrdersWithFinancials = orders.map(order => {
-      const financialData = extractFinancialData(order);
-      return {
-        ...order,
-        financialData,
-      };
-    });
+    const pendingOrdersWithFinancials = await Promise.all(
+      orders.map(async (order) => {
+        const financialData = extractFinancialData(order);
+        
+        // 如果订单有posting_number且需要获取应计费用
+        if (order.ozon_posting_number && (withAccruals || !financialData?.acquiringFee)) {
+          try {
+            const accruals = await fetchOrderAccruals(order.ozon_posting_number);
+            if (financialData) {
+              financialData.acquiringFee = accruals.acquiringFee;
+              financialData.otherFees = accruals.otherFees;
+              financialData.accrualsDetails = accruals.details;
+            }
+          } catch (e) {
+            console.error('[Finance API] Failed to get accruals for order:', order.ozon_posting_number, e);
+          }
+        }
+        
+        return {
+          ...order,
+          financialData,
+        };
+      })
+    );
 
     // 获取已结算的财务记录
     const records = await db.select().from(schema.financeRecords)
@@ -118,6 +195,7 @@ export async function GET(request: NextRequest) {
       totalCommission: pendingOrdersWithFinancials.reduce((sum, o) => sum + (o.financialData?.totalCommission || 0), 0),
       totalPayout: pendingOrdersWithFinancials.reduce((sum, o) => sum + (o.financialData?.totalPayout || 0), 0),
       totalDiscount: pendingOrdersWithFinancials.reduce((sum, o) => sum + (o.financialData?.totalDiscount || 0), 0),
+      totalAcquiringFee: pendingOrdersWithFinancials.reduce((sum, o) => sum + (o.financialData?.acquiringFee || 0), 0),
     };
 
     return NextResponse.json({ 
@@ -150,6 +228,22 @@ export async function POST(request: NextRequest) {
 
     // 提取财务明细
     const financialData = extractFinancialData(order);
+    
+    // 获取应计费用
+    let acquiringFee = 0;
+    if (order.ozon_posting_number) {
+      try {
+        const accruals = await fetchOrderAccruals(order.ozon_posting_number);
+        acquiringFee = accruals.acquiringFee;
+        if (financialData) {
+          financialData.acquiringFee = accruals.acquiringFee;
+          financialData.otherFees = accruals.otherFees;
+          financialData.accrualsDetails = accruals.details;
+        }
+      } catch (e) {
+        console.error('[Finance API] Failed to get accruals:', e);
+      }
+    }
 
     // 获取采购成本
     const purchaseTasks = await db.select().from(schema.purchaseTasks)
@@ -165,7 +259,8 @@ export async function POST(request: NextRequest) {
     // 计算利润
     const revenue = financialData?.totalRevenue || parseFloat(order.total_price || '0');
     const commission = financialData?.totalCommission || 0;
-    const grossProfit = revenue - commission - purchaseCost;
+    // 净利润 = 收入 - 佣金 - 收单费 - 采购成本 - 运费
+    const grossProfit = revenue - commission - acquiringFee - purchaseCost;
     const netProfit = grossProfit - shippingFee;
 
     // 保存利润记录
@@ -176,7 +271,7 @@ export async function POST(request: NextRequest) {
       domestic_shipping_cost: shippingFee.toString(),
       package_cost: '0',
       ozon_commission: commission.toString(),
-      other_cost: '0',
+      other_cost: acquiringFee.toString(), // 收单费存入other_cost
       after_sale_loss: '0',
       gross_profit: grossProfit.toString(),
       net_profit: netProfit.toString(),
@@ -195,6 +290,7 @@ export async function POST(request: NextRequest) {
       data: { 
         revenue, 
         commission,
+        acquiringFee,
         purchaseCost, 
         shippingFee,
         grossProfit, 
