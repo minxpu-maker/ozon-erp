@@ -152,6 +152,7 @@ export async function GET(request: NextRequest) {
         createdAt: order.created_at,
         ozonCreatedAt: order.ozon_created_at,
         shippedAt: order.shipped_at,
+        purchasePrice: order.purchase_price, // 采购价
         products,
       };
     });

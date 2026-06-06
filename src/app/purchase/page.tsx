@@ -521,7 +521,7 @@ export default function PurchasePage() {
                         </TableCell>
                         <TableCell>
                           {order.purchasePrice ? (
-                            <span className="text-[#16A37B] font-medium">¥{order.purchasePrice.toFixed(2)}</span>
+                            <span className="text-[#16A37B] font-medium">¥{(parseFloat(String(order.purchasePrice)) || 0).toFixed(2)}</span>
                           ) : (
                             <span className="text-[#637089] text-sm">未录入</span>
                           )}
@@ -622,7 +622,7 @@ export default function PurchasePage() {
                     </Button>
                   </div>
                   {detailOrder.purchasePrice ? (
-                    <p className="text-xs text-[#16A37B] mt-1">已录入: ¥{detailOrder.purchasePrice.toFixed(2)}</p>
+                    <p className="text-xs text-[#16A37B] mt-1">已录入: ¥{(parseFloat(String(detailOrder.purchasePrice)) || 0).toFixed(2)}</p>
                   ) : null}
                 </div>
               </div>
@@ -638,12 +638,12 @@ export default function PurchasePage() {
                     </div>
                     <div className="flex justify-between items-center mt-1">
                       <span className="text-[#637089]">采购成本</span>
-                      <span className="font-medium text-red-500">-¥{detailOrder.purchasePrice.toFixed(2)}</span>
+                      <span className="font-medium text-red-500">-¥{(parseFloat(String(detailOrder.purchasePrice)) || 0).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between items-center mt-2 pt-2 border-t border-[#E6EAF2]">
                       <span className="text-[#152033] font-medium">预估利润</span>
-                      <span className={`font-bold ${(parseFloat(detailOrder.totalPrice || '0') * rubToCny - detailOrder.purchasePrice) >= 0 ? 'text-[#16A37B]' : 'text-red-500'}`}>
-                        ¥{(parseFloat(detailOrder.totalPrice || '0') * rubToCny - detailOrder.purchasePrice).toFixed(2)}
+                      <span className={`font-bold ${(parseFloat(detailOrder.totalPrice || '0') * rubToCny - (parseFloat(String(detailOrder.purchasePrice)) || 0)) >= 0 ? 'text-[#16A37B]' : 'text-red-500'}`}>
+                        ¥{(parseFloat(detailOrder.totalPrice || '0') * rubToCny - (parseFloat(String(detailOrder.purchasePrice)) || 0)).toFixed(2)}
                       </span>
                     </div>
                   </div>
