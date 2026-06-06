@@ -494,7 +494,6 @@ export default function PurchasePage() {
                             {order.shopName}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-[#152033]">{order.buyerName || '-'}</TableCell>
                         <TableCell>
                           <Badge className={purchaseStatusMap[order.purchaseStatus].color}>
                             {purchaseStatusMap[order.purchaseStatus].label}
