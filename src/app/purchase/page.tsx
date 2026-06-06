@@ -330,60 +330,44 @@ export default function PurchasePage() {
             <p className="text-[#637089] mt-1">同步Ozon订单，管理待采购商品</p>
           </div>
 
-          {/* 统计卡片 */}
-          <div className="grid grid-cols-4 gap-4 mb-6">
-            <Card className="bg-white border-none shadow-sm">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-[#637089]">待采购</p>
-                    <p className="text-2xl font-semibold text-[#152033] mt-1">{stats.pendingPurchase}</p>
-                  </div>
-                  <div className="w-10 h-10 rounded-full bg-[#FFF7ED] flex items-center justify-center">
-                    <Clock className="w-5 h-5 text-[#C2410C]" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-white border-none shadow-sm">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-[#637089]">已采购</p>
-                    <p className="text-2xl font-semibold text-[#152033] mt-1">{stats.purchased}</p>
-                  </div>
-                  <div className="w-10 h-10 rounded-full bg-[#EFF6FF] flex items-center justify-center">
-                    <ShoppingCart className="w-5 h-5 text-[#2F6BFF]" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-white border-none shadow-sm">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-[#637089]">已送达</p>
-                    <p className="text-2xl font-semibold text-[#152033] mt-1">{stats.delivered}</p>
-                  </div>
-                  <div className="w-10 h-10 rounded-full bg-[#ECFDF5] flex items-center justify-center">
-                    <CheckCircle className="w-5 h-5 text-[#16A37B]" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-white border-none shadow-sm">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-[#637089]">订单总数</p>
-                    <p className="text-2xl font-semibold text-[#152033] mt-1">{stats.total}</p>
-                  </div>
-                  <div className="w-10 h-10 rounded-full bg-[#F6F8FB] flex items-center justify-center">
-                    <Package className="w-5 h-5 text-[#637089]" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          {/* 统计卡片 - 紧凑布局 */}
+          <div className="flex gap-3 mb-4">
+            <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-lg shadow-sm">
+              <div className="w-7 h-7 rounded-full bg-[#FFF7ED] flex items-center justify-center">
+                <Clock className="w-4 h-4 text-[#C2410C]" />
+              </div>
+              <div>
+                <p className="text-xs text-[#637089]">待采购</p>
+                <p className="text-lg font-semibold text-[#152033]">{stats.pendingPurchase}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-lg shadow-sm">
+              <div className="w-7 h-7 rounded-full bg-[#EFF6FF] flex items-center justify-center">
+                <ShoppingCart className="w-4 h-4 text-[#2F6BFF]" />
+              </div>
+              <div>
+                <p className="text-xs text-[#637089]">已采购</p>
+                <p className="text-lg font-semibold text-[#152033]">{stats.purchased}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-lg shadow-sm">
+              <div className="w-7 h-7 rounded-full bg-[#ECFDF5] flex items-center justify-center">
+                <CheckCircle className="w-4 h-4 text-[#16A37B]" />
+              </div>
+              <div>
+                <p className="text-xs text-[#637089]">已送达</p>
+                <p className="text-lg font-semibold text-[#152033]">{stats.delivered}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-lg shadow-sm">
+              <div className="w-7 h-7 rounded-full bg-[#F6F8FB] flex items-center justify-center">
+                <Package className="w-4 h-4 text-[#637089]" />
+              </div>
+              <div>
+                <p className="text-xs text-[#637089]">订单总数</p>
+                <p className="text-lg font-semibold text-[#152033]">{stats.total}</p>
+              </div>
+            </div>
           </div>
 
           {/* 操作栏 */}
