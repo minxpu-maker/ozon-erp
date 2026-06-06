@@ -104,7 +104,7 @@ export default function FinancePage() {
     totalAmount: pendingOrders.reduce((sum, o) => sum + (o.financialData?.totalRevenue || parseFloat(o.total_price || '0')) * exchangeRate, 0).toFixed(2),
     totalCommission: apiStats?.totalCommission ? apiStats.totalCommission.toFixed(2) : pendingOrders.reduce((sum, o) => sum + (o.financialData?.totalCommission || 0) * exchangeRate, 0).toFixed(2),
     totalAcquiringFee: apiStats?.totalAcquiringFee ? apiStats.totalAcquiringFee.toFixed(2) : pendingOrders.reduce((sum, o) => sum + (o.financialData?.acquiringFee || 0) * exchangeRate, 0).toFixed(2),
-    totalPurchasePrice: apiStats?.totalPurchasePrice || pendingOrders.reduce((sum, o) => sum + (o.financialData?.purchasePrice || 0), 0).toFixed(2),
+    totalPurchasePrice: apiStats?.totalPurchasePrice || pendingOrders.reduce((sum, o) => sum + (parseFloat(String(o.financialData?.purchasePrice)) || 0), 0).toFixed(2),
     totalEstimatedProfit: apiStats?.totalEstimatedProfit || pendingOrders.reduce((sum, o) => sum + (o.financialData?.estimatedProfit || 0), 0).toFixed(2),
   };
 
@@ -355,10 +355,10 @@ export default function FinancePage() {
                           <div className="text-sm font-medium text-[#2F6BFF]">{order.ozon_order_id}</div>
                           <div className="text-sm text-[#152033]">{order.ozon_posting_number}</div>
                           <div className="text-sm text-[#152033]">{order.buyer_name || '-'}</div>
-                          <div className="text-sm font-medium text-[#152033]">¥{fd ? (fd.totalRevenue * exchangeRate).toFixed(2) : formatCNY(order.total_price)}</div>
-                          <div className="text-sm text-cyan-600 font-medium">¥{fd?.purchasePrice?.toFixed(2) || '0'}</div>
-                          <div className={`text-sm font-medium ${fd?.estimatedProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>¥{fd?.estimatedProfit?.toFixed(2) || '0'}</div>
-                          <div className={`text-sm font-medium ${fd?.profitRate >= 0 ? 'text-green-600' : 'text-red-600'}`}>{fd?.profitRate?.toFixed(1) || '0'}%</div>
+                          <div className="text-sm font-medium text-[#152033]">¥{fd ? ((parseFloat(String(fd.totalRevenue)) || 0) * exchangeRate).toFixed(2) : formatCNY(order.total_price)}</div>
+                          <div className="text-sm text-cyan-600 font-medium">¥{(parseFloat(String(fd?.purchasePrice)) || 0).toFixed(2)}</div>
+                          <div className={`text-sm font-medium ${(parseFloat(String(fd?.estimatedProfit)) || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>¥{(parseFloat(String(fd?.estimatedProfit)) || 0).toFixed(2)}</div>
+                          <div className={`text-sm font-medium ${(parseFloat(String(fd?.profitRate)) || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>{(parseFloat(String(fd?.profitRate)) || 0).toFixed(1)}%</div>
                           <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
                             <button 
                               onClick={() => handleSettle(order.id)}
@@ -383,27 +383,27 @@ export default function FinancePage() {
                               <div className="space-y-2">
                                 <div className="flex justify-between text-sm">
                                   <span className="text-[#637089]">客户实际支付</span>
-                                  <span className="font-medium text-[#152033]">{fd.totalRevenue.toFixed(2)} RUB (¥{(fd.totalRevenue * exchangeRate).toFixed(2)})</span>
+                                  <span className="font-medium text-[#152033]">{(parseFloat(String(fd?.totalRevenue)) || 0).toFixed(2)} RUB (¥{((parseFloat(String(fd?.totalRevenue)) || 0) * exchangeRate).toFixed(2)})</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
                                   <span className="text-[#637089]">平台佣金</span>
-                                  <span className="font-medium text-orange-600">-{fd.totalCommission.toFixed(2)} RUB (¥{(fd.totalCommission * exchangeRate).toFixed(2)})</span>
+                                  <span className="font-medium text-orange-600">-{(parseFloat(String(fd?.totalCommission)) || 0).toFixed(2)} RUB (¥{((parseFloat(String(fd?.totalCommission)) || 0) * exchangeRate).toFixed(2)})</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
                                   <span className="text-[#637089]">收单业务费</span>
-                                  <span className="font-medium text-purple-600">-{(fd.acquiringFee || 0).toFixed(2)} RUB (¥{((fd.acquiringFee || 0) * exchangeRate).toFixed(2)})</span>
+                                  <span className="font-medium text-purple-600">-{(parseFloat(String(fd?.acquiringFee)) || 0).toFixed(2)} RUB (¥{((parseFloat(String(fd?.acquiringFee)) || 0) * exchangeRate).toFixed(2)})</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
                                   <span className="text-[#637089]">采购成本</span>
-                                  <span className="font-medium text-cyan-600">-¥{(fd.purchasePrice || 0).toFixed(2)}</span>
+                                  <span className="font-medium text-cyan-600">-¥{(parseFloat(String(fd?.purchasePrice)) || 0).toFixed(2)}</span>
                                 </div>
                                 <div className="flex justify-between text-sm border-t border-[#E6EAF2] pt-2">
                                   <span className="text-[#637089] font-medium">预估利润</span>
-                                  <span className={`font-bold ${fd.estimatedProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>¥{fd.estimatedProfit.toFixed(2)}</span>
+                                  <span className={`font-bold ${(parseFloat(String(fd?.estimatedProfit)) || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>¥{(parseFloat(String(fd?.estimatedProfit)) || 0).toFixed(2)}</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
                                   <span className="text-[#637089] font-medium">利润率</span>
-                                  <span className={`font-bold ${fd.profitRate >= 0 ? 'text-green-600' : 'text-red-600'}`}>{fd.profitRate.toFixed(1)}%</span>
+                                  <span className={`font-bold ${(parseFloat(String(fd?.profitRate)) || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>{(parseFloat(String(fd?.profitRate)) || 0).toFixed(1)}%</span>
                                 </div>
                               </div>
                             </div>
@@ -424,15 +424,15 @@ export default function FinancePage() {
                                       </div>
                                       <div className="flex justify-between">
                                         <span className="text-[#637089]">单价</span>
-                                        <span>{product.price.toFixed(2)} RUB</span>
+                                        <span>{(parseFloat(String(product?.price)) || 0).toFixed(2)} RUB</span>
                                       </div>
                                       <div className="flex justify-between">
                                         <span className="text-[#637089]">客户支付</span>
-                                        <span className="font-medium">{product.customerPrice.toFixed(2)} RUB</span>
+                                        <span className="font-medium">{(parseFloat(String(product?.customerPrice)) || 0).toFixed(2)} RUB</span>
                                       </div>
                                       <div className="flex justify-between">
                                         <span className="text-[#637089]">佣金</span>
-                                        <span className="text-orange-600">{product.commissionAmount.toFixed(2)} RUB ({product.commissionPercent}%)</span>
+                                        <span className="text-orange-600">{(parseFloat(String(product?.commissionAmount)) || 0).toFixed(2)} RUB ({product?.commissionPercent || 0}%)</span>
                                       </div>
                                     </div>
                                   </div>
