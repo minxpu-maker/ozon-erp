@@ -414,8 +414,46 @@ https://api-seller.ozon.ru
 | sku | offer_id | SKU编码 |
 | payout_amount | financial_data.products[].payout | 结算金额 |
 
-### 10.3 Webhook支持
-Ozon暂不支持Webhook，需使用轮询机制同步数据。
+### 10.3 推送通知（Push Notifications）
+
+Ozon支持推送通知功能，可以将订单状态变更、商品更新等信息实时推送到ERP系统。
+
+**支持的通知类型**：
+| 类型 | 说明 |
+|------|------|
+| `new_posting` | 创建新货件 |
+| `posting_cancelled` | 发货取消 |
+| `posting_status_changed` | 货件状态变更 |
+| `posting_dates_changed` | 货件递送或发货日期更改 |
+| `chat_new_message` | 新聊天消息 |
+| `chat_closed` | 聊天关闭 |
+| `product_changed` | 商品变更 |
+| `product_stocks_changed` | 库存变更 |
+
+**配置方法**：
+1. 在Ozon卖家后台，转到"设置"→"集成"部分
+2. 在"推送通知"选项卡上，启用推送通知
+3. 输入Webhook URL：`https://你的域名/api/ozon/webhook`
+4. 点击"检查"，Ozon会发送验证请求
+5. 在"通知类型"下拉列表中选择所需的通知类型
+6. 点击保存
+
+**Webhook端点**：
+- URL: `/api/ozon/webhook`
+- 方法: POST (接收通知), GET (连接验证)
+- 响应: `{ "success": true, "received": true }`
+
+**通知数据示例**：
+```json
+{
+  "event_type": "posting_status_changed",
+  "posting_number": "0117427309-0243-1",
+  "order_id": 37080103181,
+  "old_status": "awaiting_packaging",
+  "new_status": "awaiting_deliver",
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
 
 ---
 
