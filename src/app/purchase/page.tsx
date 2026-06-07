@@ -459,26 +459,26 @@ export default function PurchasePage() {
         </div>
       </div>
 
-      {/* 订单详情弹窗 */}
+      {/* 订单详情弹窗 - 居中铺满 */}
       <Dialog open={!!detailOrder} onOpenChange={(open) => !open && setDetailOrder(null)}>
-        <DialogContent className="w-[95vw] h-[90vh] max-w-none p-0 gap-0">
+        <DialogContent className="w-screen h-screen max-w-none p-0 gap-0 [&>button]:hidden">
           {detailOrder && (
-            <>
+            <div className="w-full h-full flex flex-col">
               {/* 顶部标题栏 */}
-              <DialogHeader className="px-6 py-4 border-b border-[#E6EAF2] flex flex-row items-center justify-between space-y-0">
-                <DialogTitle className="text-lg">
+              <div className="px-6 py-4 border-b border-[#E6EAF2] flex items-center justify-between shrink-0">
+                <div className="text-lg font-semibold text-[#152033]">
                   包裹「{detailOrder.postingNumber}」详情 - 来源于「Ozon」
-                </DialogTitle>
+                </div>
                 <button 
                   onClick={() => setDetailOrder(null)}
-                  className="p-1 rounded-full hover:bg-gray-100"
+                  className="p-2 rounded-full hover:bg-gray-100 transition-colors"
                 >
                   <X className="w-5 h-5 text-[#637089]" />
                 </button>
-              </DialogHeader>
+              </div>
 
-              {/* 内容区域 */}
-              <div className="flex-1 overflow-auto p-6">
+              {/* 内容区域 - 固定高度，内部滚动 */}
+              <div className="flex-1 min-h-0 p-6 overflow-y-auto">
                 {/* 基础信息区 */}
                 <div className="bg-white rounded-lg border border-[#E6EAF2] p-4 mb-4">
                   <div className="grid grid-cols-4 gap-4 text-sm">
@@ -711,7 +711,7 @@ export default function PurchasePage() {
                   关闭
                 </Button>
               </div>
-            </>
+            </div>
           )}
         </DialogContent>
       </Dialog>
