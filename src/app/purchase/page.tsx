@@ -540,11 +540,11 @@ export default function PurchasePage() {
         </div>
       </main>
 
-      {/* 订单详情抽屉 */}
+      {/* 订单详情抽屉 - 底部弹出 */}
       <Sheet open={!!detailOrder} onOpenChange={() => setDetailOrder(null)}>
-        <SheetContent className="w-[500px] overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle className="text-[#152033]">订单详情</SheetTitle>
+        <SheetContent side="bottom" className="h-[70vh] overflow-y-auto rounded-t-2xl">
+          <SheetHeader className="border-b border-[#E6EAF2] pb-4">
+            <SheetTitle className="text-[#152033] text-lg">订单详情</SheetTitle>
           </SheetHeader>
           {detailOrder && (
             <div className="mt-6 space-y-4">
