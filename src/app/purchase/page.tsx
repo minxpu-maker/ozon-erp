@@ -461,7 +461,7 @@ export default function PurchasePage() {
 
       {/* 订单详情弹窗 - 居中铺满 */}
       <Dialog open={!!detailOrder} onOpenChange={(open) => !open && setDetailOrder(null)}>
-        <DialogContent className="w-[130vw] h-screen max-w-none !max-w-none p-0 gap-0 grid-cols-1 [&>button]:hidden overflow-hidden" style={{ left: '50%', transform: 'translate(-50%, -50%)' }}>
+        <DialogContent className="w-screen h-screen max-w-none !max-w-none p-0 gap-0 grid-cols-1 [&>button]:hidden overflow-hidden">
           {detailOrder && (
             <div className="w-full h-full flex flex-col">
               {/* 顶部标题栏 */}
@@ -478,7 +478,7 @@ export default function PurchasePage() {
               </div>
 
               {/* 内容区域 - 铺满剩余空间 */}
-              <div className="flex-1 min-h-0 p-8 overflow-auto bg-[#F6F8FB]">
+              <div className="flex-1 min-h-0 p-4 overflow-auto bg-[#F6F8FB]">
                 {/* 基础信息区 */}
                 <div className="bg-white rounded-lg border border-[#E6EAF2] p-6 mb-6">
                   <div className="grid grid-cols-4 gap-6 text-sm">
@@ -533,9 +533,9 @@ export default function PurchasePage() {
                 </div>
 
                 {/* 左右分栏布局 - 占据剩余空间 */}
-                <div className="flex gap-8 flex-1 min-h-0">
+                <div className="flex gap-4 flex-1 min-h-0">
                   {/* 左侧导航 */}
-                  <div className="w-64 flex-shrink-0">
+                  <div className="w-48 flex-shrink-0">
                     <div className="bg-white rounded-lg border border-[#E6EAF2] overflow-hidden">
                       <div className="p-4 bg-[#F6F8FB] border-b border-[#E6EAF2] text-sm font-medium text-[#152033]">
                         订单信息
