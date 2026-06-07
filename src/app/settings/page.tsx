@@ -38,6 +38,95 @@ interface Shop {
   created_at: string;
 }
 
+interface NotificationLog {
+  id: string;
+  type: string;
+  message: string;
+  data: string | null;
+  created_at: string;
+}
+
+// 通知日志列表组件
+function NotificationLogList() {
+  const [logs, setLogs] = useState<NotificationLog[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadLogs();
+    // 每30秒刷新一次
+    const interval = setInterval(loadLogs, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const loadLogs = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/notifications/logs?type=ozon_notification&limit=20');
+      const data = await res.json();
+      if (data.success) {
+        setLogs(data.data.logs);
+      }
+    } catch (e) {
+      console.error('加载日志失败:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        加载中...
+      </div>
+    );
+  }
+
+  if (logs.length === 0) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        <BellRing className="w-12 h-12 mx-auto mb-3 opacity-30" />
+        <p>暂无推送通知</p>
+        <p className="text-xs mt-1">Ozon推送的通知将显示在这里</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {logs.map((log) => {
+        let parsedData = null;
+        try {
+          parsedData = log.data ? JSON.parse(log.data) : null;
+        } catch {
+          // ignore
+        }
+        
+        return (
+          <div key={log.id} className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg">
+            <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center shrink-0">
+              <BellRing className="w-4 h-4 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground truncate">{log.message}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {new Date(log.created_at).toLocaleString('zh-CN')}
+              </p>
+              {parsedData && (
+                <details className="mt-2">
+                  <summary className="text-xs text-primary cursor-pointer">查看详情</summary>
+                  <pre className="mt-2 text-xs bg-muted p-2 rounded overflow-x-auto max-h-32">
+                    {JSON.stringify(parsedData, null, 2)}
+                  </pre>
+                </details>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function SettingsPage() {
   const [activeSection, setActiveSection] = useState('platform');
   const [shops, setShops] = useState<Shop[]>([]);
@@ -692,6 +781,72 @@ export default function SettingsPage() {
                 {/* Notification Section */}
                 {activeSection === 'notification' && (
                   <div className="space-y-4">
+                    {/* Ozon推送通知配置 */}
+                    <div className="bg-card rounded-lg shadow-sm p-5">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                          <Plug className="w-5 h-5 text-green-600" />
+                        </div>
+                        <div>
+                          <h3 className="text-base font-semibold text-foreground">Ozon 推送通知</h3>
+                          <p className="text-xs text-muted-foreground">实时接收Ozon平台的订单状态变更、商品更新等通知</p>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        {/* Webhook URL */}
+                        <div className="bg-muted/50 rounded-lg p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <Label className="text-sm font-medium">Webhook URL</Label>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => {
+                                const url = `${window.location.origin}/api/ozon/webhook`;
+                                navigator.clipboard.writeText(url);
+                                alert('URL已复制到剪贴板');
+                              }}
+                            >
+                              复制URL
+                            </Button>
+                          </div>
+                          <code className="text-sm text-primary font-mono break-all">
+                            {typeof window !== 'undefined' ? `${window.location.origin}/api/ozon/webhook` : 'https://你的域名/api/ozon/webhook'}
+                          </code>
+                        </div>
+                        
+                        {/* 配置步骤 */}
+                        <div className="border border-border/50 rounded-lg p-4">
+                          <p className="text-sm font-medium text-foreground mb-3">配置步骤（在Ozon卖家后台）</p>
+                          <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
+                            <li>进入 <strong className="text-foreground">设置 → 集成</strong></li>
+                            <li>启用 <strong className="text-foreground">推送通知</strong> 功能</li>
+                            <li>粘贴上方Webhook URL并点击 <strong className="text-foreground">检查</strong></li>
+                            <li>选择需要的 <strong className="text-foreground">通知类型</strong></li>
+                            <li>保存设置</li>
+                          </ol>
+                        </div>
+                        
+                        {/* 支持的通知类型 */}
+                        <div>
+                          <p className="text-sm font-medium text-foreground mb-2">支持的通知类型</p>
+                          <div className="flex flex-wrap gap-2">
+                            {[
+                              { type: 'new_posting', label: '新货件', desc: '创建新订单' },
+                              { type: 'posting_cancelled', label: '发货取消', desc: '订单取消' },
+                              { type: 'posting_status_changed', label: '状态变更', desc: '订单状态变化' },
+                              { type: 'product_stocks_changed', label: '库存变更', desc: '商品库存变化' },
+                            ].map(item => (
+                              <div key={item.type} className="bg-primary/5 rounded-lg px-3 py-2">
+                                <p className="text-sm font-medium text-foreground">{item.label}</p>
+                                <p className="text-xs text-muted-foreground">{item.desc}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
                     <div className="bg-card rounded-lg shadow-sm p-5">
                       <h3 className="text-base font-semibold text-foreground mb-4">异常订单通知</h3>
                       <div className="space-y-4">
@@ -801,10 +956,39 @@ export default function SettingsPage() {
 
                 {/* Log Section */}
                 {activeSection === 'log' && (
-                  <div className="bg-card rounded-lg shadow-sm p-5">
-                    <h3 className="text-base font-semibold text-foreground mb-4">操作日志</h3>
-                    <div className="text-center py-8 text-muted-foreground">
-                      暂无操作日志
+                  <div className="space-y-4">
+                    <div className="bg-card rounded-lg shadow-sm p-5">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-base font-semibold text-foreground">Ozon 推送通知日志</h3>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={async () => {
+                            try {
+                              const res = await fetch('/api/notifications/logs?type=ozon_notification&limit=50');
+                              const data = await res.json();
+                              if (data.success) {
+                                console.log('通知日志:', data.data.logs);
+                              }
+                            } catch (e) {
+                              console.error('刷新日志失败:', e);
+                            }
+                          }}
+                        >
+                          <RefreshCw className="w-4 h-4 mr-1.5" />
+                          刷新
+                        </Button>
+                      </div>
+                      
+                      {/* 日志列表将通过客户端渲染 */}
+                      <NotificationLogList />
+                    </div>
+                    
+                    <div className="bg-card rounded-lg shadow-sm p-5">
+                      <h3 className="text-base font-semibold text-foreground mb-4">操作日志</h3>
+                      <div className="text-center py-8 text-muted-foreground">
+                        暂无操作日志
+                      </div>
                     </div>
                   </div>
                 )}
