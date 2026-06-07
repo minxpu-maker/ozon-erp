@@ -461,7 +461,7 @@ export default function PurchasePage() {
 
       {/* 订单详情弹窗 - 居中铺满 */}
       <Dialog open={!!detailOrder} onOpenChange={(open) => !open && setDetailOrder(null)}>
-        <DialogContent className="w-screen h-screen max-w-none p-0 gap-0 [&>button]:hidden">
+        <DialogContent className="w-screen h-screen max-w-none p-0 gap-0 grid-cols-1 [&>button]:hidden overflow-hidden">
           {detailOrder && (
             <div className="w-full h-full flex flex-col">
               {/* 顶部标题栏 */}
@@ -477,8 +477,8 @@ export default function PurchasePage() {
                 </button>
               </div>
 
-              {/* 内容区域 - 固定高度，内部滚动 */}
-              <div className="flex-1 min-h-0 p-6 overflow-y-auto">
+              {/* 内容区域 - 铺满剩余空间 */}
+              <div className="flex-1 min-h-0 p-6 overflow-hidden flex flex-col">
                 {/* 基础信息区 */}
                 <div className="bg-white rounded-lg border border-[#E6EAF2] p-4 mb-4">
                   <div className="grid grid-cols-4 gap-4 text-sm">
@@ -532,8 +532,8 @@ export default function PurchasePage() {
                   </div>
                 </div>
 
-                {/* 左右分栏布局 */}
-                <div className="flex gap-4">
+                {/* 左右分栏布局 - 占据剩余空间 */}
+                <div className="flex gap-4 flex-1 min-h-0">
                   {/* 左侧导航 */}
                   <div className="w-48 flex-shrink-0">
                     <div className="bg-white rounded-lg border border-[#E6EAF2] overflow-hidden">
