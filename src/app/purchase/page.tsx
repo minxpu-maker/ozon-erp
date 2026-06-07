@@ -156,7 +156,7 @@ export default function PurchasePage() {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('awaiting_deliver'); // 默认只显示待采购
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
   const [rubToCny, setRubToCny] = useState(0.08);
 
