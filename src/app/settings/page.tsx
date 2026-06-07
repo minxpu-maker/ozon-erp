@@ -6,7 +6,8 @@ import {
   ShoppingBag, ShoppingCart, Link as LinkIcon, Sliders, BellRing, 
   Printer, FileText, Save, CheckCircle, XCircle, Bell, Settings as SettingsIcon,
   LayoutDashboard, Package, ClipboardList, Truck, Box, Calculator,
-  PackageSearch, Warehouse, Database, Users, BarChart3, UserCircle, Shield
+  PackageSearch, Warehouse, Database, Users, BarChart3, UserCircle, Shield,
+  Copy
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -781,68 +782,113 @@ export default function SettingsPage() {
                 {/* Notification Section */}
                 {activeSection === 'notification' && (
                   <div className="space-y-4">
-                    {/* Ozon推送通知配置 */}
+                    {/* Ozon多店铺推送通知配置 */}
                     <div className="bg-card rounded-lg shadow-sm p-5">
                       <div className="flex items-center gap-3 mb-4">
                         <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
                           <Plug className="w-5 h-5 text-green-600" />
                         </div>
-                        <div>
+                        <div className="flex-1">
                           <h3 className="text-base font-semibold text-foreground">Ozon 推送通知</h3>
-                          <p className="text-xs text-muted-foreground">实时接收Ozon平台的订单状态变更、商品更新等通知</p>
+                          <p className="text-xs text-muted-foreground">为每个店铺配置独立的推送通知，实时接收订单状态变更、商品更新等</p>
                         </div>
                       </div>
                       
-                      <div className="space-y-4">
-                        {/* Webhook URL */}
-                        <div className="bg-muted/50 rounded-lg p-4">
-                          <div className="flex items-center justify-between mb-2">
-                            <Label className="text-sm font-medium">Webhook URL</Label>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => {
-                                const url = `${window.location.origin}/api/ozon/webhook`;
-                                navigator.clipboard.writeText(url);
-                                alert('URL已复制到剪贴板');
-                              }}
-                            >
-                              复制URL
-                            </Button>
-                          </div>
-                          <code className="text-sm text-primary font-mono break-all">
-                            {typeof window !== 'undefined' ? `${window.location.origin}/api/ozon/webhook` : 'https://你的域名/api/ozon/webhook'}
-                          </code>
-                        </div>
-                        
-                        {/* 配置步骤 */}
-                        <div className="border border-border/50 rounded-lg p-4">
-                          <p className="text-sm font-medium text-foreground mb-3">配置步骤（在Ozon卖家后台）</p>
-                          <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
-                            <li>进入 <strong className="text-foreground">设置 → 集成</strong></li>
-                            <li>启用 <strong className="text-foreground">推送通知</strong> 功能</li>
-                            <li>粘贴上方Webhook URL并点击 <strong className="text-foreground">检查</strong></li>
-                            <li>选择需要的 <strong className="text-foreground">通知类型</strong></li>
-                            <li>保存设置</li>
-                          </ol>
-                        </div>
-                        
-                        {/* 支持的通知类型 */}
-                        <div>
-                          <p className="text-sm font-medium text-foreground mb-2">支持的通知类型</p>
-                          <div className="flex flex-wrap gap-2">
-                            {[
-                              { type: 'new_posting', label: '新货件', desc: '创建新订单' },
-                              { type: 'posting_cancelled', label: '发货取消', desc: '订单取消' },
-                              { type: 'posting_status_changed', label: '状态变更', desc: '订单状态变化' },
-                              { type: 'product_stocks_changed', label: '库存变更', desc: '商品库存变化' },
-                            ].map(item => (
-                              <div key={item.type} className="bg-primary/5 rounded-lg px-3 py-2">
-                                <p className="text-sm font-medium text-foreground">{item.label}</p>
-                                <p className="text-xs text-muted-foreground">{item.desc}</p>
+                      {/* 店铺列表 */}
+                      <div className="space-y-3">
+                        {shops.map((shop) => (
+                          <div key={shop.id} className="border border-border/50 rounded-lg p-4">
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                                  <Store className="w-4 h-4 text-primary" />
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-foreground">{shop.name}</p>
+                                  <p className="text-xs text-muted-foreground">Client ID: {shop.client_id}</p>
+                                </div>
                               </div>
-                            ))}
+                              <div className="flex items-center gap-2">
+                                {shop.is_primary && (
+                                  <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">主店铺</span>
+                                )}
+                                <span className={`text-xs px-2 py-0.5 rounded ${shop.is_active ? 'bg-green-500/15 text-green-600' : 'bg-muted text-muted-foreground'}`}>
+                                  {shop.is_active ? '已启用' : '未启用'}
+                                </span>
+                              </div>
+                            </div>
+                            
+                            {/* Webhook配置 */}
+                            <div className="bg-muted/30 rounded-lg p-3 space-y-2">
+                              <div className="flex items-center justify-between">
+                                <Label className="text-xs font-medium">Webhook URL</Label>
+                                <div className="flex items-center gap-2">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    className="h-7 text-xs"
+                                    onClick={() => {
+                                      const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/api/ozon/webhook?shop_id=${shop.id}`;
+                                      navigator.clipboard.writeText(url);
+                                      alert('URL已复制');
+                                    }}
+                                  >
+                                    <Copy className="w-3 h-3 mr-1" />
+                                    复制
+                                  </Button>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    className="h-7 text-xs"
+                                    onClick={async () => {
+                                      try {
+                                        const res = await fetch(`/api/ozon/webhook?shop_id=${shop.id}`);
+                                        const data = await res.json();
+                                        alert(data.success ? '连接正常' : '连接失败');
+                                      } catch {
+                                        alert('验证失败');
+                                      }
+                                    }}
+                                  >
+                                    验证
+                                  </Button>
+                                </div>
+                              </div>
+                              <code className="text-xs text-primary font-mono break-all block">
+                                {typeof window !== 'undefined' ? `${window.location.origin}/api/ozon/webhook?shop_id=${shop.id}` : `https://你的域名/api/ozon/webhook?shop_id=${shop.id}`}
+                              </code>
+                            </div>
                           </div>
+                        ))}
+                      </div>
+                      
+                      {/* 配置说明 */}
+                      <div className="mt-4 p-4 bg-blue-500/5 border border-blue-500/20 rounded-lg">
+                        <p className="text-sm font-medium text-foreground mb-2">📋 配置步骤（Ozon卖家后台）</p>
+                        <ol className="text-sm text-muted-foreground space-y-1.5 list-decimal list-inside">
+                          <li>登录对应店铺的 <strong className="text-foreground">Ozon卖家后台</strong></li>
+                          <li>进入 <strong className="text-foreground">设置 → 集成 → 推送通知</strong></li>
+                          <li>粘贴该店铺的 <strong className="text-foreground">Webhook URL</strong></li>
+                          <li>点击 <strong className="text-foreground">检查</strong> 验证连接状态</li>
+                          <li>勾选需要的通知类型并保存</li>
+                        </ol>
+                      </div>
+                      
+                      {/* 支持的通知类型 */}
+                      <div className="mt-4">
+                        <p className="text-sm font-medium text-foreground mb-2">支持的通知类型</p>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                          {[
+                            { type: 'new_posting', label: '新订单', icon: '📦' },
+                            { type: 'posting_cancelled', label: '订单取消', icon: '❌' },
+                            { type: 'posting_status_changed', label: '状态变更', icon: '🔄' },
+                            { type: 'product_stocks_changed', label: '库存变更', icon: '📊' },
+                          ].map(item => (
+                            <div key={item.type} className="bg-muted/30 rounded-lg px-3 py-2 text-center">
+                              <span className="text-lg">{item.icon}</span>
+                              <p className="text-xs text-foreground mt-1">{item.label}</p>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     </div>
