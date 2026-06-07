@@ -542,7 +542,7 @@ export default function PurchasePage() {
 
       {/* 订单详情弹窗 - 居中显示 */}
       <Dialog open={!!detailOrder} onOpenChange={() => setDetailOrder(null)}>
-        <DialogContent className="w-[60vw] max-w-none h-[60vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] max-w-none h-[90vh] overflow-y-auto">
           <DialogHeader className="border-b border-[#E6EAF2] pb-4">
             <DialogTitle className="text-[#152033] text-lg">订单详情</DialogTitle>
           </DialogHeader>
