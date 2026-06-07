@@ -461,7 +461,7 @@ export default function PurchasePage() {
 
       {/* 订单详情弹窗 - 居中铺满 */}
       <Dialog open={!!detailOrder} onOpenChange={(open) => !open && setDetailOrder(null)}>
-        <DialogContent className="w-screen h-screen max-w-none p-0 gap-0 grid-cols-1 [&>button]:hidden overflow-hidden">
+        <DialogContent className="w-[130vw] h-screen max-w-none p-0 gap-0 grid-cols-1 [&>button]:hidden overflow-hidden">
           {detailOrder && (
             <div className="w-full h-full flex flex-col">
               {/* 顶部标题栏 */}
