@@ -21,11 +21,11 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -540,12 +540,12 @@ export default function PurchasePage() {
         </div>
       </main>
 
-      {/* 订单详情抽屉 - 底部弹出 */}
-      <Sheet open={!!detailOrder} onOpenChange={() => setDetailOrder(null)}>
-        <SheetContent side="bottom" className="h-[70vh] overflow-y-auto rounded-t-2xl">
-          <SheetHeader className="border-b border-[#E6EAF2] pb-4">
-            <SheetTitle className="text-[#152033] text-lg">订单详情</SheetTitle>
-          </SheetHeader>
+      {/* 订单详情弹窗 - 居中显示 */}
+      <Dialog open={!!detailOrder} onOpenChange={() => setDetailOrder(null)}>
+        <DialogContent className="w-[60vw] max-w-none h-[60vh] overflow-y-auto">
+          <DialogHeader className="border-b border-[#E6EAF2] pb-4">
+            <DialogTitle className="text-[#152033] text-lg">订单详情</DialogTitle>
+          </DialogHeader>
           {detailOrder && (
             <div className="mt-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -657,8 +657,8 @@ export default function PurchasePage() {
               </div>
             </div>
           )}
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
