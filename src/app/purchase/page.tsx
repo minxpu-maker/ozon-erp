@@ -461,11 +461,11 @@ export default function PurchasePage() {
 
       {/* 订单详情弹窗 - 居中铺满 */}
       <Dialog open={!!detailOrder} onOpenChange={(open) => !open && setDetailOrder(null)}>
-        <DialogContent className="w-[130vw] h-screen max-w-none p-0 gap-0 grid-cols-1 [&>button]:hidden overflow-hidden">
+        <DialogContent className="w-[130vw] h-screen max-w-none !max-w-none p-0 gap-0 grid-cols-1 [&>button]:hidden overflow-hidden" style={{ left: '50%', transform: 'translate(-50%, -50%)' }}>
           {detailOrder && (
             <div className="w-full h-full flex flex-col">
               {/* 顶部标题栏 */}
-              <div className="px-6 py-4 border-b border-[#E6EAF2] flex items-center justify-between shrink-0">
+              <div className="px-8 py-4 border-b border-[#E6EAF2] flex items-center justify-between shrink-0 bg-white">
                 <div className="text-lg font-semibold text-[#152033]">
                   包裹「{detailOrder.postingNumber}」详情 - 来源于「Ozon」
                 </div>
@@ -478,16 +478,16 @@ export default function PurchasePage() {
               </div>
 
               {/* 内容区域 - 铺满剩余空间 */}
-              <div className="flex-1 min-h-0 p-6 overflow-hidden flex flex-col">
+              <div className="flex-1 min-h-0 p-8 overflow-auto bg-[#F6F8FB]">
                 {/* 基础信息区 */}
-                <div className="bg-white rounded-lg border border-[#E6EAF2] p-4 mb-4">
-                  <div className="grid grid-cols-4 gap-4 text-sm">
+                <div className="bg-white rounded-lg border border-[#E6EAF2] p-6 mb-6">
+                  <div className="grid grid-cols-4 gap-6 text-sm">
                     <div>
-                      <div className="text-[#637089] mb-1">买家信息</div>
+                      <div className="text-[#637089] mb-2">买家信息</div>
                       <div className="font-medium text-[#152033]">{detailOrder.buyerName || '-'}</div>
                     </div>
                     <div>
-                      <div className="text-[#637089] mb-1">店铺</div>
+                      <div className="text-[#637089] mb-2">店铺</div>
                       <div className="font-medium text-[#152033]">{detailOrder.shopName}</div>
                     </div>
                     <div>
@@ -497,7 +497,7 @@ export default function PurchasePage() {
                       </div>
                     </div>
                     <div>
-                      <div className="text-[#637089] mb-1">采购状态</div>
+                      <div className="text-[#637089] mb-2">采购状态</div>
                       <Badge className={purchaseStatusMap[detailOrder.purchaseStatus]?.color || 'bg-gray-100 text-gray-700'}>
                         {purchaseStatusMap[detailOrder.purchaseStatus]?.label || '未知'}
                       </Badge>
@@ -506,7 +506,7 @@ export default function PurchasePage() {
                 </div>
 
                 {/* 订单流程进度条 */}
-                <div className="bg-white rounded-lg border border-[#E6EAF2] p-4 mb-4">
+                <div className="bg-white rounded-lg border border-[#E6EAF2] p-6 mb-6">
                   <div className="flex items-center justify-between text-sm">
                     {[
                       { label: '待采购', status: detailOrder.purchaseStatus === 'awaiting' },
@@ -533,24 +533,24 @@ export default function PurchasePage() {
                 </div>
 
                 {/* 左右分栏布局 - 占据剩余空间 */}
-                <div className="flex gap-4 flex-1 min-h-0">
+                <div className="flex gap-8 flex-1 min-h-0">
                   {/* 左侧导航 */}
-                  <div className="w-48 flex-shrink-0">
+                  <div className="w-64 flex-shrink-0">
                     <div className="bg-white rounded-lg border border-[#E6EAF2] overflow-hidden">
-                      <div className="p-3 bg-[#F6F8FB] border-b border-[#E6EAF2] text-sm font-medium text-[#152033]">
+                      <div className="p-4 bg-[#F6F8FB] border-b border-[#E6EAF2] text-sm font-medium text-[#152033]">
                         订单信息
                       </div>
                       <div className="divide-y divide-[#E6EAF2]">
-                        <div className="p-3 flex items-center gap-2 text-sm bg-blue-50 text-[#2F6BFF]">
-                          <MapPin className="w-4 h-4" />
+                        <div className="p-4 flex items-center gap-3 text-sm bg-blue-50 text-[#2F6BFF]">
+                          <MapPin className="w-5 h-5" />
                           <span>订单详情</span>
                         </div>
-                        <div className="p-3 flex items-center gap-2 text-sm text-[#637089]">
-                          <FileText className="w-4 h-4" />
+                        <div className="p-4 flex items-center gap-3 text-sm text-[#637089]">
+                          <FileText className="w-5 h-5" />
                           <span>采购信息</span>
                         </div>
-                        <div className="p-3 flex items-center gap-2 text-sm text-[#637089]">
-                          <Truck className="w-4 h-4" />
+                        <div className="p-4 flex items-center gap-3 text-sm text-[#637089]">
+                          <Truck className="w-5 h-5" />
                           <span>物流信息</span>
                         </div>
                       </div>
@@ -560,16 +560,16 @@ export default function PurchasePage() {
                   {/* 右侧详情 */}
                   <div className="flex-1">
                     {/* 订单详情卡片 */}
-                    <div className="bg-white rounded-lg border border-[#E6EAF2] mb-4">
-                      <div className="p-3 bg-[#F6F8FB] border-b border-[#E6EAF2] flex items-center justify-between">
+                    <div className="bg-white rounded-lg border border-[#E6EAF2] mb-6">
+                      <div className="p-4 bg-[#F6F8FB] border-b border-[#E6EAF2] flex items-center justify-between">
                         <span className="text-sm font-medium text-[#152033]">订单详情</span>
                         <span className="text-xs text-[#637089]">订单号: {detailOrder.postingNumber}</span>
                       </div>
-                      <div className="p-4 space-y-4">
+                      <div className="p-6 space-y-6">
                         {/* 订单基本信息 */}
-                        <div className="grid grid-cols-3 gap-4 text-sm">
+                        <div className="grid grid-cols-3 gap-6 text-sm">
                           <div>
-                            <div className="text-[#637089] mb-1">Ozon订单号</div>
+                            <div className="text-[#637089] mb-2">Ozon订单号</div>
                             <div className="font-medium text-[#152033]">{detailOrder.ozonOrderId}</div>
                           </div>
                           <div>
