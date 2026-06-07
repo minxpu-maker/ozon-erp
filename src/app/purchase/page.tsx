@@ -413,8 +413,8 @@ export default function PurchasePage() {
                     </div>
                     <div>
                       <div className="text-[#637089] mb-1">采购状态</div>
-                      <Badge className={purchaseStatusMap[detailOrder.purchaseStatus].color}>
-                        {purchaseStatusMap[detailOrder.purchaseStatus].label}
+                      <Badge className={purchaseStatusMap[detailOrder.purchaseStatus]?.color || 'bg-gray-100 text-gray-700'}>
+                        {purchaseStatusMap[detailOrder.purchaseStatus]?.label || '未知'}
                       </Badge>
                     </div>
                   </div>
