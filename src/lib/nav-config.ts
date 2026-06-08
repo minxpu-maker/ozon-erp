@@ -21,6 +21,7 @@ import {
   Shield,
   Settings,
   Store,
+  CreditCard,
   LucideIcon,
 } from 'lucide-react';
 
@@ -42,6 +43,7 @@ export const NAV_CONFIG: Omit<NavItem, 'active'>[] = [
   { href: '/finance', icon: Calculator, label: '利润核算' },
   { type: 'divider', label: 'AI智能' },
   { href: '/selection', icon: Target, label: 'AI 选品' },
+  { href: '/selection/cards', icon: CreditCard, label: '商品卡管理' },
   { href: '/image-listing', icon: Image, label: '修图上架' },
   { type: 'divider', label: '库存管理' },
   { href: '/inventory', icon: PackageSearch, label: '库存管理' },
@@ -95,4 +97,5 @@ export {
   Shield,
   Settings,
   Store,
+  CreditCard,
 };
