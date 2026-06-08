@@ -127,6 +127,21 @@ function calculateChannelWeights(
   return base;
 }
 
+// 约束检查详情
+interface ConstraintDetail {
+  name: string;
+  passed: boolean;
+  reason?: string;
+}
+
+// 降权规则详情
+export interface DiscountDetail {
+  name: string;
+  factor: number;
+  applied: boolean;
+  reason: string;
+}
+
 // 评分结果
 export interface ScoringResult {
   opportunityId: number;
@@ -138,7 +153,13 @@ export interface ScoringResult {
   predictedSales7d: number;
   predictedSales30d: number;
   hardConstraintsPassed: boolean;
-  constraintDetails: Record<string, boolean>;
+  constraintDetails: ConstraintDetail[];
+  // 第三阶段新增字段
+  vetoRules?: string[];        // 一票否决规则列表
+  discountDetails?: string[]; // 降权规则明细
+  totalDiscount?: number;        // 总降权系数
+  finalScore?: number;           // 应用降权后的最终得分
+  finalGrade?: 'A' | 'B' | 'C' | 'D'; // 最终等级
 }
 
 // 批量评分请求
@@ -318,22 +339,249 @@ function predictSales(demandScore: number, dimensions: ScoreDimensions): { sales
   return { sales7d, sales30d };
 }
 
+// ============ 第三阶段：硬约束过滤规则 ============
+
+// 一票否决规则：直接淘汰
+interface VetoRule {
+  name: string;
+  passed: boolean;
+  reason: string;
+}
+
+// 降权规则：应用折扣系数
+interface DiscountRule {
+  name: string;
+  factor: number; // 0-1，折扣系数
+  applied: boolean;
+  reason: string;
+}
+
 /**
- * 检查硬约束
+ * 检查一票否决规则
+ * 任一规则触发则直接淘汰
  */
-function checkHardConstraints(opportunity: typeof opportunities.$inferSelect): { passed: boolean; details: Record<string, boolean> } {
+function checkVetoRules(
+  opportunity: typeof opportunities.$inferSelect,
+  shopInfo?: { sellerType?: string }
+): VetoRule[] {
   const riskFlags = opportunity.riskFlags as Record<string, any> || {};
+  const marketAnalysis = opportunity.marketAnalysis as Record<string, any> || {};
+  const rules: VetoRule[] = [];
   
+  // 规则1: EAC认证不合规且卖家是俄罗斯本土
+  const hasEacRequirement = riskFlags.hasEacRequirement === true;
+  const isRussianSeller = shopInfo?.sellerType === 'ru_local';
+  const eacVeto = hasEacRequirement && isRussianSeller;
+  rules.push({
+    name: 'EAC认证不合规',
+    passed: !eacVeto,
+    reason: eacVeto ? '俄罗斯本土卖家需要EAC认证' : 'EAC认证合规或非本土卖家',
+  });
+  
+  // 规则2: 禁售品类命中
+  const isBannedCategory = riskFlags.bannedCategory === true;
+  rules.push({
+    name: '禁售品类检查',
+    passed: !isBannedCategory,
+    reason: isBannedCategory ? '命中禁售品类，直接淘汰' : '类目合规',
+  });
+  
+  // 规则3: 知识产权高危（品牌词命中且无授权）
+  const hasBrandHit = riskFlags.brandHit === true;
+  const hasAuthorization = riskFlags.brandAuthorized === true;
+  const ipVeto = hasBrandHit && !hasAuthorization;
+  rules.push({
+    name: '知识产权检查',
+    passed: !ipVeto,
+    reason: ipVeto ? '品牌词命中且无授权' : '知识产权合规',
+  });
+  
+  return rules;
+}
+
+/**
+ * 检查跟卖阶段硬约束（降权）
+ * 仅在跟卖模式下应用
+ */
+function checkFollowStageDiscounts(
+  opportunity: typeof opportunities.$inferSelect,
+  shopInfo?: { currentStage?: string }
+): DiscountRule[] {
+  const marketAnalysis = opportunity.marketAnalysis as Record<string, any> || {};
+  const rules: DiscountRule[] = [];
+  
+  // 规则1: 新店价格范围200-1500₽（已有，这里补充降权逻辑）
+  const priceRange = marketAnalysis.priceRange as { min: number; max: number } || { min: 0, max: 0 };
+  const avgPrice = (priceRange.min + priceRange.max) / 2;
+  const isNewShop = shopInfo?.currentStage === 'new';
+  const outOfPriceRange = isNewShop && (avgPrice < 200 || avgPrice > 1500);
+  rules.push({
+    name: '新店价格范围',
+    factor: outOfPriceRange ? 0.7 : 1.0,
+    applied: outOfPriceRange,
+    reason: outOfPriceRange ? `新店价格${avgPrice.toFixed(0)}₽不在200-1500₽范围内` : '价格范围合规',
+  });
+  
+  // 规则2: 评价数<20降权×0.5
+  const reviewCount = marketAnalysis.reviewCount || 0;
+  const lowReviews = reviewCount < 20;
+  rules.push({
+    name: '评价数检查',
+    factor: lowReviews ? 0.5 : 1.0,
+    applied: lowReviews,
+    reason: lowReviews ? `评价数${reviewCount}<20，降权×0.5` : `评价数${reviewCount}>=20`,
+  });
+  
+  // 规则3: 在售卖家数>50降权×0.6
+  const sellerCount = marketAnalysis.sellerCount || 0;
+  const highCompetition = sellerCount > 50;
+  rules.push({
+    name: '卖家数检查',
+    factor: highCompetition ? 0.6 : 1.0,
+    applied: highCompetition,
+    reason: highCompetition ? `卖家数${sellerCount}>50，降权×0.6` : `卖家数${sellerCount}<=50`,
+  });
+  
+  return rules;
+}
+
+/**
+ * 检查全阶段降权项
+ * 所有模式都应用
+ */
+function checkGlobalDiscounts(
+  opportunity: typeof opportunities.$inferSelect,
+  additionalData?: {
+    weightKg?: number;
+    volumeLiters?: number;
+    rubleVolatility?: number;
+  }
+): DiscountRule[] {
+  const marketAnalysis = opportunity.marketAnalysis as Record<string, any> || {};
+  const rules: DiscountRule[] = [];
+  
+  const priceRange = marketAnalysis.priceRange as { min: number; max: number } || { min: 0, max: 0 };
+  const avgPrice = (priceRange.min + priceRange.max) / 2;
+  
+  // 规则1: 体积>0.5L降权×0.5
+  const volume = additionalData?.volumeLiters || 0;
+  const largeVolume = volume > 0.5;
+  rules.push({
+    name: '体积检查',
+    factor: largeVolume ? 0.5 : 1.0,
+    applied: largeVolume,
+    reason: largeVolume ? `体积${volume.toFixed(2)}L>0.5L，降权×0.5` : `体积${volume.toFixed(2)}L<=0.5L`,
+  });
+  
+  // 规则2: 单价<500₽且精铺模式降权×0.6
+  const isRefineMode = opportunity.selectionMode === 'refine';
+  const lowPriceRefine = avgPrice < 500 && isRefineMode;
+  rules.push({
+    name: '低价精铺检查',
+    factor: lowPriceRefine ? 0.6 : 1.0,
+    applied: lowPriceRefine,
+    reason: lowPriceRefine ? `单价${avgPrice.toFixed(0)}₽<500₽且精铺模式，降权×0.6` : '价格或模式合规',
+  });
+  
+  // 规则3: 单价>25000₽降权×0.8
+  const highPrice = avgPrice > 25000;
+  rules.push({
+    name: '高价检查',
+    factor: highPrice ? 0.8 : 1.0,
+    applied: highPrice,
+    reason: highPrice ? `单价${avgPrice.toFixed(0)}₽>25000₽，降权×0.8` : `单价${avgPrice.toFixed(0)}₽<=25000₽`,
+  });
+  
+  // 规则4: 重量>2kg降权×0.6
+  const weight = additionalData?.weightKg || 0;
+  const heavyWeight = weight > 2;
+  rules.push({
+    name: '重量检查',
+    factor: heavyWeight ? 0.6 : 1.0,
+    applied: heavyWeight,
+    reason: heavyWeight ? `重量${weight.toFixed(1)}kg>2kg，降权×0.6` : `重量${weight.toFixed(1)}kg<=2kg`,
+  });
+  
+  // 规则5: 卢布30日波动>15%降权×0.7
+  const volatility = additionalData?.rubleVolatility || 0;
+  const highVolatility = volatility > 15;
+  rules.push({
+    name: '汇率波动检查',
+    factor: highVolatility ? 0.7 : 1.0,
+    applied: highVolatility,
+    reason: highVolatility ? `卢布波动${volatility.toFixed(1)}%>15%，降权×0.7` : `卢布波动${volatility.toFixed(1)}%<=15%`,
+  });
+  
+  return rules;
+}
+
+/**
+ * 计算综合折扣系数
+ * 将所有降权规则的系数相乘
+ */
+function calculateTotalDiscount(discountRules: DiscountRule[]): number {
+  return discountRules.reduce((total, rule) => total * rule.factor, 1.0);
+}
+
+/**
+ * 检查硬约束（完整版，包含第三阶段规则）
+ */
+function checkHardConstraints(
+  opportunity: typeof opportunities.$inferSelect,
+  shopInfo?: { sellerType?: string; currentStage?: string },
+  additionalData?: { weightKg?: number; volumeLiters?: number; rubleVolatility?: number }
+): {
+  passed: boolean;
+  vetoRules: VetoRule[];
+  followStageDiscounts: DiscountRule[];
+  globalDiscounts: DiscountRule[];
+  totalDiscount: number;
+  details: Record<string, boolean>;
+  discountDetails: Array<{ name: string; factor: number; applied: boolean; reason: string }>;
+} {
+  // 1. 检查一票否决规则
+  const vetoRules = checkVetoRules(opportunity, shopInfo);
+  const vetoPassed = vetoRules.every(rule => rule.passed);
+  
+  // 2. 检查跟卖阶段降权规则
+  const followStageDiscounts = opportunity.selectionMode === 'copy'
+    ? checkFollowStageDiscounts(opportunity, shopInfo)
+    : [];
+  
+  // 3. 检查全阶段降权规则
+  const globalDiscounts = checkGlobalDiscounts(opportunity, additionalData);
+  
+  // 4. 合并所有降权规则
+  const allDiscounts = [...followStageDiscounts, ...globalDiscounts];
+  
+  // 5. 计算综合折扣系数
+  const totalDiscount = calculateTotalDiscount(allDiscounts);
+  
+  // 6. 转换为原有格式的details（用于兼容）
+  const riskFlags = opportunity.riskFlags as Record<string, any> || {};
   const details = {
-    eacRequirement: !riskFlags.hasEacRequirement, // 无EAC要求或已满足
+    eacRequirement: !vetoRules.find(r => r.name === 'EAC认证不合规')?.reason.includes('俄罗斯本土卖家'),
     priceCompetitive: riskFlags.priceCompetitive !== false,
     stockAvailable: riskFlags.stockAvailable !== false,
     logisticsOk: riskFlags.logisticsOk !== false,
-    categorySafe: riskFlags.categorySafe !== false,
+    categorySafe: !vetoRules.find(r => r.name === '禁售品类检查')?.passed === false,
+    intellectualProperty: !vetoRules.find(r => r.name === '知识产权检查')?.passed === false,
   };
   
-  const passed = Object.values(details).every(v => v);
-  return { passed, details };
+  return {
+    passed: vetoPassed,
+    vetoRules,
+    followStageDiscounts,
+    globalDiscounts,
+    totalDiscount,
+    details,
+    discountDetails: allDiscounts.map(r => ({
+      name: r.name,
+      factor: r.factor,
+      applied: r.applied,
+      reason: r.reason,
+    })),
+  };
 }
 
 /**
@@ -341,7 +589,9 @@ function checkHardConstraints(opportunity: typeof opportunities.$inferSelect): {
  */
 async function scoreOpportunity(
   opportunity: typeof opportunities.$inferSelect,
-  weights: AHPWeights
+  weights: AHPWeights,
+  shopInfo?: { sellerType?: string; currentStage?: string },
+  additionalData?: { weightKg?: number; volumeLiters?: number; rubleVolatility?: number }
 ): Promise<ScoringResult> {
   // 1. 确保有productCard
   const productCardId = await ensureProductCard(opportunity);
@@ -349,14 +599,21 @@ async function scoreOpportunity(
   // 2. 计算五维评分
   const dimensions = calculateDimensions(opportunity);
   
-  // 3. 检查硬约束（用于交叉验证折扣）
-  const { passed: hardConstraintsPassed, details: constraintDetails } = checkHardConstraints(opportunity);
+  // 3. 检查硬约束（第三阶段完整版）
+  const constraintResult = checkHardConstraints(opportunity, shopInfo, additionalData);
+  const { 
+    passed: hardConstraintsPassed, 
+    vetoRules,
+    discountDetails,
+    totalDiscount,
+    details: constraintDetails 
+  } = constraintResult;
   
-  // 4. 计算硬约束折扣系数
-  const constraintEntries = Object.entries(constraintDetails);
-  const passedConstraints = constraintEntries.filter(([, passed]) => passed).length;
-  const totalConstraints = constraintEntries.length;
-  const hardConstraintDiscount = totalConstraints > 0 ? passedConstraints / totalConstraints : 0;
+  // 4. 一票否决检查：如果触发任一否决规则，直接标记为D级
+  if (!hardConstraintsPassed) {
+    const failedVeto = vetoRules.find(r => !r.passed);
+    console.log(`[选品引擎] 候选品${opportunity.id}触发一票否决: ${failedVeto?.name} - ${failedVeto?.reason}`);
+  }
   
   // 5. 动态计算通道权重（一期Prophet和机会指数无数据）
   const channelWeights = calculateChannelWeights(false, false);
@@ -366,32 +623,39 @@ async function scoreOpportunity(
     dimensions, 
     weights, 
     channelWeights,
-    hardConstraintDiscount
+    totalDiscount // 使用第三阶段的综合折扣系数
   );
   
-  // 7. 预测销量
+  // 7. 如果触发一票否决，强制降为D级
+  const finalGrade = hardConstraintsPassed ? grade : 'D';
+  const finalScore = hardConstraintsPassed ? score : Math.min(score, 39);
+  
+  // 8. 预测销量
   const { sales7d, sales30d } = predictSales(dimensions.demand, dimensions);
   
-  // 8. 确定趋势方向
+  // 9. 确定趋势方向
   const trendDirection: 'up' | 'down' | 'stable' = 
     dimensions.demand > 60 ? 'up' : 
     dimensions.demand < 40 ? 'down' : 'stable';
   
-  // 9. 写入评分结果到product_scores表
+  // 10. 写入评分结果到product_scores表
   await db
     .insert(productScores)
     .values({
       productId: productCardId,
       shopId: opportunity.shopId,
       opportunityId: opportunity.id,
-      shopStage: 'mature',
-      sellerType: 'cn_crossborder',
+      shopStage: shopInfo?.currentStage || 'mature',
+      sellerType: shopInfo?.sellerType || 'cn_crossborder',
       selectionMode: opportunity.selectionMode,
-      hardConstraintDiscount: hardConstraintDiscount.toFixed(2),
-      hardConstraintDetails: constraintEntries.map(([name, passed]) => ({ name, passed })),
+      hardConstraintDiscount: totalDiscount.toFixed(2),
+      hardConstraintDetails: [
+        ...vetoRules.map(r => ({ name: `否决-${r.name}`, passed: r.passed, reason: r.reason })),
+        ...discountDetails.map(r => ({ name: `降权-${r.name}`, factor: r.factor, applied: r.applied, reason: r.reason })),
+      ],
       ahpWeights: weights,
       combinedWeights: { ...weights, alpha: ALPHA, channelWeights },
-      topsisScore: score.toFixed(4),
+      topsisScore: (finalScore / 100).toFixed(4),
       semanticScore: ((dimensions.demand * 0.6 + dimensions.differentiation * 0.4) / 100).toFixed(4),
       demandScore: (dimensions.demand / 100).toFixed(4),
       competitionScore: (dimensions.competition / 100).toFixed(4),
@@ -401,31 +665,45 @@ async function scoreOpportunity(
       predictedSales7d: sales7d,
       predictedSales30d: sales30d,
       trendDirection,
-      compositeScore: (score / 100).toFixed(4),
-      grade,
+      compositeScore: (finalScore / 100).toFixed(4),
+      grade: finalGrade,
       calculatedAt: new Date(),
       expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24小时后过期
     })
     .onConflictDoUpdate({
       target: [productScores.productId],
       set: {
-        compositeScore: (score / 100).toFixed(4),
+        compositeScore: (finalScore / 100).toFixed(4),
         grade,
         calculatedAt: new Date(),
       },
     });
   
+  // 将 constraintDetails (Record<string, boolean>) 转换为 ConstraintDetail[]
+  const formattedConstraintDetails: ConstraintDetail[] = Object.entries(constraintDetails).map(
+    ([name, passed]) => ({ name, passed })
+  );
+  
+  // 将 vetoRules 转换为字符串数组
+  const formattedVetoRules = vetoRules.map(r => r.name);
+  
+  // 将 discountDetails 转换为字符串数组
+  const formattedDiscountDetails = discountDetails.map(d => `${d.name}: ×${d.factor}`);
+
   return {
     opportunityId: opportunity.id,
     productCardId,
     dimensions,
-    compositeScore: score,
-    grade,
+    compositeScore: finalScore,
+    grade: finalGrade,
     trendDirection,
     predictedSales7d: sales7d,
     predictedSales30d: sales30d,
     hardConstraintsPassed,
-    constraintDetails,
+    constraintDetails: formattedConstraintDetails,
+    vetoRules: formattedVetoRules,
+    discountDetails: formattedDiscountDetails,
+    totalDiscount,
   };
 }
 
