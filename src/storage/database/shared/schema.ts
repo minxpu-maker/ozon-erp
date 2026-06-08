@@ -15,6 +15,9 @@ export const shops = pgTable(
     name: varchar("name", { length: 128 }).notNull(),
     client_id: varchar("client_id", { length: 64 }).notNull(),
     api_key: varchar("api_key", { length: 128 }).notNull(),
+    // Ozon API 凭证（兼容字段）
+    ozon_client_id: varchar("ozon_client_id", { length: 64 }),
+    ozon_api_key: varchar("ozon_api_key", { length: 128 }),
     is_primary: boolean("is_primary").default(false).notNull(),
     is_active: boolean("is_active").default(true).notNull(),
     last_sync_at: timestamp("last_sync_at", { withTimezone: true }),
