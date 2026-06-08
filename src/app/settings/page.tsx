@@ -146,6 +146,7 @@ export default function SettingsPage() {
   });
   const [testingShop, setTestingShop] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [editingShop, setEditingShop] = useState<Shop | null>(null);
   
   // 汇率相关状态
   const [rubToCny, setRubToCny] = useState(0.08);
@@ -262,6 +263,33 @@ export default function SettingsPage() {
     } catch (error) {
       console.error('添加店铺失败:', error);
       alert('添加失败');
+    }
+  };
+
+  // 编辑店铺
+  const handleEditShop = async () => {
+    if (!editingShop) return;
+    try {
+      const response = await fetch(`/api/shops/${editingShop.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editingShop.name,
+          client_id: editingShop.client_id,
+          api_key: editingShop.api_key,
+          is_primary: editingShop.is_primary,
+        }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        setEditingShop(null);
+        loadShops();
+      } else {
+        alert(data.error || '保存失败');
+      }
+    } catch (error) {
+      console.error('编辑店铺失败:', error);
+      alert('保存失败');
     }
   };
 
@@ -560,7 +588,10 @@ export default function SettingsPage() {
                                 </div>
                               </div>
                               <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/20">
-                                <button className="text-xs text-primary hover:text-primary/80 font-medium inline-flex items-center gap-1 transition-colors">
+                                <button
+                                  onClick={() => setEditingShop(shop)}
+                                  className="text-xs text-primary hover:text-primary/80 font-medium inline-flex items-center gap-1 transition-colors"
+                                >
                                   <Pencil className="w-3 h-3" />编辑
                                 </button>
                                 <span className="text-border">|</span>
@@ -1120,6 +1151,66 @@ export default function SettingsPage() {
               添加店铺
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Shop Modal */}
+      <Dialog open={!!editingShop} onOpenChange={(open) => !open && setEditingShop(null)}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle>编辑店铺</DialogTitle>
+          </DialogHeader>
+          {editingShop && (
+            <>
+              <div className="space-y-4 py-4">
+                <div>
+                  <Label>店铺名称 <span className="text-destructive">*</span></Label>
+                  <Input
+                    placeholder="请输入店铺名称"
+                    value={editingShop.name}
+                    onChange={(e) => setEditingShop({ ...editingShop, name: e.target.value })}
+                    className="mt-1.5"
+                  />
+                </div>
+                <div>
+                  <Label>Client ID <span className="text-destructive">*</span></Label>
+                  <Input
+                    placeholder="请输入Ozon应用的Client ID"
+                    value={editingShop.client_id}
+                    onChange={(e) => setEditingShop({ ...editingShop, client_id: e.target.value })}
+                    className="mt-1.5"
+                  />
+                </div>
+                <div>
+                  <Label>API Key <span className="text-destructive">*</span></Label>
+                  <Input
+                    type="password"
+                    placeholder="请输入Ozon应用的API Key"
+                    value={editingShop.api_key}
+                    onChange={(e) => setEditingShop({ ...editingShop, api_key: e.target.value })}
+                    className="mt-1.5"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="edit-set-as-main"
+                    checked={editingShop.is_primary}
+                    onCheckedChange={(checked) => setEditingShop({ ...editingShop, is_primary: !!checked })}
+                  />
+                  <label htmlFor="edit-set-as-main" className="text-sm text-foreground cursor-pointer">设为主店铺</label>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setEditingShop(null)}>
+                  取消
+                </Button>
+                <Button onClick={handleEditShop} className="gap-2">
+                  <Save className="w-4 h-4" />
+                  保存修改
+                </Button>
+              </DialogFooter>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </div>

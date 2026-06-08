@@ -145,3 +145,69 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
     );
   }
 }
+
+/**
+ * PATCH /api/shops/[id] - 部分更新店铺信息
+ */
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
+  try {
+    const { id } = await params;
+    const body = await request.json();
+
+    // 检查店铺是否存在
+    const [existing] = await db
+      .select()
+      .from(shops)
+      .where(eq(shops.id, id))
+      .limit(1);
+
+    if (!existing) {
+      return NextResponse.json(
+        { success: false, error: '店铺不存在' },
+        { status: 404 }
+      );
+    }
+
+    const { name, client_id, api_key, is_primary, is_active } = body;
+
+    // 如果设为主店铺，先取消其他店铺的主店铺标记
+    if (is_primary) {
+      const allShops = await db.select().from(shops);
+      for (const shop of allShops.filter(s => s.is_primary && s.id !== id)) {
+        await db
+          .update(shops)
+          .set({ is_primary: false })
+          .where(eq(shops.id, shop.id));
+      }
+    }
+
+    // 更新店铺
+    const updateData: Record<string, unknown> = {};
+    if (name !== undefined) updateData.name = name;
+    if (client_id !== undefined) updateData.client_id = client_id;
+    if (api_key !== undefined) updateData.api_key = api_key;
+    if (is_primary !== undefined) updateData.is_primary = is_primary;
+    if (is_active !== undefined) updateData.is_active = is_active;
+
+    const [updated] = await db
+      .update(shops)
+      .set(updateData)
+      .where(eq(shops.id, id))
+      .returning();
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        ...updated,
+        api_key: `${updated.api_key.substring(0, 8)}****${updated.api_key.substring(updated.api_key.length - 4)}`,
+      },
+      message: '店铺更新成功',
+    });
+  } catch (error) {
+    console.error('更新店铺失败:', error);
+    return NextResponse.json(
+      { success: false, error: '更新店铺失败' },
+      { status: 500 }
+    );
+  }
+}
