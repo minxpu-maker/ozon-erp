@@ -161,7 +161,7 @@ export default function SelectionPage() {
   
   // Filter state
   const [filters, setFilters] = useState({
-    categoryId: '',
+    categoryId: 'all',
     priceMin: 0,
     priceMax: 100000,
     grades: [] as string[],
@@ -235,7 +235,7 @@ export default function SelectionPage() {
         mode,
         status: 'discovered',
       });
-      if (filters.categoryId) params.append('categoryId', filters.categoryId);
+      if (filters.categoryId && filters.categoryId !== 'all') params.append('categoryId', filters.categoryId);
       
       const res = await fetch(`/api/selection/opportunities?${params}`);
       const data = await res.json();
@@ -959,7 +959,7 @@ export default function SelectionPage() {
                       <SelectValue placeholder="全部类目" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">全部</SelectItem>
+                      <SelectItem value="all">全部</SelectItem>
                       {categories.slice(0, 20).map(cat => (
                         <SelectItem key={cat.id} value={String(cat.id)}>{cat.name}</SelectItem>
                       ))}

@@ -105,8 +105,8 @@ export default function ProductCardsPage() {
   
   // Filters
   const [filters, setFilters] = useState({
-    shopId: '',
-    status: '',
+    shopId: 'all',
+    status: 'all',
     search: '',
   });
 
@@ -136,8 +136,8 @@ export default function ProductCardsPage() {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (filters.shopId) params.append('shopId', filters.shopId);
-      if (filters.status) params.append('status', filters.status);
+      if (filters.shopId && filters.shopId !== 'all') params.append('shopId', filters.shopId);
+      if (filters.status && filters.status !== 'all') params.append('status', filters.status);
       
       const res = await fetch(`/api/selection/product-cards?${params}`);
       const data = await res.json();
@@ -361,7 +361,7 @@ export default function ProductCardsPage() {
                 <SelectValue placeholder="全部店铺" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">全部店铺</SelectItem>
+                <SelectItem value="all">全部店铺</SelectItem>
                 {shops.map(shop => (
                   <SelectItem key={shop.id} value={shop.id}>{shop.name}</SelectItem>
                 ))}
@@ -374,7 +374,7 @@ export default function ProductCardsPage() {
                 <SelectValue placeholder="全部状态" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">全部</SelectItem>
+                <SelectItem value="all">全部</SelectItem>
                 <SelectItem value="draft">草稿</SelectItem>
                 <SelectItem value="ready">待提交</SelectItem>
                 <SelectItem value="submitted">已提交</SelectItem>
