@@ -66,7 +66,8 @@ interface Order {
   buyerName: string | null;
   totalPrice: string;
   purchasePrice: string | null;
-  createdAt: string;
+  ozonCreatedAt: string | null;  // Ozon订单下单时间
+  createdAt: string;  // 系统入库时间
   products: Array<{
     name: string;
     sku: string;
@@ -435,13 +436,13 @@ export default function PurchasePage() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-sm text-[#637089]">
-                      {new Date(order.createdAt).toLocaleString('zh-CN', {
+                      {(order.ozonCreatedAt || order.createdAt) ? new Date(order.ozonCreatedAt || order.createdAt).toLocaleString('zh-CN', {
                         year: 'numeric',
                         month: '2-digit',
                         day: '2-digit',
                         hour: '2-digit',
                         minute: '2-digit',
-                      }).replace(/\//g, '/')}
+                      }).replace(/\//g, '/') : '-'}
                     </td>
                     <td className="px-4 py-3">
                       <button
