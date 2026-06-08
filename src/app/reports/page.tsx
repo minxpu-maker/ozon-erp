@@ -2,29 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { LayoutDashboard, ShoppingCart, Package, ClipboardList, Truck, Calculator, PackageSearch, Warehouse, Database, Users, BarChart3, UserCircle, Shield, Settings, RefreshCw, TrendingUp, TrendingDown, BarChart2 } from 'lucide-react';
-
-const navItems = [
-  { href: '/dashboard', icon: LayoutDashboard, label: '仪表盘' },
-  { href: '/purchase', icon: Package, label: '采购管理' },
-  { href: '/quick-entry', icon: ClipboardList, label: '快捷录单' },
-  { href: '/logistics', icon: Truck, label: '入库验货' },
-  { href: '/packaging', icon: Package, label: '打包发货' },
-  { href: '/finance', icon: Calculator, label: '利润核算' },
-  { type: 'divider', label: '库存管理' },
-  { href: '/inventory', icon: PackageSearch, label: '库存管理' },
-  { href: '/wms', icon: Warehouse, label: '仓库管理' },
-  { type: 'divider', label: '数据中心' },
-  { href: '/sku-management', icon: Database, label: 'SKU管理' },
-  { href: '/suppliers', icon: Users, label: '供应商管理' },
-  { href: '/reports', icon: BarChart3, label: '数据报表', active: true },
-  { type: 'divider', label: '系统' },
-  { href: '/accounts', icon: UserCircle, label: '账号管理' },
-  { href: '/roles', icon: Shield, label: '角色权限' },
-  { href: '/settings', icon: Settings, label: '系统设置' },
-];
+import { usePathname } from 'next/navigation';
+import { getNavItems } from '@/lib/nav-config';
+import { BarChart3, RefreshCw, TrendingUp, TrendingDown, BarChart2, Box } from 'lucide-react';
 
 export default function ReportsPage() {
+  const pathname = usePathname();
+  const navItems = getNavItems(pathname);
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 

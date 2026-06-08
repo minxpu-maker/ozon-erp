@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { getNavItems } from '@/lib/nav-config';
 import {
-  LayoutDashboard, ShoppingCart, Package, ClipboardList, Truck, Calculator,
-  PackageSearch, Warehouse, Database, Users, BarChart3, UserCircle, Shield, Settings,
-  RefreshCw, Clock, Link2, ShoppingBag, AlertTriangle, ChevronRight, CheckCircle, XCircle,
+  ClipboardList, RefreshCw, Clock, Link2, ShoppingBag, AlertTriangle, ChevronRight, CheckCircle, XCircle, Box, Database,
 } from 'lucide-react';
 
 interface QuickEntryTask {
@@ -17,27 +17,9 @@ interface QuickEntryTask {
   sourceType: string | null;
 }
 
-const navItems = [
-  { href: '/dashboard', icon: LayoutDashboard, label: '仪表盘' },
-  { href: '/purchase', icon: Package, label: '采购管理' },
-  { href: '/quick-entry', icon: ClipboardList, label: '快捷录单', active: true },
-  { href: '/logistics', icon: Truck, label: '入库验货' },
-  { href: '/packaging', icon: Package, label: '打包发货' },
-  { href: '/finance', icon: Calculator, label: '利润核算' },
-  { type: 'divider', label: '库存管理' },
-  { href: '/inventory', icon: PackageSearch, label: '库存管理' },
-  { href: '/wms', icon: Warehouse, label: '仓库管理' },
-  { type: 'divider', label: '数据中心' },
-  { href: '/sku-management', icon: Database, label: 'SKU管理' },
-  { href: '/suppliers', icon: Users, label: '供应商管理' },
-  { href: '/reports', icon: BarChart3, label: '数据报表' },
-  { type: 'divider', label: '系统' },
-  { href: '/accounts', icon: UserCircle, label: '账号管理' },
-  { href: '/roles', icon: Shield, label: '角色权限' },
-  { href: '/settings', icon: Settings, label: '系统设置' },
-];
-
 export default function QuickEntryPage() {
+  const pathname = usePathname();
+  const navItems = getNavItems(pathname);
   const [tasks, setTasks] = useState<QuickEntryTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [entryType, setEntryType] = useState<'paste' | 'ocr' | 'excel'>('paste');

@@ -1,14 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { 
   Store, Plus, Pencil, Plug, RefreshCw, Trash2, Play, MoreVertical,
   ShoppingBag, ShoppingCart, Link as LinkIcon, Sliders, BellRing, 
   Printer, FileText, Save, CheckCircle, XCircle, Bell, Settings as SettingsIcon,
-  LayoutDashboard, Package, ClipboardList, Truck, Box, Calculator,
+  Copy, Box, LayoutDashboard, Package, ClipboardList, Truck, Calculator,
   PackageSearch, Warehouse, Database, Users, BarChart3, UserCircle, Shield,
-  Copy
+  Target, Image, RefreshCw as Sync, AlertTriangle, TrendingUp, Search
 } from 'lucide-react';
+import { getNavItems } from '@/lib/nav-config';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -129,6 +132,8 @@ function NotificationLogList() {
 }
 
 export default function SettingsPage() {
+  const pathname = usePathname();
+  const navItems = getNavItems(pathname);
   const [activeSection, setActiveSection] = useState('platform');
   const [shops, setShops] = useState<Shop[]>([]);
   const [loading, setLoading] = useState(true);
@@ -319,16 +324,7 @@ export default function SettingsPage() {
     }
   };
 
-  const navItems = [
-    { id: 'dashboard', icon: LayoutDashboard, label: '仪表盘', href: '/dashboard' },
-    { id: 'orders', icon: ShoppingCart, label: '订单管理', href: '/orders' },
-    { id: 'purchase', icon: Package, label: '采购管理', href: '/purchase' },
-    { id: 'quick-entry', icon: ClipboardList, label: '快捷录单', href: '/quick-entry' },
-    { id: 'logistics', icon: Truck, label: '物流追踪', href: '/logistics' },
-    { id: 'packaging', icon: Box, label: '打包流程', href: '/packaging' },
-    { id: 'finance', icon: Calculator, label: '财务核算', href: '/finance' },
-  ];
-
+  // 定义分组导航项
   const inventoryNavItems = [
     { id: 'inventory', icon: PackageSearch, label: '库存管理', href: '/inventory' },
     { id: 'wms', icon: Warehouse, label: '仓库管理', href: '/wms' },
@@ -338,6 +334,9 @@ export default function SettingsPage() {
     { id: 'sku-management', icon: Database, label: 'SKU管理', href: '/sku-management' },
     { id: 'suppliers', icon: Users, label: '供应商管理', href: '/suppliers' },
     { id: 'reports', icon: BarChart3, label: '数据报表', href: '/reports' },
+    { id: 'source-health', icon: AlertTriangle, label: '数据源健康度', href: '/data-center/source-health' },
+    { id: 'source-management', icon: Sync, label: '数据源管理', href: '/data-center/source-management' },
+    { id: 'notifications', icon: Bell, label: '知识库通知', href: '/data-center/notifications' },
   ];
 
   const systemNavItems = [
@@ -380,59 +379,75 @@ export default function SettingsPage() {
         {/* Sidebar */}
         <aside className="w-56 shrink-0 bg-card border-r border-border/50 overflow-y-auto">
           <div className="p-3 space-y-0.5">
-            {navItems.map(item => (
-              <a
-                key={item.id}
-                href={item.href}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground font-medium text-sm transition-colors"
-              >
-                <item.icon className="w-4 h-4" />
-                {item.label}
-              </a>
-            ))}
+            {navItems.map(item => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href!}
+                  href={item.href!}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition-colors ${
+                    item.active
+                      ? 'bg-[#2F6BFF]/10 text-[#2F6BFF]'
+                      : 'text-[#637089] hover:bg-[#EEF1F6] hover:text-[#152033]'
+                  }`}
+                >
+                  {Icon && <Icon className="w-4 h-4" />}
+                  {item.label}
+                </Link>
+              );
+            })}
             <div className="pt-3 pb-1">
               <span className="px-3 text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">库存管理</span>
             </div>
-            {inventoryNavItems.map(item => (
-              <a
-                key={item.id}
-                href={item.href}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground font-medium text-sm transition-colors"
-              >
-                <item.icon className="w-4 h-4" />
-                {item.label}
-              </a>
-            ))}
+            {inventoryNavItems.map(item => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground font-medium text-sm transition-colors"
+                >
+                  {Icon && <Icon className="w-4 h-4" />}
+                  {item.label}
+                </Link>
+              );
+            })}
             <div className="pt-3 pb-1">
               <span className="px-3 text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">数据中心</span>
             </div>
-            {dataNavItems.map(item => (
-              <a
-                key={item.id}
-                href={item.href}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground font-medium text-sm transition-colors"
-              >
-                <item.icon className="w-4 h-4" />
-                {item.label}
-              </a>
-            ))}
+            {dataNavItems.map(item => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground font-medium text-sm transition-colors"
+                >
+                  {Icon && <Icon className="w-4 h-4" />}
+                  {item.label}
+                </Link>
+              );
+            })}
             <div className="pt-3 pb-1">
               <span className="px-3 text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">系统</span>
             </div>
-            {systemNavItems.map(item => (
-              <a
-                key={item.id}
-                href={item.href}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition-colors ${
-                  item.active
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                }`}
-              >
-                <item.icon className="w-4 h-4" />
-                {item.label}
-              </a>
-            ))}
+            {systemNavItems.map(item => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition-colors ${
+                    item.active
+                      ? 'bg-primary/10 text-primary'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  }`}
+                >
+                  {Icon && <Icon className="w-4 h-4" />}
+                  {item.label}
+                </Link>
+              );
+            })}
           </div>
         </aside>
 
