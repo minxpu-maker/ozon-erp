@@ -43,8 +43,13 @@ export async function GET() {
       db.select({ count: count() }).from(schema.orders)
         .where(eq(schema.orders.status, 'delivered')),
 
-      // 店铺列表
-      db.select().from(schema.shops).where(eq(schema.shops.is_active, true)),
+      // 店铺列表 - 只查询必要字段
+      db.select({
+        id: schema.shops.id,
+        name: schema.shops.name,
+        last_sync_at: schema.shops.last_sync_at,
+        is_active: schema.shops.is_active,
+      }).from(schema.shops).where(eq(schema.shops.is_active, true)),
     ]);
 
     // 获取采购任务统计
