@@ -147,6 +147,8 @@ export default function SettingsPage() {
   const [testingShop, setTestingShop] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [editingShop, setEditingShop] = useState<Shop | null>(null);
+  const [syncingShop, setSyncingShop] = useState<string | null>(null);
+  const [syncingAll, setSyncingAll] = useState(false);
   
   // 汇率相关状态
   const [rubToCny, setRubToCny] = useState(0.08);
@@ -332,6 +334,62 @@ export default function SettingsPage() {
     } catch (error) {
       console.error('删除店铺失败:', error);
       alert('删除失败');
+    }
+  };
+
+  // 同步单个店铺
+  const handleSyncShop = async (shopId: string) => {
+    try {
+      setSyncingShop(shopId);
+      const response = await fetch(`/api/shops/${shopId}/sync`, {
+        method: 'POST',
+      });
+      const data = await response.json();
+      if (data.success) {
+        alert(`同步成功: ${data.data?.synced || 0} 条数据已更新`);
+        loadShops();
+      } else {
+        alert(data.error || '同步失败');
+      }
+    } catch (error) {
+      console.error('同步店铺失败:', error);
+      alert('同步失败，请稍后重试');
+    } finally {
+      setSyncingShop(null);
+    }
+  };
+
+  // 同步全部店铺
+  const handleSyncAllShops = async () => {
+    try {
+      setSyncingAll(true);
+      const activeShops = shops.filter(s => s.is_active);
+      let successCount = 0;
+      let failCount = 0;
+      
+      for (const shop of activeShops) {
+        try {
+          const response = await fetch(`/api/shops/${shop.id}/sync`, {
+            method: 'POST',
+          });
+          const data = await response.json();
+          if (data.success) {
+            successCount++;
+          } else {
+            failCount++;
+          }
+        } catch {
+          failCount++;
+        }
+      }
+      
+      alert(`同步完成: 成功 ${successCount} 个，失败 ${failCount} 个`);
+      loadShops();
+    } catch (error) {
+      console.error('同步全部店铺失败:', error);
+      alert('同步失败，请稍后重试');
+    } finally {
+      setSyncingAll(false);
     }
   };
 
@@ -604,8 +662,13 @@ export default function SettingsPage() {
                                   {testingShop === shop.id ? '测试中...' : '测试连接'}
                                 </button>
                                 <span className="text-border">|</span>
-                                <button className="text-xs text-muted-foreground hover:text-foreground font-medium inline-flex items-center gap-1 transition-colors">
-                                  <RefreshCw className="w-3 h-3" />立即同步
+                                <button 
+                                  onClick={() => handleSyncShop(shop.id)}
+                                  disabled={syncingShop === shop.id}
+                                  className="text-xs text-muted-foreground hover:text-foreground font-medium inline-flex items-center gap-1 transition-colors disabled:opacity-50"
+                                >
+                                  <RefreshCw className={`w-3 h-3 ${syncingShop === shop.id ? 'animate-spin' : ''}`} />
+                                  {syncingShop === shop.id ? '同步中...' : '立即同步'}
                                 </button>
                                 {!shop.is_primary && (
                                   <>
@@ -656,8 +719,13 @@ export default function SettingsPage() {
                           共绑定 <strong className="text-foreground">{shops.length}</strong> 个店铺，
                           已启用 <strong className="text-green-600">{shops.filter(s => s.is_active).length}</strong> 个
                         </span>
-                        <button className="text-primary hover:text-primary/80 font-medium inline-flex items-center gap-1 transition-colors">
-                          <RefreshCw className="w-3 h-3" />同步全部店铺
+                        <button 
+                          onClick={handleSyncAllShops}
+                          disabled={syncingAll}
+                          className="text-primary hover:text-primary/80 font-medium inline-flex items-center gap-1 transition-colors disabled:opacity-50"
+                        >
+                          <RefreshCw className={`w-3 h-3 ${syncingAll ? 'animate-spin' : ''}`} />
+                          {syncingAll ? '同步中...' : '同步全部店铺'}
                         </button>
                       </div>
                     </div>
