@@ -1,5 +1,5 @@
-import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, boolean, integer, numeric, jsonb, index, serial, uuid, bigint } from "drizzle-orm/pg-core";
+import { sql, relations } from "drizzle-orm";
+import { pgTable, text, varchar, timestamp, boolean, integer, numeric, jsonb, index, serial, uuid, bigint, decimal, date, uniqueIndex } from "drizzle-orm/pg-core";
 
 // 系统健康检查表（必须保留）
 export const healthCheck = pgTable("health_check", {
@@ -18,6 +18,15 @@ export const shops = pgTable(
     is_primary: boolean("is_primary").default(false).notNull(),
     is_active: boolean("is_active").default(true).notNull(),
     last_sync_at: timestamp("last_sync_at", { withTimezone: true }),
+    // AI选品模块新增字段
+    seller_type: varchar("seller_type", { length: 20 }).default('cn_crossborder'), // cn_crossborder / ru_local
+    current_stage: varchar("current_stage", { length: 20 }).default('new'), // new / growing / mature
+    selection_mode: varchar("selection_mode", { length: 20 }).default('follow'), // follow / refine
+    price_range_min: integer("price_range_min").default(200),
+    price_range_max: integer("price_range_max").default(1500),
+    api_rate_limit_remaining: integer("api_rate_limit_remaining"), // 剩余API调用次数
+    api_rate_limit_reset_at: timestamp("api_rate_limit_reset_at", { withTimezone: true }), // 频率限制重置时间
+    default_logistics_template_id: integer("default_logistics_template_id"), // 店铺默认物流模板ID
     created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updated_at: timestamp("updated_at", { withTimezone: true }),
   },
@@ -663,3 +672,529 @@ export type InsertOzonProduct = typeof ozonProducts.$inferInsert;
 export type InsertSystemConfig = typeof systemConfigs.$inferInsert;
 export type OperationLog = typeof operationLogs.$inferSelect;
 export type InsertOperationLog = typeof operationLogs.$inferInsert;
+
+// ============================================================================
+// AI智能选品模块 Schema
+// 技术栈: Next.js 16 + React 19 + TypeScript 5 + Drizzle ORM 0.45 + PostgreSQL
+//
+// 说明:
+// - embedding 字段使用 jsonb 类型（一期不使用 pgvector 扩展）
+// - 所有引用 shops.id 的外键使用 varchar(36) UUID 类型（与主 schema 保持一致）
+// ============================================================================
+
+// ============================================================================
+// 一、EAC认证配置表
+// ============================================================================
+
+/**
+ * EAC认证配置表 — 一键切换能力（EAC策略的唯一数据源）
+ * D-014: 俄本土卖家一票否决，中国卖家风险提示（预留一键切换）
+ */
+export const eacConfig = pgTable('eac_config', {
+  id: serial('id').primaryKey(),
+  sellerType: varchar('seller_type', { length: 20 }).notNull(), // cn_crossborder / ru_local
+  policy: varchar('policy', { length: 10 }).notNull(),          // warning / veto
+  updatedAt: timestamp('updated_at').defaultNow(),
+  updatedBy: varchar('updated_by', { length: 50 }),
+}, (table) => [
+  uniqueIndex('idx_eac_config_seller_type').on(table.sellerType),
+]);
+
+// ============================================================================
+// 二、核心业务对象
+// ============================================================================
+
+/**
+ * 选品单 (Opportunity) — 记录一个选品机会
+ */
+export const opportunities = pgTable('opportunities', {
+  id: serial('id').primaryKey(),
+  shopId: varchar('shop_id', { length: 36 }).references(() => shops.id, { onDelete: 'cascade' }).notNull(),
+
+  // 选品来源
+  source: varchar('source', { length: 20 }).notNull(),
+  selectionMode: varchar('selection_mode', { length: 20 }).notNull(),
+
+  // 选品目标
+  targetType: varchar('target_type', { length: 20 }).notNull(),
+  targetCategoryId: integer('target_category_id'),
+  targetProductId: integer('target_product_id'),
+  targetName: varchar('target_name', { length: 500 }),
+
+  // 市场分析概要
+  marketAnalysis: jsonb('market_analysis'),
+  profitEstimate: jsonb('profit_estimate'),
+  riskFlags: jsonb('risk_flags'),
+
+  // 状态
+  status: varchar('status', { length: 20 }).default('discovered'),
+  confirmedAt: timestamp('confirmed_at'),
+  abandonedReason: text('abandoned_reason'),
+
+  // 归属与转化关联
+  assignedTo: varchar('assigned_to', { length: 50 }),
+  parentOpportunityId: integer('parent_opportunity_id'),
+
+  // 元数据
+  dataSources: jsonb('data_sources'),
+  strategyTemplateId: integer('strategy_template_id'),
+  notes: text('notes'),
+
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+}, (table) => [
+  index('idx_opportunities_shop_id').on(table.shopId),
+  index('idx_opportunities_status').on(table.status),
+  index('idx_opportunities_category').on(table.targetCategoryId),
+]);
+
+/**
+ * 商品卡 (Product Card) — 准备上架的商品完整信息（SPU级）
+ */
+export const productCards = pgTable('product_cards', {
+  id: serial('id').primaryKey(),
+  shopId: varchar('shop_id', { length: 36 }).references(() => shops.id, { onDelete: 'cascade' }).notNull(),
+  opportunityId: integer('opportunity_id').references(() => opportunities.id),
+
+  // Ozon类目信息
+  ozonCategoryId: integer('ozon_category_id').notNull(),
+  ozonCategoryName: varchar('ozon_category_name', { length: 500 }),
+
+  // 商品信息
+  titleRu: varchar('title_ru', { length: 500 }),
+  titleZh: varchar('title_zh', { length: 500 }),
+  description: text('description_ru'),
+  attributes: jsonb('attributes'),
+  variantAttributes: jsonb('variant_attributes'),
+
+  // 定价
+  suggestedPrice: integer('suggested_price'),
+  costPrice: integer('cost_price'),
+  commissionRate: decimal('commission_rate', { precision: 5, scale: 2 }),
+
+  // 状态
+  status: varchar('status', { length: 20 }).default('draft'),
+  isEacRequired: boolean('is_eac_required').default(false),
+  eacStatus: varchar('eac_status', { length: 20 }).default('none'),
+
+  // 来源
+  source1688Url: text('source_1688_url'),
+  sourceOzonUrl: text('source_ozon_url'),
+
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+}, (table) => [
+  index('idx_product_cards_shop_id').on(table.shopId),
+  index('idx_product_cards_status').on(table.status),
+  index('idx_product_cards_category').on(table.ozonCategoryId),
+]);
+
+/**
+ * 商品变体/SKU表
+ */
+export const productVariants = pgTable('product_variants', {
+  id: serial('id').primaryKey(),
+  productCardId: integer('product_card_id').references(() => productCards.id, { onDelete: 'cascade' }).notNull(),
+
+  variantName: varchar('variant_name', { length: 200 }),
+  variantValues: jsonb('variant_values').notNull(),
+  ozonVariantId: varchar('ozon_variant_id', { length: 50 }),
+
+  confirmedPrice: integer('confirmed_price'),
+  costPrice: integer('cost_price'),
+  stock: integer('stock').default(0),
+
+  primaryImageSetId: integer('primary_image_set_id'),
+  status: varchar('status', { length: 20 }).default('draft'),
+
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+}, (table) => [
+  index('idx_product_variants_product_card_id').on(table.productCardId),
+]);
+
+/**
+ * 图片集 (Image Set)
+ */
+export const imageSets = pgTable('image_sets', {
+  id: serial('id').primaryKey(),
+  productCardId: integer('product_card_id').references(() => productCards.id, { onDelete: 'cascade' }).notNull(),
+  variantId: integer('variant_id').references(() => productVariants.id),
+
+  originalImages: jsonb('original_images').notNull(),
+  processedImages: jsonb('processed_images'),
+  primaryImageIndex: integer('primary_image_index').default(0),
+
+  templateId: integer('template_id').references(() => imageTemplates.id),
+  aiEditProvider: varchar('ai_edit_provider', { length: 50 }),
+  aiEditParams: jsonb('ai_edit_params'),
+  complianceChecks: jsonb('compliance_checks'),
+
+  status: varchar('status', { length: 20 }).default('created'),
+  reviewerId: varchar('reviewer_id', { length: 50 }),
+  reviewedAt: timestamp('reviewed_at'),
+  rejectReason: text('reject_reason'),
+
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+}, (table) => [
+  index('idx_image_sets_product_card_id').on(table.productCardId),
+]);
+
+/**
+ * 上架任务 (Listing Task)
+ */
+export const listingTasks = pgTable('listing_tasks', {
+  id: serial('id').primaryKey(),
+  productCardId: integer('product_card_id').references(() => productCards.id, { onDelete: 'cascade' }).notNull(),
+  shopId: varchar('shop_id', { length: 36 }).references(() => shops.id, { onDelete: 'cascade' }).notNull(),
+  variantId: integer('variant_id').references(() => productVariants.id),
+
+  ozonTaskId: integer('ozon_task_id'),
+  ozonProductId: varchar('ozon_product_id', { length: 50 }),
+
+  status: varchar('status', { length: 20 }).default('created'),
+
+  logisticsTemplateId: integer('logistics_template_id'),
+  packageWeight: decimal('package_weight', { precision: 8, scale: 2 }),
+  packageDimensions: jsonb('package_dimensions'),
+
+  resultMessage: text('result_message'),
+  lastPollAt: timestamp('last_poll_at'),
+  failureReason: text('failure_reason'),
+  retryCount: integer('retry_count').default(0),
+
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+}, (table) => [
+  index('idx_listing_tasks_product_card_id').on(table.productCardId),
+  index('idx_listing_tasks_shop_id').on(table.shopId),
+  index('idx_listing_tasks_status').on(table.status),
+]);
+
+/**
+ * 修图模板表
+ */
+export const imageTemplates = pgTable('image_templates', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 200 }).notNull(),
+  type: varchar('type', { length: 30 }).notNull(),
+
+  config: jsonb('config').notNull(),
+  ozonSpec: jsonb('ozon_spec'),
+  previewImageKey: varchar('preview_image_key', { length: 500 }),
+  applicableCategoryIds: jsonb('applicable_category_ids'),
+
+  isActive: boolean('is_active').default(true),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+}, (table) => [
+  index('idx_image_templates_type').on(table.type),
+]);
+
+/**
+ * 选品策略模板表
+ */
+export const selectionStrategyTemplates = pgTable('selection_strategy_templates', {
+  id: serial('id').primaryKey(),
+  shopId: varchar('shop_id', { length: 36 }).references(() => shops.id),
+  name: varchar('name', { length: 200 }).notNull(),
+  selectionMode: varchar('selection_mode', { length: 20 }).notNull(),
+
+  ahpConfig: jsonb('ahp_config'),
+  hardConstraints: jsonb('hard_constraints'),
+  priceRangeMin: integer('price_range_min'),
+  priceRangeMax: integer('price_range_max'),
+
+  isDefault: boolean('is_default').default(false),
+  isActive: boolean('is_active').default(true),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+}, (table) => [
+  index('idx_strategy_templates_shop_mode').on(table.shopId, table.selectionMode),
+]);
+
+// ============================================================================
+// 三、选品算法相关表
+// ============================================================================
+
+/**
+ * 综合评分结果表
+ */
+export const productScores = pgTable('product_scores', {
+  id: serial('id').primaryKey(),
+  productId: integer('product_id').references(() => productCards.id, { onDelete: 'cascade' }).notNull(),
+  shopId: varchar('shop_id', { length: 36 }).references(() => shops.id).notNull(),
+  opportunityId: integer('opportunity_id').references(() => opportunities.id),
+
+  shopStage: varchar('shop_stage', { length: 20 }),
+  sellerType: varchar('seller_type', { length: 20 }),
+  selectionMode: varchar('selection_mode', { length: 20 }),
+
+  hardConstraintDiscount: decimal('hard_constraint_discount', { precision: 3, scale: 2 }).default('1.00'),
+  hardConstraintDetails: jsonb('hard_constraint_details'),
+
+  ahpWeights: jsonb('ahp_weights'),
+  entropyWeights: jsonb('entropy_weights'),
+  combinedWeights: jsonb('combined_weights'),
+
+  topsisScore: decimal('topsis_score', { precision: 5, scale: 4 }),
+  demandScore: decimal('demand_score', { precision: 5, scale: 4 }),
+  competitionScore: decimal('competition_score', { precision: 5, scale: 4 }),
+  profitScore: decimal('profit_score', { precision: 5, scale: 4 }),
+  supplyScore: decimal('supply_score', { precision: 5, scale: 4 }),
+  riskScore: decimal('risk_score', { precision: 5, scale: 4 }),
+  semanticScore: decimal('semantic_score', { precision: 5, scale: 4 }),
+
+  predictedSales7d: integer('predicted_sales_7d'),
+  predictedSales30d: integer('predicted_sales_30d'),
+  trendDirection: varchar('trend_direction', { length: 10 }),
+  trendChangepoints: jsonb('trend_changepoints'),
+
+  opportunityIndex: decimal('opportunity_index', { precision: 5, scale: 4 }),
+  crossVerifyDiscount: decimal('cross_verify_discount', { precision: 3, scale: 2 }).default('1.00'),
+  crossVerifyResult: jsonb('cross_verify_result'),
+
+  compositeScore: decimal('composite_score', { precision: 5, scale: 4 }),
+  grade: varchar('grade', { length: 1 }),
+
+  followSignal: varchar('follow_signal', { length: 20 }),
+  sellerCountOnShelf: integer('seller_count_on_shelf'),
+  differentiationScore: decimal('differentiation_score', { precision: 5, scale: 4 }),
+  negativeReviewKeywords: jsonb('negative_review_keywords'),
+  eacRiskLevel: varchar('eac_risk_level', { length: 10 }),
+  llmInsight: jsonb('llm_insight'),
+
+  calculatedAt: timestamp('calculated_at').defaultNow(),
+  expiresAt: timestamp('expires_at'),
+}, (table) => [
+  index('idx_product_scores_product_id').on(table.productId),
+  index('idx_product_scores_shop_id').on(table.shopId),
+  index('idx_product_scores_grade').on(table.grade),
+]);
+
+/**
+ * AHP权重配置表
+ */
+export const ahpWeights = pgTable('ahp_weights', {
+  id: serial('id').primaryKey(),
+  categoryId: integer('category_id'),
+  categoryName: varchar('category_name', { length: 200 }),
+  selectionMode: varchar('selection_mode', { length: 20 }).notNull(),
+
+  judgmentMatrix: jsonb('judgment_matrix').notNull(),
+  weightVector: jsonb('weight_vector').notNull(),
+  consistencyRatio: decimal('consistency_ratio', { precision: 5, scale: 4 }),
+
+  entropyWeights: jsonb('entropy_weights'),
+  combinedWeights: jsonb('combined_weights'),
+  alpha: decimal('alpha', { precision: 3, scale: 2 }).default('0.50'),
+  strategy: varchar('strategy', { length: 30 }),
+
+  isActive: boolean('is_active').default(true),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+}, (table) => [
+  uniqueIndex('idx_ahp_weights_category_mode').on(table.categoryId, table.selectionMode, table.strategy),
+]);
+
+/**
+ * 产品Embedding表 — 使用 jsonb 存储
+ */
+export const productEmbeddings = pgTable('product_embeddings', {
+  id: serial('id').primaryKey(),
+  productId: integer('product_id').references(() => productCards.id, { onDelete: 'cascade' }).notNull(),
+  embedding: jsonb('embedding'),
+  embeddingSource: varchar('embedding_source', { length: 50 }),
+  model: varchar('model', { length: 50 }).default('text-embedding-3-small'),
+  textHash: varchar('text_hash', { length: 64 }),
+  createdAt: timestamp('created_at').defaultNow(),
+}, (table) => [
+  index('idx_product_embeddings_product_id').on(table.productId),
+]);
+
+/**
+ * Prophet预测缓存表
+ */
+export const prophetForecasts = pgTable('prophet_forecasts', {
+  id: serial('id').primaryKey(),
+  targetType: varchar('target_type', { length: 10 }).notNull(),
+  targetId: integer('target_id').notNull(),
+  targetName: varchar('target_name', { length: 200 }),
+
+  forecastDate: date('forecast_date').notNull(),
+  predictedValue: decimal('predicted_value', { precision: 10, scale: 2 }),
+  lowerBound: decimal('lower_bound', { precision: 10, scale: 2 }),
+  upperBound: decimal('upper_bound', { precision: 10, scale: 2 }),
+  trendDirection: varchar('trend_direction', { length: 10 }),
+
+  changepoints: jsonb('changepoints'),
+  holidays: jsonb('holidays'),
+  modelParams: jsonb('model_params'),
+
+  createdAt: timestamp('created_at').defaultNow(),
+}, (table) => [
+  index('idx_prophet_target').on(table.targetType, table.targetId),
+  index('idx_prophet_date').on(table.forecastDate),
+]);
+
+/**
+ * 数据源健康状态表
+ */
+export const dataSourceHealth = pgTable('data_source_health', {
+  id: serial('id').primaryKey(),
+  source: varchar('source', { length: 30 }).notNull(),
+  status: varchar('status', { length: 20 }).notNull(),
+  lastCheckAt: timestamp('last_check_at').notNull(),
+  lastSuccessAt: timestamp('last_success_at'),
+  responseTime: integer('response_time'),
+  errorRate: decimal('error_rate', { precision: 5, scale: 2 }),
+  errorMessage: text('error_message'),
+  metadata: jsonb('metadata'),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+}, (table) => [
+  uniqueIndex('idx_data_source_health_source').on(table.source),
+]);
+
+/**
+ * 选品复盘追踪表
+ */
+export const selectionRetrospectives = pgTable('selection_retrospectives', {
+  id: serial('id').primaryKey(),
+  shopId: varchar('shop_id', { length: 36 }).references(() => shops.id).notNull(),
+  opportunityId: integer('opportunity_id').references(() => opportunities.id),
+  productCardId: integer('product_card_id').references(() => productCards.id),
+
+  selectedAt: timestamp('selected_at'),
+  listedAt: timestamp('listed_at'),
+  firstOrderAt: timestamp('first_order_at'),
+
+  actualSales7d: integer('actual_sales_7d'),
+  actualSales30d: integer('actual_sales_30d'),
+  predictedSales7d: integer('predicted_sales_7d'),
+  predictedSales30d: integer('predicted_sales_30d'),
+
+  accuracyScore: decimal('accuracy_score', { precision: 5, scale: 2 }),
+  actualMargin: decimal('actual_margin', { precision: 5, scale: 2 }),
+
+  grade: varchar('grade', { length: 1 }),
+  actualPerformance: varchar('actual_performance', { length: 20 }),
+
+  createdAt: timestamp('created_at').defaultNow(),
+}, (table) => [
+  index('idx_retrospectives_shop_id').on(table.shopId),
+  index('idx_retrospectives_grade').on(table.grade),
+]);
+
+/**
+ * 通知表
+ */
+export const notifications = pgTable('notifications', {
+  id: serial('id').primaryKey(),
+  userId: varchar('user_id', { length: 50 }).notNull(),
+  type: varchar('type', { length: 30 }).notNull(),
+  severity: varchar('severity', { length: 10 }).notNull(),
+
+  title: varchar('title', { length: 200 }).notNull(),
+  body: text('body'),
+
+  relatedEntityType: varchar('related_entity_type', { length: 30 }),
+  relatedEntityId: integer('related_entity_id'),
+
+  isRead: boolean('is_read').default(false),
+  readAt: timestamp('read_at'),
+
+  actionType: varchar('action_type', { length: 30 }),
+  actionData: jsonb('action_data'),
+  actionCompletedAt: timestamp('action_completed_at'),
+
+  createdAt: timestamp('created_at').defaultNow(),
+}, (table) => [
+  index('idx_notifications_user_id').on(table.userId),
+  index('idx_notifications_is_read').on(table.isRead),
+]);
+
+/**
+ * Ozon平台知识缓存表
+ */
+export const ozonKnowledgeCache = pgTable('ozon_knowledge_cache', {
+  id: serial('id').primaryKey(),
+  domain: varchar('domain', { length: 50 }).notNull(),
+  categoryId: integer('category_id'),
+  data: jsonb('data').notNull(),
+  dataHash: varchar('data_hash', { length: 64 }).notNull(),
+  syncedAt: timestamp('synced_at').defaultNow(),
+  syncSource: varchar('sync_source', { length: 50 }),
+  apiEndpoint: varchar('api_endpoint', { length: 200 }),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+}, (table) => [
+  uniqueIndex('idx_knowledge_domain_category').on(table.domain, table.categoryId),
+]);
+
+/**
+ * 政策变更事件表
+ */
+export const policyChangeEvents = pgTable('policy_change_events', {
+  id: serial('id').primaryKey(),
+  domain: varchar('domain', { length: 50 }).notNull(),
+  severity: varchar('severity', { length: 10 }).notNull(),
+  changeSummary: text('change_summary').notNull(),
+  beforeData: jsonb('before_data'),
+  afterData: jsonb('after_data'),
+  affectedCategories: jsonb('affected_categories'),
+  affectedProducts: jsonb('affected_products'),
+  algorithmImpact: jsonb('algorithm_impact'),
+  suggestedAction: text('suggested_action'),
+  effectiveDate: timestamp('effective_date'),
+  notifiedAt: timestamp('notified_at'),
+  acknowledgedAt: timestamp('acknowledged_at'),
+  acknowledgedBy: varchar('acknowledged_by', { length: 50 }),
+  createdAt: timestamp('created_at').defaultNow(),
+}, (table) => [
+  index('idx_policy_change_severity').on(table.severity),
+  index('idx_policy_change_domain').on(table.domain),
+]);
+
+/**
+ * 同步调度配置表
+ */
+export const syncSchedules = pgTable('sync_schedules', {
+  id: serial('id').primaryKey(),
+  domain: varchar('domain', { length: 50 }).notNull(),
+  apiEndpoint: varchar('api_endpoint', { length: 200 }),
+  cronExpression: varchar('cron_expression', { length: 50 }),
+  frequency: varchar('frequency', { length: 20 }),
+  isActive: boolean('is_active').default(true),
+  lastSyncAt: timestamp('last_sync_at'),
+  lastSyncStatus: varchar('last_sync_status', { length: 20 }),
+  lastError: text('last_error'),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+}, (table) => [
+  uniqueIndex('idx_sync_schedules_domain').on(table.domain),
+]);
+
+// ============================================================================
+// 类型导出
+// ============================================================================
+
+export type EacConfig = typeof eacConfig.$inferSelect;
+export type Opportunity = typeof opportunities.$inferSelect;
+export type ProductCard = typeof productCards.$inferSelect;
+export type ProductVariant = typeof productVariants.$inferSelect;
+export type ImageSet = typeof imageSets.$inferSelect;
+export type ImageTemplate = typeof imageTemplates.$inferSelect;
+export type ListingTask = typeof listingTasks.$inferSelect;
+export type ProductScore = typeof productScores.$inferSelect;
+export type AhpWeight = typeof ahpWeights.$inferSelect;
+export type ProductEmbedding = typeof productEmbeddings.$inferSelect;
+export type ProphetForecast = typeof prophetForecasts.$inferSelect;
+export type SelectionStrategyTemplate = typeof selectionStrategyTemplates.$inferSelect;
+export type DataSourceHealth = typeof dataSourceHealth.$inferSelect;
+export type SelectionRetrospective = typeof selectionRetrospectives.$inferSelect;
+export type Notification = typeof notifications.$inferSelect;
+export type OzonKnowledgeCache = typeof ozonKnowledgeCache.$inferSelect;
+export type PolicyChangeEvent = typeof policyChangeEvents.$inferSelect;
+export type SyncSchedule = typeof syncSchedules.$inferSelect;
