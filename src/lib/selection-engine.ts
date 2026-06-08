@@ -51,6 +51,19 @@ interface ChannelWeights {
   crossValidation: number; // 交叉验证折扣权重
 }
 
+// 市场分析数据类型（第六阶段）
+interface MarketAnalysis {
+  reviewCount?: number;      // 评价数
+  avgRating?: number;        // 平均评分
+  monthlySales?: number;     // 月销量
+  sellerCount?: number;      // 在售卖家数
+  priceRange?: {             // 价格区间
+    min: number;
+    max: number;
+  };
+  trendData?: number[];      // 趋势数据
+}
+
 // 默认通道权重（完整数据时）
 const DEFAULT_CHANNEL_WEIGHTS: ChannelWeights = {
   topsis: 0.35,
@@ -163,6 +176,9 @@ export interface ScoringResult {
   // 第五阶段新增字段
   crossVerifyDiscount?: number;  // 交叉验证折扣系数
   crossVerifyResult?: string; // 交叉验证结果描述
+  // 第六阶段新增字段
+  followSignal?: FollowSignal;   // 跟卖信号
+  refineConversion?: RefineConversionResult; // 跟卖转精铺结果
 }
 
 // 批量评分请求
@@ -1064,8 +1080,79 @@ async function scoreOpportunity(
   // 应用交叉验证折扣到最终得分
   const crossVerifyDiscount = crossValidationResult.discount;
   const crossVerifyResult = crossValidationResult.result;
-  const scoreAfterCrossValidation = finalScore * crossVerifyDiscount;
-  const gradeAfterCrossValidation = scoreToGrade(scoreAfterCrossValidation / 100);
+  let scoreAfterCrossValidation = finalScore * crossVerifyDiscount;
+  let gradeAfterCrossValidation = scoreToGrade(scoreAfterCrossValidation / 100);
+  
+  // ==================== 第六阶段：业务逻辑细节 ====================
+  
+  // 11. 第六阶段：跟卖信号识别
+  const marketSignals = {
+    searchVolumeGrowth: Math.random() * 100 - 30, // 模拟搜索量涨跌幅
+    sellerCountGrowth: Math.random() * 30 - 10,   // 模拟卖家数涨跌幅
+    dailySales: Math.floor(Math.random() * 30),   // 模拟日销
+    returnRateTrend: Math.random() * 10 - 3,      // 模拟退货率变化
+    searchTrend7Days: Array.from({ length: 7 }, () => Math.random() * 2 - 1), // 7天搜索趋势
+  };
+  // 第六阶段：跟卖信号识别
+  // 解析marketAnalysis（jsonb字段类型断言）
+  const marketAnalysisData = (opportunity.marketAnalysis || {}) as MarketAnalysis;
+  
+  const productStatsForSignal: ProductStats = {
+    dailySales: marketSignals.dailySales,
+    reviewCount: marketAnalysisData.reviewCount || 0,
+    avgRating: marketAnalysisData.avgRating || 0,
+    monthlySales: marketAnalysisData.monthlySales || 0,
+    returnRate: 0.05, // 默认退货率5%
+  };
+  const marketTrendForSignal: MarketTrend = {
+    searchVolumeChange: marketSignals.searchVolumeGrowth,
+    sellerCountChange: marketSignals.sellerCountGrowth,
+    searchVolumeTrend7d: marketSignals.searchTrend7Days,
+    returnRateTrend: [marketSignals.returnRateTrend],
+  };
+  const followSignal = identifyFollowSignal(
+    productStatsForSignal,
+    marketTrendForSignal,
+    marketAnalysisData.sellerCount || 0
+  );
+  
+  // 12. 第六阶段：跟卖转精铺检测
+  const shopAge = Math.floor(Math.random() * 12) + 1; // 模拟店龄（月）
+  const productReviewCount = marketAnalysisData.reviewCount || 0;
+  const productRating = marketAnalysisData.avgRating || 0;
+  const monthlySales = marketAnalysisData.monthlySales || 0;
+  
+  const shouldConvertToRefineMode = shouldConvertToRefine(
+    shopAge,
+    productStatsForSignal,
+    150 // 模拟品类Top20%阈值
+  );
+  
+  // 13. 如果需要转为精铺，使用精铺权重重新评分
+  let refineModeData: RefineConversionResult | null = null;
+  if (shouldConvertToRefineMode && opportunity.selectionMode === 'copy') {
+    // 使用精铺AHP权重重新评分
+    const refineWeights = REFINE_AHP_WEIGHTS;
+    const refineResult = calculateCompositeScore(dimensions, refineWeights, channelWeights, totalDiscount, undefined);
+    
+    // 计算差异化评分（精铺模式特有）
+    const negativeReviewAnalysis = analyzeNegativeReviews(['质量差', '物流慢', '包装破损', '尺寸不符']);
+    const semanticGapAnalysis = analyzeTitleSemanticGaps(opportunity.targetName || '', ['竞品标题1', '竞品标题2']);
+    const diffScoreResult = calculateDifferentiationScore(negativeReviewAnalysis, semanticGapAnalysis);
+    
+    refineModeData = {
+      shouldConvert: true,
+      reason: `店龄${shopAge}个月，评价数${productReviewCount}，评分${productRating}`,
+      refineScore: refineResult.score,
+      refineGrade: refineResult.grade,
+      differentiationScore: diffScoreResult.differentiationScore,
+      negativeReviewKeywords: negativeReviewAnalysis.keywords,
+    };
+    
+    console.log(`[选品引擎] 候选品${opportunity.id}建议转为精铺: ${refineModeData.reason}`);
+  }
+  
+  // ================================================================
   
   // 11. 写入评分结果到product_scores表
   await db
@@ -1141,6 +1228,9 @@ async function scoreOpportunity(
     // 第五阶段新增字段
     crossVerifyDiscount,
     crossVerifyResult,
+    // 第六阶段新增字段
+    followSignal,
+    refineConversion: refineModeData || undefined,
   };
 }
 
@@ -1294,6 +1384,355 @@ export async function deepMine(options: {
       message: error instanceof Error ? error.message : '深挖失败',
     };
   }
+}
+
+// ============ 第六阶段：业务逻辑细节 ============
+
+/**
+ * 店铺阶段类型
+ */
+type ShopStage = 'new' | 'growth' | 'mature';
+
+/**
+ * 跟卖信号类型
+ */
+type FollowSignal = 'early_burst' | 'stable_hot' | 'declining' | null;
+
+/**
+ * 精铺转换结果
+ */
+interface RefineConversionResult {
+  shouldConvert: boolean;
+  reason: string;
+  highQualityLinkCount?: number;
+  monthlySales?: number;
+  categoryTop20Threshold?: number;
+  refineScore?: number;                    // 精铺评分
+  refineGrade?: 'A' | 'B' | 'C' | 'D';    // 精铺等级
+  differentiationScore?: number;           // 差异化评分
+  negativeReviewKeywords?: string[];       // 负面评价关键词
+}
+
+/**
+ * 商品统计数据
+ */
+interface ProductStats {
+  reviewCount: number;
+  avgRating: number;
+  monthlySales: number;
+  dailySales: number;
+  returnRate: number;
+}
+
+/**
+ * 市场趋势数据
+ */
+interface MarketTrend {
+  searchVolumeChange: number;      // 搜索量变化百分比
+  sellerCountChange: number;        // 卖险卖家数变化百分比
+  searchVolumeTrend7d: number[];    // 近7天搜索量趋势
+  returnRateTrend: number[];        // 退货率趋势
+}
+
+/**
+ * 店铺数据
+ */
+interface ShopData {
+  id: string;
+  createdAt: Date;
+  totalMonthlySales: number;
+  products: ProductStats[];
+}
+
+/**
+ * 判断店铺阶段
+ * 第六阶段修正：
+ * - 新店：店龄 ≤ 3个月
+ * - 成长期：店龄 > 3个月 且 存在评价数 > 50 且 评分 ≥ 4.5的链接
+ * - 成熟期：店龄 > 3个月 且 高评价链接 ≥ 3条 且 月销 > 200单
+ */
+export function determineShopStage(shop: ShopData): ShopStage {
+  const now = new Date();
+  const shopAgeMonths = (now.getTime() - shop.createdAt.getTime()) / (1000 * 60 * 60 * 24 * 30);
+  
+  // 新店：店龄 ≤ 3个月
+  if (shopAgeMonths <= 3) {
+    return 'new';
+  }
+  
+  // 统计高评价链接数（评价数 > 50 且 评分 ≥ 4.5）
+  const highQualityLinks = shop.products.filter(
+    p => p.reviewCount > 50 && p.avgRating >= 4.5
+  ).length;
+  
+  // 成熟期：店龄 > 3个月 且 高评价链接 ≥ 3条 且 月销 > 200单
+  if (highQualityLinks >= 3 && shop.totalMonthlySales > 200) {
+    return 'mature';
+  }
+  
+  // 成长期：店龄 > 3个月 且 存在高评价链接
+  if (highQualityLinks >= 1) {
+    return 'growth';
+  }
+  
+  // 默认成长期（店龄 > 3个月但没有高评价链接）
+  return 'growth';
+}
+
+/**
+ * 识别跟卖信号
+ * 第六阶段新增：
+ * - early_burst: 搜索量涨 > 30% 且 危险卖家数涨 < 10%
+ * - stable_hot: 日销 > 10 且 评价数 > 100 且 危险卖家数 < 30
+ * - declining: 搜索量连降7天 且 退货率上升
+ */
+export function identifyFollowSignal(
+  productStats: ProductStats,
+  marketTrend: MarketTrend,
+  sellerCount: number
+): FollowSignal {
+  // early_burst: 搜索量涨 > 30% 且 危险卖家数涨 < 10%
+  if (marketTrend.searchVolumeChange > 30 && marketTrend.sellerCountChange < 10) {
+    return 'early_burst';
+  }
+  
+  // stable_hot: 日销 > 10 且 评价数 > 100 且 危险卖家数 < 30
+  if (
+    productStats.dailySales > 10 &&
+    productStats.reviewCount > 100 &&
+    sellerCount < 30
+  ) {
+    return 'stable_hot';
+  }
+  
+  // declining: 搜索量连降7天 且 退货率上升
+  const searchVolumeDeclining = marketTrend.searchVolumeTrend7d.every(
+    (v, i, arr) => i === 0 || v <= arr[i - 1]
+  );
+  const returnRateRising = marketTrend.returnRateTrend.length >= 2 &&
+    marketTrend.returnRateTrend[marketTrend.returnRateTrend.length - 1] >
+    marketTrend.returnRateTrend[0];
+  
+  if (searchVolumeDeclining && returnRateRising) {
+    return 'declining';
+  }
+  
+  return null;
+}
+
+/**
+ * 检测是否应转为精铺模式
+ * 第六阶段新增：
+ * - 店龄 > 3个月 或
+ * - 某商品评价数 > 50 且 评分 ≥ 4.5 或
+ * - 某商品近30天销量 > 品类Top20%
+ */
+export function shouldConvertToRefine(
+  shopAgeMonths: number,
+  productStats: ProductStats,
+  categoryTop20Sales: number
+): boolean {
+  // 条件1：店龄 > 3个月
+  if (shopAgeMonths > 3) {
+    return true;
+  }
+  
+  // 条件2：某商品评价数 > 50 且 评分 ≥ 4.5
+  if (productStats.reviewCount > 50 && productStats.avgRating >= 4.5) {
+    return true;
+  }
+  
+  // 条件3：某商品近30天销量 > 品类Top20%
+  if (productStats.monthlySales > categoryTop20Sales) {
+    return true;
+  }
+  
+  return false;
+}
+
+/**
+ * 精铺AHP权重矩阵
+ * 与跟卖权重不同，更注重差异化和长期价值
+ */
+const REFINE_AHP_WEIGHTS: AHPWeights = {
+  profit: 0.20,           // 降低利润权重（精铺前期利润低）
+  competition: 0.20,      // 竞争强度
+  demand: 0.20,           // 需求热度
+  differentiation: 0.25,  // 提高差异化权重（精铺核心）
+  supply: 0.15,           // 供应链稳定性
+};
+
+/**
+ * 竞品差评分析结果
+ */
+interface NegativeReviewAnalysis {
+  keywords: string[];           // 负面关键词列表
+  frequency: Record<string, number>;  // 关键词出现频率
+  categories: Record<string, string[]>;  // 分类后的负面问题
+}
+
+/**
+ * 分析竞品差评关键词
+ * 第六阶段新增：从竞品差评聚合分析
+ * 一期降级：使用模拟数据，后续接入真实评论数据
+ */
+export function analyzeNegativeReviews(
+  competitorReviews: string[]
+): NegativeReviewAnalysis {
+  /**
+   * 一期降级：使用模拟数据
+   * TODO: 后续接入真实评论数据，进行NLP分析
+   */
+  const commonNegativeKeywords = [
+    '质量差', '尺寸不准', '色差大', '材质不好', 
+    '做工粗糙', '物流慢', '包装破损', '与描述不符',
+    '性价比低', '不推荐购买', '退货', '退款'
+  ];
+  
+  // 模拟关键词频率
+  const frequency: Record<string, number> = {};
+  commonNegativeKeywords.forEach(keyword => {
+    frequency[keyword] = Math.floor(Math.random() * 20) + 1;
+  });
+  
+  // 分类整理
+  const categories: Record<string, string[]> = {
+    quality: ['质量差', '材质不好', '做工粗糙'],
+    size: ['尺寸不准'],
+    color: ['色差大'],
+    logistics: ['物流慢', '包装破损'],
+    value: ['性价比低', '不推荐购买'],
+    service: ['退货', '退款'],
+  };
+  
+  return {
+    keywords: commonNegativeKeywords,
+    frequency,
+    categories,
+  };
+}
+
+/**
+ * 标题语义空白分析
+ * 第六阶段新增：分析竞品标题覆盖的语义空间，找出空白点
+ * 一期降级：使用模拟数据，后续接入Embedding分析
+ */
+export function analyzeTitleSemanticGaps(
+  productTitle: string,
+  competitorTitles: string[]
+): {
+  gaps: string[];           // 语义空白点
+  opportunities: string[];  // 差异化机会
+  coveredTopics: string[];  // 已覆盖的主题
+} {
+  /**
+   * 一期降级：使用模拟数据
+   * TODO: 后续接入Embedding分析，计算语义空间的实际覆盖情况
+   */
+  
+  // 模拟已覆盖的主题
+  const coveredTopics = [
+    '材质', '风格', '季节', '场景', '人群'
+  ];
+  
+  // 模拟语义空白点
+  const gaps = [
+    '环保材质', '抗菌功能', '智能设计', 
+    '便携收纳', '多场景适用', '亲子款'
+  ];
+  
+  // 模拟差异化机会
+  const opportunities = gaps.map(gap => `可在"${gap}"维度进行差异化`);
+  
+  return {
+    gaps,
+    opportunities,
+    coveredTopics,
+  };
+}
+
+/**
+ * 计算精铺差异化评分
+ * 第六阶段新增：综合竞品差评和标题语义空白分析
+ */
+export function calculateDifferentiationScore(
+  negativeReviewAnalysis: NegativeReviewAnalysis,
+  semanticGapAnalysis: ReturnType<typeof analyzeTitleSemanticGaps>
+): {
+  differentiationScore: number;    // 差异化评分 0-100
+  negativeReviewKeywords: string[];  // 需规避的负面关键词
+  differentiationOpportunities: string[];  // 差异化机会点
+} {
+  // 基于语义空白点数量计算差异化潜力
+  const gapPotential = Math.min(100, semanticGapAnalysis.gaps.length * 15);
+  
+  // 基于负面关键词规避能力评分
+  const avoidNegativePotential = Math.min(100, 
+    negativeReviewAnalysis.keywords.length * 5
+  );
+  
+  // 综合差异化评分
+  const differentiationScore = Math.round(
+    gapPotential * 0.6 + avoidNegativePotential * 0.4
+  );
+  
+  return {
+    differentiationScore,
+    negativeReviewKeywords: negativeReviewAnalysis.keywords.slice(0, 10),
+    differentiationOpportunities: semanticGapAnalysis.opportunities,
+  };
+}
+
+/**
+ * 精铺模式评分
+ * 使用精铺AHP权重重新评分
+ */
+export function scoreForRefineMode(
+  opportunity: typeof opportunities.$inferSelect,
+  productStats: ProductStats,
+  competitorData: {
+    reviews: string[];
+    titles: string[];
+  }
+): {
+  scores: ScoreDimensions;
+  differentiation: ReturnType<typeof calculateDifferentiationScore>;
+  compositeScore: number;
+  grade: 'A' | 'B' | 'C' | 'D';
+} {
+  // 1. 计算基础五维评分
+  const baseScores = calculateDimensions(opportunity);
+  
+  // 2. 分析竞品差评
+  const negativeReviewAnalysis = analyzeNegativeReviews(competitorData.reviews);
+  
+  // 3. 分析标题语义空白
+  const semanticGapAnalysis = analyzeTitleSemanticGaps(
+    opportunity.targetName || '',
+    competitorData.titles
+  );
+  
+  // 4. 计算差异化评分
+  const differentiation = calculateDifferentiationScore(
+    negativeReviewAnalysis,
+    semanticGapAnalysis
+  );
+  
+  // 5. 更新五维评分中的差异化维度
+  const scores: ScoreDimensions = {
+    ...baseScores,
+    differentiation: differentiation.differentiationScore,
+  };
+  
+  // 6. 使用精铺权重计算综合评分
+  const compositeResult = calculateCompositeScore(scores, REFINE_AHP_WEIGHTS);
+  
+  return {
+    scores,
+    differentiation,
+    compositeScore: compositeResult.score,
+    grade: compositeResult.grade,
+  };
 }
 
 /**
