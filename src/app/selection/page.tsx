@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
 import {
   Select,
   SelectContent,
@@ -31,12 +33,6 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
   RadarChart,
   PolarGrid,
   PolarAngleAxis,
@@ -51,8 +47,7 @@ import {
   Scatter,
   ZAxis,
   Tooltip,
-  AreaChart,
-  Area,
+  Cell,
 } from 'recharts';
 import {
   Search,
@@ -70,26 +65,38 @@ import {
   ArrowDownRight,
   Minus,
   RefreshCw,
-  MoreHorizontal,
-  Trash2,
-  CheckSquare,
-  XSquare,
+  ChevronLeft,
+  Package,
+  Loader2,
+  Store,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // Types
 interface Opportunity {
-  id: number;
+  id: string;
   shopId: string;
   source: string;
   selectionMode: 'copy' | 'refine' | 'system_recommend';
   targetType: string;
   targetCategoryId: number | null;
+  targetCategoryName: string | null;
   targetProductId: number | null;
   targetName: string;
-  marketAnalysis: any;
-  profitEstimate: any;
-  riskFlags: any;
+  targetImage: string | null;
+  marketAnalysis: {
+    priceRange: { min: number; max: number };
+    sellerCount: number;
+    reviewCount: number;
+    trend: 'up' | 'down' | 'stable';
+  } | null;
+  scores: {
+    profit: number;
+    competition: number;
+    demand: number;
+    differentiation: number;
+    supply: number;
+  } | null;
   status: 'discovered' | 'confirmed' | 'abandoned';
   createdAt: string;
   updatedAt: string;
@@ -100,28 +107,21 @@ interface Shop {
   name: string;
 }
 
-// Mock data for radar chart
-const getRadarData = (scores: any) => [
-  { subject: '利润空间', value: scores?.profit || 60, fullMark: 100 },
-  { subject: '竞争强度', value: 100 - (scores?.competition || 40), fullMark: 100 },
-  { subject: '需求热度', value: scores?.demand || 75, fullMark: 100 },
-  { subject: '差异化', value: scores?.differentiation || 55, fullMark: 100 },
-  { subject: '供应链', value: scores?.supply || 70, fullMark: 100 },
-];
+interface Category {
+  id: number;
+  name: string;
+}
 
-// Mock trend data
-const getTrendData = () => {
-  const data = [];
-  for (let i = 6; i >= 0; i--) {
-    data.push({
-      day: `${i}天前`,
-      value: Math.random() * 100 + 50,
-    });
-  }
-  return data;
+// Grade helpers
+const getGrade = (scores: Opportunity['scores']): 'A' | 'B' | 'C' | 'D' => {
+  if (!scores) return 'D';
+  const avg = (scores.profit + (100 - scores.competition) + scores.demand + scores.differentiation + scores.supply) / 5;
+  if (avg >= 70) return 'A';
+  if (avg >= 55) return 'B';
+  if (avg >= 40) return 'C';
+  return 'D';
 };
 
-// Grade colors
 const gradeColors: Record<string, string> = {
   A: 'bg-green-500',
   B: 'bg-blue-500',
@@ -136,16 +136,28 @@ const gradeTextColors: Record<string, string> = {
   D: 'text-red-600',
 };
 
+const gradeScatterColors: Record<string, string> = {
+  A: '#22c55e',
+  B: '#3b82f6',
+  C: '#f97316',
+  D: '#ef4444',
+};
+
 export default function SelectionPage() {
+  const router = useRouter();
+  
   // State
-  const [shopId, setShopId] = useState('8275dd99-f8fe-4560-a63a-774d15a03bbf');
+  const [shopId, setShopId] = useState('');
   const [mode, setMode] = useState<'copy' | 'refine'>('copy');
   const [viewMode, setViewMode] = useState<'card' | 'list' | 'matrix'>('card');
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
+  const [shops, setShops] = useState<Shop[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showAIDigDialog, setShowAIDigDialog] = useState(false);
-  const [showFilterPanel, setShowFilterPanel] = useState(false);
+  const [showFilterPanel, setShowFilterPanel] = useState(true);
+  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
   
   // Filter state
   const [filters, setFilters] = useState({
@@ -160,15 +172,60 @@ export default function SelectionPage() {
   const [aiDigKeyword, setAiDigKeyword] = useState('');
   const [aiDigCategoryId, setAiDigCategoryId] = useState('');
 
-  // Mock shops
-  const shops: Shop[] = [
-    { id: '8275dd99-f8fe-4560-a63a-774d15a03bbf', name: 'TIANTAN' },
-  ];
-
-  // Fetch opportunities
+  // Fetch initial data
   useEffect(() => {
-    fetchOpportunities();
+    fetchShops();
+    fetchCategories();
+  }, []);
+
+  // Fetch opportunities when shop/mode/filters change
+  useEffect(() => {
+    if (shopId) {
+      fetchOpportunities();
+    }
   }, [shopId, mode, filters]);
+
+  const fetchShops = async () => {
+    try {
+      const res = await fetch('/api/shops');
+      const data = await res.json();
+      if (data.success && data.data?.length > 0) {
+        setShops(data.data);
+        // Auto-select TIANTAN or first shop
+        const tantanShop = data.data.find((s: Shop) => s.name === 'TIANTAN');
+        setShopId(tantanShop?.id || data.data[0].id);
+      } else {
+        // Fallback
+        setShops([{ id: '1', name: 'TIANTAN' }]);
+        setShopId('1');
+      }
+    } catch (error) {
+      console.error('Failed to fetch shops:', error);
+      setShops([{ id: '1', name: 'TIANTAN' }]);
+      setShopId('1');
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch('/api/selection/categories/tree');
+      const data = await res.json();
+      if (data.success && data.data) {
+        // Flatten categories for filter
+        const flat: Category[] = [];
+        const flatten = (cats: any[], prefix = '') => {
+          cats.forEach(cat => {
+            flat.push({ id: cat.category_id, name: prefix + cat.category_name });
+            if (cat.children) flatten(cat.children, prefix + '  ');
+          });
+        };
+        flatten(data.data);
+        setCategories(flat);
+      }
+    } catch (error) {
+      console.error('Failed to fetch categories:', error);
+    }
+  };
 
   const fetchOpportunities = async () => {
     setLoading(true);
@@ -178,86 +235,147 @@ export default function SelectionPage() {
         mode,
         status: 'discovered',
       });
+      if (filters.categoryId) params.append('categoryId', filters.categoryId);
+      
       const res = await fetch(`/api/selection/opportunities?${params}`);
       const data = await res.json();
-      if (data.success) {
+      if (data.success && data.data?.items) {
         setOpportunities(data.data.items);
+      } else {
+        // Use mock data if no real data
+        setOpportunities(generateMockData());
       }
     } catch (error) {
       console.error('Failed to fetch opportunities:', error);
+      setOpportunities(generateMockData());
     } finally {
       setLoading(false);
     }
   };
 
   // Generate mock data for demo
-  const mockOpportunities: Opportunity[] = useMemo(() => {
-    if (opportunities.length > 0) return opportunities;
+  const generateMockData = (): Opportunity[] => {
+    const names = [
+      '女士冬季保暖羽绒服', '儿童益智积木玩具', '家用空气净化器',
+      '运动健身瑜伽垫', '智能手表手环', '便携式充电宝',
+      '男士商务休闲皮带', '婴儿纯棉连体衣', '厨房多功能置物架',
+      '户外露营帐篷', '蓝牙无线耳机', '时尚女士手提包',
+    ];
     
     return Array.from({ length: 12 }, (_, i) => ({
-      id: i + 1,
-      shopId: shopId,
+      id: `opp-${i + 1}`,
+      shopId,
       source: ['ozon', 'aliexpress', '1688'][i % 3],
       selectionMode: mode,
       targetType: 'product',
       targetCategoryId: 100 + i,
+      targetCategoryName: ['服装', '玩具', '家电', '运动', '数码', '箱包'][i % 6],
       targetProductId: 1000 + i,
-      targetName: ['女士冬季保暖羽绒服', '儿童益智积木玩具', '家用空气净化器', '运动健身瑜伽垫', '智能手表手环', '便携式充电宝'][i % 6],
+      targetName: names[i],
+      targetImage: null,
       marketAnalysis: {
         priceRange: { min: 500 + i * 100, max: 2000 + i * 150 },
         sellerCount: 10 + i * 5,
         reviewCount: 50 + i * 20,
+        trend: ['up', 'down', 'stable'][i % 3] as 'up' | 'down' | 'stable',
       },
-      profitEstimate: {
-        profitMargin: 20 + Math.random() * 30,
-        roi: 50 + Math.random() * 100,
+      scores: {
+        profit: 40 + (i * 7) % 60,
+        competition: 20 + (i * 11) % 50,
+        demand: 50 + (i * 13) % 50,
+        differentiation: 30 + (i * 17) % 70,
+        supply: 60 + (i * 19) % 40,
       },
-      riskFlags: {},
       status: 'discovered',
       createdAt: new Date(Date.now() - i * 3600000).toISOString(),
       updatedAt: new Date().toISOString(),
     }));
-  }, [opportunities, shopId, mode]);
-
-  // Mock scores
-  const getMockScores = (id: number) => ({
-    profit: 40 + (id * 7) % 60,
-    competition: 20 + (id * 11) % 50,
-    demand: 50 + (id * 13) % 50,
-    differentiation: 30 + (id * 17) % 70,
-    supply: 60 + (id * 19) % 40,
-  });
-
-  const getGrade = (scores: any) => {
-    const avg = (scores.profit + (100 - scores.competition) + scores.demand + scores.differentiation + scores.supply) / 5;
-    if (avg >= 70) return 'A';
-    if (avg >= 55) return 'B';
-    if (avg >= 40) return 'C';
-    return 'D';
   };
 
+  // Filter opportunities
+  const filteredOpportunities = useMemo(() => {
+    return opportunities.filter(opp => {
+      // Price filter
+      if (opp.marketAnalysis) {
+        const avgPrice = (opp.marketAnalysis.priceRange.min + opp.marketAnalysis.priceRange.max) / 2;
+        if (avgPrice < filters.priceMin || avgPrice > filters.priceMax) return false;
+      }
+      
+      // Grade filter
+      if (filters.grades.length > 0) {
+        const grade = getGrade(opp.scores);
+        if (!filters.grades.includes(grade)) return false;
+      }
+      
+      // Source filter
+      if (filters.sources.length > 0) {
+        if (!filters.sources.includes(opp.source)) return false;
+      }
+      
+      return true;
+    });
+  }, [opportunities, filters]);
+
+  // Radar chart data
+  const getRadarData = (scores: Opportunity['scores']) => {
+    if (!scores) return [];
+    return [
+      { subject: '利润空间', value: scores.profit, fullMark: 100 },
+      { subject: '竞争强度', value: 100 - scores.competition, fullMark: 100 },
+      { subject: '需求热度', value: scores.demand, fullMark: 100 },
+      { subject: '差异化', value: scores.differentiation, fullMark: 100 },
+      { subject: '供应链', value: scores.supply, fullMark: 100 },
+    ];
+  };
+
+  // Trend mini chart data
+  const getTrendData = (trend: 'up' | 'down' | 'stable') => {
+    const base = trend === 'up' ? 50 : trend === 'down' ? 80 : 65;
+    return Array.from({ length: 7 }, (_, i) => ({
+      day: i,
+      value: base + (trend === 'up' ? i * 5 : trend === 'down' ? -i * 5 : Math.sin(i) * 10),
+    }));
+  };
+
+  // Scatter data for matrix view
+  const scatterData = useMemo(() => {
+    return filteredOpportunities.map(opp => {
+      const scores = opp.scores || { profit: 50, competition: 50, demand: 50, differentiation: 50, supply: 50 };
+      const grade = getGrade(scores);
+      return {
+        x: scores.competition,
+        y: scores.profit,
+        z: scores.demand,
+        id: opp.id,
+        name: opp.targetName,
+        grade,
+      };
+    });
+  }, [filteredOpportunities]);
+
   // Actions
-  const handleConfirm = async (id: number) => {
+  const handleConfirm = async (id: string) => {
     try {
       await fetch(`/api/selection/opportunities/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'confirmed' }),
       });
-      fetchOpportunities();
+      // Remove from list or refetch
+      setOpportunities(prev => prev.filter(o => o.id !== id));
     } catch (error) {
       console.error('Failed to confirm:', error);
     }
   };
 
-  const handleAbandon = async (id: number) => {
+  const handleAbandon = async (id: string) => {
     try {
       await fetch(`/api/selection/opportunities/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'abandoned' }),
       });
-      fetchOpportunities();
+      setOpportunities(prev => prev.filter(o => o.id !== id));
     } catch (error) {
       console.error('Failed to abandon:', error);
     }
@@ -334,7 +452,8 @@ export default function SelectionPage() {
     }
   };
 
-  const toggleSelect = (id: number) => {
+  // Selection handlers
+  const toggleSelect = (id: string) => {
     const newSelected = new Set(selectedIds);
     if (newSelected.has(id)) {
       newSelected.delete(id);
@@ -345,26 +464,27 @@ export default function SelectionPage() {
   };
 
   const toggleSelectAll = () => {
-    if (selectedIds.size === mockOpportunities.length) {
+    if (selectedIds.size === filteredOpportunities.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(mockOpportunities.map(o => o.id)));
+      setSelectedIds(new Set(filteredOpportunities.map(o => o.id)));
     }
   };
 
-  // Scatter data for matrix view
-  const scatterData = mockOpportunities.map(o => {
-    const scores = getMockScores(o.id);
-    const grade = getGrade(scores);
-    return {
-      x: scores.competition,
-      y: scores.profit,
-      z: scores.demand,
-      id: o.id,
-      name: o.targetName,
-      grade,
-    };
-  });
+  // Long press for multi-select
+  const handleLongPressStart = (id: string) => {
+    const timer = setTimeout(() => {
+      toggleSelect(id);
+    }, 500);
+    setLongPressTimer(timer);
+  };
+
+  const handleLongPressEnd = () => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      setLongPressTimer(null);
+    }
+  };
 
   return (
     <AppLayout title="AI 选品看板" subtitle="智能选品 · 发现优质商机">
@@ -375,6 +495,7 @@ export default function SelectionPage() {
             {/* Shop Selector */}
             <Select value={shopId} onValueChange={setShopId}>
               <SelectTrigger className="w-[140px]">
+                <Store className="w-4 h-4 mr-2" />
                 <SelectValue placeholder="选择店铺" />
               </SelectTrigger>
               <SelectContent>
@@ -385,7 +506,7 @@ export default function SelectionPage() {
             </Select>
 
             {/* Mode Toggle */}
-            <div className="flex rounded-lg border border-[#E6EAF2] overflow-hidden">
+            <div className="flex rounded-lg border border-border overflow-hidden">
               <Button
                 variant={mode === 'copy' ? 'default' : 'ghost'}
                 size="sm"
@@ -429,12 +550,13 @@ export default function SelectionPage() {
 
           <div className="flex items-center gap-3">
             {/* View Mode Toggle */}
-            <div className="flex rounded-lg border border-[#E6EAF2] overflow-hidden">
+            <div className="flex rounded-lg border border-border overflow-hidden">
               <Button
                 variant={viewMode === 'card' ? 'default' : 'ghost'}
                 size="sm"
                 className="rounded-none px-3"
                 onClick={() => setViewMode('card')}
+                title="卡片视图"
               >
                 <LayoutGrid className="w-4 h-4" />
               </Button>
@@ -443,6 +565,7 @@ export default function SelectionPage() {
                 size="sm"
                 className="rounded-none px-3"
                 onClick={() => setViewMode('list')}
+                title="列表视图"
               >
                 <List className="w-4 h-4" />
               </Button>
@@ -451,12 +574,13 @@ export default function SelectionPage() {
                 size="sm"
                 className="rounded-none px-3"
                 onClick={() => setViewMode('matrix')}
+                title="矩阵视图"
               >
                 <Grid3X3 className="w-4 h-4" />
               </Button>
             </div>
 
-            {/* Filter Button */}
+            {/* Filter Toggle */}
             <Button 
               variant="outline" 
               size="sm" 
@@ -465,11 +589,12 @@ export default function SelectionPage() {
             >
               <Filter className="w-4 h-4" />
               筛选
+              {showFilterPanel ? <ChevronLeft className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
             </Button>
 
             {/* Refresh */}
-            <Button variant="ghost" size="sm" onClick={fetchOpportunities}>
-              <RefreshCw className="w-4 h-4" />
+            <Button variant="ghost" size="sm" onClick={fetchOpportunities} disabled={loading}>
+              <RefreshCw className={cn('w-4 h-4', loading && 'animate-spin')} />
             </Button>
           </div>
         </div>
@@ -477,39 +602,65 @@ export default function SelectionPage() {
         {/* Main Content */}
         <div className="flex flex-1 gap-4 min-h-0">
           {/* Main Area */}
-          <div className={cn('flex-1 overflow-auto', showFilterPanel && 'pr-4')}>
-            {viewMode === 'card' && (
+          <div className="flex-1 overflow-auto">
+            {loading ? (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              </div>
+            ) : filteredOpportunities.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+                <Package className="w-16 h-16 mb-4 opacity-30" />
+                <p className="text-lg mb-2">暂无选品机会</p>
+                <p className="text-sm mb-4">点击"AI深挖"或"系统推荐"发现商机</p>
+                <Button onClick={() => setShowAIDigDialog(true)}>
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  AI深挖
+                </Button>
+              </div>
+            ) : viewMode === 'card' ? (
+              /* Card View */
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {mockOpportunities.map(opp => {
-                  const scores = getMockScores(opp.id);
+                {filteredOpportunities.map(opp => {
+                  const scores = opp.scores || { profit: 50, competition: 50, demand: 50, differentiation: 50, supply: 50 };
                   const grade = getGrade(scores);
-                  const trendData = getTrendData();
-                  const isPriceUp = Math.random() > 0.5;
+                  const trendData = getTrendData(opp.marketAnalysis?.trend || 'stable');
                   
                   return (
                     <Card 
                       key={opp.id} 
                       className={cn(
-                        'cursor-pointer transition-all hover:shadow-lg',
-                        selectedIds.has(opp.id) && 'ring-2 ring-[#2F6BFF]'
+                        'cursor-pointer transition-all hover:shadow-lg bg-white',
+                        selectedIds.has(opp.id) && 'ring-2 ring-primary'
                       )}
-                      onClick={() => toggleSelect(opp.id)}
+                      onMouseDown={() => handleLongPressStart(opp.id)}
+                      onMouseUp={handleLongPressEnd}
+                      onMouseLeave={handleLongPressEnd}
+                      onTouchStart={() => handleLongPressStart(opp.id)}
+                      onTouchEnd={handleLongPressEnd}
                     >
                       <CardContent className="p-4">
                         {/* Thumbnail */}
-                        <div className="aspect-square bg-muted rounded-lg mb-3 flex items-center justify-center">
-                          <span className="text-4xl">📦</span>
+                        <div className="aspect-square bg-muted rounded-lg mb-3 flex items-center justify-center relative overflow-hidden">
+                          {opp.targetImage ? (
+                            <img src={opp.targetImage} alt={opp.targetName} className="w-full h-full object-cover" />
+                          ) : (
+                            <Package className="w-12 h-12 text-muted-foreground/30" />
+                          )}
+                          {/* Source Badge */}
+                          <Badge variant="outline" className="absolute top-2 left-2 text-xs">
+                            {opp.source === 'ozon' ? 'Ozon' : opp.source === 'aliexpress' ? '速卖通' : '1688'}
+                          </Badge>
                         </div>
 
                         {/* Name */}
                         <h3 className="font-medium text-sm mb-2 line-clamp-2">{opp.targetName}</h3>
 
                         {/* Radar Chart */}
-                        <div className="h-32 mb-2">
+                        <div className="h-28 mb-2">
                           <ResponsiveContainer width="100%" height="100%">
                             <RadarChart data={getRadarData(scores)}>
                               <PolarGrid stroke="#E6EAF2" />
-                              <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10 }} />
+                              <PolarAngleAxis dataKey="subject" tick={{ fontSize: 9 }} />
                               <PolarRadiusAxis tick={false} />
                               <Radar
                                 name="评分"
@@ -523,13 +674,13 @@ export default function SelectionPage() {
                         </div>
 
                         {/* Trend Mini Chart */}
-                        <div className="h-12 mb-2">
+                        <div className="h-10 mb-2">
                           <ResponsiveContainer width="100%" height="100%">
                             <LineChart data={trendData}>
                               <Line 
                                 type="monotone" 
                                 dataKey="value" 
-                                stroke={isPriceUp ? '#16A37B' : '#EF4444'} 
+                                stroke={opp.marketAnalysis?.trend === 'up' ? '#16A37B' : opp.marketAnalysis?.trend === 'down' ? '#EF4444' : '#6B7280'}
                                 strokeWidth={2}
                                 dot={false}
                               />
@@ -537,16 +688,18 @@ export default function SelectionPage() {
                           </ResponsiveContainer>
                         </div>
 
-                        {/* Grade Badge */}
+                        {/* Grade & Seller Count */}
                         <div className="flex items-center justify-between mb-2">
                           <Badge className={cn('text-white', gradeColors[grade])}>
                             {grade}级
                           </Badge>
                           <div className="flex items-center text-xs text-muted-foreground">
-                            {isPriceUp ? (
+                            {opp.marketAnalysis?.trend === 'up' ? (
                               <ArrowUpRight className="w-3 h-3 text-green-500" />
-                            ) : (
+                            ) : opp.marketAnalysis?.trend === 'down' ? (
                               <ArrowDownRight className="w-3 h-3 text-red-500" />
+                            ) : (
+                              <Minus className="w-3 h-3 text-gray-400" />
                             )}
                             <span className="ml-1">
                               {opp.marketAnalysis?.sellerCount || 0} 在售
@@ -556,7 +709,7 @@ export default function SelectionPage() {
 
                         {/* Price Range */}
                         <div className="text-xs text-muted-foreground mb-3">
-                          ¥{opp.marketAnalysis?.priceRange?.min || 0} - ¥{opp.marketAnalysis?.priceRange?.max || 0}
+                          ₽{opp.marketAnalysis?.priceRange?.min?.toLocaleString() || 0} - ₽{opp.marketAnalysis?.priceRange?.max?.toLocaleString() || 0}
                         </div>
 
                         {/* Actions */}
@@ -589,20 +742,19 @@ export default function SelectionPage() {
                   );
                 })}
               </div>
-            )}
-
-            {viewMode === 'list' && (
-              <div className="bg-white rounded-lg border border-[#E6EAF2]">
+            ) : viewMode === 'list' ? (
+              /* List View */
+              <div className="bg-white rounded-lg border">
                 {/* Batch Actions */}
                 {selectedIds.size > 0 && (
                   <div className="flex items-center gap-2 p-3 bg-muted/50 border-b">
-                    <span className="text-sm">已选择 {selectedIds.size} 项</span>
-                    <Button size="sm" variant="default" className="bg-green-500" onClick={handleBatchConfirm}>
-                      <CheckSquare className="w-3 h-3 mr-1" />
+                    <span className="text-sm font-medium">已选择 {selectedIds.size} 项</span>
+                    <Button size="sm" variant="default" className="bg-green-500 hover:bg-green-600" onClick={handleBatchConfirm}>
+                      <CheckCircle2 className="w-3 h-3 mr-1" />
                       批量确认
                     </Button>
                     <Button size="sm" variant="destructive" onClick={handleBatchAbandon}>
-                      <XSquare className="w-3 h-3 mr-1" />
+                      <XCircle className="w-3 h-3 mr-1" />
                       批量放弃
                     </Button>
                   </div>
@@ -614,7 +766,7 @@ export default function SelectionPage() {
                     <tr className="border-b bg-muted/30">
                       <th className="p-3 text-left">
                         <Checkbox 
-                          checked={selectedIds.size === mockOpportunities.length}
+                          checked={selectedIds.size === filteredOpportunities.length && filteredOpportunities.length > 0}
                           onCheckedChange={toggleSelectAll}
                         />
                       </th>
@@ -628,17 +780,16 @@ export default function SelectionPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {mockOpportunities.map(opp => {
-                      const scores = getMockScores(opp.id);
+                    {filteredOpportunities.map(opp => {
+                      const scores = opp.scores || { profit: 50, competition: 50, demand: 50, differentiation: 50, supply: 50 };
                       const grade = getGrade(scores);
                       const avgScore = Math.round((scores.profit + (100 - scores.competition) + scores.demand + scores.differentiation + scores.supply) / 5);
-                      const isPriceUp = Math.random() > 0.5;
 
                       return (
                         <tr 
                           key={opp.id} 
                           className="border-b hover:bg-muted/30 cursor-pointer"
-                          onClick={() => window.location.href = `/selection/${opp.id}`}
+                          onClick={() => router.push(`/selection/${opp.id}`)}
                         >
                           <td className="p-3" onClick={e => e.stopPropagation()}>
                             <Checkbox 
@@ -648,17 +799,17 @@ export default function SelectionPage() {
                           </td>
                           <td className="p-3">
                             <div className="flex items-center gap-2">
-                              <div className="w-10 h-10 bg-muted rounded flex items-center justify-center text-lg">
-                                📦
+                              <div className="w-10 h-10 bg-muted rounded flex items-center justify-center">
+                                <Package className="w-5 h-5 text-muted-foreground/50" />
                               </div>
                               <span className="text-sm line-clamp-1">{opp.targetName}</span>
                             </div>
                           </td>
                           <td className="p-3 text-sm text-muted-foreground">
-                            类目 {opp.targetCategoryId}
+                            {opp.targetCategoryName || '-'}
                           </td>
                           <td className="p-3 text-sm">
-                            ¥{opp.marketAnalysis?.priceRange?.min || 0}
+                            ₽{opp.marketAnalysis?.priceRange?.min?.toLocaleString() || '-'}
                           </td>
                           <td className="p-3">
                             <span className={cn('font-medium', gradeTextColors[grade])}>
@@ -666,10 +817,12 @@ export default function SelectionPage() {
                             </span>
                           </td>
                           <td className="p-3">
-                            {isPriceUp ? (
+                            {opp.marketAnalysis?.trend === 'up' ? (
                               <ArrowUpRight className="w-4 h-4 text-green-500" />
-                            ) : (
+                            ) : opp.marketAnalysis?.trend === 'down' ? (
                               <ArrowDownRight className="w-4 h-4 text-red-500" />
+                            ) : (
+                              <Minus className="w-4 h-4 text-gray-400" />
                             )}
                           </td>
                           <td className="p-3">
@@ -706,20 +859,20 @@ export default function SelectionPage() {
                   </tbody>
                 </table>
               </div>
-            )}
-
-            {viewMode === 'matrix' && (
-              <div className="bg-white rounded-lg border border-[#E6EAF2] p-4">
+            ) : (
+              /* Matrix View */
+              <div className="bg-white rounded-lg border p-4">
                 <h3 className="text-sm font-medium mb-4">竞争-利润矩阵图</h3>
                 <div className="h-[500px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                    <ScatterChart margin={{ top: 20, right: 20, bottom: 40, left: 40 }}>
                       <XAxis 
                         type="number" 
                         dataKey="x" 
                         name="竞争强度" 
                         domain={[0, 100]}
-                        label={{ value: '竞争强度 →', position: 'bottom' }}
+                        label={{ value: '竞争强度 →', position: 'bottom', offset: 0 }}
+                        tick={{ fontSize: 11 }}
                       />
                       <YAxis 
                         type="number" 
@@ -727,21 +880,34 @@ export default function SelectionPage() {
                         name="利润空间" 
                         domain={[0, 100]}
                         label={{ value: '利润空间 →', angle: -90, position: 'left' }}
+                        tick={{ fontSize: 11 }}
                       />
-                      <ZAxis type="number" dataKey="z" range={[50, 400]} name="需求热度" />
+                      <ZAxis type="number" dataKey="z" range={[100, 1000]} name="需求热度" />
                       <Tooltip 
                         cursor={{ strokeDasharray: '3 3' }}
                         formatter={(value, name) => [Math.round(Number(value)), name]}
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            const data = payload[0].payload;
+                            return (
+                              <div className="bg-white border rounded-lg p-2 shadow-lg">
+                                <p className="font-medium text-sm">{data.name}</p>
+                                <p className="text-xs text-muted-foreground">竞争: {Math.round(data.x)} | 利润: {Math.round(data.y)} | 需求: {Math.round(data.z)}</p>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
                       />
-                      <Scatter 
-                        name="商品" 
-                        data={scatterData} 
-                        fill="#2F6BFF"
-                        onClick={(data) => window.location.href = `/selection/${data.id}`}
-                      />
+                      <Scatter name="商品" data={scatterData}>
+                        {scatterData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={gradeScatterColors[entry.grade]} />
+                        ))}
+                      </Scatter>
                     </ScatterChart>
                   </ResponsiveContainer>
                 </div>
+                {/* Legend */}
                 <div className="flex items-center justify-center gap-6 mt-4">
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 rounded-full bg-green-500" />
@@ -762,65 +928,73 @@ export default function SelectionPage() {
                 </div>
               </div>
             )}
-
-            {loading && (
-              <div className="flex items-center justify-center py-12">
-                <RefreshCw className="w-6 h-6 animate-spin text-muted-foreground" />
-              </div>
-            )}
           </div>
 
           {/* Filter Panel */}
           {showFilterPanel && (
-            <div className="w-72 bg-white rounded-lg border border-[#E6EAF2] p-4">
-              <h3 className="font-medium mb-4">筛选条件</h3>
+            <div className="w-72 bg-white rounded-lg border p-4 shrink-0 overflow-auto">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-medium">筛选条件</h3>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setFilters({
+                    categoryId: '',
+                    priceMin: 0,
+                    priceMax: 100000,
+                    grades: [],
+                    sources: [],
+                  })}
+                >
+                  重置
+                </Button>
+              </div>
               
-              <div className="space-y-4">
+              <div className="space-y-5">
+                {/* Category */}
                 <div>
-                  <Label className="text-sm">类目</Label>
+                  <Label className="text-sm mb-2 block">类目</Label>
                   <Select value={filters.categoryId} onValueChange={(v) => setFilters({...filters, categoryId: v})}>
-                    <SelectTrigger className="mt-1">
+                    <SelectTrigger>
                       <SelectValue placeholder="全部类目" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="">全部</SelectItem>
-                      <SelectItem value="100">服装</SelectItem>
-                      <SelectItem value="200">电子</SelectItem>
-                      <SelectItem value="300">家居</SelectItem>
+                      {categories.slice(0, 20).map(cat => (
+                        <SelectItem key={cat.id} value={String(cat.id)}>{cat.name}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
 
+                {/* Price Range */}
                 <div>
-                  <Label className="text-sm">价格区间</Label>
-                  <div className="flex gap-2 mt-1">
-                    <Input 
-                      type="number" 
-                      placeholder="最低" 
-                      className="flex-1"
-                      value={filters.priceMin}
-                      onChange={(e) => setFilters({...filters, priceMin: Number(e.target.value)})}
+                  <Label className="text-sm mb-2 block">价格区间</Label>
+                  <div className="px-2">
+                    <Slider
+                      value={[filters.priceMin, filters.priceMax]}
+                      onValueChange={([min, max]) => setFilters({...filters, priceMin: min, priceMax: max})}
+                      max={100000}
+                      step={1000}
+                      className="mb-2"
                     />
-                    <Input 
-                      type="number" 
-                      placeholder="最高" 
-                      className="flex-1"
-                      value={filters.priceMax}
-                      onChange={(e) => setFilters({...filters, priceMax: Number(e.target.value)})}
-                    />
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>₽{filters.priceMin.toLocaleString()}</span>
+                      <span>₽{filters.priceMax.toLocaleString()}</span>
+                    </div>
                   </div>
                 </div>
 
+                {/* AI Grade */}
                 <div>
-                  <Label className="text-sm">AI等级</Label>
-                  <div className="flex gap-2 mt-1">
+                  <Label className="text-sm mb-2 block">AI等级</Label>
+                  <div className="grid grid-cols-4 gap-2">
                     {['A', 'B', 'C', 'D'].map(grade => (
                       <Button
                         key={grade}
                         variant={filters.grades.includes(grade) ? 'default' : 'outline'}
                         size="sm"
                         className={cn(
-                          'flex-1',
                           filters.grades.includes(grade) && gradeColors[grade]
                         )}
                         onClick={() => {
@@ -836,9 +1010,10 @@ export default function SelectionPage() {
                   </div>
                 </div>
 
+                {/* Data Source */}
                 <div>
-                  <Label className="text-sm">数据来源</Label>
-                  <div className="flex gap-2 mt-1 flex-wrap">
+                  <Label className="text-sm mb-2 block">数据来源</Label>
+                  <div className="grid grid-cols-2 gap-2">
                     {['Ozon', '速卖通', '1688', '海关'].map(source => (
                       <Button
                         key={source}
@@ -856,20 +1031,13 @@ export default function SelectionPage() {
                     ))}
                   </div>
                 </div>
+              </div>
 
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={() => setFilters({
-                    categoryId: '',
-                    priceMin: 0,
-                    priceMax: 100000,
-                    grades: [],
-                    sources: [],
-                  })}
-                >
-                  重置筛选
-                </Button>
+              {/* Filter Stats */}
+              <div className="mt-6 pt-4 border-t">
+                <p className="text-sm text-muted-foreground">
+                  共 <span className="font-medium text-foreground">{filteredOpportunities.length}</span> 个结果
+                </p>
               </div>
             </div>
           )}
@@ -899,12 +1067,12 @@ export default function SelectionPage() {
               <Label>目标类目</Label>
               <Select value={aiDigCategoryId} onValueChange={setAiDigCategoryId}>
                 <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="选择类目" />
+                  <SelectValue placeholder="选择类目（可选）" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="100">服装配饰</SelectItem>
-                  <SelectItem value="200">电子产品</SelectItem>
-                  <SelectItem value="300">家居用品</SelectItem>
+                  {categories.slice(0, 20).map(cat => (
+                    <SelectItem key={cat.id} value={String(cat.id)}>{cat.name}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
