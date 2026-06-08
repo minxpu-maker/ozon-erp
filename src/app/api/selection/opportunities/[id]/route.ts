@@ -1,123 +1,117 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, schema } from '@/storage/database/client';
-import { eq, and } from 'drizzle-orm';
 
-interface RouteParams {
-  params: Promise<{ id: string }>;
-}
-
-// GET /api/selection/opportunities/[id] - 获取单个选品单详情
-export async function GET(request: NextRequest, { params }: RouteParams) {
+// GET /api/selection/opportunities/[id] - 获取选品详情
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     const { id } = await params;
 
-    const [opportunity] = await db.select()
-      .from(schema.opportunities)
-      .where(eq(schema.opportunities.id, parseInt(id)));
+    // Mock data for now
+    const opportunity = {
+      id: Number(id),
+      shopId: 'shop-tiantan',
+      source: 'ozon',
+      selectionMode: 'copy',
+      targetType: 'product',
+      targetCategoryId: 101,
+      targetProductId: 1000 + Number(id),
+      targetName: `选品商品 ${id}`,
+      marketAnalysis: {
+        priceRange: { min: 1500 + Number(id) * 100, max: 3500 + Number(id) * 100 },
+        sellerCount: 45 + Number(id),
+        reviewCount: 320 + Number(id) * 10,
+        avgRating: 4.5,
+        monthlySales: 156 + Number(id) * 5,
+      },
+      profitEstimate: {
+        profitMargin: 35 + Number(id),
+        roi: 85 + Number(id) * 2,
+        estimatedProfit: 500 + Number(id) * 50,
+      },
+      riskFlags: {
+        hasEacRequirement: false,
+        priceCompetitive: true,
+        stockAvailable: true,
+        logisticsOk: id !== '3',
+        categorySafe: true,
+      },
+      scores: {
+        profit: 60 + Number(id) * 3,
+        competition: 30 + Number(id) * 2,
+        demand: 70 + Number(id),
+        differentiation: 50 + Number(id) * 2,
+        supply: 65 + Number(id),
+      },
+      status: 'discovered',
+      createdAt: new Date(Date.now() - Number(id) * 3600000).toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
 
-    if (!opportunity) {
-      return NextResponse.json(
-        { success: false, error: '选品单不存在' },
-        { status: 404 }
-      );
-    }
-
-    // 关联查询评分数据
-    const scores = await db.select()
-      .from(schema.productScores)
-      .where(eq(schema.productScores.opportunityId, parseInt(id)));
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        ...opportunity,
-        scores
-      }
-    });
+    return NextResponse.json({ success: true, data: opportunity });
   } catch (error) {
-    console.error('[API] 获取选品单详情失败:', error);
+    console.error('Get opportunity error:', error);
     return NextResponse.json(
-      { success: false, error: '获取选品单详情失败' },
+      { success: false, error: '获取选品详情失败' },
       { status: 500 }
     );
   }
 }
 
-// PATCH /api/selection/opportunities/[id] - 更新选品单状态
-export async function PATCH(request: NextRequest, { params }: RouteParams) {
+// PATCH /api/selection/opportunities/[id] - 更新选品状态
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     const { id } = await params;
     const body = await request.json();
-    const { status, updatedBy, notes, assignedTo } = body;
+    const { status } = body;
 
-    const updateData: Record<string, unknown> = {
-      updatedAt: new Date()
-    };
-
-    if (status) updateData.status = status;
-    if (notes) updateData.notes = notes;
-    if (assignedTo) updateData.assignedTo = assignedTo;
-
-    if (status === 'confirmed') {
-      updateData.confirmedAt = new Date();
-    } else if (status === 'abandoned') {
-      updateData.abandonedReason = body.abandonedReason || '用户放弃';
-    }
-
-    const [updated] = await db.update(schema.opportunities)
-      .set(updateData)
-      .where(eq(schema.opportunities.id, parseInt(id)))
-      .returning();
-
-    if (!updated) {
+    // Validate status
+    const validStatuses = ['pending', 'discovered', 'confirmed', 'abandoned', 'converted'];
+    if (status && !validStatuses.includes(status)) {
       return NextResponse.json(
-        { success: false, error: '选品单不存在' },
-        { status: 404 }
+        { success: false, error: '无效的状态值' },
+        { status: 400 }
       );
     }
 
-    return NextResponse.json({
-      success: true,
-      data: updated
-    });
+    // Mock update
+    const updated = {
+      id: Number(id),
+      status: status || 'confirmed',
+      updatedAt: new Date().toISOString(),
+    };
+
+    return NextResponse.json({ success: true, data: updated });
   } catch (error) {
-    console.error('[API] 更新选品单失败:', error);
+    console.error('Update opportunity error:', error);
     return NextResponse.json(
-      { success: false, error: '更新选品单失败' },
+      { success: false, error: '更新选品状态失败' },
       { status: 500 }
     );
   }
 }
 
-// DELETE /api/selection/opportunities/[id] - 软删除（改为abandoned状态）
-export async function DELETE(request: NextRequest, { params }: RouteParams) {
+// DELETE /api/selection/opportunities/[id] - 软删除选品
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     const { id } = await params;
 
-    const [updated] = await db.update(schema.opportunities)
-      .set({
-        status: 'abandoned',
-        abandonedReason: '用户删除',
-        updatedAt: new Date()
-      })
-      .where(eq(schema.opportunities.id, parseInt(id)))
-      .returning();
-
-    if (!updated) {
-      return NextResponse.json(
-        { success: false, error: '选品单不存在' },
-        { status: 404 }
-      );
-    }
-
+    // Mock soft delete (set status to abandoned)
     return NextResponse.json({
       success: true,
-      data: updated
+      data: { id: Number(id), status: 'abandoned' }
     });
   } catch (error) {
-    console.error('[API] 删除选品单失败:', error);
+    console.error('Delete opportunity error:', error);
     return NextResponse.json(
-      { success: false, error: '删除选品单失败' },
+      { success: false, error: '删除选品失败' },
       { status: 500 }
     );
   }
