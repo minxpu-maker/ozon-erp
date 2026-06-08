@@ -2244,3 +2244,370 @@ export async function getScoringConfigWithStrategy(
     strategy,
   };
 }
+
+// ============ 第八阶段：错误处理和降级逻辑 ============
+
+/**
+ * 数据源类型
+ */
+export type DataSourceType = 'ozon' | 'aliexpress' | 'alibaba1688' | 'customs';
+
+/**
+ * 数据源获取结果
+ */
+export interface DataSourceResult<T> {
+  source: DataSourceType;
+  success: boolean;
+  data?: T;
+  error?: string;
+  fallbackUsed: boolean;
+}
+
+/**
+ * 数据源降级上下文
+ */
+export interface DegradationContext {
+  availableSources: DataSourceType[];
+  failedSources: Array<{ source: DataSourceType; error: string }>;
+  warningFlags: string[];
+  dataSufficiency: 'full' | 'partial' | 'minimal';
+  discountFactor: number; // 数据不足时的折扣因子
+}
+
+/**
+ * 创建降级上下文
+ */
+export function createDegradationContext(): DegradationContext {
+  return {
+    availableSources: [],
+    failedSources: [],
+    warningFlags: [],
+    dataSufficiency: 'full',
+    discountFactor: 1.0,
+  };
+}
+
+/**
+ * 记录数据源结果并更新降级上下文
+ */
+export function recordDataSourceResult<T>(
+  ctx: DegradationContext,
+  result: DataSourceResult<T>
+): void {
+  if (result.success && result.data) {
+    ctx.availableSources.push(result.source);
+  } else {
+    ctx.failedSources.push({
+      source: result.source,
+      error: result.error || '未知错误',
+    });
+    ctx.warningFlags.push(`数据源${result.source}失败: ${result.error}`);
+  }
+  
+  // 更新数据充分性评估
+  const sourceCount = ctx.availableSources.length;
+  const totalSources = ctx.availableSources.length + ctx.failedSources.length;
+  
+  if (sourceCount === 0) {
+    ctx.dataSufficiency = 'minimal';
+    ctx.discountFactor = 0; // 无数据，无法评分
+    ctx.warningFlags.push('无可用数据源，无法进行有效评分');
+  } else if (sourceCount === 1) {
+    ctx.dataSufficiency = 'minimal';
+    ctx.discountFactor = 0.7; // 仅1个源，评分打7折
+    ctx.warningFlags.push('仅有单一数据源，评分已打7折');
+  } else if (sourceCount < totalSources * 0.5) {
+    ctx.dataSufficiency = 'partial';
+    ctx.discountFactor = 0.85; // 部分数据源失败
+    ctx.warningFlags.push('部分数据源不可用，评分精度降低');
+  } else {
+    ctx.dataSufficiency = 'full';
+    ctx.discountFactor = 1.0;
+  }
+}
+
+/**
+ * 带降级的数据源获取包装器
+ */
+export async function fetchWithDegradation<T>(
+  source: DataSourceType,
+  fetcher: () => Promise<T>,
+  ctx: DegradationContext
+): Promise<DataSourceResult<T>> {
+  try {
+    const data = await fetcher();
+    return {
+      source,
+      success: true,
+      data,
+      fallbackUsed: false,
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : '请求失败';
+    
+    // 记录失败
+    recordDataSourceResult(ctx, {
+      source,
+      success: false,
+      error: errorMessage,
+      fallbackUsed: false,
+    });
+    
+    return {
+      source,
+      success: false,
+      error: errorMessage,
+      fallbackUsed: false,
+    };
+  }
+}
+
+/**
+ * 应用数据降级折扣
+ */
+export function applyDegradationDiscount(
+  score: number,
+  ctx: DegradationContext
+): number {
+  if (ctx.discountFactor === 0) {
+    return 0; // 无数据
+  }
+  return score * ctx.discountFactor;
+}
+
+/**
+ * 层数结果（用于异常时返回已完成层）
+ */
+export interface LayerResult {
+  layer: number;
+  name: string;
+  completed: boolean;
+  data?: unknown;
+  error?: string;
+}
+
+/**
+ * 分层执行上下文
+ */
+export interface LayerExecutionContext {
+  taskId: string;
+  completedLayers: LayerResult[];
+  currentLayer: number;
+  error?: Error;
+}
+
+/**
+ * 分层执行包装器 - 异常时返回已完成层结果
+ */
+export async function executeLayer<T>(
+  layer: number,
+  name: string,
+  executor: () => Promise<T>,
+  context: LayerExecutionContext
+): Promise<{ success: boolean; data?: T; error?: string }> {
+  try {
+    const data = await executor();
+    context.completedLayers.push({
+      layer,
+      name,
+      completed: true,
+      data,
+    });
+    context.currentLayer = layer;
+    return { success: true, data };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : '执行失败';
+    context.completedLayers.push({
+      layer,
+      name,
+      completed: false,
+      error: errorMessage,
+    });
+    context.error = error instanceof Error ? error : new Error(errorMessage);
+    return { success: false, error: errorMessage };
+  }
+}
+
+/**
+ * 获取已完成层的结果摘要
+ */
+export function getCompletedLayersSummary(context: LayerExecutionContext): {
+  completed: number[];
+  failed: number[];
+  lastSuccessfulLayer: number;
+} {
+  const completed = context.completedLayers
+    .filter(l => l.completed)
+    .map(l => l.layer);
+  const failed = context.completedLayers
+    .filter(l => !l.completed)
+    .map(l => l.layer);
+  const lastSuccessfulLayer = completed.length > 0 ? Math.max(...completed) : 0;
+  
+  return { completed, failed, lastSuccessfulLayer };
+}
+
+// ============ 第八阶段：LLM调用频率限制 ============
+
+/**
+ * LLM调用限制配置
+ */
+const LLM_RATE_LIMIT = {
+  MAX_CALLS_PER_MINUTE: 10,   // 每分钟最多10次
+  MAX_TOKENS_PER_CALL: 2000,  // 单次Token上限
+};
+
+/**
+ * LLM调用记录
+ */
+interface LLMCallRecord {
+  timestamp: number;
+  tokens: number;
+}
+
+// LLM调用历史（内存存储）
+const llmCallHistory: LLMCallRecord[] = [];
+
+/**
+ * 清理过期的LLM调用记录（超过1分钟）
+ */
+function cleanupLLMCallHistory(): void {
+  const oneMinuteAgo = Date.now() - 60 * 1000;
+  while (llmCallHistory.length > 0 && llmCallHistory[0].timestamp < oneMinuteAgo) {
+    llmCallHistory.shift();
+  }
+}
+
+/**
+ * 检查LLM调用是否被允许
+ */
+export function checkLLMRateLimit(): {
+  allowed: boolean;
+  remainingCalls: number;
+  resetIn?: number; // 毫秒
+} {
+  cleanupLLMCallHistory();
+  
+  const callsInLastMinute = llmCallHistory.length;
+  const remainingCalls = LLM_RATE_LIMIT.MAX_CALLS_PER_MINUTE - callsInLastMinute;
+  
+  if (remainingCalls <= 0) {
+    // 计算最早记录何时过期
+    const oldestCall = llmCallHistory[0];
+    const resetIn = oldestCall ? 60000 - (Date.now() - oldestCall.timestamp) : 60000;
+    return {
+      allowed: false,
+      remainingCalls: 0,
+      resetIn: Math.max(0, resetIn),
+    };
+  }
+  
+  return {
+    allowed: true,
+    remainingCalls,
+  };
+}
+
+/**
+ * 记录LLM调用
+ */
+export function recordLLMCall(tokens: number): void {
+  cleanupLLMCallHistory();
+  llmCallHistory.push({
+    timestamp: Date.now(),
+    tokens: Math.min(tokens, LLM_RATE_LIMIT.MAX_TOKENS_PER_CALL),
+  });
+}
+
+/**
+ * 验证Token数量
+ */
+export function validateTokenCount(tokens: number): {
+  valid: boolean;
+  capped: number;
+  warning?: string;
+} {
+  if (tokens > LLM_RATE_LIMIT.MAX_TOKENS_PER_CALL) {
+    return {
+      valid: false,
+      capped: LLM_RATE_LIMIT.MAX_TOKENS_PER_CALL,
+      warning: `Token数量${tokens}超过上限${LLM_RATE_LIMIT.MAX_TOKENS_PER_CALL}，已自动截断`,
+    };
+  }
+  return { valid: true, capped: tokens };
+}
+
+/**
+ * 第五层LLM推理接口（空壳实现）
+ * 预留调用频率限制
+ */
+export async function llmInference(
+  prompt: string,
+  options?: {
+    maxTokens?: number;
+    model?: string;
+  }
+): Promise<{
+  success: boolean;
+  result?: string;
+  error?: string;
+  rateLimitInfo?: {
+    remainingCalls: number;
+    resetIn?: number;
+  };
+}> {
+  // 检查频率限制
+  const rateCheck = checkLLMRateLimit();
+  if (!rateCheck.allowed) {
+    return {
+      success: false,
+      error: `LLM调用频率超限，请在${Math.ceil((rateCheck.resetIn || 60000) / 1000)}秒后重试`,
+      rateLimitInfo: {
+        remainingCalls: 0,
+        resetIn: rateCheck.resetIn,
+      },
+    };
+  }
+  
+  // 验证Token数量
+  const requestedTokens = options?.maxTokens || 1000;
+  const tokenValidation = validateTokenCount(requestedTokens);
+  
+  // 记录调用
+  recordLLMCall(tokenValidation.capped);
+  
+  // TODO: 第五层LLM推理暂为空壳
+  // 实际实现时应调用LLM API
+  console.log('[选品引擎] 第五层LLM推理（空壳）:', {
+    prompt: prompt.slice(0, 100) + '...',
+    maxTokens: tokenValidation.capped,
+    model: options?.model || 'default',
+  });
+  
+  return {
+    success: true,
+    result: '[LLM推理结果占位 - 待实现]',
+    rateLimitInfo: {
+      remainingCalls: rateCheck.remainingCalls - 1,
+    },
+  };
+}
+
+/**
+ * 获取LLM调用统计
+ */
+export function getLLMStats(): {
+  callsInLastMinute: number;
+  remainingCalls: number;
+  maxCallsPerMinute: number;
+  maxTokensPerCall: number;
+} {
+  cleanupLLMCallHistory();
+  const callsInLastMinute = llmCallHistory.length;
+  return {
+    callsInLastMinute,
+    remainingCalls: LLM_RATE_LIMIT.MAX_CALLS_PER_MINUTE - callsInLastMinute,
+    maxCallsPerMinute: LLM_RATE_LIMIT.MAX_CALLS_PER_MINUTE,
+    maxTokensPerCall: LLM_RATE_LIMIT.MAX_TOKENS_PER_CALL,
+  };
+}
