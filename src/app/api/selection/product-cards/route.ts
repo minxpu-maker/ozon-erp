@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const {
+    let {
       shopId,
       opportunityId,
       titleRu,
@@ -60,11 +60,29 @@ export async function POST(request: NextRequest) {
       sourceOzonUrl
     } = body;
 
-    if (!shopId || !categoryId) {
+    // If shopId not provided, try to get an existing shop
+    if (!shopId) {
+      try {
+        const existingShops = await db.select({ id: schema.shops.id }).from(schema.shops).limit(1);
+        if (existingShops.length > 0) {
+          shopId = existingShops[0].id;
+        }
+      } catch (e) {
+        console.log('[API] Could not query shops table:', e);
+      }
+    }
+
+    // If still no shopId, return error
+    if (!shopId) {
       return NextResponse.json(
-        { success: false, error: '缺少必填字段: shopId, categoryId' },
+        { success: false, error: '缺少必填字段: shopId，请先创建店铺' },
         { status: 400 }
       );
+    }
+
+    // Default category if not provided
+    if (!categoryId) {
+      categoryId = '100'; // Default: 服装配饰
     }
 
     const [productCard] = await db.insert(schema.productCards)
