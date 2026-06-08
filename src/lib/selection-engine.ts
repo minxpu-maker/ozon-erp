@@ -160,6 +160,9 @@ export interface ScoringResult {
   totalDiscount?: number;        // 总降权系数
   finalScore?: number;           // 应用降权后的最终得分
   finalGrade?: 'A' | 'B' | 'C' | 'D'; // 最终等级
+  // 第五阶段新增字段
+  crossVerifyDiscount?: number;  // 交叉验证折扣系数
+  crossVerifyResult?: string; // 交叉验证结果描述
 }
 
 // 批量评分请求
@@ -500,6 +503,19 @@ function buildSemanticInput(
  * - 语义评分使用独立的semanticScore函数
  * - 预留embedding+结构化特征接口
  */
+
+/**
+ * 分数转等级（第二阶段定义的映射规则）
+ * @param score 百分制分数 (0-100)
+ * @returns 等级 A/B/C/D
+ */
+function scoreToGrade(score: number): 'A' | 'B' | 'C' | 'D' {
+  if (score >= 80) return 'A';
+  if (score >= 60) return 'B';
+  if (score >= 40) return 'C';
+  return 'D';
+}
+
 function calculateCompositeScore(
   dimensions: ScoreDimensions,
   weights: AHPWeights,
@@ -762,6 +778,170 @@ function calculateTotalDiscount(discountRules: DiscountRule[]): number {
   return discountRules.reduce((total, rule) => total * rule.factor, 1.0);
 }
 
+// ============ 第五阶段：四源交叉验证 ============
+
+/**
+ * 四源数据评分
+ * 用于交叉验证的需求端和供给端评分
+ */
+interface FourSourceScores {
+  // 需求端评分（Ozon + 速卖通数据）
+  ozonScore: number;        // Ozon平台数据评分 0-100
+  aliexpressScore: number;  // 速卖通数据评分 0-100
+  demandScore: number;      // 综合需求端评分 0-100
+  
+  // 供给端评分（1688 + 海关数据）
+  ali1688Score: number;     // 1688数据评分 0-100
+  customsScore: number;     // 海关数据评分 0-100
+  supplyScore: number;      // 综合供给端评分 0-100
+  
+  // 数据可用性
+  hasOzonData: boolean;
+  hasAliexpressData: boolean;
+  has1688Data: boolean;
+  hasCustomsData: boolean;
+}
+
+/**
+ * 交叉验证结果
+ */
+interface CrossValidationResult {
+  discount: number;              // 交叉验证折扣系数
+  result: string;                // 交叉验证结果描述
+  demandLevel: 'high' | 'low';   // 需求端水平
+  supplyLevel: 'sufficient' | 'insufficient'; // 供给端水平
+  details: {
+    demandScore: number;         // 需求端综合评分
+    supplyScore: number;         // 供给端综合评分
+    combination: string;         // 组合类型
+  };
+}
+
+/**
+ * 计算四源数据评分
+ * 从opportunity数据提取各数据源的评分
+ */
+function calculateFourSourceScores(
+  opportunity: typeof opportunities.$inferSelect,
+  dimensions: ScoreDimensions
+): FourSourceScores {
+  const marketAnalysis = opportunity.marketAnalysis as Record<string, any> || {};
+  const riskFlags = opportunity.riskFlags as Record<string, any> || {};
+  
+  // 需求端评分（Ozon数据为主）
+  // Ozon评分基于：销量、评价数、价格竞争力
+  const ozonScore = Math.min(100, Math.max(0,
+    (marketAnalysis.monthlySales || 0) / 5 +  // 销量贡献
+    (marketAnalysis.reviewCount || 0) / 2 +   // 评价贡献
+    (riskFlags.priceCompetitive ? 20 : 0)      // 价格竞争力
+  ));
+  
+  // 速卖通评分（一期使用占位值）
+  // TODO: 接入速卖通API获取真实数据
+  const aliexpressScore = dimensions.demand * 0.8; // 一期降级：使用需求热度估计
+  
+  // 综合需求端评分（Ozon权重更高）
+  const hasOzonData = true; // Ozon数据始终有
+  const hasAliexpressData = false; // 一期无速卖通数据
+  const demandScore = hasOzonData && hasAliexpressData
+    ? ozonScore * 0.6 + aliexpressScore * 0.4  // 有两个数据源时加权
+    : ozonScore;  // 只有一个数据源时直接使用
+  
+  // 供给端评分（1688数据为主）
+  // 1688评分基于：供应商数量、起订量、价格优势
+  // TODO: 接入1688 API获取真实数据
+  const ali1688Score = dimensions.supply * 0.9; // 一期降级：使用供应链评分估计
+  
+  // 海关评分（基于类目合规性和风险）
+  const customsScore = Math.min(100, Math.max(0,
+    (riskFlags.categorySafe ? 50 : 0) +
+    (riskFlags.hasEacRequirement ? 30 : 50) +  // 无EAC要求更好
+    (riskFlags.bannedCategory ? 0 : 20)         // 非禁售类目
+  ));
+  
+  // 综合供给端评分
+  const has1688Data = false; // 一期无1688数据
+  const hasCustomsData = true; // 海关数据基于riskFlags
+  const supplyScore = has1688Data && hasCustomsData
+    ? ali1688Score * 0.7 + customsScore * 0.3  // 有两个数据源时加权
+    : customsScore;  // 只有一个数据源时直接使用
+  
+  return {
+    ozonScore,
+    aliexpressScore,
+    demandScore,
+    ali1688Score,
+    customsScore,
+    supplyScore,
+    hasOzonData,
+    hasAliexpressData,
+    has1688Data,
+    hasCustomsData,
+  };
+}
+
+/**
+ * 四源交叉验证
+ * 
+ * 逻辑：根据需求端评分和供给端评分的高低组合，乘不同折扣因子
+ * - 高需求 + 供给充足 × 1.0  （最佳组合）
+ * - 高需求 + 供给不足 × 0.7  （机会型，需快速切入）
+ * - 低需求 + 供给充足 × 0.5  （潜力型，需培育市场）
+ * - 低需求 + 供给不足 × 0.3  （风险型，建议放弃）
+ * 
+ * 阈值定义：
+ * - 高需求：demandScore >= 60
+ * - 供给充足：supplyScore >= 50
+ */
+function crossValidation(fourSourceScores: FourSourceScores): CrossValidationResult {
+  const { demandScore, supplyScore } = fourSourceScores;
+  
+  // 确定需求端水平
+  const demandLevel: 'high' | 'low' = demandScore >= 60 ? 'high' : 'low';
+  
+  // 确定供给端水平
+  const supplyLevel: 'sufficient' | 'insufficient' = supplyScore >= 50 ? 'sufficient' : 'insufficient';
+  
+  // 根据组合确定折扣因子
+  let discount: number;
+  let combination: string;
+  let result: string;
+  
+  if (demandLevel === 'high' && supplyLevel === 'sufficient') {
+    // 高需求 + 供给充足 = 最佳组合
+    discount = 1.0;
+    combination = '高需求+供给充足';
+    result = '最佳组合：高需求且供给充足，建议优先跟进';
+  } else if (demandLevel === 'high' && supplyLevel === 'insufficient') {
+    // 高需求 + 供给不足 = 机会型
+    discount = 0.7;
+    combination = '高需求+供给不足';
+    result = '机会型：高需求但供给不足，需快速切入抢占市场';
+  } else if (demandLevel === 'low' && supplyLevel === 'sufficient') {
+    // 低需求 + 供给充足 = 潜力型
+    discount = 0.5;
+    combination = '低需求+供给充足';
+    result = '潜力型：需求不足但供给充足，需培育市场或差异化营销';
+  } else {
+    // 低需求 + 供给不足 = 风险型
+    discount = 0.3;
+    combination = '低需求+供给不足';
+    result = '风险型：需求不足且供给不足，建议放弃或长期观察';
+  }
+  
+  return {
+    discount,
+    result,
+    demandLevel,
+    supplyLevel,
+    details: {
+      demandScore: Math.round(demandScore * 100) / 100,
+      supplyScore: Math.round(supplyScore * 100) / 100,
+      combination,
+    },
+  };
+}
+
 /**
  * 检查硬约束（完整版，包含第三阶段规则）
  */
@@ -877,7 +1057,17 @@ async function scoreOpportunity(
     dimensions.demand > 60 ? 'up' : 
     dimensions.demand < 40 ? 'down' : 'stable';
   
-  // 10. 写入评分结果到product_scores表
+  // 10. 第五阶段：四源交叉验证（在评分之后、输出结果之前）
+  const fourSourceScores = calculateFourSourceScores(opportunity, dimensions);
+  const crossValidationResult = crossValidation(fourSourceScores);
+  
+  // 应用交叉验证折扣到最终得分
+  const crossVerifyDiscount = crossValidationResult.discount;
+  const crossVerifyResult = crossValidationResult.result;
+  const scoreAfterCrossValidation = finalScore * crossVerifyDiscount;
+  const gradeAfterCrossValidation = scoreToGrade(scoreAfterCrossValidation / 100);
+  
+  // 11. 写入评分结果到product_scores表
   await db
     .insert(productScores)
     .values({
@@ -904,16 +1094,21 @@ async function scoreOpportunity(
       predictedSales7d: sales7d,
       predictedSales30d: sales30d,
       trendDirection,
-      compositeScore: (finalScore / 100).toFixed(4),
-      grade: finalGrade,
+      compositeScore: (scoreAfterCrossValidation / 100).toFixed(4), // 第五阶段：使用交叉验证后的分数
+      grade: gradeAfterCrossValidation, // 第五阶段：使用交叉验证后的等级
+      // 第五阶段新增字段
+      crossVerifyDiscount: crossVerifyDiscount.toFixed(2),
+      crossVerifyResult: crossVerifyResult,
       calculatedAt: new Date(),
       expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24小时后过期
     })
     .onConflictDoUpdate({
       target: [productScores.productId],
       set: {
-        compositeScore: (finalScore / 100).toFixed(4),
-        grade,
+        compositeScore: (scoreAfterCrossValidation / 100).toFixed(4),
+        grade: gradeAfterCrossValidation,
+        crossVerifyDiscount: crossVerifyDiscount.toFixed(2),
+        crossVerifyResult: crossVerifyResult,
         calculatedAt: new Date(),
       },
     });
@@ -933,8 +1128,8 @@ async function scoreOpportunity(
     opportunityId: opportunity.id,
     productCardId,
     dimensions,
-    compositeScore: finalScore,
-    grade: finalGrade,
+    compositeScore: scoreAfterCrossValidation, // 第五阶段：使用交叉验证后的分数
+    grade: gradeAfterCrossValidation, // 第五阶段：使用交叉验证后的等级
     trendDirection,
     predictedSales7d: sales7d,
     predictedSales30d: sales30d,
@@ -943,6 +1138,9 @@ async function scoreOpportunity(
     vetoRules: formattedVetoRules,
     discountDetails: formattedDiscountDetails,
     totalDiscount,
+    // 第五阶段新增字段
+    crossVerifyDiscount,
+    crossVerifyResult,
   };
 }
 
