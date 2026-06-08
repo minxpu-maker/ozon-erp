@@ -1305,12 +1305,16 @@ export async function batchScore(request: BatchScoringRequest): Promise<BatchSco
 }
 
 /**
- * 获取评分配置
+ * 获取评分配置（第七阶段：支持策略参数）
  */
-export async function getScoringConfig(shopId: string): Promise<{
+export async function getScoringConfig(
+  shopId: string,
+  strategy?: SelectionStrategy
+): Promise<{
   weights: AHPWeights;
   shopStage: string;
   selectionMode: string;
+  strategy: SelectionStrategy;
 }> {
   // 查询店铺配置
   const shop = await db
@@ -1320,11 +1324,22 @@ export async function getScoringConfig(shopId: string): Promise<{
     .limit(1);
   
   const shopData = shop[0];
+  const shopStage = (shopData as any)?.currentStage || 'mature';
+  const selectionMode = (shopData as any)?.selectionMode || 'follow';
+  
+  // 根据策略或店铺模式确定权重
+  let effectiveStrategy = strategy;
+  if (!effectiveStrategy) {
+    // 默认根据店铺模式选择策略
+    effectiveStrategy = selectionMode === 'refine' ? 'refine_default' : 'follow_default';
+  }
+  const weights = getStrategyWeights(effectiveStrategy);
   
   return {
-    weights: DEFAULT_AHP_WEIGHTS,
-    shopStage: (shopData as any)?.currentStage || 'mature',
-    selectionMode: (shopData as any)?.selectionMode || 'follow',
+    weights,
+    shopStage,
+    selectionMode,
+    strategy: effectiveStrategy,
   };
 }
 
@@ -1784,4 +1799,448 @@ export async function systemRecommend(shopId: string): Promise<{ success: boolea
       message: error instanceof Error ? error.message : '推荐失败',
     };
   }
+}
+
+// ============ 第七阶段：排序和去重 ============
+
+/**
+ * 策略类型定义
+ */
+export type SelectionStrategy = 'follow_default' | 'refine_default' | 'follow_aggressive' | 'refine_conservative';
+
+/**
+ * 策略对应的AHP权重配置
+ */
+const STRATEGY_WEIGHTS: Record<SelectionStrategy, AHPWeights> = {
+  // 跟卖默认策略：重视利润和需求
+  follow_default: {
+    profit: 0.30,
+    competition: 0.15,
+    demand: 0.30,
+    differentiation: 0.10,
+    supply: 0.15,
+  },
+  // 跟卖激进策略：高利润优先
+  follow_aggressive: {
+    profit: 0.40,
+    competition: 0.10,
+    demand: 0.25,
+    differentiation: 0.10,
+    supply: 0.15,
+  },
+  // 精铺默认策略：重视差异化和供应链
+  refine_default: {
+    profit: 0.20,
+    competition: 0.15,
+    demand: 0.20,
+    differentiation: 0.30,
+    supply: 0.15,
+  },
+  // 精铺保守策略：稳定优先
+  refine_conservative: {
+    profit: 0.15,
+    competition: 0.20,
+    demand: 0.15,
+    differentiation: 0.25,
+    supply: 0.25,
+  },
+};
+
+/**
+ * 获取策略对应的AHP权重
+ */
+export function getStrategyWeights(strategy: SelectionStrategy = 'follow_default'): AHPWeights {
+  return STRATEGY_WEIGHTS[strategy];
+}
+
+/**
+ * 计算新鲜度衰减
+ * 公式：0.95^发现天数
+ * @param discoveredAt 发现时间
+ * @returns 衰减系数 0-1
+ */
+export function calculateFreshnessDecay(discoveredAt: Date | string | null): number {
+  if (!discoveredAt) return 1;
+  
+  const discovered = new Date(discoveredAt);
+  const now = new Date();
+  const daysSinceDiscovery = Math.floor((now.getTime() - discovered.getTime()) / (1000 * 60 * 60 * 24));
+  
+  // 0.95^天数，最多衰减30天
+  const effectiveDays = Math.min(daysSinceDiscovery, 30);
+  return Math.pow(0.95, effectiveDays);
+}
+
+/**
+ * 最终排序结果
+ */
+export interface FinalSortResult {
+  opportunityId: number;
+  finalScore: number;      // 最终排序分数
+  compositeScore: number;  // 综合评分
+  freshnessDecay: number;  // 新鲜度衰减
+  hardConstraintDiscount: number; // 硬约束折扣
+  crossVerifyDiscount: number; // 交叉验证折扣
+  isDeduplicated: boolean; // 是否被去重
+  dedupReason?: string;    // 去重原因
+}
+
+/**
+ * 计算最终排序分数
+ * 公式：综合评分 × 新鲜度衰减 × 硬约束折扣 × 交叉验证折扣
+ */
+export function calculateFinalScore(
+  compositeScore: number,
+  discoveredAt: Date | string | null,
+  hardConstraintDiscount: number = 1,
+  crossVerifyDiscount: number = 1
+): FinalSortResult {
+  const freshnessDecay = calculateFreshnessDecay(discoveredAt);
+  const finalScore = compositeScore * freshnessDecay * hardConstraintDiscount * crossVerifyDiscount;
+  
+  return {
+    opportunityId: 0, // 调用时填充
+    finalScore,
+    compositeScore,
+    freshnessDecay,
+    hardConstraintDiscount,
+    crossVerifyDiscount,
+    isDeduplicated: false,
+  };
+}
+
+/**
+ * 去重规则配置
+ */
+export interface DedupConfig {
+  sameCategoryKeepTop: boolean;   // 同类目只保留最高分
+  imageHashThreshold: number;     // 图片哈希相似度阈值
+  titleSimilarityThreshold: number; // 标题相似度阈值
+  excludeBlacklist: boolean;      // 排除用户黑名单
+  excludeListed: boolean;         // 排除已上架商品
+}
+
+const DEFAULT_DEDUP_CONFIG: DedupConfig = {
+  sameCategoryKeepTop: true,
+  imageHashThreshold: 0.9,
+  titleSimilarityThreshold: 0.85,
+  excludeBlacklist: true,
+  excludeListed: true,
+};
+
+/**
+ * 候选品数据（用于去重）
+ */
+export interface OpportunityForDedup {
+  id: number;
+  targetCategoryId?: number | null;
+  targetName?: string | null;
+  imageHash?: string | null;
+  source1688Url?: string | null;
+  score: number;
+  isBlacklisted?: boolean;
+  isAlreadyListed?: boolean;
+}
+
+/**
+ * 计算标题相似度（余弦相似度简化版）
+ */
+function calculateTitleSimilarity(title1: string, title2: string): number {
+  if (!title1 || !title2) return 0;
+  
+  // 简单的词频向量余弦相似度
+  const words1 = title1.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+  const words2 = title2.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+  
+  if (words1.length === 0 || words2.length === 0) return 0;
+  
+  const wordSet = new Set([...words1, ...words2]);
+  const vec1 = Array.from(wordSet).map(w => words1.filter(w1 => w1 === w).length);
+  const vec2 = Array.from(wordSet).map(w => words2.filter(w2 => w2 === w).length);
+  
+  const dotProduct = vec1.reduce((sum, v1, i) => sum + v1 * vec2[i], 0);
+  const norm1 = Math.sqrt(vec1.reduce((sum, v) => sum + v * v, 0));
+  const norm2 = Math.sqrt(vec2.reduce((sum, v) => sum + v * v, 0));
+  
+  if (norm1 === 0 || norm2 === 0) return 0;
+  return dotProduct / (norm1 * norm2);
+}
+
+/**
+ * 图片哈希相似度计算
+ */
+function calculateImageHashSimilarity(hash1: string, hash2: string): number {
+  if (!hash1 || !hash2 || hash1.length !== hash2.length) return 0;
+  
+  // 汉明距离转相似度
+  let diff = 0;
+  for (let i = 0; i < hash1.length; i++) {
+    if (hash1[i] !== hash2[i]) diff++;
+  }
+  return 1 - diff / hash1.length;
+}
+
+/**
+ * 执行去重
+ * @param opportunities 候选品列表
+ * @param config 去重配置
+ * @param blacklist 黑名单URL列表
+ * @param listedUrls 已上架URL列表
+ * @returns 去重后的候选品ID列表和去重原因映射
+ */
+export function deduplicateOpportunities(
+  opportunities: OpportunityForDedup[],
+  config: DedupConfig = DEFAULT_DEDUP_CONFIG,
+  blacklist: string[] = [],
+  listedUrls: string[] = []
+): { kept: number[]; removed: Map<number, string> } {
+  const removed = new Map<number, string>();
+  const kept: number[] = [];
+  
+  // 1. 黑名单过滤
+  if (config.excludeBlacklist) {
+    for (const opp of opportunities) {
+      if (blacklist.some(url => opp.source1688Url?.includes(url))) {
+        removed.set(opp.id, '用户黑名单');
+        continue;
+      }
+    }
+  }
+  
+  // 2. 已上架过滤
+  if (config.excludeListed) {
+    for (const opp of opportunities) {
+      if (listedUrls.some(url => opp.source1688Url?.includes(url))) {
+        if (!removed.has(opp.id)) {
+          removed.set(opp.id, '已上架商品');
+        }
+        continue;
+      }
+    }
+  }
+  
+  // 3. 按类目分组，同类目只保留最高分
+  const categoryGroups = new Map<number | null | undefined, OpportunityForDedup[]>();
+  for (const opp of opportunities) {
+    if (removed.has(opp.id)) continue;
+    const catId = opp.targetCategoryId;
+    if (!categoryGroups.has(catId)) {
+      categoryGroups.set(catId, []);
+    }
+    categoryGroups.get(catId)!.push(opp);
+  }
+  
+  // 4. 类目内去重
+  const dedupCandidates: OpportunityForDedup[] = [];
+  for (const [catId, items] of categoryGroups) {
+    // 按分数降序排序
+    items.sort((a, b) => b.score - a.score);
+    
+    if (config.sameCategoryKeepTop && items.length > 1) {
+      // 保留最高分，标记其他为同类目低分
+      dedupCandidates.push(items[0]);
+      for (let i = 1; i < items.length; i++) {
+        removed.set(items[i].id, `同类目已有更高分候选(分数${items[0].score.toFixed(1)})`);
+      }
+    } else {
+      dedupCandidates.push(...items);
+    }
+  }
+  
+  // 5. 图片哈希 + 标题相似度去重
+  for (let i = 0; i < dedupCandidates.length; i++) {
+    const opp1 = dedupCandidates[i];
+    if (removed.has(opp1.id)) continue;
+    
+    for (let j = i + 1; j < dedupCandidates.length; j++) {
+      const opp2 = dedupCandidates[j];
+      if (removed.has(opp2.id)) continue;
+      
+      // 图片哈希相似度检查
+      if (opp1.imageHash && opp2.imageHash) {
+        const imgSimilarity = calculateImageHashSimilarity(opp1.imageHash, opp2.imageHash);
+        if (imgSimilarity >= config.imageHashThreshold) {
+          // 保留高分，移除低分
+          const toRemove = opp1.score >= opp2.score ? opp2 : opp1;
+          removed.set(toRemove.id, `图片相似度${(imgSimilarity * 100).toFixed(0)}%`);
+          continue;
+        }
+      }
+      
+      // 标题相似度检查
+      if (opp1.targetName && opp2.targetName) {
+        const titleSimilarity = calculateTitleSimilarity(opp1.targetName, opp2.targetName);
+        if (titleSimilarity >= config.titleSimilarityThreshold) {
+          const toRemove = opp1.score >= opp2.score ? opp2 : opp1;
+          removed.set(toRemove.id, `标题相似度${(titleSimilarity * 100).toFixed(0)}%`);
+        }
+      }
+    }
+  }
+  
+  // 收集保留的候选品
+  for (const opp of opportunities) {
+    if (!removed.has(opp.id)) {
+      kept.push(opp.id);
+    }
+  }
+  
+  return { kept, removed };
+}
+
+/**
+ * 批量排序和去重主函数
+ * @param shopId 店铺ID
+ * @param strategy 选品策略
+ * @param config 去重配置
+ * @returns 排序后的结果
+ */
+export async function sortAndDeduplicate(
+  shopId: string,
+  strategy: SelectionStrategy = 'follow_default',
+  config: DedupConfig = DEFAULT_DEDUP_CONFIG
+): Promise<{
+  success: boolean;
+  sorted: FinalSortResult[];
+  dedupStats: {
+    original: number;
+    kept: number;
+    removed: number;
+    topReasons: { reason: string; count: number }[];
+  };
+  error?: string;
+}> {
+  try {
+    // 1. 获取店铺所有未处理的候选品及其评分
+    const results = await db
+      .select({
+        opportunity: opportunities,
+        score: productScores,
+      })
+      .from(opportunities)
+      .leftJoin(productScores, eq(opportunities.id, productScores.opportunityId))
+      .where(
+        and(
+          eq(opportunities.shopId, shopId),
+          eq(opportunities.status, 'discovered')
+        )
+      );
+    
+    if (results.length === 0) {
+      return {
+        success: true,
+        sorted: [],
+        dedupStats: { original: 0, kept: 0, removed: 0, topReasons: [] },
+      };
+    }
+    
+    // 2. 计算最终排序分数
+    const sortResults: FinalSortResult[] = results.map(({ opportunity, score }) => {
+      const compositeScore = Number(score?.compositeScore) || 0;
+      const hardConstraintDiscount = Number(score?.hardConstraintDiscount) || 1;
+      const crossVerifyDiscount = Number(score?.crossVerifyDiscount) || 1;
+      
+      const result = calculateFinalScore(
+        compositeScore,
+        opportunity.createdAt, // 使用 createdAt 作为发现时间
+        hardConstraintDiscount,
+        crossVerifyDiscount
+      );
+      result.opportunityId = opportunity.id;
+      return result;
+    });
+    
+    // 3. 准备去重数据
+    const dedupData: OpportunityForDedup[] = results.map(({ opportunity, score }) => ({
+      id: opportunity.id,
+      targetCategoryId: opportunity.targetCategoryId ?? undefined,
+      targetName: opportunity.targetName,
+      imageHash: undefined, // 暂无图片哈希字段
+      source1688Url: undefined, // 暂无1688链接字段
+      score: Number(score?.compositeScore) || 0,
+      isBlacklisted: false, // 实际应查询黑名单
+      isAlreadyListed: false, // 实际应查询已上架
+    }));
+    
+    // 4. 获取黑名单和已上架URL（从数据库或缓存）
+    // TODO: 实际实现时应从数据库查询
+    const blacklist: string[] = [];
+    const listedUrls: string[] = [];
+    
+    // 5. 执行去重
+    const { kept, removed } = deduplicateOpportunities(dedupData, config, blacklist, listedUrls);
+    
+    // 6. 标记去重结果
+    for (const result of sortResults) {
+      if (removed.has(result.opportunityId)) {
+        result.isDeduplicated = true;
+        result.dedupReason = removed.get(result.opportunityId);
+      }
+    }
+    
+    // 7. 按最终分数排序，只保留未去重的
+    const sorted = sortResults
+      .filter(r => !r.isDeduplicated)
+      .sort((a, b) => b.finalScore - a.finalScore);
+    
+    // 8. 统计去重原因
+    const reasonCounts = new Map<string, number>();
+    for (const reason of removed.values()) {
+      // 简化原因归类
+      const simplifiedReason = reason.includes('黑名单') ? '用户黑名单' :
+                              reason.includes('已上架') ? '已上架商品' :
+                              reason.includes('类目') ? '同类目低分' :
+                              reason.includes('图片') ? '图片重复' :
+                              reason.includes('标题') ? '标题重复' : reason;
+      reasonCounts.set(simplifiedReason, (reasonCounts.get(simplifiedReason) || 0) + 1);
+    }
+    const topReasons = Array.from(reasonCounts.entries())
+      .map(([reason, count]) => ({ reason, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+    
+    return {
+      success: true,
+      sorted,
+      dedupStats: {
+        original: results.length,
+        kept: kept.length,
+        removed: removed.size,
+        topReasons,
+      },
+    };
+  } catch (error) {
+    return {
+      success: false,
+      sorted: [],
+      dedupStats: { original: 0, kept: 0, removed: 0, topReasons: [] },
+      error: error instanceof Error ? error.message : '排序去重失败',
+    };
+  }
+}
+
+/**
+ * 获取评分配置（支持策略参数）
+ */
+export async function getScoringConfigWithStrategy(
+  shopId: string,
+  strategy: SelectionStrategy = 'follow_default'
+): Promise<{
+  weights: AHPWeights;
+  channelWeights: ChannelWeights;
+  alpha: number;
+  strategy: SelectionStrategy;
+}> {
+  // 获取策略权重
+  const weights = getStrategyWeights(strategy);
+  
+  // 获取通道权重（一期固定）
+  const channelWeights = PHASE1_CHANNEL_WEIGHTS;
+  
+  return {
+    weights,
+    channelWeights,
+    alpha: ALPHA,
+    strategy,
+  };
 }
