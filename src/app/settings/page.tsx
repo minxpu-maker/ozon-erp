@@ -379,7 +379,15 @@ export default function SettingsPage() {
         {/* Sidebar */}
         <aside className="w-56 shrink-0 bg-card border-r border-border/50 overflow-y-auto">
           <div className="p-3 space-y-0.5">
-            {navItems.map(item => {
+            {navItems.map((item, index) => {
+              // 处理 divider 分隔符
+              if (item.type === 'divider') {
+                return (
+                  <div key={`divider-${index}-${item.label}`} className="pt-3 pb-1">
+                    <span className="px-3 text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">{item.label}</span>
+                  </div>
+                );
+              }
               const Icon = item.icon;
               return (
                 <Link
