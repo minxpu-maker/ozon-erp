@@ -264,19 +264,249 @@ function calculateDimensions(opportunity: typeof opportunities.$inferSelect): Sc
   };
 }
 
+// ============ 第四阶段：语义评分通道 ============
+
+/**
+ * 语义评分输入数据
+ * 包含商品文本信息和结构化特征
+ */
+interface SemanticScoreInput {
+  // 文本特征
+  productTitle: string;         // 商品标题
+  productDescription?: string;  // 商品描述
+  categoryName: string;         // 类目名称
+  targetKeywords?: string[];    // 目标关键词
+  
+  // 结构化特征（用于后续LightGBM）
+  priceRange: { min: number; max: number };
+  sellerCount: number;
+  reviewCount: number;
+  monthlySales: number;
+  avgRating: number;
+  
+  // Embedding向量（预留接口）
+  titleEmbedding?: number[];    // 标题embedding向量
+  descriptionEmbedding?: number[]; // 描述embedding向量
+}
+
+/**
+ * 语义评分结果
+ */
+interface SemanticScoreResult {
+  score: number;                // 0-1的相似度得分
+  confidence: number;           // 置信度 0-1
+  method: 'cosine' | 'lightgbm'; // 使用的计算方法
+  
+  // 中间结果（用于调试和优化）
+  details: {
+    titleSimilarity?: number;   // 标题相似度
+    categoryMatch?: number;     // 类目匹配度
+    keywordMatch?: number;      // 关键词匹配度
+    featureScore?: number;      // 结构化特征得分
+  };
+  
+  // 预留LightGBM输出
+  lightgbmPrediction?: number;  // LightGBM预测概率
+  featureImportance?: Record<string, number>; // 特征重要性
+}
+
+/**
+ * 计算余弦相似度
+ * @param vec1 向量1
+ * @param vec2 向量2
+ * @returns 相似度 0-1
+ */
+function cosineSimilarity(vec1: number[], vec2: number[]): number {
+  if (vec1.length !== vec2.length || vec1.length === 0) {
+    return 0;
+  }
+  
+  let dotProduct = 0;
+  let norm1 = 0;
+  let norm2 = 0;
+  
+  for (let i = 0; i < vec1.length; i++) {
+    dotProduct += vec1[i] * vec2[i];
+    norm1 += vec1[i] * vec1[i];
+    norm2 += vec2[i] * vec2[i];
+  }
+  
+  const denominator = Math.sqrt(norm1) * Math.sqrt(norm2);
+  if (denominator === 0) {
+    return 0;
+  }
+  
+  return Math.max(0, Math.min(1, dotProduct / denominator));
+}
+
+/**
+ * 生成简单的文本向量（一期占位）
+ * 实际应调用LLM Embedding API
+ * 
+ * 一期降级：使用简单的词频向量代替真实的embedding
+ */
+function generateSimpleEmbedding(text: string): number[] {
+  // 简单的词频特征向量（128维）
+  const vector = new Array(128).fill(0);
+  const words = text.toLowerCase().split(/\s+/);
+  
+  words.forEach((word, index) => {
+    // 使用词的字符编码作为向量索引
+    const hash = word.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const vecIndex = hash % 128;
+    vector[vecIndex] += 1 / (index + 1); // 考虑位置权重
+  });
+  
+  // 归一化
+  const norm = Math.sqrt(vector.reduce((sum, v) => sum + v * v, 0));
+  return norm > 0 ? vector.map(v => v / norm) : vector;
+}
+
+/**
+ * 语义评分函数
+ * 
+ * 算法设计：LLM Embedding + LightGBM
+ * 
+ * 一期降级：LightGBM模型还没训练，降级为余弦相似度
+ * 后续接入LightGBM替换此实现
+ * 
+ * @param input 商品语义输入数据
+ * @param targetEmbedding 目标embedding（可选，用于比较）
+ * @returns 语义评分结果
+ */
+function semanticScore(
+  input: SemanticScoreInput,
+  targetEmbedding?: number[]
+): SemanticScoreResult {
+  const details: SemanticScoreResult['details'] = {};
+  
+  // ========== 一期降级实现：余弦相似度 ==========
+  // TODO: 后续接入LightGBM替换此实现
+  // LightGBM模型输入：[embedding向量, 结构化特征]
+  // 预训练模型路径：/models/semantic_lightgbm.txt
+  
+  // 1. 生成或获取标题embedding
+  const titleEmb = input.titleEmbedding || generateSimpleEmbedding(input.productTitle);
+  
+  // 2. 计算标题相似度
+  let titleSimilarity = 0.5; // 默认中等相似度
+  if (targetEmbedding && targetEmbedding.length > 0) {
+    titleSimilarity = cosineSimilarity(titleEmb, targetEmbedding);
+  }
+  details.titleSimilarity = titleSimilarity;
+  
+  // 3. 计算类目匹配度
+  // 简单实现：检查目标关键词是否在类目名称中
+  let categoryMatch = 0.5;
+  if (input.targetKeywords && input.targetKeywords.length > 0) {
+    const categoryLower = input.categoryName.toLowerCase();
+    const matchCount = input.targetKeywords.filter(
+      kw => categoryLower.includes(kw.toLowerCase())
+    ).length;
+    categoryMatch = matchCount / input.targetKeywords.length;
+  }
+  details.categoryMatch = categoryMatch;
+  
+  // 4. 计算关键词匹配度
+  let keywordMatch = 0.5;
+  if (input.targetKeywords && input.targetKeywords.length > 0) {
+    const titleLower = input.productTitle.toLowerCase();
+    const descLower = (input.productDescription || '').toLowerCase();
+    const combinedText = titleLower + ' ' + descLower;
+    
+    const matchCount = input.targetKeywords.filter(
+      kw => combinedText.includes(kw.toLowerCase())
+    ).length;
+    keywordMatch = matchCount / input.targetKeywords.length;
+  }
+  details.keywordMatch = keywordMatch;
+  
+  // 5. 计算结构化特征得分（用于后续LightGBM）
+  // 价格竞争力
+  const avgPrice = (input.priceRange.min + input.priceRange.max) / 2;
+  const priceScore = avgPrice > 500 && avgPrice < 5000 ? 1 : 
+                     avgPrice < 500 ? 0.6 : 0.8;
+  
+  // 销量热度
+  const salesScore = Math.min(1, input.monthlySales / 200);
+  
+  // 评价质量
+  const reviewScore = Math.min(1, input.reviewCount / 100);
+  
+  // 综合结构化特征得分
+  const featureScore = priceScore * 0.3 + salesScore * 0.4 + reviewScore * 0.3;
+  details.featureScore = featureScore;
+  
+  // 6. 一期综合得分：加权组合
+  // 权重：标题相似度30%，类目匹配20%，关键词匹配20%，结构化特征30%
+  const score = 
+    titleSimilarity * 0.30 +
+    categoryMatch * 0.20 +
+    keywordMatch * 0.20 +
+    featureScore * 0.30;
+  
+  // 7. 计算置信度
+  // 数据越完整，置信度越高
+  const confidence = 
+    (input.titleEmbedding ? 0.3 : 0.1) +
+    (input.targetKeywords ? 0.3 : 0.1) +
+    (input.productDescription ? 0.2 : 0.1) +
+    (input.monthlySales > 0 ? 0.2 : 0.1);
+  
+  return {
+    score: Math.max(0, Math.min(1, score)),
+    confidence,
+    method: 'cosine', // 一期使用余弦相似度
+    details,
+    // LightGBM相关字段预留
+    lightgbmPrediction: undefined,
+    featureImportance: undefined,
+  };
+}
+
+/**
+ * 构建语义评分输入
+ * 从opportunity数据构建语义评分所需的输入
+ */
+function buildSemanticInput(
+  opportunity: typeof opportunities.$inferSelect,
+  targetKeywords?: string[],
+  targetEmbedding?: number[]
+): SemanticScoreInput {
+  const marketAnalysis = opportunity.marketAnalysis as Record<string, any> || {};
+  const priceRange = marketAnalysis.priceRange as { min: number; max: number } || { min: 1000, max: 2000 };
+  
+  return {
+    productTitle: opportunity.targetName || '',
+    categoryName: String(opportunity.targetCategoryId || ''),
+    targetKeywords,
+    priceRange,
+    sellerCount: marketAnalysis.sellerCount || 0,
+    reviewCount: marketAnalysis.reviewCount || 0,
+    monthlySales: marketAnalysis.monthlySales || 0,
+    avgRating: marketAnalysis.avgRating || 4.0,
+    titleEmbedding: targetEmbedding, // 如果有预计算的embedding
+  };
+}
+
 /**
  * 计算综合评分和等级
  * 
  * 第二阶段改进：
  * - 使用动态通道权重
  * - 评分等级映射：80-100=A, 60-79=B, 40-59=C, 0-39=D
+ * 
+ * 第四阶段改进：
+ * - 语义评分使用独立的semanticScore函数
+ * - 预留embedding+结构化特征接口
  */
 function calculateCompositeScore(
   dimensions: ScoreDimensions,
   weights: AHPWeights,
   channelWeights: ChannelWeights = PHASE1_CHANNEL_WEIGHTS,
-  hardConstraintDiscount: number = 1.0
-): { score: number; grade: 'A' | 'B' | 'C' | 'D'; normalizedScore: number } {
+  hardConstraintDiscount: number = 1.0,
+  semanticResult?: SemanticScoreResult // 第四阶段：支持外部语义评分
+): { score: number; grade: 'A' | 'B' | 'C' | 'D'; normalizedScore: number; semanticScore: number } {
   // 1. 计算TOPSIS客观评分（五维加权）
   const topsisScore = 
     dimensions.profit * weights.profit +
@@ -285,8 +515,16 @@ function calculateCompositeScore(
     dimensions.differentiation * weights.differentiation +
     dimensions.supply * weights.supply;
   
-  // 2. 语义相似度评分（基于需求热度和差异化）
-  const semanticScore = dimensions.demand * 0.6 + dimensions.differentiation * 0.4;
+  // 2. 语义相似度评分
+  // 第四阶段：使用外部传入的语义评分或降级为简单计算
+  let semanticScoreValue: number;
+  if (semanticResult) {
+    // 使用独立的semanticScore函数结果（推荐）
+    semanticScoreValue = semanticResult.score * 100;
+  } else {
+    // 降级：基于需求热度和差异化的简单估计
+    semanticScoreValue = dimensions.demand * 0.6 + dimensions.differentiation * 0.4;
+  }
   
   // 3. Prophet预测评分（一期无数据，使用需求热度替代）
   const prophetScore = dimensions.demand; // 占位
@@ -300,7 +538,7 @@ function calculateCompositeScore(
   // 6. 多通道加权综合评分
   const rawScore = 
     topsisScore * channelWeights.topsis +
-    semanticScore * channelWeights.semantic +
+    semanticScoreValue * channelWeights.semantic +
     prophetScore * channelWeights.prophet +
     opportunityScore * channelWeights.opportunity +
     crossValidationScore * channelWeights.crossValidation;
@@ -324,7 +562,8 @@ function calculateCompositeScore(
   return { 
     score: Math.round(normalizedScore * 100) / 100, 
     grade,
-    normalizedScore 
+    normalizedScore,
+    semanticScore: Math.round(semanticScoreValue * 100) / 100 // 第四阶段：返回语义评分
   };
 }
 
