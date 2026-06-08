@@ -2,37 +2,31 @@
  * 选品引擎主接口 - 第八阶段
  * POST /api/selection/run
  * 参数: shopId, categoryId(可选), strategy(可选)
- * 返回: taskId (前端轮询查询进度)
+ * 返回: taskId 和结果（同步执行）
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import {
-  createTask,
-  startTask,
-  updateProgress,
-  markDataSource,
-  addWarning,
-  markLayerCompleted,
-  completeTask,
-  failTask,
-} from '@/lib/selection-task-manager';
 import {
   batchScore,
   sortAndDeduplicate,
   getStrategyWeights,
   createDegradationContext,
   fetchWithDegradation,
-  applyDegradationDiscount,
-  executeLayer,
-  getCompletedLayersSummary,
   SelectionStrategy,
-  LayerExecutionContext,
 } from '@/lib/selection-engine';
 import { db } from '@/storage/database/client';
 import * as schema from '@/storage/database/shared/schema';
 import { eq, and } from 'drizzle-orm';
 
 const { opportunities, shops } = schema;
+
+// 内存任务存储（用于短期轮询）
+const taskResults = new Map<string, {
+  status: 'running' | 'completed' | 'failed';
+  result?: unknown;
+  error?: string;
+  createdAt: number;
+}>();
 
 export async function POST(request: NextRequest) {
   try {
@@ -46,261 +40,186 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // 1. 创建任务
-    const task = createTask(shopId, categoryId, strategy as SelectionStrategy);
+    // 生成任务ID
+    const taskId = `sel_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
     
-    // 2. 异步执行选品流程（不阻塞响应）
-    runSelectionTask(task.id, shopId, categoryId, strategy as SelectionStrategy);
+    // 初始化任务状态
+    taskResults.set(taskId, { status: 'running', createdAt: Date.now() });
     
-    // 3. 立即返回taskId
+    // 同步执行选品任务
+    const result = await executeSelectionTask(shopId, categoryId, strategy as SelectionStrategy);
+    
+    // 更新任务状态
+    taskResults.set(taskId, { 
+      status: 'completed', 
+      result, 
+      createdAt: Date.now() 
+    });
+    
+    // 清理过期任务（保留最近100个）
+    if (taskResults.size > 100) {
+      const entries = Array.from(taskResults.entries());
+      entries.slice(0, 50).forEach(([key]) => taskResults.delete(key));
+    }
+    
+    // 返回完整结果（前端可选择轮询或直接使用结果）
     return NextResponse.json({
       success: true,
-      taskId: task.id,
-      message: '选品任务已创建，请轮询查询进度',
-      pollUrl: `/api/selection/run/${task.id}`,
+      taskId,
+      status: 'completed',
+      message: '选品任务执行完成',
+      pollUrl: `/api/selection/run/${taskId}`,
+      result,
     });
   } catch (error) {
     return NextResponse.json(
-      { success: false, error: error instanceof Error ? error.message : '创建任务失败' },
+      { success: false, error: error instanceof Error ? error.message : '执行失败' },
       { status: 500 }
     );
   }
 }
 
 /**
- * 异步执行选品任务
+ * 执行选品任务
  */
-async function runSelectionTask(
-  taskId: string,
+async function executeSelectionTask(
   shopId: string,
   categoryId?: number,
   strategy: SelectionStrategy = 'follow_default'
-): Promise<void> {
-  // 分层执行上下文
-  const layerContext: LayerExecutionContext = {
-    taskId,
-    completedLayers: [],
-    currentLayer: 0,
-  };
+): Promise<{
+  shop: { found: boolean; name?: string };
+  opportunities: { total: number };
+  dataSources: Array<{ name: string; status: string; count?: number }>;
+  scoring: { processed: number; successful: number; failed: number };
+  dedup: { original: number; kept: number; removed: number };
+  warnings: string[];
+  completedLayers: number[];
+}> {
+  const warnings: string[] = [];
+  const dataSources: Array<{ name: string; status: string; count?: number }> = [];
+  const completedLayers: number[] = [];
   
-  // 降级上下文
+  // ========== 第0层：店铺信息获取 ==========
+  let shopName: string | undefined;
+  try {
+    const shop = await db
+      .select()
+      .from(shops)
+      .where(eq(shops.id, shopId))
+      .limit(1);
+    
+    if (shop[0]) {
+      shopName = shop[0].name;
+      dataSources.push({ name: 'shop', status: 'success' });
+      completedLayers.push(0);
+    } else {
+      warnings.push('店铺信息获取失败，使用默认配置');
+      dataSources.push({ name: 'shop', status: 'failed' });
+    }
+  } catch (err) {
+    warnings.push('店铺查询失败，使用默认配置');
+    dataSources.push({ name: 'shop', status: 'failed' });
+  }
+  
+  // ========== 第1层：候选品获取 ==========
+  let opportunityList: typeof opportunities.$inferSelect[] = [];
+  try {
+    const conditions = [eq(opportunities.shopId, shopId)];
+    if (categoryId) {
+      conditions.push(eq(opportunities.targetCategoryId, categoryId));
+    }
+    
+    opportunityList = await db
+      .select()
+      .from(opportunities)
+      .where(and(...conditions));
+    
+    dataSources.push({ name: 'opportunities', status: 'success', count: opportunityList.length });
+    completedLayers.push(1);
+  } catch (err) {
+    warnings.push('候选品获取失败');
+    dataSources.push({ name: 'opportunities', status: 'failed' });
+  }
+  
+  // ========== 第2层：数据源获取（带降级） ==========
   const degradationCtx = createDegradationContext();
   
+  // Ozon数据源
+  const ozonResult = await fetchWithDegradation(
+    'ozon',
+    async () => ({ products: [], count: 0 }),
+    degradationCtx
+  );
+  dataSources.push({ name: 'ozon', status: ozonResult.success ? 'success' : 'failed' });
+  
+  // 速卖通数据源
+  const aliexpressResult = await fetchWithDegradation(
+    'aliexpress',
+    async () => ({ products: [], count: 0 }),
+    degradationCtx
+  );
+  dataSources.push({ name: 'aliexpress', status: aliexpressResult.success ? 'success' : 'failed' });
+  
+  // 1688数据源
+  const alibabaResult = await fetchWithDegradation(
+    'alibaba1688',
+    async () => ({ products: [], count: 0 }),
+    degradationCtx
+  );
+  dataSources.push({ name: 'alibaba1688', status: alibabaResult.success ? 'success' : 'failed' });
+  
+  // 记录数据充分性警告
+  if (degradationCtx.warningFlags.length > 0) {
+    warnings.push(...degradationCtx.warningFlags);
+  }
+  completedLayers.push(2);
+  
+  // ========== 第3层：批量评分 ==========
+  let scoringResult = { processed: 0, results: [] as unknown[], errors: [] as unknown[] };
   try {
-    // 标记任务开始
-    startTask(taskId);
-    
-    // ========== 第0层：店铺信息获取 ==========
-    updateProgress(taskId, 0, 5, '获取店铺信息');
-    
-    const shopResult = await executeLayer(
-      0,
-      '店铺信息获取',
-      async () => {
-        const shop = await db
-          .select()
-          .from(shops)
-          .where(eq(shops.id, shopId))
-          .limit(1);
-        return shop[0] || null;
-      },
-      layerContext
-    );
-    
-    if (!shopResult.success || !shopResult.data) {
-      addWarning(taskId, '店铺信息获取失败，使用默认配置');
-      markDataSource(taskId, 'shop', 'failed', '店铺不存在');
-    } else {
-      markDataSource(taskId, 'shop', 'success', undefined, 1);
-      markLayerCompleted(taskId, 0);
-    }
-    
-    // ========== 第1层：候选品获取 ==========
-    updateProgress(taskId, 1, 5, '获取候选品列表');
-    
-    const opportunitiesResult = await executeLayer(
-      1,
-      '候选品获取',
-      async () => {
-        // 构建查询条件
-        const conditions = [eq(opportunities.shopId, shopId)];
-        if (categoryId) {
-          conditions.push(eq(opportunities.targetCategoryId, categoryId));
-        }
-        
-        const items = await db
-          .select()
-          .from(opportunities)
-          .where(and(...conditions));
-        return items;
-      },
-      layerContext
-    );
-    
-    let opportunityList: typeof opportunities.$inferSelect[] = [];
-    if (opportunitiesResult.success && opportunitiesResult.data) {
-      opportunityList = opportunitiesResult.data;
-      markDataSource(taskId, 'opportunities', 'success', undefined, opportunityList.length);
-      markLayerCompleted(taskId, 1);
-    } else {
-      markDataSource(taskId, 'opportunities', 'failed', opportunitiesResult.error);
-      // 即使候选品获取失败，也继续执行（返回空结果）
-    }
-    
-    // ========== 第2层：数据源获取（带降级） ==========
-    updateProgress(taskId, 2, 5, '获取外部数据源');
-    
-    // Ozon数据源
-    const ozonResult = await fetchWithDegradation(
-      'ozon',
-      async () => {
-        // TODO: 实际调用Ozon API
-        // 模拟数据
-        return { products: [], count: 0 };
-      },
-      degradationCtx
-    );
-    markDataSource(taskId, 'ozon', ozonResult.success ? 'success' : 'failed', ozonResult.error);
-    
-    // 速卖通数据源
-    const aliexpressResult = await fetchWithDegradation(
-      'aliexpress',
-      async () => {
-        // TODO: 实际调用速卖通API
-        return { products: [], count: 0 };
-      },
-      degradationCtx
-    );
-    markDataSource(taskId, 'aliexpress', aliexpressResult.success ? 'success' : 'failed', aliexpressResult.error);
-    
-    // 1688数据源
-    const alibabaResult = await fetchWithDegradation(
-      'alibaba1688',
-      async () => {
-        // TODO: 实际调用1688 API
-        return { products: [], count: 0 };
-      },
-      degradationCtx
-    );
-    markDataSource(taskId, 'alibaba1688', alibabaResult.success ? 'success' : 'failed', alibabaResult.error);
-    
-    // 记录数据充分性警告
-    if (degradationCtx.warningFlags.length > 0) {
-      for (const warning of degradationCtx.warningFlags) {
-        addWarning(taskId, warning);
-      }
-    }
-    
-    markLayerCompleted(taskId, 2);
-    
-    // ========== 第3层：批量评分 ==========
-    updateProgress(taskId, 3, 5, '计算候选品评分');
-    
-    const scoringResult = await executeLayer(
-      3,
-      '批量评分',
-      async () => {
-        if (opportunityList.length === 0) {
-          return { processed: 0, results: [], errors: [] };
-        }
-        
-        // 获取策略权重
-        const weights = getStrategyWeights(strategy);
-        
-        // 调用批量评分
-        return await batchScore({
-          shopId,
-          categoryId: categoryId,
-          weights,
-        });
-      },
-      layerContext
-    );
-    
-    let processedCount = 0;
-    let successfulCount = 0;
-    let failedCount = 0;
-    
-    if (scoringResult.success && scoringResult.data) {
-      processedCount = scoringResult.data.processed || 0;
-      successfulCount = scoringResult.data.results?.length || 0;
-      failedCount = scoringResult.data.errors?.length || 0;
-      markLayerCompleted(taskId, 3);
+    if (opportunityList.length > 0) {
+      const weights = getStrategyWeights(strategy);
+      scoringResult = await batchScore({
+        shopId,
+        categoryId: categoryId,
+        weights,
+      });
+      completedLayers.push(3);
       
-      // 应用数据降级折扣
       if (degradationCtx.discountFactor < 1) {
-        addWarning(taskId, `评分已应用降级折扣: ${(degradationCtx.discountFactor * 100).toFixed(0)}%`);
+        warnings.push(`评分已应用降级折扣: ${(degradationCtx.discountFactor * 100).toFixed(0)}%`);
       }
+    } else {
+      completedLayers.push(3);
     }
-    
-    // ========== 第4层：排序和去重 ==========
-    updateProgress(taskId, 4, 5, '执行排序和去重');
-    
-    const sortResult = await executeLayer(
-      4,
-      '排序去重',
-      async () => {
-        return await sortAndDeduplicate(shopId, strategy);
-      },
-      layerContext
-    );
-    
-    let topCandidates: Array<{ id: number; score: number; grade: string; name?: string }> = [];
-    let dedupStats = { original: 0, kept: 0, removed: 0 };
-    
-    if (sortResult.success && sortResult.data) {
-      topCandidates = sortResult.data.sorted.slice(0, 20).map(r => ({
-        id: r.opportunityId,
-        score: r.finalScore,
-        grade: r.compositeScore >= 80 ? 'A' : r.compositeScore >= 60 ? 'B' : r.compositeScore >= 40 ? 'C' : 'D',
-      }));
-      dedupStats = sortResult.data.dedupStats;
-      markLayerCompleted(taskId, 4);
-    }
-    
-    // ========== 完成 ==========
-    updateProgress(taskId, 5, 5, '完成');
-    
-    completeTask(taskId, {
-      processed: processedCount,
-      successful: successfulCount,
-      failed: failedCount,
-      topCandidates,
-      dedupStats,
-    });
-    
-  } catch (error) {
-    // 异常时返回已完成层结果
-    const { completed, failed, lastSuccessfulLayer } = getCompletedLayersSummary(layerContext);
-    
-    addWarning(taskId, `处理异常: ${error instanceof Error ? error.message : '未知错误'}`);
-    addWarning(taskId, `已完成${completed.length}层，失败${failed.length}层，最高完成层${lastSuccessfulLayer}`);
-    
-    failTask(taskId, error instanceof Error ? error.message : '任务执行失败');
-  }
-}
-
-/**
- * GET 方法：获取当前任务列表
- */
-export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const shopId = searchParams.get('shopId');
-  
-  if (!shopId) {
-    return NextResponse.json(
-      { success: false, error: '缺少shopId参数' },
-      { status: 400 }
-    );
+  } catch (err) {
+    warnings.push('批量评分执行失败');
   }
   
-  // 返回LLM调用统计
-  const { getLLMStats } = await import('@/lib/selection-engine');
-  const llmStats = getLLMStats();
+  // ========== 第4层：排序和去重 ==========
+  let dedupResult = { sorted: [] as unknown[], dedupStats: { original: 0, kept: 0, removed: 0 } };
+  try {
+    if (opportunityList.length > 0) {
+      dedupResult = await sortAndDeduplicate(shopId, strategy);
+      completedLayers.push(4);
+    } else {
+      completedLayers.push(4);
+    }
+  } catch (err) {
+    warnings.push('排序去重执行失败');
+  }
   
-  return NextResponse.json({
-    success: true,
-    message: '请使用POST方法创建新任务',
-    llmRateLimit: llmStats,
-  });
+  return {
+    shop: { found: !!shopName, name: shopName },
+    opportunities: { total: opportunityList.length },
+    dataSources,
+    scoring: {
+      processed: scoringResult.processed,
+      successful: scoringResult.results.length,
+      failed: scoringResult.errors.length,
+    },
+    dedup: dedupResult.dedupStats,
+    warnings,
+    completedLayers,
+  };
 }
