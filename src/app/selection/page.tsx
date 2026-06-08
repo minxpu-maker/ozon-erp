@@ -383,31 +383,24 @@ export default function SelectionPage() {
 
   const handleAIDig = async () => {
     try {
-      // 调用评分引擎的深挖API
-      const response = await fetch('/api/selection/score', {
+      // 调用新的选品引擎API
+      const response = await fetch('/api/selection/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action: 'deepMine',
           shopId,
-          keywords: aiDigKeyword,
           categoryId: aiDigCategoryId ? parseInt(aiDigCategoryId) : undefined,
-          mode,
+          strategy: mode === 'copy' ? 'follow_default' : 'refine_default',
+          keyword: aiDigKeyword,
         }),
       });
       const result = await response.json();
       
-      if (result.success && result.opportunityId) {
-        // 创建成功后，自动触发评分
-        await fetch('/api/selection/score', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'batch',
-            shopId,
-            limit: 10,
-          }),
-        });
+      if (result.success) {
+        // 显示结果
+        console.log('选品任务完成:', result);
+        // 刷新候选品列表
+        await fetchOpportunities();
       }
       
       setShowAIDigDialog(false);

@@ -14,6 +14,14 @@ import {
   fetchWithDegradation,
   SelectionStrategy,
 } from '@/lib/selection-engine';
+import {
+  fetchMultiSourceData,
+  calculateDemandScore,
+  calculateSupplyScore,
+  type OzonProductData,
+  type AliexpressProductData,
+  type Alibaba1688ProductData,
+} from '@/lib/data-source-service';
 import { db } from '@/storage/database/client';
 import * as schema from '@/storage/database/shared/schema';
 import { eq, and } from 'drizzle-orm';
@@ -144,34 +152,65 @@ async function executeSelectionTask(
   // ========== 第2层：数据源获取（带降级） ==========
   const degradationCtx = createDegradationContext();
   
-  // Ozon数据源
-  const ozonResult = await fetchWithDegradation(
-    'ozon',
-    async () => ({ products: [], count: 0 }),
-    degradationCtx
-  );
-  dataSources.push({ name: 'ozon', status: ozonResult.success ? 'success' : 'failed' });
+  // 使用真实数据源服务获取多源数据
+  let ozonProducts: OzonProductData[] = [];
+  let aliexpressProducts: AliexpressProductData[] = [];
+  let alibaba1688Products: Alibaba1688ProductData[] = [];
   
-  // 速卖通数据源
-  const aliexpressResult = await fetchWithDegradation(
-    'aliexpress',
-    async () => ({ products: [], count: 0 }),
-    degradationCtx
-  );
-  dataSources.push({ name: 'aliexpress', status: aliexpressResult.success ? 'success' : 'failed' });
+  try {
+    const multiSourceResult = await fetchMultiSourceData({
+      shopId,
+      categoryId,
+    });
+    
+    if (multiSourceResult.ozon?.success && multiSourceResult.ozon.data) {
+      ozonProducts = multiSourceResult.ozon.data;
+      dataSources.push({ name: 'ozon', status: 'success', count: ozonProducts.length });
+    } else {
+      dataSources.push({ name: 'ozon', status: 'failed', count: 0 });
+    }
+    
+    if (multiSourceResult.aliexpress?.success && multiSourceResult.aliexpress.data) {
+      aliexpressProducts = multiSourceResult.aliexpress.data;
+      dataSources.push({ name: 'aliexpress', status: 'success', count: aliexpressProducts.length });
+    } else {
+      dataSources.push({ name: 'aliexpress', status: 'failed', count: 0 });
+    }
+    
+    if (multiSourceResult.alibaba1688?.success && multiSourceResult.alibaba1688.data) {
+      alibaba1688Products = multiSourceResult.alibaba1688.data;
+      dataSources.push({ name: 'alibaba1688', status: 'success', count: alibaba1688Products.length });
+    } else {
+      dataSources.push({ name: 'alibaba1688', status: 'failed', count: 0 });
+    }
+  } catch (err) {
+    // 降级处理：使用空数据
+    dataSources.push({ name: 'ozon', status: 'failed' });
+    dataSources.push({ name: 'aliexpress', status: 'failed' });
+    dataSources.push({ name: 'alibaba1688', status: 'failed' });
+    warnings.push('外部数据源获取失败，使用降级评分');
+  }
   
-  // 1688数据源
-  const alibabaResult = await fetchWithDegradation(
-    'alibaba1688',
-    async () => ({ products: [], count: 0 }),
-    degradationCtx
-  );
-  dataSources.push({ name: 'alibaba1688', status: alibabaResult.success ? 'success' : 'failed' });
+  // 计算交叉验证评分
+  const demandScore = calculateDemandScore(ozonProducts, aliexpressProducts);
+  const supplyScore = calculateSupplyScore(alibaba1688Products);
+  const crossValidationScore = demandScore * supplyScore;
   
   // 记录数据充分性警告
   if (degradationCtx.warningFlags.length > 0) {
     warnings.push(...degradationCtx.warningFlags);
   }
+  
+  // 单数据源降级
+  const successSources = dataSources.filter(d => d.status === 'success').length;
+  if (successSources === 1) {
+    degradationCtx.discountFactor *= 0.7;
+    warnings.push('仅1个数据源有数据，评分打7折');
+  } else if (successSources === 0) {
+    degradationCtx.discountFactor *= 0.5;
+    warnings.push('无有效数据源，评分打5折');
+  }
+  
   completedLayers.push(2);
   
   // ========== 第3层：批量评分 ==========
