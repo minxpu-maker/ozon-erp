@@ -31,6 +31,11 @@ import {
   Zap,
   HardDrive,
   Scale,
+  Target,
+  Image,
+  Activity,
+  Server,
+  Store,
 } from 'lucide-react';
 
 interface DashboardStats {
@@ -65,6 +70,9 @@ const navItems = [
   { href: '/logistics', icon: Truck, label: '入库验货' },
   { href: '/packaging', icon: Box, label: '打包发货' },
   { href: '/finance', icon: Calculator, label: '利润核算' },
+  { type: 'divider', label: 'AI智能' },
+  { href: '/selection', icon: Target, label: 'AI 选品' },
+  { href: '/image-listing', icon: Image, label: '修图上架' },
   { type: 'divider', label: '库存管理' },
   { href: '/inventory', icon: PackageSearch, label: '库存管理' },
   { href: '/wms', icon: Warehouse, label: '仓库管理' },
@@ -72,10 +80,14 @@ const navItems = [
   { href: '/sku-management', icon: Database, label: 'SKU管理' },
   { href: '/suppliers', icon: Users, label: '供应商管理' },
   { href: '/reports', icon: BarChart3, label: '数据报表' },
+  { href: '/data-center/source-health', icon: Activity, label: '数据源健康度' },
+  { href: '/data-center/source-management', icon: Server, label: '数据源管理' },
+  { href: '/data-center/notifications', icon: Bell, label: '知识库通知' },
   { type: 'divider', label: '系统' },
   { href: '/accounts', icon: UserCircle, label: '账号管理' },
   { href: '/roles', icon: Shield, label: '角色权限' },
   { href: '/settings', icon: Settings, label: '系统设置' },
+  { href: '/settings/shop-config', icon: Store, label: '店铺配置' },
 ];
 
 export default function DashboardPage() {
