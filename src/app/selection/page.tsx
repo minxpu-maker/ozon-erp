@@ -383,16 +383,33 @@ export default function SelectionPage() {
 
   const handleAIDig = async () => {
     try {
-      await fetch('/api/selection/opportunities', {
+      // 调用评分引擎的深挖API
+      const response = await fetch('/api/selection/score', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          action: 'deepMine',
           shopId,
-          mode,
-          targetCategoryId: aiDigCategoryId || null,
           keywords: aiDigKeyword,
+          categoryId: aiDigCategoryId ? parseInt(aiDigCategoryId) : undefined,
+          mode,
         }),
       });
+      const result = await response.json();
+      
+      if (result.success && result.opportunityId) {
+        // 创建成功后，自动触发评分
+        await fetch('/api/selection/score', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'batch',
+            shopId,
+            limit: 10,
+          }),
+        });
+      }
+      
       setShowAIDigDialog(false);
       setAiDigKeyword('');
       setAiDigCategoryId('');
@@ -404,17 +421,56 @@ export default function SelectionPage() {
 
   const handleSystemRecommend = async () => {
     try {
-      await fetch('/api/selection/opportunities', {
+      // 调用评分引擎的系统推荐API
+      const response = await fetch('/api/selection/score', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          action: 'systemRecommend',
           shopId,
-          mode: 'system_recommend',
         }),
       });
+      const result = await response.json();
+      
+      if (result.success && result.opportunityId) {
+        // 创建成功后，自动触发评分
+        await fetch('/api/selection/score', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'batch',
+            shopId,
+            limit: 10,
+          }),
+        });
+      }
+      
       fetchOpportunities();
     } catch (error) {
       console.error('Failed to create system recommendation:', error);
+    }
+  };
+  
+  // 批量评分
+  const handleBatchScore = async () => {
+    try {
+      const response = await fetch('/api/selection/score', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'batch',
+          shopId,
+          status: 'discovered',
+          limit: 50,
+        }),
+      });
+      const result = await response.json();
+      
+      if (result.success) {
+        fetchOpportunities();
+      }
+    } catch (error) {
+      console.error('Failed to batch score:', error);
     }
   };
 
