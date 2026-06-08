@@ -87,7 +87,6 @@ const navItems = [
   { href: '/accounts', icon: UserCircle, label: '账号管理' },
   { href: '/roles', icon: Shield, label: '角色权限' },
   { href: '/settings', icon: Settings, label: '系统设置' },
-  { href: '/settings/shop-config', icon: Store, label: '店铺配置' },
 ];
 
 export default function DashboardPage() {
