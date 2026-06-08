@@ -1022,7 +1022,7 @@ function checkHardConstraints(
 /**
  * 单个opportunity评分
  */
-async function scoreOpportunity(
+export async function scoreOpportunity(
   opportunity: typeof opportunities.$inferSelect,
   weights: AHPWeights,
   shopInfo?: { sellerType?: string; currentStage?: string },
