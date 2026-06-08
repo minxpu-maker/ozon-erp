@@ -58,7 +58,7 @@ export default function FinancePage() {
 
   // 执行结算
   const handleSettle = async (orderId: number) => {
-    if (!confirm('确认执行利润核算？')) return;
+    if (!confirm('确认执行财务核算？')) return;
     setSettlingOrderId(orderId);
     try {
       const res = await fetch('/api/finance', {
@@ -68,7 +68,7 @@ export default function FinancePage() {
       });
       const data = await res.json();
       if (data.success) {
-        alert(`利润核算完成！净利润: ¥${data.data.netProfit.toFixed(2)}`);
+        alert(`财务核算完成！净利润: ¥${data.data.netProfit.toFixed(2)}`);
         fetchData();
       } else {
         alert('核算失败: ' + data.error);
@@ -147,7 +147,7 @@ export default function FinancePage() {
 
         <main className="flex-1 min-w-0 overflow-y-auto bg-[#F6F8FB] p-6">
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-[#152033]">利润核算</h1>
+            <h1 className="text-2xl font-bold text-[#152033]">财务核算</h1>
             <p className="text-sm text-[#637089] mt-1">售后期结束后计算真实净利润 = Ozon结算金额 - 平台佣金 - 收单费 - 采购成本 - 运费</p>
           </div>
 
