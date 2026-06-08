@@ -40,7 +40,7 @@ const navItems: NavItem[] = [
   { href: '/quick-entry', icon: ClipboardList, label: '快捷录单' },
   { href: '/logistics', icon: Truck, label: '入库验货' },
   { href: '/packaging', icon: Box, label: '打包发货' },
-  { href: '/finance', icon: Calculator, label: '利润核算' },
+  { href: '/finance', icon: Calculator, label: '财务核算' },
   { type: 'divider', label: 'AI 选品' },
   { href: '/selection', icon: Target, label: 'AI 选品' },
   { href: '/image-listing', icon: Image, label: '修图上架' },
@@ -58,7 +58,6 @@ const navItems: NavItem[] = [
   { href: '/accounts', icon: UserCircle, label: '账号管理' },
   { href: '/roles', icon: Shield, label: '角色权限' },
   { href: '/settings', icon: Settings, label: '系统设置' },
-  { href: '/settings/shop-config', icon: ShoppingCart, label: '店铺配置' },
 ];
 
 interface AppLayoutProps {

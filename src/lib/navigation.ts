@@ -55,5 +55,4 @@ export const getNavItems = (currentPath: string): NavItem[] => [
   { href: '/accounts', icon: UserCircle, label: '账号管理', active: currentPath === '/accounts' },
   { href: '/roles', icon: Shield, label: '角色权限', active: currentPath === '/roles' },
   { href: '/settings', icon: Settings, label: '系统设置', active: currentPath === '/settings' },
-  { href: '/settings/shop-config', icon: Store, label: '店铺配置', active: currentPath === '/settings/shop-config' },
 ];
