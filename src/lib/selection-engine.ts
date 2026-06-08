@@ -37,6 +37,96 @@ const DEFAULT_AHP_WEIGHTS: AHPWeights = {
   supply: 0.10,
 };
 
+// ============ 第二阶段：权重配置 ============
+
+// 组合权重α值：主客观各半
+const ALPHA = 0.5;
+
+// 多通道评分权重（TOPSIS、语义相似度、Prophet预测、机会指数）
+interface ChannelWeights {
+  topsis: number;      // TOPSIS客观评分权重
+  semantic: number;    // 语义相似度权重
+  prophet: number;     // Prophet预测权重
+  opportunity: number; // 机会指数权重
+  crossValidation: number; // 交叉验证折扣权重
+}
+
+// 默认通道权重（完整数据时）
+const DEFAULT_CHANNEL_WEIGHTS: ChannelWeights = {
+  topsis: 0.35,
+  semantic: 0.20,
+  prophet: 0.20,
+  opportunity: 0.15,
+  crossValidation: 0.10,
+};
+
+// 一期通道权重（Prophet和机会指数无数据时）
+// 动态重分配：0.57×TOPSIS + 0.28×语义 + 0.15×交叉验证折扣
+const PHASE1_CHANNEL_WEIGHTS: ChannelWeights = {
+  topsis: 0.57,
+  semantic: 0.28,
+  prophet: 0,          // 一期无数据
+  opportunity: 0,      // 一期无数据
+  crossValidation: 0.15,
+};
+
+/**
+ * 动态计算通道权重
+ * 根据哪些通道有数据动态重分配权重
+ */
+function calculateChannelWeights(
+  hasProphet: boolean,
+  hasOpportunity: boolean
+): ChannelWeights {
+  if (!hasProphet && !hasOpportunity) {
+    // 一期：Prophet和机会指数都无数据
+    return PHASE1_CHANNEL_WEIGHTS;
+  }
+  
+  // 有部分数据时动态重分配
+  const base = DEFAULT_CHANNEL_WEIGHTS;
+  const availableWeights: { key: keyof ChannelWeights; value: number }[] = [];
+  let missingWeight = 0;
+  
+  // 检查各通道是否有数据
+  const channelAvailability = {
+    topsis: true,        // TOPSIS始终有
+    semantic: true,      // 语义始终有
+    prophet: hasProphet,
+    opportunity: hasOpportunity,
+    crossValidation: true, // 交叉验证始终有
+  };
+  
+  // 收集可用通道和缺失权重
+  for (const [key, available] of Object.entries(channelAvailability)) {
+    const k = key as keyof ChannelWeights;
+    if (available) {
+      availableWeights.push({ key: k, value: base[k] });
+    } else {
+      missingWeight += base[k];
+    }
+  }
+  
+  // 如果有权重缺失，按比例重分配给可用通道
+  if (missingWeight > 0 && availableWeights.length > 0) {
+    const totalAvailable = availableWeights.reduce((sum, w) => sum + w.value, 0);
+    const result: ChannelWeights = { ...base };
+    
+    for (const { key, value } of availableWeights) {
+      // 按比例重分配缺失权重
+      result[key] = value + (value / totalAvailable) * missingWeight;
+    }
+    
+    // 无数据通道权重设为0
+    if (!hasProphet) result.prophet = 0;
+    if (!hasOpportunity) result.opportunity = 0;
+    
+    return result;
+  }
+  
+  return base;
+}
+
 // 评分结果
 export interface ScoringResult {
   opportunityId: number;
@@ -155,27 +245,66 @@ function calculateDimensions(opportunity: typeof opportunities.$inferSelect): Sc
 
 /**
  * 计算综合评分和等级
+ * 
+ * 第二阶段改进：
+ * - 使用动态通道权重
+ * - 评分等级映射：80-100=A, 60-79=B, 40-59=C, 0-39=D
  */
 function calculateCompositeScore(
   dimensions: ScoreDimensions,
-  weights: AHPWeights
-): { score: number; grade: 'A' | 'B' | 'C' | 'D' } {
-  // 加权计算综合分数
-  const score = 
+  weights: AHPWeights,
+  channelWeights: ChannelWeights = PHASE1_CHANNEL_WEIGHTS,
+  hardConstraintDiscount: number = 1.0
+): { score: number; grade: 'A' | 'B' | 'C' | 'D'; normalizedScore: number } {
+  // 1. 计算TOPSIS客观评分（五维加权）
+  const topsisScore = 
     dimensions.profit * weights.profit +
     (100 - dimensions.competition) * weights.competition + // 竞争强度越低越好
     dimensions.demand * weights.demand +
     dimensions.differentiation * weights.differentiation +
     dimensions.supply * weights.supply;
   
-  // 确定等级
+  // 2. 语义相似度评分（基于需求热度和差异化）
+  const semanticScore = dimensions.demand * 0.6 + dimensions.differentiation * 0.4;
+  
+  // 3. Prophet预测评分（一期无数据，使用需求热度替代）
+  const prophetScore = dimensions.demand; // 占位
+  
+  // 4. 机会指数（一期无数据）
+  const opportunityScore = 50; // 占位
+  
+  // 5. 交叉验证折扣
+  const crossValidationScore = hardConstraintDiscount * 100;
+  
+  // 6. 多通道加权综合评分
+  const rawScore = 
+    topsisScore * channelWeights.topsis +
+    semanticScore * channelWeights.semantic +
+    prophetScore * channelWeights.prophet +
+    opportunityScore * channelWeights.opportunity +
+    crossValidationScore * channelWeights.crossValidation;
+  
+  // 7. 组合主客观评分（α=0.5各半）
+  const subjectiveScore = topsisScore; // 主观评分就是TOPSIS
+  const objectiveScore = rawScore;     // 客观评分是多通道综合
+  const combinedScore = ALPHA * subjectiveScore + (1 - ALPHA) * objectiveScore;
+  
+  // 8. 归一化到0-100
+  const normalizedScore = Math.min(100, Math.max(0, combinedScore));
+  
+  // 9. 确定等级（第二阶段修正映射）
+  // 80-100=A, 60-79=B, 40-59=C, 0-39=D
   let grade: 'A' | 'B' | 'C' | 'D';
-  if (score >= 70) grade = 'A';
-  else if (score >= 55) grade = 'B';
-  else if (score >= 40) grade = 'C';
+  if (normalizedScore >= 80) grade = 'A';
+  else if (normalizedScore >= 60) grade = 'B';
+  else if (normalizedScore >= 40) grade = 'C';
   else grade = 'D';
   
-  return { score: Math.round(score * 100) / 100, grade };
+  return { 
+    score: Math.round(normalizedScore * 100) / 100, 
+    grade,
+    normalizedScore 
+  };
 }
 
 /**
@@ -220,21 +349,35 @@ async function scoreOpportunity(
   // 2. 计算五维评分
   const dimensions = calculateDimensions(opportunity);
   
-  // 3. 计算综合评分和等级
-  const { score, grade } = calculateCompositeScore(dimensions, weights);
-  
-  // 4. 预测销量
-  const { sales7d, sales30d } = predictSales(dimensions.demand, dimensions);
-  
-  // 5. 检查硬约束
+  // 3. 检查硬约束（用于交叉验证折扣）
   const { passed: hardConstraintsPassed, details: constraintDetails } = checkHardConstraints(opportunity);
   
-  // 6. 确定趋势方向
+  // 4. 计算硬约束折扣系数
+  const constraintEntries = Object.entries(constraintDetails);
+  const passedConstraints = constraintEntries.filter(([, passed]) => passed).length;
+  const totalConstraints = constraintEntries.length;
+  const hardConstraintDiscount = totalConstraints > 0 ? passedConstraints / totalConstraints : 0;
+  
+  // 5. 动态计算通道权重（一期Prophet和机会指数无数据）
+  const channelWeights = calculateChannelWeights(false, false);
+  
+  // 6. 计算综合评分和等级（第二阶段改进）
+  const { score, grade, normalizedScore } = calculateCompositeScore(
+    dimensions, 
+    weights, 
+    channelWeights,
+    hardConstraintDiscount
+  );
+  
+  // 7. 预测销量
+  const { sales7d, sales30d } = predictSales(dimensions.demand, dimensions);
+  
+  // 8. 确定趋势方向
   const trendDirection: 'up' | 'down' | 'stable' = 
     dimensions.demand > 60 ? 'up' : 
     dimensions.demand < 40 ? 'down' : 'stable';
   
-  // 7. 写入评分结果到product_scores表
+  // 9. 写入评分结果到product_scores表
   await db
     .insert(productScores)
     .values({
@@ -244,11 +387,12 @@ async function scoreOpportunity(
       shopStage: 'mature',
       sellerType: 'cn_crossborder',
       selectionMode: opportunity.selectionMode,
-      hardConstraintDiscount: hardConstraintsPassed ? '1.00' : '0.50',
-      hardConstraintDetails: constraintDetails,
+      hardConstraintDiscount: hardConstraintDiscount.toFixed(2),
+      hardConstraintDetails: constraintEntries.map(([name, passed]) => ({ name, passed })),
       ahpWeights: weights,
-      combinedWeights: weights,
+      combinedWeights: { ...weights, alpha: ALPHA, channelWeights },
       topsisScore: score.toFixed(4),
+      semanticScore: ((dimensions.demand * 0.6 + dimensions.differentiation * 0.4) / 100).toFixed(4),
       demandScore: (dimensions.demand / 100).toFixed(4),
       competitionScore: (dimensions.competition / 100).toFixed(4),
       profitScore: (dimensions.profit / 100).toFixed(4),
