@@ -9,7 +9,8 @@ import {
   Printer, FileText, Save, CheckCircle, XCircle, Bell, Settings as SettingsIcon,
   Copy, Box, LayoutDashboard, Package, ClipboardList, Truck, Calculator,
   PackageSearch, Warehouse, Database, Users, BarChart3, UserCircle, Shield,
-  Target, Image, RefreshCw as Sync, AlertTriangle, TrendingUp, Search
+  Target, Image, RefreshCw as Sync, AlertTriangle, TrendingUp, Search,
+  HelpCircle, Info, Zap, Loader2, AlertCircle
 } from 'lucide-react';
 import { getNavItems } from '@/lib/nav-config';
 import { Button } from '@/components/ui/button';
@@ -145,6 +146,8 @@ function ExtensionKeyManager() {
     expiresAt: string;
     isActive: boolean;
     createdAt: string;
+    isExpired?: boolean;
+    status?: string;
   }>>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -241,19 +244,98 @@ function ExtensionKeyManager() {
     navigator.clipboard.writeText(key);
   };
 
+  // 权限说明映射
+  const permissionLabels: Record<string, string> = {
+    'read:signals': '读取市场信号',
+    'write:signals': '推送市场信号',
+    'read:opportunities': '读取选品机会',
+  };
+
+  // 鉴权测试
+  const [testingKeyId, setTestingKeyId] = useState<number | null>(null);
+  const [testResult, setTestResult] = useState<{ keyId: number; success: boolean; message: string } | null>(null);
+
+  const handleTestAuth = async (keyId: number) => {
+    setTestingKeyId(keyId);
+    setTestResult(null);
+    try {
+      // 使用测试接口验证鉴权
+      const res = await fetch(`/api/extension-api-keys/test-by-id`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ keyId }),
+      });
+      const data = await res.json();
+      setTestResult({
+        keyId,
+        success: data.success,
+        message: data.success ? '鉴权成功，Key有效' : (data.error || '鉴权失败'),
+      });
+    } catch (e) {
+      setTestResult({
+        keyId,
+        success: false,
+        message: '测试失败，请重试',
+      });
+    } finally {
+      setTestingKeyId(null);
+    }
+  };
+
+  // 使用说明显示
+  const [showHelp, setShowHelp] = useState(false);
+
   if (loading) {
     return <div className="text-center py-8 text-muted-foreground">加载中...</div>;
   }
 
   return (
     <div className="space-y-4">
-      {/* 创建新Key按钮 */}
-      <div className="flex justify-end">
+      {/* 使用说明 */}
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={() => setShowHelp(!showHelp)} className="gap-1.5 text-muted-foreground">
+            <HelpCircle className="w-4 h-4" />
+            使用说明
+          </Button>
+        </div>
         <Button onClick={() => setShowCreateModal(true)} className="gap-1.5">
           <Plus className="w-4 h-4" />
           生成新密钥
         </Button>
       </div>
+
+      {/* 帮助文档 */}
+      {showHelp && (
+        <div className="bg-muted/30 rounded-lg p-4 border border-border/20 text-sm space-y-3">
+          <h4 className="font-medium text-foreground flex items-center gap-2">
+            <Info className="w-4 h-4" />
+            Chrome 插件使用说明
+          </h4>
+          <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
+            <li>点击"生成新密钥"创建一个 API Key</li>
+            <li>复制生成的密钥（只显示一次，请妥善保管）</li>
+            <li>在 Chrome 插件设置中粘贴此密钥</li>
+            <li>插件采集商品数据后会自动推送到本系统</li>
+          </ol>
+          <div className="pt-2 border-t border-border/20">
+            <p className="text-xs text-muted-foreground">
+              <strong>鉴权方式：</strong>Bearer Token，请求头格式 <code className="bg-muted px-1 rounded">Authorization: Bearer ozon_ext_xxx</code>
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              <strong>接口地址：</strong><code className="bg-muted px-1 rounded">POST /api/market-signals/batch</code>
+            </p>
+          </div>
+          <div className="pt-2 border-t border-border/20">
+            <p className="text-xs font-medium text-foreground mb-1">权限说明：</p>
+            <ul className="text-xs text-muted-foreground space-y-0.5">
+              <li>• <code>read:signals</code> - 读取市场信号数据</li>
+              <li>• <code>write:signals</code> - 推送市场信号数据</li>
+              <li>• <code>read:opportunities</code> - 读取选品机会</li>
+            </ul>
+          </div>
+        </div>
+      )}
 
       {/* 新创建的Key提示 */}
       {newlyCreatedKey && (
@@ -313,15 +395,46 @@ function ExtensionKeyManager() {
                     {key.isActive ? '启用中' : '已禁用'}
                   </span>
                 </div>
-                {key.isActive && (
-                  <button
-                    onClick={() => handleDisableKey(key.id, key.shopId)}
-                    className="text-xs text-destructive hover:text-destructive/80 font-medium inline-flex items-center gap-1"
-                  >
-                    <Trash2 className="w-3 h-3" />禁用
-                  </button>
-                )}
+                <div className="flex items-center gap-2">
+                  {key.isActive && (
+                    <>
+                      <button
+                        onClick={() => handleTestAuth(key.id)}
+                        disabled={testingKeyId === key.id}
+                        className="text-xs text-primary hover:text-primary/80 font-medium inline-flex items-center gap-1 disabled:opacity-50"
+                      >
+                        {testingKeyId === key.id ? (
+                          <>
+                            <Loader2 className="w-3 h-3 animate-spin" />测试中...
+                          </>
+                        ) : (
+                          <>
+                            <Zap className="w-3 h-3" />测试
+                          </>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => handleDisableKey(key.id, key.shopId)}
+                        className="text-xs text-destructive hover:text-destructive/80 font-medium inline-flex items-center gap-1"
+                      >
+                        <Trash2 className="w-3 h-3" />禁用
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
+              {/* 测试结果提示 */}
+              {testResult && testResult.keyId === key.id && (
+                <div className={`mb-3 p-2 rounded text-xs ${
+                  testResult.success ? 'bg-green-500/10 text-green-600' : 'bg-destructive/10 text-destructive'
+                }`}>
+                  {testResult.success ? (
+                    <span className="flex items-center gap-1"><CheckCircle className="w-3 h-3" />{testResult.message}</span>
+                  ) : (
+                    <span className="flex items-center gap-1"><AlertCircle className="w-3 h-3" />{testResult.message}</span>
+                  )}
+                </div>
+              )}
               <div className="grid grid-cols-4 gap-3 text-xs">
                 <div>
                   <span className="text-muted-foreground">绑定店铺</span>
@@ -348,12 +461,19 @@ function ExtensionKeyManager() {
                 <span className="text-xs text-muted-foreground">权限：</span>
                 <div className="flex flex-wrap gap-1 mt-1">
                   {key.permissions.map((perm) => (
-                    <span key={perm} className="inline-flex items-center px-2 py-0.5 rounded-sm text-xs bg-primary/10 text-primary">
+                    <span key={perm} className="inline-flex items-center px-2 py-0.5 rounded-sm text-xs bg-primary/10 text-primary" title={permissionLabels[perm] || perm}>
                       {perm}
                     </span>
                   ))}
                 </div>
               </div>
+              {/* 设备信息 */}
+              {key.deviceInfo && (
+                <div className="mt-2 pt-2 border-t border-border/20 text-xs">
+                  <span className="text-muted-foreground">设备信息：</span>
+                  <span className="text-foreground ml-1">{key.deviceInfo}</span>
+                </div>
+              )}
             </div>
           ))}
         </div>
