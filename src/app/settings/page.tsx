@@ -160,28 +160,37 @@ function ExtensionKeyManager() {
     loadShops();
   }, []);
 
+  const [error, setError] = useState<string | null>(null);
+
   const loadShops = async () => {
     try {
       const res = await fetch('/api/shops');
       const data = await res.json();
       if (data.success) {
         setShops(data.data);
+      } else {
+        console.error('加载店铺失败:', data.error);
       }
     } catch (e) {
       console.error('加载店铺失败:', e);
+      setError('加载店铺列表失败');
     }
   };
 
   const loadKeys = async () => {
     try {
       setLoading(true);
+      setError(null);
       const res = await fetch('/api/extension-api-keys');
       const data = await res.json();
       if (data.success) {
         setKeys(data.data);
+      } else {
+        setError(data.error || '加载失败');
       }
     } catch (e) {
       console.error('加载Keys失败:', e);
+      setError('加载API密钥列表失败');
     } finally {
       setLoading(false);
     }
@@ -240,8 +249,17 @@ function ExtensionKeyManager() {
     }
   };
 
-  const handleCopyKey = (key: string) => {
-    navigator.clipboard.writeText(key);
+  const [copySuccess, setCopySuccess] = useState(false);
+
+  const handleCopyKey = async (key: string) => {
+    try {
+      await navigator.clipboard.writeText(key);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    } catch (e) {
+      console.error('复制失败:', e);
+      alert('复制失败，请手动复制');
+    }
   };
 
   // 权限说明映射
@@ -271,6 +289,10 @@ function ExtensionKeyManager() {
         success: data.success,
         message: data.success ? '鉴权成功，Key有效' : (data.error || '鉴权失败'),
       });
+      // 5秒后自动清除测试结果
+      setTimeout(() => {
+        setTestResult(null);
+      }, 5000);
     } catch (e) {
       setTestResult({
         keyId,
@@ -291,6 +313,15 @@ function ExtensionKeyManager() {
 
   return (
     <div className="space-y-4">
+      {/* 错误提示 */}
+      {error && (
+        <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 text-sm text-destructive flex items-center gap-2">
+          <AlertCircle className="w-4 h-4" />
+          {error}
+          <button onClick={() => setError(null)} className="ml-auto hover:opacity-70">×</button>
+        </div>
+      )}
+
       {/* 使用说明 */}
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-2">
@@ -356,7 +387,7 @@ function ExtensionKeyManager() {
                   size="sm"
                   onClick={() => handleCopyKey(newlyCreatedKey)}
                 >
-                  <Copy className="w-3 h-3" />
+                  {copySuccess ? <CheckCircle className="w-3 h-3 text-green-600" /> : <Copy className="w-3 h-3" />}
                 </Button>
               </div>
               <Button
@@ -389,14 +420,23 @@ function ExtensionKeyManager() {
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <code className="text-sm font-mono text-foreground">{key.keyPrefix}...</code>
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium ${
-                    key.isActive ? 'bg-green-500/15 text-green-600' : 'bg-muted text-muted-foreground'
-                  }`}>
-                    {key.isActive ? '启用中' : '已禁用'}
-                  </span>
+                  {/* 状态显示 */}
+                  {key.isExpired ? (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-destructive/15 text-destructive">
+                      已过期
+                    </span>
+                  ) : key.isActive ? (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-green-500/15 text-green-600">
+                      启用中
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-muted text-muted-foreground">
+                      已禁用
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
-                  {key.isActive && (
+                  {key.isActive && !key.isExpired && (
                     <>
                       <button
                         onClick={() => handleTestAuth(key.id)}
@@ -420,6 +460,9 @@ function ExtensionKeyManager() {
                         <Trash2 className="w-3 h-3" />禁用
                       </button>
                     </>
+                  )}
+                  {key.isExpired && (
+                    <span className="text-xs text-muted-foreground">密钥已过期，无法使用</span>
                   )}
                 </div>
               </div>
