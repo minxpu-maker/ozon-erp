@@ -1179,6 +1179,76 @@ export const syncSchedules = pgTable('sync_schedules', {
   uniqueIndex('idx_sync_schedules_domain').on(table.domain),
 ]);
 
+/**
+ * 市场信号表 - Chrome插件采集的Ozon商品数据
+ */
+export const marketSignals = pgTable('market_signals', {
+  id: serial('id').primaryKey(),
+  shopId: varchar('shop_id', { length: 36 }).notNull().references(() => shops.id),
+  
+  // 商品基本信息
+  ozonProductId: varchar('ozon_product_id', { length: 50 }).notNull(),
+  productTitle: varchar('product_title', { length: 500 }).notNull(),
+  productTitleZh: varchar('product_title_zh', { length: 500 }), // 中文翻译标题
+  
+  // 新增字段
+  imageUrl: varchar('image_url', { length: 1000 }), // 商品主图URL
+  images: jsonb('images'), // 图片URL数组
+  brandName: varchar('brand_name', { length: 200 }), // 品牌名称
+  previousSignalId: integer('previous_signal_id'), // 历史趋势链
+  
+  // 价格与销量
+  currentPrice: numeric('current_price', { precision: 12, scale: 2 }),
+  originalPrice: numeric('original_price', { precision: 12, scale: 2 }),
+  discountPercent: numeric('discount_percent', { precision: 5, scale: 2 }),
+  monthlySales: integer('monthly_sales').default(0),
+  
+  // 评价数据
+  rating: numeric('rating', { precision: 3, scale: 2 }),
+  reviewsCount: integer('reviews_count').default(0),
+  
+  // 竞争数据
+  sellerCount: integer('seller_count').default(0),
+  isOzonSeller: boolean('is_ozon_seller').default(false),
+  
+  // 类目信息
+  categoryId: varchar('category_id', { length: 50 }),
+  categoryName: varchar('category_name', { length: 200 }),
+  
+  // 采集元数据
+  sourceUrl: varchar('source_url', { length: 1000 }),
+  collectedAt: timestamp('collected_at', { withTimezone: true }).defaultNow(),
+  
+  // 原始数据
+  rawData: jsonb('raw_data'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+}, (table) => [
+  index('idx_market_signals_shop').on(table.shopId),
+  index('idx_market_signals_product').on(table.ozonProductId),
+  index('idx_market_signals_collected').on(table.collectedAt),
+]);
+
+/**
+ * Chrome插件API密钥表 - 插件鉴权
+ */
+export const extensionApiKeys = pgTable('extension_api_keys', {
+  id: serial('id').primaryKey(),
+  keyHash: varchar('key_hash', { length: 64 }).notNull(), // SHA256哈希
+  keyPrefix: varchar('key_prefix', { length: 8 }).notNull(), // 密钥前8位
+  shopId: varchar('shop_id', { length: 36 }).notNull().references(() => shops.id),
+  userId: varchar('user_id', { length: 50 }).notNull(),
+  permissions: jsonb('permissions').default(sql`'["read:signals", "write:signals"]'::jsonb`),
+  deviceInfo: varchar('device_info', { length: 200 }),
+  lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
+  expiresAt: timestamp('expires_at', { withTimezone: true }),
+  isActive: boolean('is_active').default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+}, (table) => [
+  uniqueIndex('idx_ext_api_key_hash').on(table.keyHash),
+  index('idx_ext_api_key_shop').on(table.shopId),
+]);
+
 // ============================================================================
 // 类型导出
 // ============================================================================
@@ -1201,3 +1271,5 @@ export type Notification = typeof notifications.$inferSelect;
 export type OzonKnowledgeCache = typeof ozonKnowledgeCache.$inferSelect;
 export type PolicyChangeEvent = typeof policyChangeEvents.$inferSelect;
 export type SyncSchedule = typeof syncSchedules.$inferSelect;
+export type MarketSignal = typeof marketSignals.$inferSelect;
+export type ExtensionApiKey = typeof extensionApiKeys.$inferSelect;
