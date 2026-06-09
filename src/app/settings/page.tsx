@@ -10,7 +10,7 @@ import {
   Copy, Box, LayoutDashboard, Package, ClipboardList, Truck, Calculator,
   PackageSearch, Warehouse, Database, Users, BarChart3, UserCircle, Shield,
   Target, Image, RefreshCw as Sync, AlertTriangle, TrendingUp, Search,
-  HelpCircle, Info, Zap, Loader2, AlertCircle
+  HelpCircle, Info, Zap, Loader2, AlertCircle, History, Eye, ChevronRight
 } from 'lucide-react';
 import { getNavItems } from '@/lib/nav-config';
 import { Button } from '@/components/ui/button';
@@ -571,6 +571,7 @@ function MarketSignalsList() {
     productId: string;
     productTitle: string;
     productTitleZh?: string;
+    productUrl?: string;
     categoryPath?: string;
     price: string | null;
     originalPrice?: string | null;
@@ -578,19 +579,31 @@ function MarketSignalsList() {
     rating: string | null;
     reviewsCount: number | null;
     imageUrl?: string;
+    images?: string[];
     brandName?: string;
+    sellerCount?: number | null;
     previousSignalId?: number | null;
     collectedAt: string;
     createdAt: string;
+    rawData?: Record<string, unknown>;
   }>>([]);
   const [loading, setLoading] = useState(true);
   const [sourceFilter, setSourceFilter] = useState<string>('all');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [stats, setStats] = useState<{ total: number; bySource: Record<string, number> }>({ total: 0, bySource: {} });
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedSignal, setSelectedSignal] = useState<typeof signals[0] | null>(null);
+  const [historyChain, setHistoryChain] = useState<typeof signals>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [showTestModal, setShowTestModal] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [testing, setTesting] = useState(false);
   const pageSize = 20;
 
   useEffect(() => {
     loadSignals();
+    loadStats();
   }, [sourceFilter, page]);
 
   const loadSignals = async () => {
@@ -611,6 +624,121 @@ function MarketSignalsList() {
       console.error('加载信号失败:', e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadStats = async () => {
+    try {
+      const res = await fetch('/api/market-signals?limit=1000');
+      const data = await res.json();
+      if (data.success) {
+        const allSignals = data.data.signals;
+        const bySource: Record<string, number> = {};
+        allSignals.forEach((s: { sourceType: string }) => {
+          bySource[s.sourceType] = (bySource[s.sourceType] || 0) + 1;
+        });
+        setStats({ total: data.data.total, bySource });
+      }
+    } catch (e) {
+      console.error('加载统计失败:', e);
+    }
+  };
+
+  const loadHistoryChain = async (signalId: number) => {
+    try {
+      setLoadingHistory(true);
+      const res = await fetch(`/api/market-signals?limit=100`);
+      const data = await res.json();
+      if (data.success) {
+        const chain: typeof signals = [];
+        let current = signals.find(s => s.id === signalId);
+        while (current) {
+          chain.unshift(current);
+          if (current.previousSignalId) {
+            current = data.data.signals.find((s: typeof signals[0]) => s.id === current!.previousSignalId);
+          } else {
+            break;
+          }
+        }
+        setHistoryChain(chain);
+      }
+    } catch (e) {
+      console.error('加载历史链失败:', e);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
+  const handleShowDetail = async (signal: typeof signals[0]) => {
+    setSelectedSignal(signal);
+    setShowDetailModal(true);
+    if (signal.previousSignalId) {
+      await loadHistoryChain(signal.id);
+    } else {
+      setHistoryChain([]);
+    }
+  };
+
+  const handleTestPush = async () => {
+    try {
+      setTesting(true);
+      setTestResult(null);
+      // 使用已有的 API Key 进行测试推送
+      const keysRes = await fetch('/api/extension-api-keys');
+      const keysData = await keysRes.json();
+      if (!keysData.success || !keysData.data.length) {
+        setTestResult({ success: false, message: '没有可用的API Key，请先生成一个' });
+        return;
+      }
+      const activeKey = keysData.data.find((k: { isActive: boolean; isExpired: boolean }) => k.isActive && !k.isExpired);
+      if (!activeKey) {
+        setTestResult({ success: false, message: '没有有效的API Key，请生成一个新Key' });
+        return;
+      }
+      
+      // 构造测试数据
+      const testSignal = {
+        sourceType: 'wb',
+        signalType: 'demand',
+        productId: `test-${Date.now()}`,
+        productTitle: '测试商品 Test Product',
+        productUrl: 'https://test.example.com/product',
+        categoryPath: '测试分类/Test Category',
+        price: 1990,
+        originalPrice: 2990,
+        salesVolume: 100,
+        rating: 4.5,
+        reviewsCount: 50,
+        sellerCount: 3,
+        imageUrl: 'https://test.example.com/image.jpg',
+        images: ['https://test.example.com/image.jpg'],
+        brandName: 'TestBrand',
+        rawData: { test: true, timestamp: new Date().toISOString() },
+      };
+
+      const res = await fetch('/api/market-signals/batch', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer test-key-${activeKey.id}`, // 简化测试，实际需要真实Key
+        },
+        body: JSON.stringify({
+          shopId: activeKey.shopId,
+          signals: [testSignal],
+        }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setTestResult({ success: true, message: `推送成功！创建了 ${data.success} 条记录` });
+        loadSignals();
+        loadStats();
+      } else {
+        setTestResult({ success: false, message: data.error || '推送失败' });
+      }
+    } catch (e) {
+      setTestResult({ success: false, message: `请求失败: ${e}` });
+    } finally {
+      setTesting(false);
     }
   };
 
@@ -638,8 +766,29 @@ function MarketSignalsList() {
     return <div className="text-center py-8 text-muted-foreground">加载中...</div>;
   }
 
+  const sourceLabels: Record<string, string> = {
+    wb: 'Wildberries',
+    ozon_market: 'Ozon',
+    aliexpress: 'AliExpress',
+    '1688': '1688',
+  };
+
   return (
     <div className="space-y-4">
+      {/* 统计面板 */}
+      <div className="grid grid-cols-5 gap-3">
+        <div className="bg-muted/30 rounded-lg p-3 border border-border/20 text-center">
+          <div className="text-2xl font-bold text-foreground">{stats.total}</div>
+          <div className="text-xs text-muted-foreground">总记录数</div>
+        </div>
+        {['wb', 'ozon_market', 'aliexpress', '1688'].map((source) => (
+          <div key={source} className="bg-muted/30 rounded-lg p-3 border border-border/20 text-center">
+            <div className="text-2xl font-bold text-foreground">{stats.bySource[source] || 0}</div>
+            <div className="text-xs text-muted-foreground">{sourceLabels[source]}</div>
+          </div>
+        ))}
+      </div>
+
       {/* 筛选栏 */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -656,6 +805,12 @@ function MarketSignalsList() {
               <SelectItem value="1688">1688</SelectItem>
             </SelectContent>
           </Select>
+          <Button variant="outline" size="sm" onClick={() => { loadSignals(); loadStats(); }}>
+            <RefreshCw className="w-4 h-4 mr-1" />刷新
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setShowTestModal(true)}>
+            <Zap className="w-4 h-4 mr-1" />测试推送
+          </Button>
         </div>
         <div className="text-sm text-muted-foreground">
           共 <strong className="text-foreground">{total}</strong> 条记录
@@ -697,13 +852,18 @@ function MarketSignalsList() {
                       {getSourceBadge(signal.sourceType)}
                       {signal.previousSignalId && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-green-500/15 text-green-600">
-                          历史记录 #{signal.previousSignalId}
+                          <History className="w-3 h-3 mr-1" />历史 #{signal.previousSignalId}
                         </span>
                       )}
                     </div>
-                    <span className="text-xs text-muted-foreground shrink-0">
-                      {new Date(signal.collectedAt).toLocaleString('zh-CN')}
-                    </span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Button variant="ghost" size="sm" className="h-6 px-2" onClick={() => handleShowDetail(signal)}>
+                        <Eye className="w-3 h-3" />
+                      </Button>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(signal.collectedAt).toLocaleString('zh-CN')}
+                      </span>
+                    </div>
                   </div>
                   <p className="text-sm font-medium text-foreground truncate mb-1">
                     {signal.productTitleZh || signal.productTitle || '未知商品'}
@@ -769,6 +929,83 @@ function MarketSignalsList() {
           >
             下一页
           </Button>
+        </div>
+      )}
+
+      {/* 详情弹窗 */}
+      {showDetailModal && selectedSignal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-background rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-auto border border-border">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">信号详情 #{selectedSignal.id}</h3>
+              <Button variant="ghost" size="sm" onClick={() => setShowDetailModal(false)}>✕</Button>
+            </div>
+            
+            {/* 历史趋势链 */}
+            {historyChain.length > 1 && (
+              <div className="mb-4 p-3 bg-muted/30 rounded-lg border border-border/20">
+                <div className="flex items-center gap-2 mb-2">
+                  <History className="w-4 h-4 text-green-600" />
+                  <span className="text-sm font-medium">历史趋势链 ({historyChain.length}条记录)</span>
+                </div>
+                <div className="flex items-center gap-2 overflow-x-auto">
+                  {historyChain.map((s, i) => (
+                    <div key={s.id} className="flex items-center gap-2">
+                      <div className={`px-2 py-1 rounded text-xs ${s.id === selectedSignal.id ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                        #{s.id}: {s.price ? `${parseFloat(s.price).toLocaleString()}₽` : '无价格'}
+                      </div>
+                      {i < historyChain.length - 1 && <ChevronRight className="w-3 h-3 text-muted-foreground" />}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div><span className="text-muted-foreground">数据源：</span>{sourceLabels[selectedSignal.sourceType] || selectedSignal.sourceType}</div>
+              <div><span className="text-muted-foreground">信号类型：</span>{selectedSignal.signalType}</div>
+              <div><span className="text-muted-foreground">商品ID：</span>{selectedSignal.productId}</div>
+              <div><span className="text-muted-foreground">品牌：</span>{selectedSignal.brandName || '-'}</div>
+              <div className="col-span-2"><span className="text-muted-foreground">标题：</span>{selectedSignal.productTitle}</div>
+              {selectedSignal.productTitleZh && <div className="col-span-2"><span className="text-muted-foreground">中文：</span>{selectedSignal.productTitleZh}</div>}
+              <div><span className="text-muted-foreground">价格：</span>{selectedSignal.price ? `${parseFloat(selectedSignal.price).toLocaleString()} ₽` : '-'}</div>
+              <div><span className="text-muted-foreground">原价：</span>{selectedSignal.originalPrice ? `${parseFloat(selectedSignal.originalPrice).toLocaleString()} ₽` : '-'}</div>
+              <div><span className="text-muted-foreground">销量：</span>{selectedSignal.salesVolume?.toLocaleString() || '-'}</div>
+              <div><span className="text-muted-foreground">评分：</span>{selectedSignal.rating ? `${parseFloat(selectedSignal.rating).toFixed(1)}` : '-'}</div>
+              <div><span className="text-muted-foreground">评论数：</span>{selectedSignal.reviewsCount?.toLocaleString() || '-'}</div>
+              <div><span className="text-muted-foreground">卖家数：</span>{selectedSignal.sellerCount?.toLocaleString() || '-'}</div>
+              <div className="col-span-2"><span className="text-muted-foreground">品类路径：</span>{selectedSignal.categoryPath || '-'}</div>
+              <div className="col-span-2"><span className="text-muted-foreground">商品链接：</span>{selectedSignal.productUrl ? <a href={selectedSignal.productUrl} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{selectedSignal.productUrl}</a> : '-'}</div>
+              <div><span className="text-muted-foreground">采集时间：</span>{new Date(selectedSignal.collectedAt).toLocaleString('zh-CN')}</div>
+              <div><span className="text-muted-foreground">创建时间：</span>{new Date(selectedSignal.createdAt).toLocaleString('zh-CN')}</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 测试推送弹窗 */}
+      {showTestModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-background rounded-lg p-6 max-w-md w-full border border-border">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">模拟推送测试</h3>
+              <Button variant="ghost" size="sm" onClick={() => { setShowTestModal(false); setTestResult(null); }}>✕</Button>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              点击下方按钮将模拟Chrome插件推送一条测试数据到系统。用于验证批量推送接口和智能合并逻辑是否正常工作。
+            </p>
+            <Button onClick={handleTestPush} disabled={testing} className="w-full">
+              {testing ? '推送中...' : '执行测试推送'}
+            </Button>
+            {testResult && (
+              <div className={`mt-4 p-3 rounded-lg ${testResult.success ? 'bg-green-500/15 text-green-600' : 'bg-red-500/15 text-red-600'}`}>
+                <div className="flex items-center gap-2">
+                  {testResult.success ? <CheckCircle className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+                  {testResult.message}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
