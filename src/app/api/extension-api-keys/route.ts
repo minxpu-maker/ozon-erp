@@ -35,6 +35,23 @@ interface CreateKeyRequest {
 }
 
 /**
+ * 简单的管理员验证（从请求头获取）
+ * 生产环境应使用更严格的鉴权机制
+ */
+function getOperatorInfo(request: NextRequest): { operatorId: string } | null {
+  // 从自定义请求头获取操作者信息
+  const operatorId = request.headers.get('x-operator-id');
+  if (operatorId) {
+    return { operatorId };
+  }
+  // 开发环境允许通过（生产环境应强制要求）
+  if (process.env.NODE_ENV === 'development') {
+    return { operatorId: 'dev-admin' };
+  }
+  return null;
+}
+
+/**
  * POST /api/extension-api-keys
  * 生成新的插件API Key
  */
@@ -73,11 +90,12 @@ export async function POST(request: NextRequest) {
 
     // 生成随机Key
     const randomHex = randomBytes(32).toString('hex'); // 64位hex
-    const apiKey = EXTENSION_KEY_PREFIX + randomHex; // 总长约74字符
+    const apiKey = EXTENSION_KEY_PREFIX + randomHex; // 总长约73字符（9+64）
 
     // 计算哈希
     const keyHash = createHash('sha256').update(apiKey).digest('hex');
-    const keyPrefix = apiKey.slice(0, 8); // "ozon_ext_"
+    // keyPrefix 取前8位：ozon_ext（用于快速识别，数据库字段长度为8）
+    const keyPrefix = apiKey.slice(0, 8); // "ozon_ext"
 
     // 计算过期时间
     const validityDays = expiresInDays || KEY_VALIDITY_DAYS;
@@ -131,9 +149,23 @@ export async function POST(request: NextRequest) {
 /**
  * GET /api/extension-api-keys?shopId=xxx
  * 查询店铺的API Key列表（不返回明文）
+ * 
+ * 需要验证请求者有权查看该 shopId 的 Key
  */
 export async function GET(request: NextRequest) {
   try {
+    // 验证操作者身份
+    const operator = getOperatorInfo(request);
+    if (!operator) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Unauthorized: Missing operator identification',
+        },
+        { status: 401 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const shopId = searchParams.get('shopId');
 
@@ -146,6 +178,9 @@ export async function GET(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // 生产环境应验证 operator 是否有权限查看该 shopId
+    // 此处仅做基础验证，完整权限检查应在业务层实现
 
     // 查询该店铺的所有Key（不返回keyHash）
     const keys = await db
@@ -194,13 +229,28 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * DELETE /api/extension-api-keys?id=xxx
+ * DELETE /api/extension-api-keys?id=xxx&shopId=xxx
  * 禁用（软删除）API Key
+ * 
+ * 需要验证请求者有权操作该 shopId 的 Key
  */
 export async function DELETE(request: NextRequest) {
   try {
+    // 验证操作者身份
+    const operator = getOperatorInfo(request);
+    if (!operator) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Unauthorized: Missing operator identification',
+        },
+        { status: 401 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const keyId = searchParams.get('id');
+    const shopId = searchParams.get('shopId');
 
     if (!keyId) {
       return NextResponse.json(
@@ -212,7 +262,52 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // 软删除（设置 isActive = false）
+    if (!shopId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Missing required parameter: shopId (required for authorization)',
+        },
+        { status: 400 }
+      );
+    }
+
+    // 先验证该 Key 确实属于该 shop（防止越权操作）
+    const keyRecords = await db
+      .select({ id: extensionApiKeys.id, shopId: extensionApiKeys.shopId })
+      .from(extensionApiKeys)
+      .where(eq(extensionApiKeys.id, parseInt(keyId)))
+      .limit(1);
+
+    if (keyRecords.length === 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'API key not found',
+        },
+        { status: 404 }
+      );
+    }
+
+    if (keyRecords[0].shopId !== shopId) {
+      // 记录越权尝试（生产环境应记录到安全日志）
+      console.warn('[Security] Unauthorized key deletion attempt:', {
+        keyId,
+        requestedShopId: shopId,
+        actualShopId: keyRecords[0].shopId,
+        operator: operator.operatorId,
+      });
+      
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Forbidden: You do not have permission to delete this key',
+        },
+        { status: 403 }
+      );
+    }
+
+    // 执行软删除（设置 isActive = false）
     await db
       .update(extensionApiKeys)
       .set({ isActive: false })

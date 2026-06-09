@@ -79,9 +79,19 @@ export async function authenticateExtension(
       };
     }
 
+    // 验证 Key 长度：前缀(9) + 随机hex(64) = 73字符
+    if (apiKey.length < 70) {
+      return {
+        success: false,
+        error: 'Invalid API key: key too short',
+        status: 401,
+      };
+    }
+
     // 2. 计算 SHA256 哈希
     const keyHash = createHash('sha256').update(apiKey).digest('hex');
-    const keyPrefix = apiKey.slice(0, 8); // 取前8位
+    // keyPrefix 取前8位：ozon_ext（不包含最后的下划线）
+    const keyPrefix = apiKey.slice(0, 8);
 
     // 3. 查询数据库
     const records = await db
@@ -127,11 +137,16 @@ export async function authenticateExtension(
       .where(eq(extensionApiKeys.id, keyRecord.id));
 
     // 返回成功结果
+    // 确保 permissions 是有效数组
+    const permissions = Array.isArray(keyRecord.permissions) 
+      ? keyRecord.permissions as string[] 
+      : [];
+
     return {
       success: true,
       shopId: keyRecord.shopId,
       userId: keyRecord.userId,
-      permissions: keyRecord.permissions as string[],
+      permissions,
       keyId: keyRecord.id,
     };
   } catch (error) {
