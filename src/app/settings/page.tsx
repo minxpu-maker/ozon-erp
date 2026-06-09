@@ -131,6 +131,466 @@ function NotificationLogList() {
   );
 }
 
+// 插件API Key管理组件
+function ExtensionKeyManager() {
+  const [keys, setKeys] = useState<Array<{
+    id: number;
+    keyPrefix: string;
+    shopId: string;
+    shopName?: string;
+    userId: string;
+    permissions: string[];
+    deviceInfo?: string;
+    lastUsedAt?: string;
+    expiresAt: string;
+    isActive: boolean;
+    createdAt: string;
+  }>>([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newKeyData, setNewKeyData] = useState({ shopId: '', deviceInfo: '' });
+  const [newlyCreatedKey, setNewlyCreatedKey] = useState<string | null>(null);
+  const [shops, setShops] = useState<Array<{ id: string; name: string }>>([]);
+
+  useEffect(() => {
+    loadKeys();
+    loadShops();
+  }, []);
+
+  const loadShops = async () => {
+    try {
+      const res = await fetch('/api/shops');
+      const data = await res.json();
+      if (data.success) {
+        setShops(data.data);
+      }
+    } catch (e) {
+      console.error('加载店铺失败:', e);
+    }
+  };
+
+  const loadKeys = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/extension-api-keys');
+      const data = await res.json();
+      if (data.success) {
+        setKeys(data.data);
+      }
+    } catch (e) {
+      console.error('加载Keys失败:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateKey = async () => {
+    if (!newKeyData.shopId) return;
+    try {
+      const res = await fetch('/api/extension-api-keys', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          shopId: newKeyData.shopId,
+          userId: 'admin',
+          deviceInfo: newKeyData.deviceInfo || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setNewlyCreatedKey(data.data.apiKey);
+        loadKeys();
+      }
+    } catch (e) {
+      console.error('创建Key失败:', e);
+    }
+  };
+
+  const handleDisableKey = async (id: number, shopId: string) => {
+    try {
+      const res = await fetch(`/api/extension-api-keys?id=${id}&shopId=${shopId}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (data.success) {
+        loadKeys();
+      }
+    } catch (e) {
+      console.error('禁用Key失败:', e);
+    }
+  };
+
+  const handleCopyKey = (key: string) => {
+    navigator.clipboard.writeText(key);
+  };
+
+  if (loading) {
+    return <div className="text-center py-8 text-muted-foreground">加载中...</div>;
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* 创建新Key按钮 */}
+      <div className="flex justify-end">
+        <Button onClick={() => setShowCreateModal(true)} className="gap-1.5">
+          <Plus className="w-4 h-4" />
+          生成新密钥
+        </Button>
+      </div>
+
+      {/* 新创建的Key提示 */}
+      {newlyCreatedKey && (
+        <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <CheckCircle className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-green-600">API Key 已生成</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                请妥善保管，系统不会再次显示明文密钥
+              </p>
+              <div className="mt-2 flex items-center gap-2">
+                <code className="text-xs bg-muted px-2 py-1 rounded font-mono flex-1 break-all">
+                  {newlyCreatedKey}
+                </code>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleCopyKey(newlyCreatedKey)}
+                >
+                  <Copy className="w-3 h-3" />
+                </Button>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="mt-2 text-xs"
+                onClick={() => setNewlyCreatedKey(null)}
+              >
+                关闭
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Key列表 */}
+      {keys.length === 0 ? (
+        <div className="text-center py-8 text-muted-foreground">
+          <Plug className="w-12 h-12 mx-auto mb-3 opacity-30" />
+          <p>暂无API密钥</p>
+          <p className="text-xs mt-1">生成密钥后，Chrome插件可使用此密钥采集数据</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {keys.map((key) => (
+            <div
+              key={key.id}
+              className={`bg-muted/30 rounded-lg p-4 border border-border/20 ${!key.isActive ? 'opacity-60' : ''}`}
+            >
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <code className="text-sm font-mono text-foreground">{key.keyPrefix}...</code>
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium ${
+                    key.isActive ? 'bg-green-500/15 text-green-600' : 'bg-muted text-muted-foreground'
+                  }`}>
+                    {key.isActive ? '启用中' : '已禁用'}
+                  </span>
+                </div>
+                {key.isActive && (
+                  <button
+                    onClick={() => handleDisableKey(key.id, key.shopId)}
+                    className="text-xs text-destructive hover:text-destructive/80 font-medium inline-flex items-center gap-1"
+                  >
+                    <Trash2 className="w-3 h-3" />禁用
+                  </button>
+                )}
+              </div>
+              <div className="grid grid-cols-4 gap-3 text-xs">
+                <div>
+                  <span className="text-muted-foreground">绑定店铺</span>
+                  <p className="text-foreground mt-0.5">{key.shopName || key.shopId}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">创建者</span>
+                  <p className="text-foreground mt-0.5">{key.userId}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">最后使用</span>
+                  <p className="text-foreground mt-0.5">
+                    {key.lastUsedAt ? new Date(key.lastUsedAt).toLocaleString('zh-CN') : '从未使用'}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">过期时间</span>
+                  <p className="text-foreground mt-0.5">
+                    {new Date(key.expiresAt).toLocaleDateString('zh-CN')}
+                  </p>
+                </div>
+              </div>
+              <div className="mt-2 pt-2 border-t border-border/20">
+                <span className="text-xs text-muted-foreground">权限：</span>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {key.permissions.map((perm) => (
+                    <span key={perm} className="inline-flex items-center px-2 py-0.5 rounded-sm text-xs bg-primary/10 text-primary">
+                      {perm}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* 创建Key弹窗 */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-card rounded-lg p-6 w-full max-w-md shadow-xl">
+            <h3 className="text-lg font-semibold text-foreground mb-4">生成新API密钥</h3>
+            <div className="space-y-4">
+              <div>
+                <Label className="text-xs text-muted-foreground">绑定店铺</Label>
+                <Select value={newKeyData.shopId} onValueChange={(v) => setNewKeyData({ ...newKeyData, shopId: v })}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="选择店铺" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {shops.map((shop) => (
+                      <SelectItem key={shop.id} value={shop.id}>{shop.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">设备信息（可选）</Label>
+                <Input
+                  className="mt-1"
+                  placeholder="Chrome on Windows"
+                  value={newKeyData.deviceInfo}
+                  onChange={(e) => setNewKeyData({ ...newKeyData, deviceInfo: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-6">
+              <Button variant="outline" onClick={() => setShowCreateModal(false)}>取消</Button>
+              <Button onClick={() => { handleCreateKey(); setShowCreateModal(false); }}>生成</Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// 市场信号列表组件
+function MarketSignalsList() {
+  const [signals, setSignals] = useState<Array<{
+    id: number;
+    sourceType: string;
+    signalType: string;
+    productId: string;
+    productTitle: string;
+    productTitleZh?: string;
+    categoryPath?: string;
+    price: number | null;
+    originalPrice?: number | null;
+    salesVolume: number | null;
+    rating: number | null;
+    reviewsCount: number | null;
+    imageUrl?: string;
+    brandName?: string;
+    previousSignalId?: number | null;
+    collectedAt: string;
+    createdAt: string;
+  }>>([]);
+  const [loading, setLoading] = useState(true);
+  const [sourceFilter, setSourceFilter] = useState<string>('all');
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const pageSize = 20;
+
+  useEffect(() => {
+    loadSignals();
+  }, [sourceFilter, page]);
+
+  const loadSignals = async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams({
+        limit: String(pageSize),
+        offset: String((page - 1) * pageSize),
+        ...(sourceFilter !== 'all' && { sourceType: sourceFilter }),
+      });
+      const res = await fetch(`/api/market-signals?${params}`);
+      const data = await res.json();
+      if (data.success) {
+        setSignals(data.data.signals);
+        setTotal(data.data.total);
+      }
+    } catch (e) {
+      console.error('加载信号失败:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getSourceBadge = (source: string) => {
+    const styles: Record<string, string> = {
+      wb: 'bg-purple-500/15 text-purple-600',
+      ozon_market: 'bg-blue-500/15 text-blue-600',
+      aliexpress: 'bg-orange-500/15 text-orange-600',
+      1688: 'bg-yellow-500/15 text-yellow-600',
+    };
+    const labels: Record<string, string> = {
+      wb: 'Wildberries',
+      ozon_market: 'Ozon',
+      aliexpress: 'AliExpress',
+      '1688': '1688',
+    };
+    return (
+      <span className={`inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium ${styles[source] || 'bg-muted text-muted-foreground'}`}>
+        {labels[source] || source}
+      </span>
+    );
+  };
+
+  if (loading) {
+    return <div className="text-center py-8 text-muted-foreground">加载中...</div>;
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* 筛选栏 */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">数据源：</span>
+          <Select value={sourceFilter} onValueChange={setSourceFilter}>
+            <SelectTrigger className="w-36">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">全部</SelectItem>
+              <SelectItem value="wb">Wildberries</SelectItem>
+              <SelectItem value="ozon_market">Ozon</SelectItem>
+              <SelectItem value="aliexpress">AliExpress</SelectItem>
+              <SelectItem value="1688">1688</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="text-sm text-muted-foreground">
+          共 <strong className="text-foreground">{total}</strong> 条记录
+        </div>
+      </div>
+
+      {/* 数据列表 */}
+      {signals.length === 0 ? (
+        <div className="text-center py-8 text-muted-foreground">
+          <TrendingUp className="w-12 h-12 mx-auto mb-3 opacity-30" />
+          <p>暂无市场信号数据</p>
+          <p className="text-xs mt-1">使用Chrome插件采集商品数据后会显示在这里</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {signals.map((signal) => (
+            <div key={signal.id} className="bg-muted/30 rounded-lg p-4 border border-border/20">
+              <div className="flex gap-4">
+                {/* 商品图片 */}
+                <div className="w-20 h-20 bg-muted rounded-lg shrink-0 overflow-hidden flex items-center justify-center">
+                  {signal.imageUrl ? (
+                    <img
+                      src={`/api/image-proxy?url=${encodeURIComponent(signal.imageUrl)}`}
+                      alt={signal.productTitle}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <Image className="w-8 h-8 text-muted-foreground/50" />
+                  )}
+                </div>
+                {/* 商品信息 */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {getSourceBadge(signal.sourceType)}
+                      {signal.previousSignalId && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-green-500/15 text-green-600">
+                          历史记录 #{signal.previousSignalId}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-xs text-muted-foreground shrink-0">
+                      {new Date(signal.collectedAt).toLocaleString('zh-CN')}
+                    </span>
+                  </div>
+                  <p className="text-sm font-medium text-foreground truncate mb-1">
+                    {signal.productTitleZh || signal.productTitle || '未知商品'}
+                  </p>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    ID: {signal.productId} {signal.brandName && `| 品牌: ${signal.brandName}`}
+                  </p>
+                  <div className="flex items-center gap-4 text-xs">
+                    {signal.price !== null && (
+                      <span>
+                        <span className="text-muted-foreground">价格：</span>
+                        <span className="font-semibold text-foreground">{signal.price.toLocaleString()} ₽</span>
+                        {signal.originalPrice && signal.originalPrice > signal.price && (
+                          <span className="text-muted-foreground line-through ml-1">{signal.originalPrice.toLocaleString()}</span>
+                        )}
+                      </span>
+                    )}
+                    {signal.salesVolume !== null && (
+                      <span>
+                        <span className="text-muted-foreground">销量：</span>
+                        <span className="text-foreground">{signal.salesVolume.toLocaleString()}</span>
+                      </span>
+                    )}
+                    {signal.rating !== null && (
+                      <span>
+                        <span className="text-muted-foreground">评分：</span>
+                        <span className="text-foreground">{signal.rating}</span>
+                        {signal.reviewsCount && <span className="text-muted-foreground"> ({signal.reviewsCount}评)</span>}
+                      </span>
+                    )}
+                    {signal.categoryPath && (
+                      <span className="text-muted-foreground truncate max-w-48" title={signal.categoryPath}>
+                        {signal.categoryPath}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* 分页 */}
+      {total > pageSize && (
+        <div className="flex items-center justify-center gap-2 mt-4">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page === 1}
+            onClick={() => setPage(page - 1)}
+          >
+            上一页
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            第 {page} / {Math.ceil(total / pageSize)} 页
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page >= Math.ceil(total / pageSize)}
+            onClick={() => setPage(page + 1)}
+          >
+            下一页
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function SettingsPage() {
   const pathname = usePathname();
   const navItems = getNavItems(pathname);
@@ -433,6 +893,8 @@ export default function SettingsPage() {
 
   const settingsNavItems = [
     { id: 'platform', icon: Store, label: '平台账号' },
+    { id: 'extension', icon: Plug, label: '插件管理' },
+    { id: 'signals', icon: TrendingUp, label: '市场信号' },
     { id: 'system', icon: Sliders, label: '系统参数' },
     { id: 'notification', icon: BellRing, label: '通知设置' },
     { id: 'printer', icon: Printer, label: '打印机配置' },
@@ -1118,6 +1580,46 @@ export default function SettingsPage() {
                         <Save className="w-4 h-4" />
                         保存设置
                       </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Extension Management Section */}
+                {activeSection === 'extension' && (
+                  <div className="space-y-4">
+                    <div className="bg-card rounded-lg shadow-sm p-5">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                            <Plug className="w-5 h-5 text-primary" />
+                          </div>
+                          <div>
+                            <h3 className="text-base font-semibold text-foreground">Chrome 插件管理</h3>
+                            <p className="text-xs text-muted-foreground">管理插件API密钥，用于从Ozon/WB采集商品数据</p>
+                          </div>
+                        </div>
+                      </div>
+                      <ExtensionKeyManager />
+                    </div>
+                  </div>
+                )}
+
+                {/* Market Signals Section */}
+                {activeSection === 'signals' && (
+                  <div className="space-y-4">
+                    <div className="bg-card rounded-lg shadow-sm p-5">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                            <TrendingUp className="w-5 h-5 text-primary" />
+                          </div>
+                          <div>
+                            <h3 className="text-base font-semibold text-foreground">市场信号数据</h3>
+                            <p className="text-xs text-muted-foreground">插件采集的商品数据，供选品引擎分析</p>
+                          </div>
+                        </div>
+                      </div>
+                      <MarketSignalsList />
                     </div>
                   </div>
                 )}

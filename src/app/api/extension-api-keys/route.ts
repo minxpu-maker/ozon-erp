@@ -10,7 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/storage/database/client';
 import { extensionApiKeys, shops } from '@/storage/database/shared/schema';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { createHash, randomBytes } from 'crypto';
 
 // API Key 前缀
@@ -148,9 +148,8 @@ export async function POST(request: NextRequest) {
 
 /**
  * GET /api/extension-api-keys?shopId=xxx
- * 查询店铺的API Key列表（不返回明文）
- * 
- * 需要验证请求者有权查看该 shopId 的 Key
+ * 查询API Key列表（不返回明文）
+ * 如果不传 shopId，返回所有 keys
  */
 export async function GET(request: NextRequest) {
   try {
@@ -169,40 +168,58 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const shopId = searchParams.get('shopId');
 
-    if (!shopId) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Missing required parameter: shopId',
-        },
-        { status: 400 }
-      );
+    // 查询Keys（不返回keyHash）
+    let keys;
+    if (shopId) {
+      keys = await db
+        .select({
+          id: extensionApiKeys.id,
+          keyPrefix: extensionApiKeys.keyPrefix,
+          shopId: extensionApiKeys.shopId,
+          userId: extensionApiKeys.userId,
+          permissions: extensionApiKeys.permissions,
+          deviceInfo: extensionApiKeys.deviceInfo,
+          lastUsedAt: extensionApiKeys.lastUsedAt,
+          expiresAt: extensionApiKeys.expiresAt,
+          isActive: extensionApiKeys.isActive,
+          createdAt: extensionApiKeys.createdAt,
+        })
+        .from(extensionApiKeys)
+        .where(eq(extensionApiKeys.shopId, shopId));
+    } else {
+      // 返回所有 keys
+      keys = await db
+        .select({
+          id: extensionApiKeys.id,
+          keyPrefix: extensionApiKeys.keyPrefix,
+          shopId: extensionApiKeys.shopId,
+          userId: extensionApiKeys.userId,
+          permissions: extensionApiKeys.permissions,
+          deviceInfo: extensionApiKeys.deviceInfo,
+          lastUsedAt: extensionApiKeys.lastUsedAt,
+          expiresAt: extensionApiKeys.expiresAt,
+          isActive: extensionApiKeys.isActive,
+          createdAt: extensionApiKeys.createdAt,
+        })
+        .from(extensionApiKeys);
     }
 
-    // 生产环境应验证 operator 是否有权限查看该 shopId
-    // 此处仅做基础验证，完整权限检查应在业务层实现
+    // 获取店铺名称
+    const shopIds = [...new Set(keys.map(k => k.shopId))];
+    const shopMap = new Map<string, string>();
+    if (shopIds.length > 0) {
+      const shopRecords = await db
+        .select({ id: shops.id, name: shops.name })
+        .from(shops)
+        .where(inArray(shops.id, shopIds));
+      shopRecords.forEach(s => shopMap.set(s.id, s.name));
+    }
 
-    // 查询该店铺的所有Key（不返回keyHash）
-    const keys = await db
-      .select({
-        id: extensionApiKeys.id,
-        keyPrefix: extensionApiKeys.keyPrefix,
-        shopId: extensionApiKeys.shopId,
-        userId: extensionApiKeys.userId,
-        permissions: extensionApiKeys.permissions,
-        deviceInfo: extensionApiKeys.deviceInfo,
-        lastUsedAt: extensionApiKeys.lastUsedAt,
-        expiresAt: extensionApiKeys.expiresAt,
-        isActive: extensionApiKeys.isActive,
-        createdAt: extensionApiKeys.createdAt,
-      })
-      .from(extensionApiKeys)
-      .where(eq(extensionApiKeys.shopId, shopId));
-
-    // 添加状态判断
+    // 添加状态判断和店铺名称
     const now = new Date();
     const keysWithStatus = keys.map((key: typeof keys[number]) => ({
       ...key,
+      shopName: shopMap.get(key.shopId),
       isExpired: key.expiresAt ? new Date(key.expiresAt) < now : false,
       status: key.isActive
         ? key.expiresAt && new Date(key.expiresAt) < now
