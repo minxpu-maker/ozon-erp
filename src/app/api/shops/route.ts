@@ -12,6 +12,7 @@ export async function GET() {
         id: shops.id,
         name: shops.name,
         client_id: shops.client_id,
+        api_key: shops.api_key,
         is_primary: shops.is_primary,
         is_active: shops.is_active,
         last_sync_at: shops.last_sync_at,
@@ -24,9 +25,15 @@ export async function GET() {
       })
       .from(shops);
 
+    // 脱敏处理 API Key
+    const sanitizedShops = shopList.map(shop => ({
+      ...shop,
+      api_key: shop.api_key ? `${shop.api_key.slice(0, 6)}****${shop.api_key.slice(-4)}` : null,
+    }));
+
     return NextResponse.json({
       success: true,
-      data: shopList,
+      data: sanitizedShops,
     });
   } catch (error) {
     console.error('获取店铺列表失败:', error);

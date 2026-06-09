@@ -635,7 +635,7 @@ export default function SettingsPage() {
                                 <div>
                                   <span className="text-muted-foreground">API Key</span>
                                   <p className="text-foreground font-mono mt-0.5">
-                                    {shop.api_key ? `${shop.api_key.slice(0, 6)}...${shop.api_key.slice(-4)}` : '--'}
+                                    {shop.api_key || '--'}
                                   </p>
                                 </div>
                                 <div>
