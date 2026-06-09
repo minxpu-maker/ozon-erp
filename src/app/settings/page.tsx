@@ -10,7 +10,8 @@ import {
   Copy, Box, LayoutDashboard, Package, ClipboardList, Truck, Calculator,
   PackageSearch, Warehouse, Database, Users, BarChart3, UserCircle, Shield,
   Target, Image, RefreshCw as Sync, AlertTriangle, TrendingUp, Search,
-  HelpCircle, Info, Zap, Loader2, AlertCircle, History, Eye, ChevronRight
+  HelpCircle, Info, Zap, Loader2, AlertCircle, History, Eye, ChevronRight,
+  Languages
 } from 'lucide-react';
 import { getNavItems } from '@/lib/nav-config';
 import { ProxiedImage } from '@/components/ui/proxied-image';
@@ -590,6 +591,8 @@ function MarketSignalsList() {
   }>>([]);
   const [loading, setLoading] = useState(true);
   const [sourceFilter, setSourceFilter] = useState<string>('all');
+  const [signalTypeFilter, setSignalTypeFilter] = useState<string>('all');
+  const [showChineseTitle, setShowChineseTitle] = useState(true);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [stats, setStats] = useState<{ total: number; bySource: Record<string, number> }>({ total: 0, bySource: {} });
@@ -606,7 +609,7 @@ function MarketSignalsList() {
   useEffect(() => {
     loadSignals();
     loadStats();
-  }, [sourceFilter, page]);
+  }, [sourceFilter, signalTypeFilter, page]);
 
   const loadSignals = async () => {
     try {
@@ -616,6 +619,7 @@ function MarketSignalsList() {
         limit: String(pageSize),
         offset: String((page - 1) * pageSize),
         ...(sourceFilter !== 'all' && { sourceType: sourceFilter }),
+        ...(signalTypeFilter !== 'all' && { signalType: signalTypeFilter }),
       });
       const res = await fetch(`/api/market-signals?${params}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -852,6 +856,25 @@ function MarketSignalsList() {
               <SelectItem value="1688">1688</SelectItem>
             </SelectContent>
           </Select>
+          <Select value={signalTypeFilter} onValueChange={(v) => { setSignalTypeFilter(v); setPage(1); }}>
+            <SelectTrigger className="w-[120px]">
+              <SelectValue placeholder="信号类型" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">全部类型</SelectItem>
+              <SelectItem value="demand">需求信号</SelectItem>
+              <SelectItem value="competition">竞争信号</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button 
+            variant={showChineseTitle ? "default" : "outline"} 
+            size="sm" 
+            onClick={() => setShowChineseTitle(!showChineseTitle)}
+            title={showChineseTitle ? '当前显示中文标题，点击切换到俄语原文' : '当前显示俄语原文，点击切换到中文'}
+          >
+            <Languages className="w-4 h-4 mr-1" />
+            {showChineseTitle ? '中文' : '原文'}
+          </Button>
           <Button variant="outline" size="sm" onClick={() => { loadSignals(); loadStats(); }}>
             <RefreshCw className="w-4 h-4 mr-1" />刷新
           </Button>
@@ -905,7 +928,7 @@ function MarketSignalsList() {
                     </div>
                   </div>
                   <p className="text-sm font-medium text-foreground truncate mb-1">
-                    {signal.productTitleZh || signal.productTitle || '未知商品'}
+                    {(showChineseTitle && signal.productTitleZh) ? signal.productTitleZh : signal.productTitle || '未知商品'}
                   </p>
                   <p className="text-xs text-muted-foreground mb-2">
                     ID: {signal.productId} {signal.brandName && `| 品牌: ${signal.brandName}`}
