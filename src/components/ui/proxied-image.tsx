@@ -77,27 +77,27 @@ export function ProxiedImage({
   iconSize = 'md',
   onClick,
 }: ProxiedImageProps) {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-
-  // 判断是否需要使用代理
-  const imageSrc = useMemo(() => {
-    if (!src) return null;
+  // 如果没有 src，直接显示占位符（不设置 loading 状态避免内存泄漏）
+  const needsProxy = useMemo(() => {
+    if (!src) return { shouldProxy: false, proxyUrl: null };
     
     // 如果是相对路径或本站路径，直接使用
     if (src.startsWith('/') || src.startsWith('data:')) {
-      return src;
+      return { shouldProxy: false, proxyUrl: src };
     }
     
     // 检查是否在白名单中
     if (isAllowedDomain(src)) {
-      return buildProxyUrl(src);
+      return { shouldProxy: true, proxyUrl: buildProxyUrl(src) };
     }
     
     // 不在白名单，直接使用原始URL（可能会被防盗链拒绝）
-    console.warn(`Image domain not in whitelist: ${src}`);
-    return src;
+    console.warn(`[ProxiedImage] Domain not in whitelist, image may fail to load: ${src}`);
+    return { shouldProxy: false, proxyUrl: src };
   }, [src]);
+
+  const [loading, setLoading] = useState(!!needsProxy.proxyUrl);
+  const [error, setError] = useState(false);
 
   const handleError = () => {
     setError(true);
@@ -111,7 +111,7 @@ export function ProxiedImage({
   };
 
   // 无图片或加载失败时显示占位符
-  if (!imageSrc || error) {
+  if (!needsProxy.proxyUrl || error) {
     return (
       <div 
         className={cn(
@@ -144,7 +144,7 @@ export function ProxiedImage({
       
       {/* 实际图片 */}
       <img
-        src={imageSrc}
+        src={needsProxy.proxyUrl}
         alt={alt}
         className={cn(
           'rounded-lg',

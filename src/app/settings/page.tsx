@@ -13,6 +13,7 @@ import {
   HelpCircle, Info, Zap, Loader2, AlertCircle, History, Eye, ChevronRight
 } from 'lucide-react';
 import { getNavItems } from '@/lib/nav-config';
+import { ProxiedImage } from '@/components/ui/proxied-image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -876,21 +877,13 @@ function MarketSignalsList() {
             <div key={signal.id} className="bg-muted/30 rounded-lg p-4 border border-border/20">
               <div className="flex gap-4">
                 {/* 商品图片 */}
-                <div className="w-20 h-20 bg-muted rounded-lg shrink-0 overflow-hidden flex items-center justify-center">
-                  {signal.imageUrl ? (
-                    <img
-                      src={`/api/image-proxy?url=${encodeURIComponent(signal.imageUrl)}`}
-                      alt={signal.productTitle}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none';
-                        (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
-                      }}
-                    />
-                  ) : null}
-                  {!signal.imageUrl && <Image className="w-8 h-8 text-muted-foreground/50" />}
-                  {signal.imageUrl && <Image className="w-8 h-8 text-muted-foreground/50 hidden" />}
-                </div>
+                <ProxiedImage
+                  src={signal.imageUrl}
+                  alt={signal.productTitle}
+                  containerClassName="w-20 h-20 shrink-0"
+                  className="w-full h-full object-cover"
+                  iconSize="sm"
+                />
                 {/* 商品信息 */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2 mb-2">
