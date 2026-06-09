@@ -1195,7 +1195,7 @@ export const marketSignals = pgTable('market_signals', {
   imageUrl: varchar('image_url', { length: 1000 }), // 商品主图URL
   images: jsonb('images'), // 图片URL数组
   brandName: varchar('brand_name', { length: 200 }), // 品牌名称
-  previousSignalId: integer('previous_signal_id'), // 历史趋势链
+  previousSignalId: integer('previous_signal_id').references((): any => marketSignals.id), // 历史趋势链（自引用）
   
   // 价格与销量
   currentPrice: numeric('current_price', { precision: 12, scale: 2 }),
