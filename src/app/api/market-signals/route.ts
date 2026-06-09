@@ -35,22 +35,37 @@ function toProxyUrls(urls: string[] | null | undefined): string[] {
  * - limit: 每页条数，默认20，最大100
  * - offset: 分页偏移，默认0
  */
+// 有效的参数值白名单
+const VALID_SOURCE_TYPES = ['wb', 'ozon_market', 'aliexpress', '1688'];
+const VALID_SIGNAL_TYPES = ['demand', 'competition'];
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100);
-    const offset = parseInt(searchParams.get('offset') || '0');
-    const sourceType = searchParams.get('sourceType');
-    const signalType = searchParams.get('signalType');
+    
+    // 安全解析数字参数，防止 NaN
+    const limitParam = parseInt(searchParams.get('limit') || '20', 10);
+    const offsetParam = parseInt(searchParams.get('offset') || '0', 10);
+    const limit = Math.min(Math.max(isNaN(limitParam) ? 20 : limitParam, 1), 100);
+    const offset = Math.max(isNaN(offsetParam) ? 0 : offsetParam, 0);
+    
+    // 参数值白名单验证
+    const sourceTypeParam = searchParams.get('sourceType');
+    const signalTypeParam = searchParams.get('signalType');
+    const sourceType = sourceTypeParam && VALID_SOURCE_TYPES.includes(sourceTypeParam) 
+      ? sourceTypeParam : null;
+    const signalType = signalTypeParam && VALID_SIGNAL_TYPES.includes(signalTypeParam) 
+      ? signalTypeParam : null;
+    
     const productId = searchParams.get('productId');
     const shopId = searchParams.get('shopId');
 
     // 构建查询条件
     const conditions = [];
-    if (sourceType && sourceType !== 'all') {
+    if (sourceType) {
       conditions.push(eq(marketSignals.sourceType, sourceType));
     }
-    if (signalType && signalType !== 'all') {
+    if (signalType) {
       conditions.push(eq(marketSignals.signalType, signalType));
     }
     if (productId) {
@@ -77,15 +92,20 @@ export async function GET(request: NextRequest) {
 
     const total = countResult[0]?.count || 0;
 
-    // 获取涉及的店铺名称
-    const shopIds = [...new Set(signals.map(s => s.shopId))];
+    // 获取涉及的店铺名称（安全处理空数组）
+    const shopIds = [...new Set(signals.map(s => s.shopId).filter(Boolean))];
     const shopMap = new Map<string, string>();
     if (shopIds.length > 0) {
-      const shopList = await db
-        .select({ id: shops.id, name: shops.name })
-        .from(shops)
-        .where(inArray(shops.id, shopIds));
-      shopList.forEach(s => shopMap.set(s.id, s.name));
+      try {
+        const shopList = await db
+          .select({ id: shops.id, name: shops.name })
+          .from(shops)
+          .where(inArray(shops.id, shopIds));
+        shopList.forEach(s => shopMap.set(s.id, s.name));
+      } catch (shopError) {
+        console.warn('[MarketSignals] Failed to fetch shop names:', shopError);
+        // 继续执行，店铺名称非必须
+      }
     }
 
     // 转换数据格式
@@ -102,7 +122,7 @@ export async function GET(request: NextRequest) {
       productUrl: s.productUrl,
       // 关键转换：图片URL改为代理格式
       imageUrl: toProxyUrl(s.imageUrl),
-      images: toProxyUrls(Array.isArray(s.images) ? s.images as string[] : null),
+      images: toProxyUrls(Array.isArray(s.images) ? s.images.filter((img): img is string => typeof img === 'string') : null),
       brandName: s.brandName,
       categoryPath: s.categoryPath,
       categoryId: s.categoryId,
