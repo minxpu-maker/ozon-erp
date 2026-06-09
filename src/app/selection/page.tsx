@@ -71,6 +71,7 @@ import {
   Store,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ProxiedImage, getProxiedImageUrl } from '@/components/ui/proxied-image';
 
 // Types
 interface Opportunity {
@@ -691,7 +692,12 @@ export default function SelectionPage() {
                         {/* Thumbnail */}
                         <div className="aspect-square bg-muted rounded-lg mb-3 flex items-center justify-center relative overflow-hidden">
                           {opp.targetImage ? (
-                            <img src={opp.targetImage} alt={opp.targetName} className="w-full h-full object-cover" />
+                            <ProxiedImage
+                              src={opp.targetImage}
+                              alt={opp.targetName}
+                              className="w-full h-full object-cover"
+                              iconSize="lg"
+                            />
                           ) : (
                             <Package className="w-12 h-12 text-muted-foreground/30" />
                           )}

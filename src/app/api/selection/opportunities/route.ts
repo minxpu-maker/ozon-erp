@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, schema } from '@/storage/database/client';
-import { desc, eq, and, sql } from 'drizzle-orm';
+import { desc, eq, and, sql, inArray } from 'drizzle-orm';
 
 // GET /api/selection/opportunities - 获取选品单列表
 export async function GET(request: NextRequest) {
@@ -36,10 +36,43 @@ export async function GET(request: NextRequest) {
 
     const total = Number(totalResult[0]?.count || 0);
 
+    // 获取关联的市场信号图片
+    const productIds = items
+      .filter(item => item.targetProductId)
+      .map(item => String(item.targetProductId));
+    
+    let signalImages: Record<string, string> = {};
+    if (productIds.length > 0) {
+      try {
+        const signals = await db.select({
+          productId: schema.marketSignals.productId,
+          imageUrl: schema.marketSignals.imageUrl,
+        })
+          .from(schema.marketSignals)
+          .where(inArray(schema.marketSignals.productId, productIds))
+          .orderBy(desc(schema.marketSignals.collectedAt));
+        
+        // 取每个 productId 最新的图片
+        signals.forEach(signal => {
+          if (signal.productId && signal.imageUrl && !signalImages[signal.productId]) {
+            signalImages[signal.productId] = signal.imageUrl;
+          }
+        });
+      } catch (err) {
+        console.error('[API] 获取市场信号图片失败:', err);
+      }
+    }
+
+    // 将图片添加到返回数据
+    const itemsWithImages = items.map(item => ({
+      ...item,
+      targetImage: item.targetProductId ? signalImages[String(item.targetProductId)] || null : null
+    }));
+
     return NextResponse.json({
       success: true,
       data: {
-        items,
+        items: itemsWithImages,
         total,
         page,
         limit,
