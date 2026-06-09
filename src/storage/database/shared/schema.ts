@@ -1180,28 +1180,36 @@ export const syncSchedules = pgTable('sync_schedules', {
 ]);
 
 /**
- * 市场信号表 - Chrome插件采集的Ozon商品数据
+ * 市场信号表 - Chrome插件采集的Ozon/WB商品数据
  */
 export const marketSignals = pgTable('market_signals', {
   id: serial('id').primaryKey(),
   shopId: varchar('shop_id', { length: 36 }).notNull().references(() => shops.id),
   
+  // 数据来源
+  sourceType: varchar('source_type', { length: 20 }).notNull(), // 'wb' | 'ozon_market'
+  signalType: varchar('signal_type', { length: 30 }).default('demand'), // 信号类型
+  
   // 商品基本信息
-  ozonProductId: varchar('ozon_product_id', { length: 50 }).notNull(),
+  productId: varchar('product_id', { length: 100 }).notNull(), // 统一商品ID（平台商品ID）
   productTitle: varchar('product_title', { length: 500 }).notNull(),
   productTitleZh: varchar('product_title_zh', { length: 500 }), // 中文翻译标题
+  productUrl: varchar('product_url', { length: 1000 }), // 商品链接
   
-  // 新增字段
+  // 图片信息
   imageUrl: varchar('image_url', { length: 1000 }), // 商品主图URL
   images: jsonb('images'), // 图片URL数组
   brandName: varchar('brand_name', { length: 200 }), // 品牌名称
-  previousSignalId: integer('previous_signal_id').references((): any => marketSignals.id), // 历史趋势链（自引用）
+  
+  // 类目信息
+  categoryPath: varchar('category_path', { length: 500 }), // 类目路径（如：女装/外套/羽绒服）
+  categoryId: varchar('category_id', { length: 50 }),
+  categoryName: varchar('category_name', { length: 200 }),
   
   // 价格与销量
-  currentPrice: numeric('current_price', { precision: 12, scale: 2 }),
-  originalPrice: numeric('original_price', { precision: 12, scale: 2 }),
-  discountPercent: numeric('discount_percent', { precision: 5, scale: 2 }),
-  monthlySales: integer('monthly_sales').default(0),
+  price: numeric('price', { precision: 12, scale: 2 }), // 当前价格
+  originalPrice: numeric('original_price', { precision: 12, scale: 2 }), // 原价
+  salesVolume: integer('sales_volume').default(0), // 销量
   
   // 评价数据
   rating: numeric('rating', { precision: 3, scale: 2 }),
@@ -1209,15 +1217,13 @@ export const marketSignals = pgTable('market_signals', {
   
   // 竞争数据
   sellerCount: integer('seller_count').default(0),
-  isOzonSeller: boolean('is_ozon_seller').default(false),
   
-  // 类目信息
-  categoryId: varchar('category_id', { length: 50 }),
-  categoryName: varchar('category_name', { length: 200 }),
+  // 历史趋势链
+  previousSignalId: integer('previous_signal_id').references((): any => marketSignals.id),
   
   // 采集元数据
-  sourceUrl: varchar('source_url', { length: 1000 }),
   collectedAt: timestamp('collected_at', { withTimezone: true }).defaultNow(),
+  processedAt: timestamp('processed_at', { withTimezone: true }), // 选品引擎处理时间
   
   // 原始数据
   rawData: jsonb('raw_data'),
@@ -1225,7 +1231,8 @@ export const marketSignals = pgTable('market_signals', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 }, (table) => [
   index('idx_market_signals_shop').on(table.shopId),
-  index('idx_market_signals_product').on(table.ozonProductId),
+  index('idx_market_signals_product').on(table.productId),
+  index('idx_market_signals_source').on(table.sourceType),
   index('idx_market_signals_collected').on(table.collectedAt),
 ]);
 
