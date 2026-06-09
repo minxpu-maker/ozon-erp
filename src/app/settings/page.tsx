@@ -184,9 +184,15 @@ function ExtensionKeyManager() {
     }
   };
 
+  const [creating, setCreating] = useState(false);
+
   const handleCreateKey = async () => {
-    if (!newKeyData.shopId) return;
+    if (!newKeyData.shopId) {
+      alert('请选择绑定的店铺');
+      return;
+    }
     try {
+      setCreating(true);
       const res = await fetch('/api/extension-api-keys', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -199,14 +205,22 @@ function ExtensionKeyManager() {
       const data = await res.json();
       if (data.success) {
         setNewlyCreatedKey(data.data.apiKey);
+        setNewKeyData({ shopId: '', deviceInfo: '' });
+        setShowCreateModal(false);
         loadKeys();
+      } else {
+        alert(data.error || '创建失败');
       }
     } catch (e) {
       console.error('创建Key失败:', e);
+      alert('创建失败，请重试');
+    } finally {
+      setCreating(false);
     }
   };
 
   const handleDisableKey = async (id: number, shopId: string) => {
+    if (!confirm('确定要禁用此密钥吗？禁用后插件将无法使用此密钥。')) return;
     try {
       const res = await fetch(`/api/extension-api-keys?id=${id}&shopId=${shopId}`, {
         method: 'DELETE',
@@ -214,9 +228,12 @@ function ExtensionKeyManager() {
       const data = await res.json();
       if (data.success) {
         loadKeys();
+      } else {
+        alert(data.error || '禁用失败');
       }
     } catch (e) {
       console.error('禁用Key失败:', e);
+      alert('禁用失败，请重试');
     }
   };
 
@@ -373,7 +390,7 @@ function ExtensionKeyManager() {
             </div>
             <div className="flex justify-end gap-2 mt-6">
               <Button variant="outline" onClick={() => setShowCreateModal(false)}>取消</Button>
-              <Button onClick={() => { handleCreateKey(); setShowCreateModal(false); }}>生成</Button>
+              <Button onClick={handleCreateKey} disabled={creating}>{creating ? '生成中...' : '生成'}</Button>
             </div>
           </div>
         </div>
@@ -392,10 +409,10 @@ function MarketSignalsList() {
     productTitle: string;
     productTitleZh?: string;
     categoryPath?: string;
-    price: number | null;
-    originalPrice?: number | null;
+    price: string | null;
+    originalPrice?: string | null;
     salesVolume: number | null;
-    rating: number | null;
+    rating: string | null;
     reviewsCount: number | null;
     imageUrl?: string;
     brandName?: string;
@@ -501,10 +518,14 @@ function MarketSignalsList() {
                       src={`/api/image-proxy?url=${encodeURIComponent(signal.imageUrl)}`}
                       alt={signal.productTitle}
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                        (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+                      }}
                     />
-                  ) : (
-                    <Image className="w-8 h-8 text-muted-foreground/50" />
-                  )}
+                  ) : null}
+                  {!signal.imageUrl && <Image className="w-8 h-8 text-muted-foreground/50" />}
+                  {signal.imageUrl && <Image className="w-8 h-8 text-muted-foreground/50 hidden" />}
                 </div>
                 {/* 商品信息 */}
                 <div className="flex-1 min-w-0">
@@ -531,9 +552,9 @@ function MarketSignalsList() {
                     {signal.price !== null && (
                       <span>
                         <span className="text-muted-foreground">价格：</span>
-                        <span className="font-semibold text-foreground">{signal.price.toLocaleString()} ₽</span>
-                        {signal.originalPrice && signal.originalPrice > signal.price && (
-                          <span className="text-muted-foreground line-through ml-1">{signal.originalPrice.toLocaleString()}</span>
+                        <span className="font-semibold text-foreground">{parseFloat(signal.price).toLocaleString()} ₽</span>
+                        {signal.originalPrice && parseFloat(signal.originalPrice) > parseFloat(signal.price) && (
+                          <span className="text-muted-foreground line-through ml-1">{parseFloat(signal.originalPrice).toLocaleString()}</span>
                         )}
                       </span>
                     )}
@@ -546,7 +567,7 @@ function MarketSignalsList() {
                     {signal.rating !== null && (
                       <span>
                         <span className="text-muted-foreground">评分：</span>
-                        <span className="text-foreground">{signal.rating}</span>
+                        <span className="text-foreground">{parseFloat(signal.rating).toFixed(1)}</span>
                         {signal.reviewsCount && <span className="text-muted-foreground"> ({signal.reviewsCount}评)</span>}
                       </span>
                     )}
