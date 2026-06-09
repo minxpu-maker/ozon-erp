@@ -77,6 +77,8 @@ async function checkCrossPlatformMatch(
   categoryPath: string
 ): Promise<boolean> {
   try {
+    if (!categoryPath) return false;
+    
     const targetSourceType = sourceType === 'wb' ? 'ozon_market' : 'wb';
     
     const records = await db
@@ -103,9 +105,15 @@ async function checkCrossPlatformMatch(
  * 仅对 ozon_market 来源的新记录触发翻译（俄语 → 中文）
  */
 function triggerTranslation(signalId: number, text: string): void {
-  const baseUrl = process.env.COZE_PROJECT_DOMAIN_DEFAULT || '';
+  // 获取基础URL，优先使用环境变量，否则使用本地地址
+  const baseUrl = process.env.COZE_PROJECT_DOMAIN_DEFAULT || 'http://localhost:5000';
   
-  fetch(`${baseUrl}/api/translate`, {
+  // 避免URL拼接问题
+  const translateUrl = baseUrl.endsWith('/') 
+    ? `${baseUrl}api/translate` 
+    : `${baseUrl}/api/translate`;
+  
+  fetch(translateUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ 
@@ -121,8 +129,11 @@ function triggerTranslation(signalId: number, text: string): void {
 
 /**
  * 查找同一商品的最新记录
+ * 
+ * 注意：必须同时匹配 shopId、sourceType、productId，防止跨店铺数据混淆
  */
 async function findLatestSignal(
+  shopId: string,
   sourceType: string,
   productId: string
 ): Promise<typeof marketSignals.$inferSelect | null> {
@@ -132,6 +143,7 @@ async function findLatestSignal(
       .from(marketSignals)
       .where(
         and(
+          eq(marketSignals.shopId, shopId),
           eq(marketSignals.sourceType, sourceType),
           eq(marketSignals.productId, productId)
         )
@@ -148,15 +160,48 @@ async function findLatestSignal(
 
 /**
  * 判断是否在合并窗口内（24小时）
+ * 
+ * 安全处理无效日期：如果日期无效，返回 false（视为超过窗口）
  */
 function isWithinMergeWindow(collectedAt: Date | string | null): boolean {
   if (!collectedAt) return false;
   
   const collected = new Date(collectedAt);
   const now = new Date();
+  
+  // 检查日期是否有效
+  if (isNaN(collected.getTime()) || isNaN(now.getTime())) {
+    return false;
+  }
+  
   const hoursDiff = (now.getTime() - collected.getTime()) / (1000 * 60 * 60);
   
+  // 确保计算结果有效
+  if (isNaN(hoursDiff)) return false;
+  
   return hoursDiff <= MERGE_WINDOW_HOURS;
+}
+
+/**
+ * 验证信号数据完整性
+ */
+function validateSignal(signal: SignalInput): { valid: boolean; error?: string } {
+  // 检查 productId
+  if (!signal.productId || signal.productId.trim() === '') {
+    return { valid: false, error: 'productId is required and cannot be empty' };
+  }
+  
+  // 检查 productTitle
+  if (!signal.productTitle || signal.productTitle.trim() === '') {
+    return { valid: false, error: 'productTitle is required and cannot be empty' };
+  }
+  
+  // 检查 sourceType
+  if (!signal.sourceType) {
+    return { valid: false, error: 'sourceType is required' };
+  }
+  
+  return { valid: true };
 }
 
 /**
@@ -167,6 +212,17 @@ async function processSignal(
   signal: SignalInput
 ): Promise<ProcessResult> {
   const now = new Date();
+  
+  // 验证数据完整性
+  const validation = validateSignal(signal);
+  if (!validation.valid) {
+    return {
+      signalId: 0,
+      status: 'skipped',
+      triggeredMatching: false,
+      error: validation.error,
+    };
+  }
   
   // 验证 sourceType
   if (!VALID_SOURCE_TYPES.includes(signal.sourceType as SourceType)) {
@@ -180,8 +236,8 @@ async function processSignal(
   
   const sourceType = signal.sourceType as SourceType;
   
-  // 查找已有记录
-  const existingRecord = await findLatestSignal(sourceType, signal.productId);
+  // 查找已有记录（包含 shopId 过滤）
+  const existingRecord = await findLatestSignal(shopId, sourceType, signal.productId);
   
   let signalId: number;
   let status: 'created' | 'updated' | 'created_with_history';
@@ -197,17 +253,17 @@ async function processSignal(
         signalType: signal.signalType || 'demand',
         productId: signal.productId,
         productTitle: signal.productTitle,
-        productUrl: signal.productUrl,
-        categoryPath: signal.categoryPath,
-        price: signal.price ? String(signal.price) : null,
-        originalPrice: signal.originalPrice ? String(signal.originalPrice) : null,
+        productUrl: signal.productUrl || null,
+        categoryPath: signal.categoryPath || null,
+        price: signal.price != null ? String(signal.price) : null,
+        originalPrice: signal.originalPrice != null ? String(signal.originalPrice) : null,
         salesVolume: signal.salesVolume ?? 0,
-        rating: signal.rating ? String(signal.rating) : null,
+        rating: signal.rating != null ? String(signal.rating) : null,
         reviewsCount: signal.reviewsCount ?? 0,
         sellerCount: signal.sellerCount ?? 0,
-        imageUrl: signal.imageUrl,
-        images: signal.images,
-        brandName: signal.brandName,
+        imageUrl: signal.imageUrl || null,
+        images: signal.images || null,
+        brandName: signal.brandName || null,
         productTitleZh: null,
         previousSignalId: null,
         rawData: signal.rawData || {},
@@ -225,15 +281,15 @@ async function processSignal(
     await db
       .update(marketSignals)
       .set({
-        price: signal.price ? String(signal.price) : null,
-        originalPrice: signal.originalPrice ? String(signal.originalPrice) : null,
+        price: signal.price != null ? String(signal.price) : null,
+        originalPrice: signal.originalPrice != null ? String(signal.originalPrice) : null,
         salesVolume: signal.salesVolume ?? 0,
-        rating: signal.rating ? String(signal.rating) : null,
+        rating: signal.rating != null ? String(signal.rating) : null,
         reviewsCount: signal.reviewsCount ?? 0,
         sellerCount: signal.sellerCount ?? 0,
-        imageUrl: signal.imageUrl,
-        images: signal.images,
-        brandName: signal.brandName,
+        imageUrl: signal.imageUrl || null,
+        images: signal.images || null,
+        brandName: signal.brandName || null,
         rawData: signal.rawData || {},
         processedAt: null, // 标记为未处理，让引擎重新分析
         updatedAt: now,
@@ -254,17 +310,17 @@ async function processSignal(
         signalType: signal.signalType || 'demand',
         productId: signal.productId,
         productTitle: signal.productTitle,
-        productUrl: signal.productUrl,
-        categoryPath: signal.categoryPath,
-        price: signal.price ? String(signal.price) : null,
-        originalPrice: signal.originalPrice ? String(signal.originalPrice) : null,
+        productUrl: signal.productUrl || null,
+        categoryPath: signal.categoryPath || null,
+        price: signal.price != null ? String(signal.price) : null,
+        originalPrice: signal.originalPrice != null ? String(signal.originalPrice) : null,
         salesVolume: signal.salesVolume ?? 0,
-        rating: signal.rating ? String(signal.rating) : null,
+        rating: signal.rating != null ? String(signal.rating) : null,
         reviewsCount: signal.reviewsCount ?? 0,
         sellerCount: signal.sellerCount ?? 0,
-        imageUrl: signal.imageUrl,
-        images: signal.images,
-        brandName: signal.brandName,
+        imageUrl: signal.imageUrl || null,
+        images: signal.images || null,
+        brandName: signal.brandName || null,
         productTitleZh: null,
         previousSignalId: existingRecord.id, // 关联上一次记录
         rawData: signal.rawData || {},
@@ -356,7 +412,21 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // 5. 逐条处理信号
+    // 5. 检查批量中重复的 productId（去重提示）
+    const productIdSet = new Set<string>();
+    const duplicates: string[] = [];
+    
+    for (const signal of signals) {
+      if (signal.productId) {
+        if (productIdSet.has(signal.productId)) {
+          duplicates.push(signal.productId);
+        } else {
+          productIdSet.add(signal.productId);
+        }
+      }
+    }
+    
+    // 6. 逐条处理信号
     const results: ProcessResult[] = [];
     
     for (const signal of signals) {
@@ -374,7 +444,7 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    // 6. 返回结果
+    // 7. 返回结果
     const successCount = results.filter(r => r.status !== 'skipped').length;
     const skipCount = results.filter(r => r.status === 'skipped').length;
     
@@ -384,6 +454,9 @@ export async function POST(request: NextRequest) {
       success: successCount,
       skipped: skipCount,
       results,
+      ...(duplicates.length > 0 && { 
+        warning: `Duplicate productId detected in batch: ${duplicates.join(', ')}. Each processed separately.` 
+      }),
     });
     
   } catch (error) {
