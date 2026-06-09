@@ -28,10 +28,26 @@ const ALLOWED_DOMAINS = [
 
 // 缓存配置
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24小时
-const MAX_CACHE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
+const MAX_CACHE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB 单张图片上限
+const MAX_TOTAL_CACHE_SIZE = 100 * 1024 * 1024; // 100MB 总缓存上限
 
 // 请求配置
 const FETCH_TIMEOUT_MS = 10000; // 10秒超时
+
+// 允许的 Content-Type（防止 XSS）
+const ALLOWED_CONTENT_TYPES = [
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'image/avif',
+  'image/svg+xml',
+  'image/bmp',
+  'image/tiff',
+  'image/x-icon',
+  'image/ico',
+];
 
 // 模拟浏览器 User-Agent
 const BROWSER_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
@@ -58,15 +74,40 @@ function isCacheExpired(entry: CacheEntry): boolean {
 }
 
 /**
+ * 获取当前缓存总大小
+ */
+function getTotalCacheSize(): number {
+  let total = 0;
+  for (const entry of imageCache.values()) {
+    total += entry.size;
+  }
+  return total;
+}
+
+/**
  * 清理过期缓存（每次请求时调用，概率性清理）
+ * 如果总缓存超过上限，强制清理最旧的条目
  */
 function cleanupExpiredCache(): void {
-  // 10% 概率触发清理，避免每次请求都遍历
-  if (Math.random() > 0.1) return;
-  
+  // 清理过期条目
   for (const [key, entry] of imageCache.entries()) {
     if (isCacheExpired(entry)) {
       imageCache.delete(key);
+    }
+  }
+  
+  // 如果总缓存超过上限，清理最旧的 20% 条目
+  const totalSize = getTotalCacheSize();
+  if (totalSize > MAX_TOTAL_CACHE_SIZE) {
+    console.warn(`[ImageProxy] Cache size ${Math.round(totalSize / 1024 / 1024)}MB exceeds limit, cleaning up...`);
+    
+    // 按时间排序，删除最旧的 20%
+    const entries = Array.from(imageCache.entries())
+      .sort((a, b) => a[1].cachedAt - b[1].cachedAt);
+    
+    const deleteCount = Math.ceil(entries.length * 0.2);
+    for (let i = 0; i < deleteCount && i < entries.length; i++) {
+      imageCache.delete(entries[i][0]);
     }
   }
 }
@@ -85,6 +126,11 @@ function cleanupExpiredCache(): void {
 function isDomainAllowed(hostname: string): boolean {
   const lowerHostname = hostname.toLowerCase();
   
+  // 安全检查：hostname 不能为空
+  if (!lowerHostname || lowerHostname.length === 0) {
+    return false;
+  }
+  
   for (const domain of ALLOWED_DOMAINS) {
     const lowerDomain = domain.toLowerCase();
     
@@ -94,12 +140,23 @@ function isDomainAllowed(hostname: string): boolean {
     }
     
     // 子域名匹配（如 basket-01.wbbasket.ru 匹配 wbbasket.ru）
+    // 确保是真正的子域名，不是类似 evilwbbasket.ru 的欺骗
     if (lowerHostname.endsWith('.' + lowerDomain)) {
       return true;
     }
   }
   
   return false;
+}
+
+/**
+ * 验证 Content-Type 是否为允许的图片类型（防止 XSS）
+ */
+function isContentTypeAllowed(contentType: string): boolean {
+  const lowerContentType = contentType.toLowerCase().split(';')[0].trim();
+  return ALLOWED_CONTENT_TYPES.some(allowed => 
+    lowerContentType === allowed || lowerContentType.startsWith(allowed)
+  );
 }
 
 // ============================================================================
@@ -193,9 +250,27 @@ export async function GET(request: NextRequest) {
     
     // 2. 解析 URL 并校验域名
     let hostname: string;
+    let protocol: string;
     try {
       const urlObj = new URL(imageUrl);
       hostname = urlObj.hostname;
+      protocol = urlObj.protocol;
+      
+      // 安全校验：只允许 http/https 协议
+      if (protocol !== 'http:' && protocol !== 'https:') {
+        return NextResponse.json(
+          { error: 'Only http/https protocols are allowed' },
+          { status: 400 }
+        );
+      }
+      
+      // 安全校验：hostname 不能为空
+      if (!hostname) {
+        return NextResponse.json(
+          { error: 'Invalid URL: missing hostname' },
+          { status: 400 }
+        );
+      }
     } catch {
       return NextResponse.json(
         { error: 'Invalid URL format' },
@@ -210,8 +285,11 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    // 3. 检查内存缓存
-    const cachedEntry = imageCache.get(imageUrl);
+    // 3. 规范化缓存 key（移除末尾问号等）
+    const normalizedCacheKey = imageUrl.replace(/[?&]$/, '');
+    
+    // 4. 检查内存缓存
+    const cachedEntry = imageCache.get(normalizedCacheKey);
     
     if (cachedEntry && !isCacheExpired(cachedEntry)) {
       // 缓存命中
@@ -239,21 +317,36 @@ export async function GET(request: NextRequest) {
     const { data, contentType } = result;
     const imageSize = data.length;
     
-    // 5. 写入缓存（如果小于 5MB）
+    // 安全验证：检查 Content-Type 是否为允许的图片类型
+    const finalContentType = contentType || 'image/jpeg';
+    if (!isContentTypeAllowed(finalContentType)) {
+      console.warn(`[ImageProxy] Blocked suspicious Content-Type: ${finalContentType} from ${imageUrl}`);
+      return NextResponse.json(
+        { error: 'Content-Type not allowed: suspicious response' },
+        { status: 403 }
+      );
+    }
+    
+    // 5. 写入缓存（如果小于 5MB 且总缓存未超限）
     if (imageSize <= MAX_CACHE_SIZE_BYTES) {
-      imageCache.set(imageUrl, {
-        data,
-        contentType: contentType!,
-        cachedAt: Date.now(),
-        size: imageSize,
-      });
+      const currentTotalSize = getTotalCacheSize();
+      if (currentTotalSize + imageSize <= MAX_TOTAL_CACHE_SIZE) {
+        imageCache.set(normalizedCacheKey, {
+          data,
+          contentType: finalContentType,
+          cachedAt: Date.now(),
+          size: imageSize,
+        });
+      } else {
+        console.warn(`[ImageProxy] Cache full, skipping cache for ${imageUrl}`);
+      }
     }
     
     // 6. 返回图片
     return new NextResponse(new Uint8Array(data), {
       status: 200,
       headers: {
-        'Content-Type': contentType!,
+        'Content-Type': finalContentType,
         'Cache-Control': 'public, max-age=86400',
         'X-Cache': 'MISS',
         'X-Image-Size': String(imageSize),
