@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { MarketSignalPayload, ExtensionConfig, CollectionRecord } from '../shared/types';
-import { MESSAGE_TYPES, STORAGE_KEYS } from '../shared/constants';
+import { MESSAGE_TYPES, STORAGE_KEYS, DEFAULT_ERP_URL } from '../shared/constants';
 
 type PageType = 'main' | 'settings';
 interface PlatformInfo {
@@ -299,7 +299,7 @@ function SettingsPage({ onBack, config, onConfigUpdate }: {
   config: ExtensionConfig | null;
   onConfigUpdate: (config: ExtensionConfig | null) => void;
 }) {
-  const [erpBaseUrl, setErpBaseUrl] = useState(config?.erpBaseUrl || '');
+  const [erpBaseUrl, setErpBaseUrl] = useState(config?.erpBaseUrl || DEFAULT_ERP_URL);
   const [apiKey, setApiKey] = useState(config?.apiKey || '');
   const [shopId, setShopId] = useState(config?.shopId || '');
   const [shopName, setShopName] = useState(config?.shopName || '');
