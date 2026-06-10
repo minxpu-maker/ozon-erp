@@ -114,10 +114,18 @@ export interface PushResult {
 export interface BatchPushResponse {
   /** 是否成功 */
   ok: boolean;
+  /** 总数 */
+  total?: number;
+  /** 成功数 */
+  success?: number;
+  /** 跳过数 */
+  skipped?: number;
   /** 各条记录的处理结果 */
   results: PushResult[];
   /** 错误信息（如果有） */
   error?: string;
+  /** 重复警告 */
+  duplicates?: Array<{ productId: string; reason: string }>;
 }
 
 /**
@@ -144,8 +152,8 @@ export interface CollectionRecord {
   platform: SourceType;
   /** 商品标题 */
   productTitle: string;
-  /** 商品价格 */
-  price: number;
+  /** 商品价格（可能无法解析） */
+  price?: number;
   /** 商品主图 */
   imageUrl?: string;
   /** 采集时间（ISO时间字符串） */
@@ -154,6 +162,8 @@ export interface CollectionRecord {
   pushStatus: PushStatus;
   /** 关联的信号ID（推送成功后） */
   signalId?: number;
+  /** 错误信息（推送失败时） */
+  error?: string;
 }
 
 // ============================================================================
@@ -254,7 +264,7 @@ export function getDefaultConfig(): ExtensionConfig {
 }
 
 /**
- * 检查配置是否完整
+ * 检查配置是否完整（所有必填字段都有值）
  */
 export function isConfigComplete(config: ExtensionConfig): boolean {
   return Boolean(
@@ -263,4 +273,30 @@ export function isConfigComplete(config: ExtensionConfig): boolean {
     config.shopId &&
     config.shopName
   );
+}
+
+/**
+ * 检查配置格式是否有效
+ * - apiKey 必须以 ozon_ext_ 开头
+ * - erpBaseUrl 必须是有效的 URL
+ */
+export function isConfigValid(config: ExtensionConfig): boolean {
+  // 检查必填字段
+  if (!isConfigComplete(config)) {
+    return false;
+  }
+  
+  // 检查 apiKey 格式
+  if (!config.apiKey.startsWith('ozon_ext_')) {
+    return false;
+  }
+  
+  // 检查 erpBaseUrl 格式
+  try {
+    new URL(config.erpBaseUrl);
+  } catch {
+    return false;
+  }
+  
+  return true;
 }
