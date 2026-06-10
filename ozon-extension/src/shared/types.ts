@@ -187,7 +187,8 @@ export type MessageType =
   | 'GET_COLLECTIONS'     // 获取采集历史
   | 'CLEAR_COLLECTIONS'   // 清空采集历史
   | 'COLLECTION_COMPLETE' // 采集完成通知
-  | 'PUSH_RESULT';        // 推送结果通知
+  | 'PUSH_RESULT'         // 推送结果通知
+  | 'VALIDATE_CONFIG';    // 验证配置
 
 /**
  * 基础消息结构

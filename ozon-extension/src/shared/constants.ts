@@ -161,6 +161,8 @@ export const MESSAGE_TYPES = {
   CLEAR_COLLECTIONS: 'CLEAR_COLLECTIONS',
   /** 采集完成通知 */
   COLLECTION_COMPLETE: 'COLLECTION_COMPLETE',
+  /** 验证配置 */
+  VALIDATE_CONFIG: 'VALIDATE_CONFIG',
 } as const;
 
 /**
