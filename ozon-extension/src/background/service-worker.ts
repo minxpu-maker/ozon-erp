@@ -337,20 +337,16 @@ async function handlePushSignal(
   // 推送到后端
   const result = await pushSignalToBackend(signal);
   
-  // 创建采集记录
-  const record: CollectionRecord = {
-    id: `record_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+  // 创建采集记录（不包含 id 和 collectedAt，由 addCollectionRecord 生成）
+  addCollectionRecord({
     platform: signal.sourceType,
     productTitle: signal.productTitle,
     price: signal.price ?? 0,
     imageUrl: signal.imageUrl,
-    collectedAt: new Date().toISOString(),
     pushStatus: result.success ? 'pushed' : 'failed',
     signalId: result.signalId,
     error: result.error,
-  };
-  
-  addCollectionRecord(record);
+  });
   
   // 如果推送失败，添加到离线队列
   if (!result.success) {
@@ -361,7 +357,8 @@ async function handlePushSignal(
   chrome.runtime.sendMessage({
     type: MESSAGE_TYPES.PUSH_RESULT,
     success: result.success,
-    record,
+    signal,
+    signalId: result.signalId,
   }).catch(() => {});
   
   // 通知 content script 采集完成
@@ -447,9 +444,16 @@ function handleCollectStart(): { success: boolean } {
       for (const tab of tabs) {
         if (tab.id && tab.url) {
           // 根据 URL 决定发送哪种消息
+          // 支持 WB 详情页
           if (tab.url.includes('wildberries.ru/catalog')) {
             chrome.tabs.sendMessage(tab.id, { type: MESSAGE_TYPES.COLLECT_START }).catch(() => {});
-          } else if (tab.url.includes('ozon.ru/product')) {
+          }
+          // 支持 Ozon 详情页、搜索页、分类页
+          else if (
+            tab.url.includes('ozon.ru/product') ||
+            tab.url.includes('ozon.ru/search') ||
+            tab.url.includes('ozon.ru/category')
+          ) {
             chrome.tabs.sendMessage(tab.id, { type: MESSAGE_TYPES.COLLECT_START }).catch(() => {});
           }
         }
