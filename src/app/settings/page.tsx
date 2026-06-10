@@ -641,17 +641,18 @@ function MarketSignalsList() {
 
   const loadStats = async () => {
     try {
-      // 使用与列表相同的查询，避免额外请求
+      // 使用与列表相同的查询参数，保持统计与列表一致
       const params = new URLSearchParams({
         limit: String(pageSize),
         offset: String((page - 1) * pageSize),
         ...(sourceFilter !== 'all' && { sourceType: sourceFilter }),
+        ...(signalTypeFilter !== 'all' && { signalType: signalTypeFilter }),
       });
       const res = await fetch(`/api/market-signals?${params}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       if (data.success) {
-        // 从 total 和当前页数据推断统计（简化，实际应由后端提供）
+        // 从 total 和当前页数据推断统计
         const bySource: Record<string, number> = {};
         data.data.signals.forEach((s: { sourceType: string }) => {
           bySource[s.sourceType] = (bySource[s.sourceType] || 0) + 1;
