@@ -96,7 +96,11 @@ export async function POST(request: NextRequest) {
 
     // 检查信号是否存在
     const existingSignal = await db
-      .select({ id: marketSignals.id, productTitle: marketSignals.productTitle })
+      .select({ 
+        id: marketSignals.id, 
+        productTitle: marketSignals.productTitle,
+        productTitleZh: marketSignals.productTitleZh 
+      })
       .from(marketSignals)
       .where(eq(marketSignals.id, signalId))
       .limit(1);
@@ -106,6 +110,19 @@ export async function POST(request: NextRequest) {
         { success: false, error: 'Signal not found' },
         { status: 404 }
       );
+    }
+
+    // 幂等性检查：已有翻译且非强制更新时跳过
+    const forceUpdate = body.force === true;
+    if (existingSignal[0].productTitleZh && !forceUpdate) {
+      return NextResponse.json({
+        success: true,
+        signalId,
+        translatedText: existingSignal[0].productTitleZh,
+        originalText: text,
+        cached: true,
+        message: 'Translation already exists, skipped. Use force=true to override.'
+      });
     }
 
     // 执行翻译
