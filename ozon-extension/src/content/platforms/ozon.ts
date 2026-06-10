@@ -1,19 +1,9 @@
 /**
- * Ozon 内容脚本
- * 在 Ozon 商品详情页注入
+ * Ozon 内容脚本入口
+ * 由 manifest.json 的 content_scripts 配置加载
+ * 
+ * 此文件是入口点，实际逻辑在 ../ozon.ts 中
  */
 
-console.log('[Ozon Extension] Ozon content script loaded');
-
-// 检测页面类型
-const isProductPage = () => {
-  return window.location.pathname.includes('/product/');
-};
-
-if (isProductPage()) {
-  console.log('[Ozon Extension] Ozon product page detected');
-  
-  // TODO: 实现商品数据采集逻辑
-}
-
-export {};
+// 重新导出所有功能
+export * from '../ozon';
