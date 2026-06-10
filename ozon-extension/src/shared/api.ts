@@ -63,7 +63,12 @@ export class ErpApiClient {
       }
 
       // 解析响应
-      const data: BatchPushResponse = await response.json();
+      let data: BatchPushResponse;
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        throw new Error(`Push failed: invalid response format`);
+      }
       return data;
     } catch (error) {
       // 如果是我们抛出的错误，直接传递
@@ -77,10 +82,11 @@ export class ErpApiClient {
 
   /**
    * 验证 API Key 是否有效
+   * 使用专门的认证测试接口
    * @returns true 表示有效，false 表示无效或网络错误
    */
   async validateApiKey(): Promise<boolean> {
-    const url = `${this.config.erpBaseUrl}/api/market-signals?limit=1`;
+    const url = `${this.config.erpBaseUrl}/api/extension-api-keys/test-auth`;
 
     try {
       const response = await fetch(url, {
@@ -91,7 +97,12 @@ export class ErpApiClient {
       });
 
       // 响应200表示有效
-      return response.ok;
+      if (response.ok) {
+        const data = await response.json();
+        // 检查是否有必要的权限
+        return data?.success === true && data?.data?.permissions?.includes('write:signals');
+      }
+      return false;
     } catch (error) {
       // 任何异常都返回false，不抛出
       console.error('[ErpApiClient] validateApiKey error:', error);
@@ -100,10 +111,11 @@ export class ErpApiClient {
   }
 
   /**
-   * 检查后端服务是否可用
+   * 检查后端服务是否可用（不带认证）
    * @returns true 表示可用，false 表示不可用
    */
   async checkHealth(): Promise<boolean> {
+    // 使用市场信号查询接口作为健康检查（该接口不需要认证）
     const url = `${this.config.erpBaseUrl}/api/market-signals?limit=1`;
 
     try {
@@ -114,6 +126,50 @@ export class ErpApiClient {
     } catch (error) {
       console.error('[ErpApiClient] checkHealth error:', error);
       return false;
+    }
+  }
+
+  /**
+   * 获取详细的认证信息（用于调试）
+   * @returns 认证结果或null
+   */
+  async getAuthInfo(): Promise<{
+    valid: boolean;
+    shopId?: string;
+    userId?: string;
+    permissions?: string[];
+    error?: string;
+  }> {
+    const url = `${this.config.erpBaseUrl}/api/extension-api-keys/test-auth`;
+
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.config.apiKey}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return {
+          valid: true,
+          shopId: data?.data?.shopId,
+          userId: data?.data?.userId,
+          permissions: data?.data?.permissions,
+        };
+      }
+
+      const errorData = await response.json();
+      return {
+        valid: false,
+        error: errorData?.error || `HTTP ${response.status}`,
+      };
+    } catch (error) {
+      return {
+        valid: false,
+        error: error instanceof Error ? error.message : 'network error',
+      };
     }
   }
 }
