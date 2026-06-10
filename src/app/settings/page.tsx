@@ -682,15 +682,15 @@ function MarketSignalsList() {
         }),
       });
       const data = await res.json();
-      if (data.success) {
+      if (data.success && data.translatedText) {
         // 更新本地状态
         setSignals(prev => prev.map(s => 
           s.id === signalId 
-            ? { ...s, productTitleZh: data.data.translatedText }
+            ? { ...s, productTitleZh: data.translatedText }
             : s
         ));
       } else {
-        console.error('翻译失败:', data.error);
+        console.error('翻译失败:', data.error || '翻译结果为空');
       }
     } catch (e) {
       console.error('翻译请求失败:', e);
