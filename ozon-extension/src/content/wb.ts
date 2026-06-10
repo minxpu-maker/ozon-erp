@@ -10,7 +10,7 @@
  */
 
 import { MarketSignalPayload, SourceType, SignalType } from '../shared/types';
-import { getMatchedPlatform } from '../shared/constants';
+import { getMatchedPlatform, MESSAGE_TYPES } from '../shared/constants';
 
 // ============================================================================
 // 辅助函数
@@ -584,37 +584,36 @@ function initMessageListener(): void {
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     console.log('[WB] Received message:', message.type);
     
-    switch (message.type) {
-      case 'collect':
-      case 'COLLECT_SINGLE':
-      case 'COLLECT_WB': {
-        // 一键采集
-        const result = collectWbData();
-        sendResponse(result);
-        return true; // 保持消息通道开放
-      }
-      
-      case 'auto_collect':
-      case 'COLLECT_START': {
-        // 连续采集 - 直接发送给 Background
-        const signal = extractWbSignal();
-        if (signal) {
-          chrome.runtime.sendMessage({
-            type: 'push_signal',
-            data: signal,
-          }).catch(err => {
-            console.error('[WB] Failed to send push_signal:', err);
-          });
-          sendResponse({ success: true });
-        } else {
-          sendResponse({ success: false, error: 'Extraction failed' });
-        }
-        return true;
-      }
-      
-      default:
-        return false;
+    const msgType = message.type;
+    
+    // 一键采集
+    if (msgType === MESSAGE_TYPES.COLLECT_SINGLE || 
+        msgType === 'collect' || 
+        msgType === 'COLLECT_WB') {
+      const result = collectWbData();
+      sendResponse(result);
+      return true; // 保持消息通道开放
     }
+    
+    // 连续采集 - 直接发送给 Background
+    if (msgType === MESSAGE_TYPES.COLLECT_START || msgType === 'auto_collect') {
+      const signal = extractWbSignal();
+      if (signal) {
+        chrome.runtime.sendMessage({
+          type: MESSAGE_TYPES.PUSH_SIGNAL,
+          data: signal,
+          source: 'wb',
+        }).catch(err => {
+          console.error('[WB] Failed to send PUSH_SIGNAL:', err);
+        });
+        sendResponse({ success: true });
+      } else {
+        sendResponse({ success: false, error: 'Extraction failed' });
+      }
+      return true;
+    }
+    
+    return false;
   });
 }
 
@@ -627,13 +626,13 @@ function initMessageListener(): void {
  */
 function notifyPageReady(): void {
   chrome.runtime.sendMessage({
-    type: 'page_ready',
+    type: MESSAGE_TYPES.PAGE_READY,
     platform: 'wb',
     url: window.location.href,
     productId: extractProductIdFromUrl(),
   }).catch(err => {
     // Background 可能未准备好，忽略错误
-    console.debug('[WB] Failed to notify page_ready:', err);
+    console.debug('[WB] Failed to notify PAGE_READY:', err);
   });
 }
 

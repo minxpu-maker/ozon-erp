@@ -178,10 +178,14 @@ export type MessageType =
   | 'COLLECT_START'       // 开始连续采集
   | 'COLLECT_STOP'        // 停止连续采集
   | 'PUSH_BATCH'          // 批量推送
+  | 'PUSH_SIGNAL'         // 单条推送（来自content script）
+  | 'PAGE_READY'          // 页面就绪通知
   | 'GET_CONFIG'          // 获取配置
   | 'SET_CONFIG'          // 设置配置
   | 'GET_COLLECTIONS'     // 获取采集历史
-  | 'CLEAR_COLLECTIONS';  // 清空采集历史
+  | 'CLEAR_COLLECTIONS'   // 清空采集历史
+  | 'COLLECTION_COMPLETE' // 采集完成通知
+  | 'PUSH_RESULT';        // 推送结果通知
 
 /**
  * 基础消息结构

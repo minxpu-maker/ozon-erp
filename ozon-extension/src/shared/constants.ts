@@ -107,6 +107,8 @@ export function getPlatformRule(platform: SourceType): PlatformRule | undefined 
 export const COLLECTION_INTERVALS = {
   /** 连续采集间隔：5秒 */
   CONTINUOUS: 5000,
+  /** 默认采集间隔：5秒 */
+  DEFAULT: 5000,
   /** 最小采集间隔：1秒 */
   MIN: 1000,
   /** 最大采集间隔：60秒 */
@@ -123,6 +125,8 @@ export const STORAGE_KEYS = {
   COLLECTIONS: 'ozon_extension_collections',
   /** 采集状态 */
   COLLECTION_STATE: 'ozon_extension_collection_state',
+  /** 离线队列 */
+  OFFLINE_QUEUE: 'ozon_extension_offline_queue',
 } as const;
 
 /**
@@ -137,6 +141,10 @@ export const MESSAGE_TYPES = {
   COLLECT_STOP: 'COLLECT_STOP',
   /** 批量推送 */
   PUSH_BATCH: 'PUSH_BATCH',
+  /** 单条推送（来自content script） */
+  PUSH_SIGNAL: 'PUSH_SIGNAL',
+  /** 页面就绪通知 */
+  PAGE_READY: 'PAGE_READY',
   /** 获取配置 */
   GET_CONFIG: 'GET_CONFIG',
   /** 设置配置 */
