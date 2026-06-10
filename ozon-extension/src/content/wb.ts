@@ -1,10 +1,20 @@
 /**
  * Wildberries 内容脚本
  * 从 WB 商品详情页提取商品数据
+ * 
+ * 匹配页面：https://www.wildberries.ru/catalog/{商品ID}/detail.aspx
+ * 
+ * 提取策略：
+ * 1. 优先从 #__NEXT_DATA__ 提取JSON数据（准确）
+ * 2. Fallback到DOM元素提取（兜底）
  */
 
 import { MarketSignalPayload, SourceType, SignalType } from '../shared/types';
 import { getMatchedPlatform } from '../shared/constants';
+
+// ============================================================================
+// 辅助函数
+// ============================================================================
 
 /**
  * 解析数字字符串
@@ -42,244 +52,346 @@ function safeQueryAll(selector: string): Element[] {
 }
 
 /**
- * 提取商品名称
+ * 标准化图片URL
+ * - 补上 https: 前缀（如果以 // 开头）
+ * - 补上 WB CDN 前缀（如果是相对路径）
+ * - 过滤掉 data: 占位图
  */
-function extractProductName(): string {
+function normalizeImageUrl(url: string | undefined | null): string | undefined {
+  if (!url) return undefined;
+  
+  // 过滤 data: 占位图
+  if (url.startsWith('data:')) return undefined;
+  
+  // 过滤 placeholder 图片
+  if (url.includes('placeholder') || url.includes('no-photo')) return undefined;
+  
+  // 补上 https: 前缀
+  if (url.startsWith('//')) {
+    return 'https:' + url;
+  }
+  
+  // 补上 WB CDN 前缀（相对路径）
+  if (!url.startsWith('http')) {
+    // WB 图片CDN前缀
+    return 'https://basket-01.wbbasket.ru/' + url.replace(/^\//, '');
+  }
+  
+  return url;
+}
+
+// ============================================================================
+// __NEXT_DATA__ 提取（优先方案）
+// ============================================================================
+
+interface WbNextData {
+  props?: {
+    pageProps?: {
+      product?: WbProductData;
+      goods?: WbProductData;
+      [key: string]: unknown;
+    };
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
+
+interface WbProductData {
+  id?: number | string;
+  name?: string;
+  title?: string;
+  priceU?: number; // 价格（戈比，需要除以100）
+  salePriceU?: number;
+  originalPriceU?: number;
+  sale?: number; // 折扣价
+  price?: number;
+  imt_id?: number;
+  root_parent_id?: number;
+  pics?: string[];
+  photo?: string[];
+  images?: string[];
+  media?: { photos?: string[] };
+  rating?: number;
+  feedbacks?: number;
+  review_count?: number;
+  brand?: string;
+  brandName?: string;
+  seller?: { name?: string } | string;
+  categoryName?: string;
+  category?: string;
+  [key: string]: unknown;
+}
+
+/**
+ * 从 #__NEXT_DATA__ 提取商品数据
+ */
+function extractFromNextData(): { 
+  productData: WbProductData | null; 
+  rawData: WbNextData | null;
+} {
   try {
-    // 尝试多种选择器
-    const selectors = [
-      'h1[data-link]',
-      '.product-page__header',
-      'h1.name',
-      '.product-name',
-      'h1[class*="product"]',
-    ];
-    
-    for (const selector of selectors) {
-      const text = safeGetText(selector);
-      if (text) return text;
+    const scriptEl = document.getElementById('__NEXT_DATA__');
+    if (!scriptEl?.textContent) {
+      return { productData: null, rawData: null };
     }
     
-    return '未知商品';
-  } catch {
-    return '未知商品';
+    const json: WbNextData = JSON.parse(scriptEl.textContent);
+    const pageProps = json?.props?.pageProps;
+    
+    // 尝试多个可能的字段
+    const productData = pageProps?.product || pageProps?.goods || null;
+    
+    return { productData, rawData: json };
+  } catch (error) {
+    console.warn('[WB] Failed to parse __NEXT_DATA__:', error);
+    return { productData: null, rawData: null };
   }
 }
 
 /**
- * 提取当前价格
+ * 从 NextData 中提取图片数组
  */
-function extractCurrentPrice(): number {
-  try {
-    const selectors = [
-      '.product-page__price .price-block__final-price',
-      '.price-block__final-price',
-      '.product-price__price',
-      '[class*="final-price"]',
-      '.price-current',
-    ];
-    
-    for (const selector of selectors) {
-      const elements = safeQueryAll(selector);
-      if (elements.length > 0) {
-        const text = elements[0].textContent?.trim() || '';
-        const price = parseNumber(text);
-        if (price > 0) return price;
-      }
-    }
-    
-    return 0;
-  } catch {
-    return 0;
-  }
-}
-
-/**
- * 提取原价
- */
-function extractOriginalPrice(): number | undefined {
-  try {
-    const selectors = [
-      '.price-block__old-price',
-      '.product-price__old-price',
-      '[class*="old-price"]',
-      '.price-original',
-    ];
-    
-    for (const selector of selectors) {
-      const text = safeGetText(selector);
-      if (text) {
-        const price = parseNumber(text);
-        if (price > 0) return price;
-      }
-    }
-    
-    return undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-/**
- * 提取评分
- */
-function extractRating(): number {
-  try {
-    const selectors = [
-      '.product-page__rating .address-rate-mini',
-      '.address-rate-mini',
-      '.rating-value',
-      '[class*="rating"]',
-    ];
-    
-    for (const selector of selectors) {
-      const text = safeGetText(selector);
-      if (text) {
-        const rating = parseFloat(text.replace(',', '.'));
-        if (!isNaN(rating) && rating >= 0 && rating <= 5) {
-          return rating;
+function extractImagesFromNextData(productData: WbProductData | null): string[] {
+  if (!productData) return [];
+  
+  const images: string[] = [];
+  
+  // 尝试多个可能的图片字段
+  const possibleFields = [
+    productData.pics,
+    productData.photo,
+    productData.images,
+    productData.media?.photos,
+  ];
+  
+  for (const field of possibleFields) {
+    if (Array.isArray(field)) {
+      for (const img of field) {
+        if (typeof img === 'string') {
+          const normalized = normalizeImageUrl(img);
+          if (normalized && !images.includes(normalized)) {
+            images.push(normalized);
+          }
         }
       }
     }
-    
-    return 0;
-  } catch {
-    return 0;
   }
+  
+  return images;
+}
+
+// ============================================================================
+// DOM 提取（Fallback方案）
+// ============================================================================
+
+/**
+ * 从DOM提取商品名称
+ */
+function extractProductNameFromDOM(): string {
+  const selectors = [
+    'h1[data-link]',
+    '.product-page__header',
+    'h1.name',
+    '.product-name',
+    'h1[class*="product"]',
+    'h1',
+  ];
+  
+  for (const selector of selectors) {
+    const text = safeGetText(selector);
+    if (text && text.length > 2) return text;
+  }
+  
+  return '未知商品';
 }
 
 /**
- * 提取评论数
+ * 从DOM提取当前价格
  */
-function extractReviewCount(): number {
-  try {
-    // 查找包含"отзыв"的链接
-    const links = safeQueryAll('a');
-    for (const link of links) {
-      const text = link.textContent?.trim() || '';
-      if (text.toLowerCase().includes('отзыв') || text.includes('отзыв')) {
-        // 提取数字
-        const match = text.match(/(\d+)/);
-        if (match) {
-          return parseInt(match[1], 10);
-        }
+function extractCurrentPriceFromDOM(): number {
+  const selectors = [
+    '.product-page__price .price-block__final-price',
+    '.price-block__final-price',
+    '.product-price__price',
+    '[class*="final-price"]',
+    '.price-current',
+    '[class*="price"]',
+  ];
+  
+  for (const selector of selectors) {
+    const elements = safeQueryAll(selector);
+    if (elements.length > 0) {
+      const text = elements[0].textContent?.trim() || '';
+      const price = parseNumber(text);
+      if (price > 0) return price;
+    }
+  }
+  
+  return 0;
+}
+
+/**
+ * 从DOM提取原价
+ */
+function extractOriginalPriceFromDOM(): number | undefined {
+  const selectors = [
+    '.price-block__old-price',
+    '.product-price__old-price',
+    '[class*="old-price"]',
+    '.price-original',
+  ];
+  
+  for (const selector of selectors) {
+    const text = safeGetText(selector);
+    if (text) {
+      const price = parseNumber(text);
+      if (price > 0) return price;
+    }
+  }
+  
+  return undefined;
+}
+
+/**
+ * 从DOM提取评分
+ */
+function extractRatingFromDOM(): number {
+  const selectors = [
+    '.product-page__rating .address-rate-mini',
+    '.address-rate-mini',
+    '.rating-value',
+    '[class*="rating"]',
+  ];
+  
+  for (const selector of selectors) {
+    const text = safeGetText(selector);
+    if (text) {
+      const rating = parseFloat(text.replace(',', '.'));
+      if (!isNaN(rating) && rating >= 0 && rating <= 5) {
+        return rating;
       }
     }
-    
-    // 备用选择器
-    const selectors = [
-      '.product-page__rating-count',
-      '.reviews-count',
-      '[class*="review-count"]',
-    ];
-    
-    for (const selector of selectors) {
-      const text = safeGetText(selector);
-      if (text) {
-        const count = parseNumber(text);
-        if (count > 0) return count;
+  }
+  
+  return 0;
+}
+
+/**
+ * 从DOM提取评论数
+ */
+function extractReviewCountFromDOM(): number {
+  // 查找包含"отзыв"的链接
+  const links = safeQueryAll('a');
+  for (const link of links) {
+    const text = link.textContent?.trim() || '';
+    if (text.toLowerCase().includes('отзыв')) {
+      const match = text.match(/(\d+)/);
+      if (match) {
+        return parseInt(match[1], 10);
       }
     }
-    
-    return 0;
-  } catch {
-    return 0;
   }
+  
+  // 备用选择器
+  const selectors = [
+    '.product-page__rating-count',
+    '.reviews-count',
+    '[class*="review-count"]',
+  ];
+  
+  for (const selector of selectors) {
+    const text = safeGetText(selector);
+    if (text) {
+      const count = parseNumber(text);
+      if (count > 0) return count;
+    }
+  }
+  
+  return 0;
 }
 
 /**
- * 提取卖家名称
+ * 从DOM提取卖家名称
  */
-function extractSellerName(): string {
-  try {
-    const selectors = [
-      '.seller-info__name',
-      '.product-page__seller-name',
-      '[class*="seller-name"]',
-      '.brand-name',
-    ];
-    
-    for (const selector of selectors) {
-      const text = safeGetText(selector);
-      if (text) return text;
-    }
-    
-    return '未知卖家';
-  } catch {
-    return '未知卖家';
+function extractSellerNameFromDOM(): string {
+  const selectors = [
+    '.seller-info__name',
+    '.product-page__seller-name',
+    '[class*="seller-name"]',
+    '.brand-name',
+  ];
+  
+  for (const selector of selectors) {
+    const text = safeGetText(selector);
+    if (text) return text;
   }
+  
+  return '未知卖家';
 }
 
 /**
- * 提取分类
+ * 从DOM提取分类路径
  */
-function extractCategory(): string {
-  try {
-    // 面包屑导航
-    const breadcrumbLinks = safeQueryAll('.product-page__nav a');
-    if (breadcrumbLinks.length > 0) {
-      // 取最后一个
-      const last = breadcrumbLinks[breadcrumbLinks.length - 1];
-      const text = last.textContent?.trim();
-      if (text) return text;
+function extractCategoryFromDOM(): string {
+  // 面包屑导航
+  const breadcrumbLinks = safeQueryAll('.product-page__nav a, nav.breadcrumbs a, [class*="breadcrumb"] a');
+  if (breadcrumbLinks.length > 0) {
+    const parts = breadcrumbLinks
+      .map(el => el.textContent?.trim())
+      .filter(Boolean);
+    if (parts.length > 0) {
+      return parts.join(' / ');
     }
-    
-    // 备用选择器
-    const selectors = [
-      '.breadcrumb-item:last-child',
-      '[itemprop="name"]:last-child',
-    ];
-    
-    for (const selector of selectors) {
-      const text = safeGetText(selector);
-      if (text) return text;
-    }
-    
-    return '未分类';
-  } catch {
-    return '未分类';
   }
+  
+  // 取最后一个面包屑
+  const last = safeGetText('.breadcrumb-item:last-child, [itemprop="name"]:last-child');
+  if (last) return last;
+  
+  return '未分类';
 }
 
 /**
- * 提取商品图片URL
+ * 从DOM提取图片数组
  */
-function extractImageUrl(): string | undefined {
-  try {
-    const selectors = [
-      '.product-page__main-image img',
-      '.product-image img',
-      'img[class*="product"]',
-      '.gallery img',
-    ];
-    
-    for (const selector of selectors) {
-      const img = document.querySelector(selector) as HTMLImageElement;
-      if (img?.src) {
-        // 确保是完整URL
-        return img.src.startsWith('http') ? img.src : undefined;
+function extractImagesFromDOM(): string[] {
+  const images: string[] = [];
+  
+  const selectors = [
+    '.product-page__carousel img',
+    '.product-image img',
+    '[class*="swiper-slide"] img',
+    '.gallery img',
+    'img[class*="product"]',
+  ];
+  
+  for (const selector of selectors) {
+    const imgs = document.querySelectorAll(selector);
+    for (const img of imgs) {
+      const src = (img as HTMLImageElement).src;
+      const normalized = normalizeImageUrl(src);
+      if (normalized && !images.includes(normalized)) {
+        images.push(normalized);
       }
     }
-    
-    return undefined;
-  } catch {
-    return undefined;
+    if (images.length > 0) break;
   }
+  
+  return images;
 }
 
 /**
- * 提取销量（WB页面可能没有直接显示，尝试从描述中提取）
+ * 从DOM提取销量
  */
-function extractSalesVolume(): number {
+function extractSalesVolumeFromDOM(): number {
   try {
-    // 查找包含"купили"或"продаж"的元素
     const allText = document.body.innerText;
     
-    // 匹配 "Купили X раз" 或 "X продаж"
     const patterns = [
       /купили\s*(\d+)/i,
       /(\d+)\s*продаж/i,
       /продано\s*(\d+)/i,
+      /bought\s*(\d+)/i,
     ];
     
     for (const pattern of patterns) {
@@ -294,6 +406,10 @@ function extractSalesVolume(): number {
     return 0;
   }
 }
+
+// ============================================================================
+// 主提取函数
+// ============================================================================
 
 /**
  * 从URL提取商品ID
@@ -311,6 +427,10 @@ function extractProductIdFromUrl(): string | null {
 
 /**
  * 主提取函数：从 Wildberries 商品详情页提取商品数据
+ * 
+ * 提取策略：
+ * 1. 优先从 #__NEXT_DATA__ 提取（准确）
+ * 2. Fallback到DOM元素提取（兜底）
  */
 export function extractWbSignal(): MarketSignalPayload | null {
   // 1. 验证是否在WB页面
@@ -326,16 +446,77 @@ export function extractWbSignal(): MarketSignalPayload | null {
     return null;
   }
   
-  // 3. 提取各字段
-  const productName = extractProductName();
-  const currentPrice = extractCurrentPrice();
-  const originalPrice = extractOriginalPrice();
-  const rating = extractRating();
-  const reviewCount = extractReviewCount();
-  const sellerName = extractSellerName();
-  const category = extractCategory();
-  const imageUrl = extractImageUrl();
-  const salesVolume = extractSalesVolume();
+  // 3. 尝试从 __NEXT_DATA__ 提取（优先方案）
+  const { productData, rawData } = extractFromNextData();
+  
+  let productName: string;
+  let currentPrice: number;
+  let originalPrice: number | undefined;
+  let rating: number;
+  let reviewCount: number;
+  let sellerName: string;
+  let category: string;
+  let images: string[];
+  let salesVolume: number;
+  
+  if (productData) {
+    // 从 JSON 数据提取
+    productName = productData.name || productData.title || extractProductNameFromDOM();
+    
+    // WB 价格可能是戈比（需要除以100）
+    if (productData.priceU) {
+      currentPrice = Math.round(productData.priceU / 100);
+    } else if (productData.salePriceU) {
+      currentPrice = Math.round(productData.salePriceU / 100);
+    } else if (productData.sale) {
+      currentPrice = productData.sale;
+    } else if (productData.price) {
+      currentPrice = productData.price;
+    } else {
+      currentPrice = extractCurrentPriceFromDOM();
+    }
+    
+    if (productData.originalPriceU) {
+      originalPrice = Math.round(productData.originalPriceU / 100);
+    } else {
+      originalPrice = extractOriginalPriceFromDOM();
+    }
+    
+    rating = productData.rating ?? extractRatingFromDOM();
+    reviewCount = productData.feedbacks ?? productData.review_count ?? extractReviewCountFromDOM();
+    
+    // 卖家名称
+    if (typeof productData.seller === 'string') {
+      sellerName = productData.seller;
+    } else if (productData.seller?.name) {
+      sellerName = productData.seller.name;
+    } else {
+      sellerName = productData.brand || productData.brandName || extractSellerNameFromDOM();
+    }
+    
+    category = productData.categoryName || productData.category || extractCategoryFromDOM();
+    
+    // 图片
+    images = extractImagesFromNextData(productData);
+    if (images.length === 0) {
+      images = extractImagesFromDOM();
+    }
+    
+    salesVolume = extractSalesVolumeFromDOM();
+    
+  } else {
+    // Fallback到 DOM 提取
+    console.log('[WB] __NEXT_DATA__ not found, falling back to DOM extraction');
+    productName = extractProductNameFromDOM();
+    currentPrice = extractCurrentPriceFromDOM();
+    originalPrice = extractOriginalPriceFromDOM();
+    rating = extractRatingFromDOM();
+    reviewCount = extractReviewCountFromDOM();
+    sellerName = extractSellerNameFromDOM();
+    category = extractCategoryFromDOM();
+    images = extractImagesFromDOM();
+    salesVolume = extractSalesVolumeFromDOM();
+  }
   
   // 4. 组装返回对象
   const signal: MarketSignalPayload = {
@@ -350,14 +531,26 @@ export function extractWbSignal(): MarketSignalPayload | null {
     salesVolume,
     rating,
     reviewsCount: reviewCount,
-    imageUrl,
-    images: imageUrl ? [imageUrl] : [],
+    imageUrl: images[0] || undefined,
+    images,
     brandName: sellerName,
-    rawData: {
+    rawData: rawData ? { 
+      nextData: true,
+      sellerName,
+      extractedAt: new Date().toISOString(),
+    } : {
+      nextData: false,
       sellerName,
       extractedAt: new Date().toISOString(),
     },
   };
+  
+  console.log('[WB] Extracted signal:', {
+    productId,
+    productName,
+    price: currentPrice,
+    images: images.length,
+  });
   
   return signal;
 }
@@ -379,6 +572,76 @@ export function collectWbData(): { success: boolean; data?: MarketSignalPayload;
     };
   }
 }
+
+// ============================================================================
+// 消息监听器
+// ============================================================================
+
+/**
+ * 初始化消息监听
+ */
+function initMessageListener(): void {
+  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    console.log('[WB] Received message:', message.type);
+    
+    switch (message.type) {
+      case 'collect':
+      case 'COLLECT_SINGLE':
+      case 'COLLECT_WB': {
+        // 一键采集
+        const result = collectWbData();
+        sendResponse(result);
+        return true; // 保持消息通道开放
+      }
+      
+      case 'auto_collect':
+      case 'COLLECT_START': {
+        // 连续采集 - 直接发送给 Background
+        const signal = extractWbSignal();
+        if (signal) {
+          chrome.runtime.sendMessage({
+            type: 'push_signal',
+            data: signal,
+          }).catch(err => {
+            console.error('[WB] Failed to send push_signal:', err);
+          });
+          sendResponse({ success: true });
+        } else {
+          sendResponse({ success: false, error: 'Extraction failed' });
+        }
+        return true;
+      }
+      
+      default:
+        return false;
+    }
+  });
+}
+
+// ============================================================================
+// 初始化
+// ============================================================================
+
+/**
+ * 页面就绪通知
+ */
+function notifyPageReady(): void {
+  chrome.runtime.sendMessage({
+    type: 'page_ready',
+    platform: 'wb',
+    url: window.location.href,
+    productId: extractProductIdFromUrl(),
+  }).catch(err => {
+    // Background 可能未准备好，忽略错误
+    console.debug('[WB] Failed to notify page_ready:', err);
+  });
+}
+
+// 初始化
+initMessageListener();
+notifyPageReady();
+
+console.log('[WB] Content script loaded on:', window.location.href);
 
 // 默认导出
 export default {
