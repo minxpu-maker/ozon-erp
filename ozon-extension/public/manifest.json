@@ -6,6 +6,7 @@
   "permissions": ["activeTab", "storage", "contextMenus", "sidePanel"],
   "host_permissions": [
     "https://www.wildberries.ru/*",
+    "https://wildberries.ru/*",
     "https://ozon.ru/*",
     "https://www.ozon.ru/*",
     "https://292b3syh46.coze.site/*"
@@ -24,12 +25,19 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://www.wildberries.ru/catalog/*/detail.aspx"],
+      "matches": ["https://www.wildberries.ru/catalog/*/detail.aspx", "https://wildberries.ru/catalog/*/detail.aspx"],
       "js": ["src/content/platforms/wildberries.ts"],
       "run_at": "document_idle"
     },
     {
-      "matches": ["https://ozon.ru/product/*", "https://www.ozon.ru/product/*"],
+      "matches": [
+        "https://ozon.ru/product/*",
+        "https://www.ozon.ru/product/*",
+        "https://ozon.ru/search*",
+        "https://www.ozon.ru/search*",
+        "https://ozon.ru/category/*",
+        "https://www.ozon.ru/category/*"
+      ],
       "js": ["src/content/platforms/ozon.ts"],
       "run_at": "document_idle"
     }

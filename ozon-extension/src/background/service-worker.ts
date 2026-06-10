@@ -416,11 +416,122 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 // ============================================================================
+// 右键菜单
+// ============================================================================
+
+const CONTEXT_MENU_ID = 'collect-to-ozon';
+
+/**
+ * 注册右键菜单
+ */
+function registerContextMenu(): void {
+  // 移除已存在的菜单（避免重复注册）
+  chrome.contextMenus.removeAll(() => {
+    chrome.contextMenus.create({
+      id: CONTEXT_MENU_ID,
+      title: '采集到Ozon选品系统',
+      contexts: ['page', 'link', 'image'],
+      documentUrlPatterns: [
+        'https://www.wildberries.ru/*',
+        'https://wildberries.ru/*',
+        'https://ozon.ru/*',
+        'https://www.ozon.ru/*',
+      ],
+    }, () => {
+      if (chrome.runtime.lastError) {
+        console.error('[BG] Context menu creation failed:', chrome.runtime.lastError);
+      } else {
+        console.log('[BG] Context menu registered');
+      }
+    });
+  });
+}
+
+/**
+ * 处理右键菜单点击
+ */
+async function handleContextMenuClick(
+  _info: chrome.contextMenus.OnClickData,
+  tab: chrome.tabs.Tab | undefined
+): Promise<void> {
+  if (!tab?.id || !tab.url) {
+    console.warn('[BG] Context menu clicked but no tab info');
+    return;
+  }
+  
+  console.log('[BG] Context menu clicked on tab:', tab.id, tab.url);
+  
+  try {
+    // 向内容脚本发送采集消息
+    const response = await chrome.tabs.sendMessage(tab.id, {
+      type: MESSAGE_TYPES.COLLECT_SINGLE,
+      source: 'context_menu',
+    });
+    
+    if (!response?.success || !response?.data) {
+      console.warn('[BG] No data received from content script');
+      return;
+    }
+    
+    // 判断是单条还是批量
+    const isBatch = response.isBatch === true;
+    let signals: MarketSignalPayload[];
+    
+    if (isBatch && Array.isArray(response.data)) {
+      signals = response.data;
+    } else {
+      signals = [response.data];
+    }
+    
+    console.log('[BG] Context menu collected:', signals.length, 'signals');
+    
+    // 推送到后端
+    const result = await pushBatchToBackend(signals);
+    
+    // 创建采集记录
+    for (let i = 0; i < signals.length; i++) {
+      const signal = signals[i];
+      const signalResult = result.results?.[i];
+      
+      const record: CollectionRecord = {
+        id: `record_${Date.now()}_${Math.random().toString(36).slice(2, 9)}_${i}`,
+        platform: signal.sourceType,
+        productTitle: signal.productTitle,
+        price: signal.price ?? 0,
+        imageUrl: signal.imageUrl,
+        collectedAt: new Date().toISOString(),
+        pushStatus: result.ok && signalResult ? 'pushed' : 'failed',
+        signalId: signalResult?.signalId,
+        error: result.ok ? undefined : 'Push failed',
+      };
+      
+      addCollectionRecord(record);
+      
+      if (!result.ok) {
+        addToOfflineQueue(signal);
+      }
+    }
+    
+    // 显示通知
+    if (result.ok) {
+      console.log('[BG] Context menu push success:', signals.length, 'signals');
+    } else {
+      console.warn('[BG] Context menu push failed');
+    }
+  } catch (error) {
+    console.error('[BG] Context menu handling failed:', error);
+  }
+}
+
+// ============================================================================
 // 初始化
 // ============================================================================
 
 async function init(): Promise<void> {
   console.log('[BG] Initializing service worker');
+  
+  // 注册右键菜单
+  registerContextMenu();
   
   // 加载配置
   await loadConfig();
@@ -459,6 +570,11 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 chrome.runtime.onStartup.addListener(async () => {
   console.log('[BG] Extension started');
   await init();
+});
+
+// 监听右键菜单点击
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  handleContextMenuClick(info, tab);
 });
 
 // 初始化
