@@ -62,12 +62,14 @@ function App() {
     }
   };
 
-  // 平台识别
+  // 平台识别 - 必须与 manifest.json 中的 content_scripts 匹配规则一致
   const detectPlatform = (url: string): PlatformInfo | null => {
-    if (url.includes('wildberries.ru/catalog')) {
+    // WB 商品详情页: /catalog/数字/detail.aspx
+    if (/wildberries\.ru\/catalog\/\d+\/detail\.aspx/i.test(url)) {
       return { platform: 'wb', name: 'Wildberries' };
     }
-    if (url.includes('ozon.ru/product') || url.includes('ozon.ru/search') || url.includes('ozon.ru/category')) {
+    // Ozon 商品详情页或搜索页
+    if (/ozon\.ru\/(product|search|category)/i.test(url)) {
       return { platform: 'ozon_market', name: 'Ozon' };
     }
     return null;
