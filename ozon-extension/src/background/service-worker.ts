@@ -158,8 +158,13 @@ const MAX_OFFLINE_QUEUE_SIZE = 500;
 /**
  * 添加采集记录到历史
  */
-function addCollectionRecord(record: CollectionRecord): void {
-  collectionHistory.unshift(record);
+function addCollectionRecord(record: Omit<CollectionRecord, 'id' | 'collectedAt'>): void {
+  const fullRecord: CollectionRecord = {
+    ...record,
+    id: `col_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+    collectedAt: new Date().toISOString(),
+  };
+  collectionHistory.unshift(fullRecord);
   if (collectionHistory.length > MAX_HISTORY_SIZE) {
     collectionHistory = collectionHistory.slice(0, MAX_HISTORY_SIZE);
   }
@@ -188,6 +193,111 @@ function addToOfflineQueue(payload: MarketSignalPayload): string {
   chrome.storage.local.set({ [STORAGE_KEYS.OFFLINE_QUEUE]: offlineQueue }).catch(() => {});
   
   return item.id;
+}
+
+/**
+ * 刷新离线队列 - 尝试推送所有离线数据
+ * D-046: 网络恢复后自动把之前推送失败的数据重新推送
+ */
+async function flushOfflineQueue(): Promise<{ success: number; failed: number }> {
+  console.log('[BG] flushOfflineQueue called, queue size:', offlineQueue.length);
+  
+  // 没有配置，无法推送
+  if (!currentConfig) {
+    console.log('[BG] No config, cannot flush offline queue');
+    return { success: 0, failed: 0 };
+  }
+  
+  // 队列为空
+  if (offlineQueue.length === 0) {
+    console.log('[BG] Offline queue is empty');
+    return { success: 0, failed: 0 };
+  }
+  
+  // 确保 apiClient 已初始化
+  if (!apiClient) {
+    apiClient = createApiClient(currentConfig);
+  }
+  
+  let successCount = 0;
+  let failedCount = 0;
+  const remainingQueue: typeof offlineQueue = [];
+  
+  // 逐条推送队列中的请求
+  for (const item of offlineQueue) {
+    try {
+      console.log('[BG] Retrying offline item:', item.id);
+      
+      const response = await apiClient.pushSignals({
+        shopId: currentConfig.shopId,
+        signals: [item.payload],
+      });
+      
+      if (response.ok) {
+        successCount++;
+        console.log('[BG] Offline item pushed successfully:', item.id);
+        
+        // 添加到采集历史
+        addCollectionRecord({
+          platform: item.payload.sourceType,
+          productTitle: item.payload.productTitle,
+          price: item.payload.price,
+          imageUrl: item.payload.imageUrl,
+          pushStatus: 'pushed',
+          signalId: response.results?.[0]?.signalId,
+        });
+      } else {
+        // 推送失败（业务错误），保留到剩余队列
+        failedCount++;
+        item.retryCount++;
+        remainingQueue.push(item);
+        console.warn('[BG] Offline item push failed (business error):', item.id);
+        
+        // 如果是认证错误，停止后续推送
+        if (response.error?.includes('401') || response.error?.includes('403')) {
+          console.warn('[BG] Auth error, stopping flush');
+          // 把剩余的所有项都保留
+          const currentIndex = offlineQueue.indexOf(item);
+          remainingQueue.push(...offlineQueue.slice(currentIndex + 1).map(i => {
+            i.retryCount++;
+            return i;
+          }));
+          break;
+        }
+      }
+    } catch (error) {
+      // 网络错误，停止推送后续的（大概率也失败）
+      failedCount++;
+      item.retryCount++;
+      remainingQueue.push(item);
+      console.error('[BG] Offline item push failed (network error):', item.id, error);
+      
+      // 把剩余的所有项都保留
+      const currentIndex = offlineQueue.indexOf(item);
+      if (currentIndex < offlineQueue.length - 1) {
+        remainingQueue.push(...offlineQueue.slice(currentIndex + 1).map(i => {
+          i.retryCount++;
+          return i;
+        }));
+      }
+      break;
+    }
+  }
+  
+  // 更新离线队列
+  offlineQueue = remainingQueue;
+  await chrome.storage.local.set({ [STORAGE_KEYS.OFFLINE_QUEUE]: offlineQueue });
+  
+  console.log('[BG] flushOfflineQueue complete:', { success: successCount, failed: failedCount, remaining: offlineQueue.length });
+  
+  // 通知 popup 更新
+  chrome.runtime.sendMessage({
+    type: MESSAGE_TYPES.PUSH_RESULT,
+    success: true,
+    flushed: { success: successCount, failed: failedCount },
+  }).catch(() => {});
+  
+  return { success: successCount, failed: failedCount };
 }
 
 // ============================================================================
@@ -401,6 +511,22 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sendResponse({ received: true });
       return true;
       
+    case MESSAGE_TYPES.ONLINE:
+      // D-046: 网络恢复，尝试刷新离线队列
+      (async () => {
+        const result = await flushOfflineQueue();
+        sendResponse({ success: true, flushed: result });
+      })();
+      return true;
+      
+    case MESSAGE_TYPES.FLUSH_OFFLINE:
+      // 手动触发离线队列刷新
+      (async () => {
+        const result = await flushOfflineQueue();
+        sendResponse({ success: true, flushed: result });
+      })();
+      return true;
+      
     case MESSAGE_TYPES.PUSH_SIGNAL:
       handlePushSignal(message, sender).then(sendResponse);
       return true;
@@ -549,6 +675,17 @@ async function init(): Promise<void> {
     historyCount: collectionHistory.length,
     queueCount: offlineQueue.length,
   });
+  
+  // D-046: 启动时尝试刷新离线队列（处理上次关闭时残留的离线数据）
+  if (offlineQueue.length > 0) {
+    console.log('[BG] Attempting to flush offline queue on startup');
+    // 延迟一小段时间，等待网络就绪
+    setTimeout(() => {
+      flushOfflineQueue().catch(err => {
+        console.error('[BG] Failed to flush offline queue on startup:', err);
+      });
+    }, 2000);
+  }
 }
 
 // 监听扩展安装事件

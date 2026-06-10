@@ -180,6 +180,8 @@ export type MessageType =
   | 'PUSH_BATCH'          // 批量推送
   | 'PUSH_SIGNAL'         // 单条推送（来自content script）
   | 'PAGE_READY'          // 页面就绪通知
+  | 'ONLINE'              // 网络恢复通知
+  | 'FLUSH_OFFLINE'       // 刷新离线队列
   | 'GET_CONFIG'          // 获取配置
   | 'SET_CONFIG'          // 设置配置
   | 'GET_COLLECTIONS'     // 获取采集历史

@@ -145,6 +145,12 @@ export const MESSAGE_TYPES = {
   PUSH_SIGNAL: 'PUSH_SIGNAL',
   /** 页面就绪通知 */
   PAGE_READY: 'PAGE_READY',
+  /** 网络恢复通知 */
+  ONLINE: 'ONLINE',
+  /** 刷新离线队列 */
+  FLUSH_OFFLINE: 'FLUSH_OFFLINE',
+  /** 推送结果通知 */
+  PUSH_RESULT: 'PUSH_RESULT',
   /** 获取配置 */
   GET_CONFIG: 'GET_CONFIG',
   /** 设置配置 */
@@ -155,8 +161,6 @@ export const MESSAGE_TYPES = {
   CLEAR_COLLECTIONS: 'CLEAR_COLLECTIONS',
   /** 采集完成通知 */
   COLLECTION_COMPLETE: 'COLLECTION_COMPLETE',
-  /** 推送结果通知 */
-  PUSH_RESULT: 'PUSH_RESULT',
 } as const;
 
 /**
