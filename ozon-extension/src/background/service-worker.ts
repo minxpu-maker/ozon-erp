@@ -411,14 +411,17 @@ async function handleSetConfig(message: { config: ExtensionConfig }): Promise<{ 
  * 处理验证配置消息
  */
 async function handleValidateConfig(message: { 
-  erpBaseUrl: string; 
-  apiKey: string; 
-}): Promise<{ valid: boolean; error?: string }> {
+  type: string;
+  data?: { 
+    erpBaseUrl: string; 
+    apiKey: string; 
+  };
+}): Promise<{ success: boolean; error?: string }> {
   try {
-    const { erpBaseUrl, apiKey } = message;
+    const { erpBaseUrl, apiKey } = message.data || {};
     
     if (!erpBaseUrl || !apiKey) {
-      return { valid: false, error: '缺少必要参数' };
+      return { success: false, error: '缺少必要参数' };
     }
     
     // 创建临时 client 验证 API Key
@@ -430,10 +433,10 @@ async function handleValidateConfig(message: {
     });
     
     const isValid = await client.validateApiKey();
-    return { valid: isValid };
+    return { success: isValid };
   } catch (error) {
     return { 
-      valid: false, 
+      success: false, 
       error: error instanceof Error ? error.message : '验证失败' 
     };
   }
