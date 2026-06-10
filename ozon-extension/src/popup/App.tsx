@@ -107,9 +107,10 @@ function App() {
         const signals = response.isBatch ? data : [data];
         
         try {
+          // 发送 signals 数组，Service Worker 会处理
           const pushResponse = await chrome.runtime.sendMessage({
             type: MESSAGE_TYPES.PUSH_BATCH,
-            data: { signals },
+            signals,  // 直接传数组，不包装
           });
           
           if (pushResponse?.success) {
