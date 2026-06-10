@@ -38,7 +38,10 @@ export interface PlatformRule {
  */
 export const PLATFORM_RULES: PlatformRule[] = [
   {
-    pattern: /wildberries\.ru\/catalog\/\d+\/detail\.aspx/i,
+    // Wildberries 商品详情页格式: /catalog/{数字}/detail.aspx
+    // 例如: https://www.wildberries.ru/catalog/12345/detail.aspx
+    // 匹配域名: wildberries.ru 或 www.wildberries.ru 或任意子域名
+    pattern: /https?:\/\/(?:[\w-]+\.)?wildberries\.ru\/catalog\/\d+\/detail\.aspx/i,
     platform: 'wb',
     signalType: 'demand',
     name: 'Wildberries',
@@ -46,7 +49,10 @@ export const PLATFORM_RULES: PlatformRule[] = [
     color: '#D02B2E', // Wildberries 品牌红
   },
   {
-    pattern: /ozon\.ru\/product\//i,
+    // Ozon 商品详情页格式: /product/{slug}
+    // 例如: https://ozon.ru/product/pyjkhvki-123456/
+    // 匹配域名: ozon.ru 或 www.ozon.ru 或任意子域名
+    pattern: /https?:\/\/(?:[\w-]+\.)?ozon\.ru\/product\//i,
     platform: 'ozon_market',
     signalType: 'competition',
     name: 'Ozon',
