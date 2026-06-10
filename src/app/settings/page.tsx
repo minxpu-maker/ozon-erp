@@ -604,6 +604,8 @@ function MarketSignalsList() {
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [testing, setTesting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // 翻译相关状态
+  const [translatingIds, setTranslatingIds] = useState<Set<number>>(new Set());
   const pageSize = 20;
 
   useEffect(() => {
@@ -661,6 +663,43 @@ function MarketSignalsList() {
       }
     } catch (e) {
       console.error('加载统计失败:', e);
+    }
+  };
+
+  // 翻译处理函数
+  const handleTranslate = async (signalId: number, text: string, force: boolean = false) => {
+    try {
+      setTranslatingIds(prev => new Set(prev).add(signalId));
+      const res = await fetch('/api/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          signalId, 
+          text, 
+          from: 'ru', 
+          to: 'zh',
+          ...(force && { force: true })
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        // 更新本地状态
+        setSignals(prev => prev.map(s => 
+          s.id === signalId 
+            ? { ...s, productTitleZh: data.data.translatedText }
+            : s
+        ));
+      } else {
+        console.error('翻译失败:', data.error);
+      }
+    } catch (e) {
+      console.error('翻译请求失败:', e);
+    } finally {
+      setTranslatingIds(prev => {
+        const next = new Set(prev);
+        next.delete(signalId);
+        return next;
+      });
     }
   };
 
@@ -918,8 +957,37 @@ function MarketSignalsList() {
                           <History className="w-3 h-3 mr-1" />历史 #{signal.previousSignalId}
                         </span>
                       )}
+                      {/* 翻译状态标识 */}
+                      {signal.sourceType === 'ozon_market' && (
+                        signal.productTitleZh ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-blue-500/15 text-blue-600">
+                            <Languages className="w-3 h-3 mr-1" />已翻译
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-amber-500/15 text-amber-600">
+                            <Languages className="w-3 h-3 mr-1" />待翻译
+                          </span>
+                        )
+                      )}
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
+                      {/* 翻译按钮 - 仅ozon_market来源显示 */}
+                      {signal.sourceType === 'ozon_market' && signal.productTitle && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-6 px-2" 
+                          onClick={() => handleTranslate(signal.id, signal.productTitle, !!signal.productTitleZh)}
+                          disabled={translatingIds.has(signal.id)}
+                          title={signal.productTitleZh ? '重新翻译' : '翻译标题'}
+                        >
+                          {translatingIds.has(signal.id) ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <Languages className="w-3 h-3" />
+                          )}
+                        </Button>
+                      )}
                       <Button variant="ghost" size="sm" className="h-6 px-2" onClick={() => handleShowDetail(signal)}>
                         <Eye className="w-3 h-3" />
                       </Button>
