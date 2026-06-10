@@ -270,10 +270,12 @@ async function handlePushSignal(
  * 处理批量推送消息
  */
 async function handlePushBatch(
-  message: { signals: MarketSignalPayload[] }
+  message: { signals?: MarketSignalPayload[]; data?: MarketSignalPayload[] }
 ): Promise<BatchPushResponse> {
-  console.log('[BG] Batch push received:', message.signals.length, 'signals');
-  return pushBatchToBackend(message.signals);
+  // 支持两种消息格式：signals 或 data
+  const signals = message.signals || message.data || [];
+  console.log('[BG] Batch push received:', signals.length, 'signals');
+  return pushBatchToBackend(signals);
 }
 
 /**
