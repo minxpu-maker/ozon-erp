@@ -7,6 +7,12 @@ interface PlatformInfo {
   platform: 'wb' | 'ozon_market';
   name: string;
 }
+interface OfflineQueueItem {
+  id: string;
+  productTitle?: string;
+  queuedAt: string;
+  retryCount: number;
+}
 
 function App() {
   // 页面状态
@@ -19,11 +25,13 @@ function App() {
   // 数据状态
   const [previewData, setPreviewData] = useState<MarketSignalPayload | null>(null);
   const [history, setHistory] = useState<CollectionRecord[]>([]);
+  const [offlineQueue, setOfflineQueue] = useState<OfflineQueueItem[]>([]);
   const [config, setConfig] = useState<ExtensionConfig | null>(null);
   
   // 操作状态
   const [isCollecting, setIsCollecting] = useState(false);
   const [isContinuousActive, setIsContinuousActive] = useState(false);
+  const [isFlushing, setIsFlushing] = useState(false);
   const [message, setMessage] = useState<string>('');
   const [messageType, setMessageType] = useState<'success' | 'warning' | 'error' | 'info'>('info');
 
@@ -52,6 +60,12 @@ function App() {
       const historyData = await chrome.storage.local.get(STORAGE_KEYS.COLLECTIONS);
       if (historyData[STORAGE_KEYS.COLLECTIONS]) {
         setHistory(historyData[STORAGE_KEYS.COLLECTIONS].slice(0, 10));
+      }
+
+      // 加载离线队列
+      const offlineData = await chrome.storage.local.get(STORAGE_KEYS.OFFLINE_QUEUE);
+      if (offlineData[STORAGE_KEYS.OFFLINE_QUEUE]) {
+        setOfflineQueue(offlineData[STORAGE_KEYS.OFFLINE_QUEUE].slice(0, 10));
       }
 
       // 检查连续采集状态
@@ -170,6 +184,30 @@ function App() {
     }
   };
 
+  // 手动推送离线队列
+  const handleFlushOffline = async () => {
+    if (!config) {
+      showMessage('⚠️ 请先在设置中配置API Key', 'error');
+      return;
+    }
+
+    setIsFlushing(true);
+    try {
+      const response = await chrome.runtime.sendMessage({ type: MESSAGE_TYPES.FLUSH_OFFLINE });
+      if (response?.success) {
+        showMessage(`✅ 已推送 ${response.pushed || 0} 条离线数据`, 'success');
+        setOfflineQueue([]);
+      } else {
+        showMessage('⚠️ 推送失败: ' + (response?.error || '未知错误'), 'warning');
+      }
+    } catch (error) {
+      console.error('推送离线队列失败:', error);
+      showMessage('❌ 推送失败，请重试', 'error');
+    } finally {
+      setIsFlushing(false);
+    }
+  };
+
   // 截断文本
   const truncate = (text: string, maxLen: number): string => {
     if (!text) return '';
@@ -280,6 +318,25 @@ function App() {
             </div>
           )}
         </div>
+
+        {/* 离线队列 */}
+        {offlineQueue.length > 0 && (
+          <div style={styles.offlineSection}>
+            <div style={styles.offlineHeader}>
+              <span style={styles.offlineTitle}>📤 离线队列 ({offlineQueue.length}条)</span>
+              <button
+                style={{ ...styles.flushButton, ...(isFlushing ? styles.buttonDisabled : {}) }}
+                onClick={handleFlushOffline}
+                disabled={isFlushing}
+              >
+                {isFlushing ? '推送中...' : '立即推送'}
+              </button>
+            </div>
+            <div style={styles.offlineHint}>
+              后端不可达时自动暂存，恢复后点击推送
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 配置缺失提示 */}
@@ -612,6 +669,37 @@ const styles: Record<string, React.CSSProperties> = {
   historyItemInfo: {
     fontSize: 11,
     color: '#637089',
+  },
+  offlineSection: {
+    marginTop: 12,
+    padding: '10px 12px',
+    backgroundColor: '#fef3c7',
+    borderRadius: 8,
+    border: '1px solid #f59e0b',
+  },
+  offlineHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  offlineTitle: {
+    fontSize: 13,
+    fontWeight: 600,
+    color: '#92400e',
+  },
+  offlineHint: {
+    fontSize: 11,
+    color: '#b45309',
+  },
+  flushButton: {
+    padding: '4px 10px',
+    backgroundColor: '#f59e0b',
+    color: 'white',
+    border: 'none',
+    borderRadius: 4,
+    fontSize: 12,
+    cursor: 'pointer',
   },
   configWarning: {
     padding: '8px 16px',
