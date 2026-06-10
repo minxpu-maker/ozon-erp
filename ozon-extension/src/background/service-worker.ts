@@ -408,6 +408,38 @@ async function handleSetConfig(message: { config: ExtensionConfig }): Promise<{ 
 }
 
 /**
+ * 处理验证配置消息
+ */
+async function handleValidateConfig(message: { 
+  erpBaseUrl: string; 
+  apiKey: string; 
+}): Promise<{ valid: boolean; error?: string }> {
+  try {
+    const { erpBaseUrl, apiKey } = message;
+    
+    if (!erpBaseUrl || !apiKey) {
+      return { valid: false, error: '缺少必要参数' };
+    }
+    
+    // 创建临时 client 验证 API Key
+    const client = new ErpApiClient({
+      erpBaseUrl,
+      apiKey,
+      shopId: 'temp',
+      shopName: 'temp',
+    });
+    
+    const isValid = await client.validateApiKey();
+    return { valid: isValid };
+  } catch (error) {
+    return { 
+      valid: false, 
+      error: error instanceof Error ? error.message : '验证失败' 
+    };
+  }
+}
+
+/**
  * 处理获取采集历史消息
  */
 async function handleGetCollections(): Promise<{ collections: CollectionRecord[] }> {
@@ -500,6 +532,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       
     case MESSAGE_TYPES.CLEAR_COLLECTIONS:
       handleClearCollections().then(sendResponse);
+      return true;
+      
+    case MESSAGE_TYPES.VALIDATE_CONFIG:
+      handleValidateConfig(message).then(sendResponse);
       return true;
       
     case MESSAGE_TYPES.COLLECT_START:
