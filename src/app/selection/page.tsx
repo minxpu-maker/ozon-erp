@@ -269,6 +269,7 @@ export default function SelectionPage() {
   });
   const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null);
   const [addedSignalIds, setAddedSignalIds] = useState<Set<number>>(new Set());
+  const [selectedSignalForPopup, setSelectedSignalForPopup] = useState<MarketSignal | null>(null);
   
   // ============ Effects ============
   
@@ -532,18 +533,20 @@ export default function SelectionPage() {
       const priceNum = Number(signal.price || 0);
       const salesNum = Number(signal.salesVolume || 0);
       const sellerNum = Number(signal.sellerCount || 0);
+      const ratingNum = Number(signal.rating || 0);
       return {
         x: priceNum,
         y: signal.sourceType === 'wb' 
           ? salesNum 
-          : (100 - sellerNum), // Ozon: seller count inverse
+          : (100 - sellerNum), // Ozon: seller count inverse (fewer sellers = higher Y = better opportunity)
         z: signal.sourceType === 'wb' 
           ? (salesNum || 100) 
-          : (sellerNum || 100),
+          : (ratingNum * 20 || 100), // WB: bubble size by sales, Ozon: by rating (scale rating 0-5 to 0-100)
         id: signal.id,
         name: signal.productTitleZh || signal.productTitle,
         color,
         sourceType: signal.sourceType,
+        signal, // Include full signal data for popup
       };
     });
   }, [filteredSignals]);
@@ -1541,9 +1544,13 @@ export default function SelectionPage() {
                             return null;
                           }}
                         />
-                        <Scatter name="市场信号" data={signalScatterData}>
+                        <Scatter name="市场信号" data={signalScatterData} onClick={(data) => {
+                          if (data && data.payload) {
+                            setSelectedSignalForPopup(data.payload.signal);
+                          }
+                        }}>
                           {signalScatterData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
+                            <Cell key={`cell-${index}`} fill={entry.color} style={{ cursor: 'pointer' }} />
                           ))}
                         </Scatter>
                       </ScatterChart>
@@ -1553,6 +1560,73 @@ export default function SelectionPage() {
                     <div className="flex items-center gap-2"><div className="w-4 h-4 rounded-full bg-purple-500" /><span className="text-xs">WB需求信号</span></div>
                     <div className="flex items-center gap-2"><div className="w-4 h-4 rounded-full bg-blue-500" /><span className="text-xs">Ozon竞争信号</span></div>
                   </div>
+                  
+                  {/* 点击气泡弹出商品卡片详情 */}
+                  {selectedSignalForPopup && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setSelectedSignalForPopup(null)}>
+                      <div className="bg-white rounded-xl p-6 max-w-md shadow-xl" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex gap-4">
+                          <ProxiedImage
+                            src={selectedSignalForPopup.imageUrl}
+                            alt={selectedSignalForPopup.productTitleZh || selectedSignalForPopup.productTitle}
+                            className="w-24 h-24 rounded-lg object-cover shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-medium text-sm line-clamp-2 mb-2">
+                              {selectedSignalForPopup.productTitleZh || selectedSignalForPopup.productTitle}
+                            </h3>
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="text-lg font-semibold text-foreground">
+                                ₽{Number(selectedSignalForPopup.price || 0).toLocaleString()}
+                              </span>
+                              {selectedSignalForPopup.originalPrice && (
+                                <span className="text-sm text-muted-foreground line-through">
+                                  ₽{Number(selectedSignalForPopup.originalPrice || 0).toLocaleString()}
+                                </span>
+                              )}
+                            </div>
+                            <Badge className={selectedSignalForPopup.sourceType === 'wb' ? 'bg-purple-500' : 'bg-blue-500'}>
+                              {selectedSignalForPopup.sourceType === 'wb' ? 'WB需求' : 'Ozon竞争'}
+                            </Badge>
+                          </div>
+                        </div>
+                        <div className="mt-4 flex items-center gap-4 text-sm text-muted-foreground">
+                          {selectedSignalForPopup.sourceType === 'wb' ? (
+                            <>
+                              <span>★{Number(selectedSignalForPopup.rating || 0).toFixed(1)}</span>
+                              <span>销量{(Number(selectedSignalForPopup.salesVolume || 0)).toLocaleString()}</span>
+                              <span>{selectedSignalForPopup.reviewsCount}评</span>
+                            </>
+                          ) : (
+                            <>
+                              <span>{selectedSignalForPopup.sellerCount}家卖家</span>
+                              <span>★{Number(selectedSignalForPopup.rating || 0).toFixed(1)}</span>
+                            </>
+                          )}
+                        </div>
+                        {selectedSignalForPopup.brandName && (
+                          <div className="mt-2 text-xs text-muted-foreground">品牌: {selectedSignalForPopup.brandName}</div>
+                        )}
+                        <div className="mt-4 flex gap-2">
+                          <Button size="sm" className="bg-primary text-primary-foreground" onClick={() => {
+                            handleAddToSelection(selectedSignalForPopup.id);
+                            setSelectedSignalForPopup(null);
+                          }}>
+                            加入选品
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => {
+                            handleIgnoreSignal(selectedSignalForPopup.id);
+                            setSelectedSignalForPopup(null);
+                          }}>
+                            忽略
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => setSelectedSignalForPopup(null)}>
+                            关闭
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )
             )}
