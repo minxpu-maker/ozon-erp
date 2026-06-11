@@ -973,7 +973,7 @@ export default function SelectionPage() {
             )}
             {lastRefreshTime && (
               <span className="text-xs text-muted-foreground ml-auto">
-                最后刷新: {lastRefreshTime.toLocaleTimeString('zh-CN')}
+                最后刷新: {getRelativeTime(lastRefreshTime.toISOString())}
               </span>
             )}
           </div>
