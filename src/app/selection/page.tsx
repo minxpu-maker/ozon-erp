@@ -83,6 +83,8 @@ interface Opportunity {
   targetProductId: number | null;
   targetName: string;
   targetImage: string | null;
+  marketSignalId?: number;  // 关联的市场信号ID
+  signalSourceType?: 'wb' | 'ozon_market' | 'aliexpress' | '1688';  // 市场信号来源
   marketAnalysis: {
     priceRange: { min: number; max: number };
     sellerCount: number;
@@ -1051,9 +1053,18 @@ export default function SelectionPage() {
                             ) : (
                               <Package className="w-12 h-12 text-muted-foreground/30" />
                             )}
-                            <Badge variant="outline" className="absolute top-2 left-2 text-xs">
-                              {opp.source === 'ozon' ? 'Ozon' : opp.source === 'aliexpress' ? '速卖通' : '1688'}
-                            </Badge>
+                            {/* 来源标签 */}
+                            <div className="absolute top-2 left-2 flex flex-col gap-1">
+                              <Badge variant="outline" className="text-xs">
+                                {opp.source === 'ozon' ? 'Ozon' : opp.source === 'aliexpress' ? '速卖通' : '1688'}
+                              </Badge>
+                              {/* 市场信号来源标签 */}
+                              {opp.signalSourceType && (
+                                <Badge className={cn('text-xs', getSourceTypeColor(opp.signalSourceType))}>
+                                  {getSourceTypeLabel(opp.signalSourceType)}
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                           
                           <h3 className="font-medium text-sm mb-2 line-clamp-2">{opp.targetName}</h3>
@@ -1157,6 +1168,7 @@ export default function SelectionPage() {
                           />
                         </th>
                         <th className="p-3 text-left text-sm font-medium">商品</th>
+                        <th className="p-3 text-left text-sm font-medium">来源</th>
                         <th className="p-3 text-left text-sm font-medium">类目</th>
                         <th className="p-3 text-left text-sm font-medium">价格</th>
                         <th className="p-3 text-left text-sm font-medium">评分</th>
@@ -1189,6 +1201,18 @@ export default function SelectionPage() {
                                   <Package className="w-5 h-5 text-muted-foreground/50" />
                                 </div>
                                 <span className="text-sm line-clamp-1">{opp.targetName}</span>
+                              </div>
+                            </td>
+                            <td className="p-3">
+                              <div className="flex flex-col gap-1">
+                                <Badge variant="outline" className="text-xs">
+                                  {opp.source === 'ozon' ? 'Ozon' : opp.source === 'aliexpress' ? '速卖通' : '1688'}
+                                </Badge>
+                                {opp.signalSourceType && (
+                                  <Badge className={cn('text-xs', getSourceTypeColor(opp.signalSourceType))}>
+                                    {getSourceTypeLabel(opp.signalSourceType)}
+                                  </Badge>
+                                )}
                               </div>
                             </td>
                             <td className="p-3 text-sm text-muted-foreground">{opp.targetCategoryName || '-'}</td>

@@ -723,6 +723,10 @@ export const opportunities = pgTable('opportunities', {
   targetCategoryId: integer('target_category_id'),
   targetProductId: integer('target_product_id'),
   targetName: varchar('target_name', { length: 500 }),
+  targetImage: varchar('target_image', { length: 1000 }),
+  
+  // 关联市场信号
+  marketSignalId: integer('market_signal_id').references(() => marketSignals.id),
 
   // 市场分析概要
   marketAnalysis: jsonb('market_analysis'),

@@ -36,26 +36,32 @@ export async function GET(request: NextRequest) {
 
     const total = Number(totalResult[0]?.count || 0);
 
-    // 获取关联的市场信号图片
-    const productIds = items
-      .filter(item => item.targetProductId)
-      .map(item => String(item.targetProductId));
+    // 获取关联的市场信号图片和数据
+    const signalIds = items
+      .filter(item => item.marketSignalId)
+      .map(item => item.marketSignalId);
     
-    let signalImages: Record<string, string> = {};
-    if (productIds.length > 0) {
+    let signalImages: Record<number, { imageUrl: string; sourceType: string }> = {};
+    // 过滤掉null值
+    const validSignalIds = signalIds.filter((id): id is number => id !== null);
+    
+    if (validSignalIds.length > 0) {
       try {
         const signals = await db.select({
-          productId: schema.marketSignals.productId,
+          id: schema.marketSignals.id,
           imageUrl: schema.marketSignals.imageUrl,
+          sourceType: schema.marketSignals.sourceType,
         })
           .from(schema.marketSignals)
-          .where(inArray(schema.marketSignals.productId, productIds))
-          .orderBy(desc(schema.marketSignals.collectedAt));
+          .where(inArray(schema.marketSignals.id, validSignalIds));
         
-        // 取每个 productId 最新的图片
+        // 建立信号ID到图片的映射
         signals.forEach(signal => {
-          if (signal.productId && signal.imageUrl && !signalImages[signal.productId]) {
-            signalImages[signal.productId] = signal.imageUrl;
+          if (signal.imageUrl) {
+            signalImages[signal.id] = {
+              imageUrl: signal.imageUrl,
+              sourceType: signal.sourceType,
+            };
           }
         });
       } catch (err) {
@@ -63,10 +69,11 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // 将图片添加到返回数据
+    // 将图片和来源信息添加到返回数据
     const itemsWithImages = items.map(item => ({
       ...item,
-      targetImage: item.targetProductId ? signalImages[String(item.targetProductId)] || null : null
+      targetImage: item.targetImage || (item.marketSignalId ? signalImages[item.marketSignalId]?.imageUrl : null),
+      signalSourceType: item.marketSignalId ? signalImages[item.marketSignalId]?.sourceType : null
     }));
 
     return NextResponse.json({
@@ -95,21 +102,28 @@ export async function POST(request: NextRequest) {
     const {
       shopId,
       mode,
+      selectionMode,  // 支持两种参数名
       targetCategoryId,
       targetProductId,
       targetName,
+      targetImage,
       source,
       targetType,
+      marketSignalId,  // 新增：关联市场信号
       marketAnalysis,
       profitEstimate,
       riskFlags,
       assignedTo,
-      notes
+      notes,
+      status  // 新增：支持自定义状态
     } = body;
 
-    if (!shopId || !mode) {
+    // 支持两种参数名：mode 或 selectionMode
+    const finalMode = mode || selectionMode;
+
+    if (!shopId || !finalMode) {
       return NextResponse.json(
-        { success: false, error: '缺少必填字段: shopId, mode' },
+        { success: false, error: '缺少必填字段: shopId, selectionMode' },
         { status: 400 }
       );
     }
@@ -118,15 +132,17 @@ export async function POST(request: NextRequest) {
       .values({
         shopId,
         source: source || 'manual',
-        selectionMode: mode,
-        targetType: targetType || 'category',
+        selectionMode: finalMode,
+        targetType: targetType || 'product',
         targetCategoryId: targetCategoryId ? parseInt(targetCategoryId) : null,
         targetProductId: targetProductId ? parseInt(targetProductId) : null,
         targetName: targetName || null,
+        targetImage: targetImage || null,
+        marketSignalId: marketSignalId || null,
         marketAnalysis: marketAnalysis || null,
         profitEstimate: profitEstimate || null,
         riskFlags: riskFlags || null,
-        status: 'discovered',
+        status: status || 'discovered',
         assignedTo: assignedTo || null,
         notes: notes || null,
         createdAt: new Date(),

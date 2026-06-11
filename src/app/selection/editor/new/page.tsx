@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 
-export default function NewProductCardPage() {
+function NewProductCardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const opportunityId = searchParams.get('opportunityId');
@@ -75,27 +75,42 @@ export default function NewProductCardPage() {
   }, [opportunityId, router]);
 
   return (
-    <AppLayout title="新建商品卡" subtitle="正在初始化...">
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center">
-          {creating ? (
-            <>
-              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
-              <p className="text-muted-foreground">正在创建草稿...</p>
-            </>
-          ) : error ? (
-            <>
-              <p className="text-red-500 mb-4">{error}</p>
-              <p className="text-sm text-muted-foreground">正在跳转到编辑器...</p>
-            </>
-          ) : (
-            <>
-              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
-              <p className="text-muted-foreground">正在初始化编辑器...</p>
-            </>
-          )}
-        </div>
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="text-center">
+        {creating ? (
+          <>
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
+            <p className="text-muted-foreground">正在创建草稿...</p>
+          </>
+        ) : error ? (
+          <>
+            <p className="text-red-500 mb-4">{error}</p>
+            <p className="text-sm text-muted-foreground">正在跳转到编辑器...</p>
+          </>
+        ) : (
+          <>
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
+            <p className="text-muted-foreground">正在初始化编辑器...</p>
+          </>
+        )}
       </div>
+    </div>
+  );
+}
+
+export default function NewProductCardPage() {
+  return (
+    <AppLayout title="新建商品卡" subtitle="正在初始化...">
+      <Suspense fallback={
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
+            <p className="text-muted-foreground">正在初始化编辑器...</p>
+          </div>
+        </div>
+      }>
+        <NewProductCardContent />
+      </Suspense>
     </AppLayout>
   );
 }
