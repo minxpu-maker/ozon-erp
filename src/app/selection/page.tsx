@@ -529,14 +529,17 @@ export default function SelectionPage() {
   const signalScatterData = useMemo(() => {
     return filteredSignals.map(signal => {
       const color = signal.sourceType === 'wb' ? '#9333ea' : '#3b82f6';
+      const priceNum = Number(signal.price || 0);
+      const salesNum = Number(signal.salesVolume || 0);
+      const sellerNum = Number(signal.sellerCount || 0);
       return {
-        x: signal.price || 0,
+        x: priceNum,
         y: signal.sourceType === 'wb' 
-          ? (signal.salesVolume || 0) 
-          : (100 - (signal.sellerCount || 0)), // Ozon: seller count inverse
+          ? salesNum 
+          : (100 - sellerNum), // Ozon: seller count inverse
         z: signal.sourceType === 'wb' 
-          ? (signal.salesVolume || 100) 
-          : (signal.sellerCount || 100),
+          ? (salesNum || 100) 
+          : (sellerNum || 100),
         id: signal.id,
         name: signal.productTitleZh || signal.productTitle,
         color,
@@ -1344,10 +1347,10 @@ export default function SelectionPage() {
                         
                         {/* Price */}
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="text-lg font-semibold">₽{signal.price?.toLocaleString() || '-'}</span>
-                          {signal.originalPrice && signal.originalPrice > (signal.price || 0) && (
+                          <span className="text-lg font-semibold">₽{Number(signal.price || 0).toLocaleString()}</span>
+                          {signal.originalPrice && Number(signal.originalPrice) > Number(signal.price || 0) && (
                             <span className="text-sm text-muted-foreground line-through">
-                              ₽{signal.originalPrice.toLocaleString()}
+                              ₽{Number(signal.originalPrice).toLocaleString()}
                             </span>
                           )}
                         </div>
@@ -1355,9 +1358,9 @@ export default function SelectionPage() {
                         {/* Data Row */}
                         <div className="text-xs text-muted-foreground mb-2">
                           {signal.sourceType === 'wb' ? (
-                            <span>★{signal.rating?.toFixed(1) || '-'} | 销量{signal.salesVolume?.toLocaleString() || '-'} | {signal.reviewsCount?.toLocaleString() || '-'}评</span>
+                            <span>★{Number(signal.rating || 0).toFixed(1)} | 销量{Number(signal.salesVolume || 0).toLocaleString()} | {Number(signal.reviewsCount || 0).toLocaleString()}评</span>
                           ) : (
-                            <span>{signal.sellerCount || '-'}家卖家 | ★{signal.rating?.toFixed(1) || '-'}</span>
+                            <span>{signal.sellerCount || '-'}家卖家 | ★{Number(signal.rating || 0).toFixed(1)}</span>
                           )}
                         </div>
                         
@@ -1450,19 +1453,19 @@ export default function SelectionPage() {
                           </td>
                           <td className="p-3">
                             <div className="flex items-center gap-1">
-                              <span className="text-sm font-medium">₽{signal.price?.toLocaleString() || '-'}</span>
-                              {signal.originalPrice && signal.originalPrice > (signal.price || 0) && (
+                              <span className="text-sm font-medium">₽{Number(signal.price || 0).toLocaleString()}</span>
+                              {signal.originalPrice && Number(signal.originalPrice) > Number(signal.price || 0) && (
                                 <span className="text-xs text-muted-foreground line-through">
-                                  ₽{signal.originalPrice.toLocaleString()}
+                                  ₽{Number(signal.originalPrice).toLocaleString()}
                                 </span>
                               )}
                             </div>
                           </td>
                           <td className="p-3 text-xs text-muted-foreground">
                             {signal.sourceType === 'wb' ? (
-                              <span>★{signal.rating?.toFixed(1) || '-'} | 销量{signal.salesVolume?.toLocaleString() || '-'}</span>
+                              <span>★{Number(signal.rating || 0).toFixed(1)} | 销量{Number(signal.salesVolume || 0).toLocaleString()}</span>
                             ) : (
-                              <span>{signal.sellerCount || '-'}家卖家 | ★{signal.rating?.toFixed(1) || '-'}</span>
+                              <span>{signal.sellerCount || '-'}家卖家 | ★{Number(signal.rating || 0).toFixed(1)}</span>
                             )}
                           </td>
                           <td className="p-3 text-sm text-muted-foreground">{signal.brandName || '-'}</td>
