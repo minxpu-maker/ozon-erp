@@ -74,7 +74,7 @@ export async function authenticateExtension(
     if (!apiKey.startsWith(EXTENSION_KEY_PREFIX)) {
       return {
         success: false,
-        error: 'Invalid API key format. Key must start with ozon_ext_',
+        error: `Invalid API key prefix. Expected: ${EXTENSION_KEY_PREFIX}_, Got: ${apiKey.substring(0, 15)}`,
         status: 401,
       };
     }
@@ -83,7 +83,7 @@ export async function authenticateExtension(
     if (apiKey.length < 70) {
       return {
         success: false,
-        error: 'Invalid API key: key too short',
+        error: `Invalid API key length. Expected: >=70, Got: ${apiKey.length}`,
         status: 401,
       };
     }

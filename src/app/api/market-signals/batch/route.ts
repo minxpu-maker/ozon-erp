@@ -63,6 +63,14 @@ interface ProcessResult {
 }
 
 // ============================================================================
+// 调试日志（生产环境应移除）
+// ============================================================================
+function debugLog(...args: unknown[]) {
+  const timestamp = new Date().toISOString();
+  console.log(`[BATCH DEBUG ${timestamp}]`, ...args);
+}
+
+// ============================================================================
 // 核心函数
 // ============================================================================
 
@@ -358,11 +366,18 @@ async function processSignal(
  * 批量推送市场信号
  */
 export async function POST(request: NextRequest) {
+  // 记录原始请求信息用于调试
+  const authHeader = request.headers.get('Authorization');
+  debugLog('Request received');
+  debugLog('Auth header:', authHeader ? `Bearer ${authHeader.substring(0, 20)}...` : 'MISSING');
+  
   try {
     // 1. 鉴权验证
     const authResult = await authenticateExtension(request);
+    debugLog('Auth result:', authResult);
     
     if (!authResult.success) {
+      debugLog('Auth failed:', authResult.error);
       return createAuthErrorResponse(authResult);
     }
     
