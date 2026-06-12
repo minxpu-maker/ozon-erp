@@ -1,6 +1,6 @@
 {
   "name": "ozon-extension",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "Ozon智能选品助手 - 一键采集WB和Ozon商品数据",
   "type": "module",
   "scripts": {

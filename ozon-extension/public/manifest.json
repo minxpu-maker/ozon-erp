@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Ozon智能选品助手",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "一键采集WB和Ozon商品数据，同步到Ozon AI选品系统",
   "permissions": ["activeTab", "storage", "contextMenus", "sidePanel"],
   "host_permissions": [

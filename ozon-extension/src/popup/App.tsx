@@ -131,7 +131,7 @@ function App() {
             signals,  // 直接传数组，不包装
           });
           
-          if (pushResponse?.success) {
+          if (pushResponse?.ok) {
             const count = response.isBatch ? signals.length : 1;
             showMessage(`✅ 采集成功，已推送${count}条数据到ERP`, 'success');
           } else {
