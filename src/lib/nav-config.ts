@@ -23,6 +23,7 @@ import {
   Store,
   CreditCard,
   LucideIcon,
+  Key,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -59,6 +60,7 @@ export const NAV_CONFIG: Omit<NavItem, 'active'>[] = [
   { href: '/accounts', icon: UserCircle, label: '账号管理' },
   { href: '/roles', icon: Shield, label: '角色权限' },
   { href: '/settings', icon: Settings, label: '系统设置' },
+  { href: '/settings/extension-settings', icon: Key, label: '插件设置' },
 ];
 
 // 生成带 active 状态的导航项
@@ -97,4 +99,5 @@ export {
   Settings,
   Store,
   CreditCard,
+  Key,
 };

@@ -324,22 +324,141 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // 执行软删除（设置 isActive = false）
+    // 执行硬删除（从数据库删除）
     await db
-      .update(extensionApiKeys)
-      .set({ isActive: false })
+      .delete(extensionApiKeys)
       .where(eq(extensionApiKeys.id, parseInt(keyId)));
 
     return NextResponse.json({
       success: true,
-      message: 'API key has been disabled',
+      message: 'API key has been deleted',
     });
   } catch (error) {
     console.error('[Extension API Keys] Delete error:', error);
     return NextResponse.json(
       {
         success: false,
-        error: 'Failed to disable API key',
+        error: 'Failed to delete API key',
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * PATCH /api/extension-api-keys?id=xxx&shopId=xxx
+ * 更新API Key状态（启用/禁用）
+ * 
+ * Body: { status: 'active' | 'disabled' }
+ */
+export async function PATCH(request: NextRequest) {
+  try {
+    // 验证操作者身份
+    const operator = getOperatorInfo(request);
+    if (!operator) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Unauthorized: Missing operator identification',
+        },
+        { status: 401 }
+      );
+    }
+
+    const { searchParams } = new URL(request.url);
+    const keyId = searchParams.get('id');
+    const shopId = searchParams.get('shopId');
+
+    if (!keyId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Missing required parameter: id',
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!shopId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Missing required parameter: shopId (required for authorization)',
+        },
+        { status: 400 }
+      );
+    }
+
+    // 解析请求体
+    const body = await request.json();
+    const { status } = body;
+
+    if (!status || !['active', 'disabled'].includes(status)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid status value. Must be "active" or "disabled"',
+        },
+        { status: 400 }
+      );
+    }
+
+    // 先验证该 Key 确实属于该 shop（防止越权操作）
+    const keyRecords = await db
+      .select({ id: extensionApiKeys.id, shopId: extensionApiKeys.shopId })
+      .from(extensionApiKeys)
+      .where(eq(extensionApiKeys.id, parseInt(keyId)))
+      .limit(1);
+
+    if (keyRecords.length === 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'API key not found',
+        },
+        { status: 404 }
+      );
+    }
+
+    if (keyRecords[0].shopId !== shopId) {
+      // 记录越权尝试
+      console.warn('[Security] Unauthorized key modification attempt:', {
+        keyId,
+        requestedShopId: shopId,
+        actualShopId: keyRecords[0].shopId,
+        operator: operator.operatorId,
+      });
+      
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Forbidden: You do not have permission to modify this key',
+        },
+        { status: 403 }
+      );
+    }
+
+    // 更新状态
+    const newIsActive = status === 'active';
+    await db
+      .update(extensionApiKeys)
+      .set({ isActive: newIsActive })
+      .where(eq(extensionApiKeys.id, parseInt(keyId)));
+
+    return NextResponse.json({
+      success: true,
+      message: `API key has been ${status === 'active' ? 'enabled' : 'disabled'}`,
+      data: {
+        id: parseInt(keyId),
+        status: status,
+      },
+    });
+  } catch (error) {
+    console.error('[Extension API Keys] Patch error:', error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Failed to update API key status',
       },
       { status: 500 }
     );
