@@ -20,6 +20,7 @@ const ALLOWED_DOMAINS = [
   'wbbasket.ru',
   'ozon.ru',
   'ozon-cdn.ru',
+  'ozonstatic.cn',
   '1688.com',
   'alicdn.com',
   'aliexpress.ru',
@@ -175,7 +176,17 @@ async function fetchImage(imageUrl: string): Promise<{
   try {
     // 解析 URL 获取 origin（用于 Referer）
     const urlObj = new URL(imageUrl);
-    const referer = `${urlObj.origin}/`;
+    const cdnHost = urlObj.hostname;
+    
+    // 根据不同CDN设置正确的Referer
+    let referer = `${urlObj.origin}/`;
+    if (cdnHost.includes('ozonstatic.cn')) {
+      // Ozon CDN 需要从 ozon.ru 主站发起的请求
+      referer = 'https://www.ozon.ru/';
+    } else if (cdnHost.includes('wildberries.ru') || cdnHost.includes('wbxmedia')) {
+      // Wildberries CDN
+      referer = 'https://www.wildberries.ru/';
+    }
     
     // 创建超时信号
     const controller = new AbortController();
@@ -186,6 +197,8 @@ async function fetchImage(imageUrl: string): Promise<{
       headers: {
         'User-Agent': BROWSER_USER_AGENT,
         'Referer': referer,
+        'Origin': referer,
+        'Accept-Language': 'ru-RU,ru;q=0.9,en;q=0.8',
         'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
       },
       signal: controller.signal,
