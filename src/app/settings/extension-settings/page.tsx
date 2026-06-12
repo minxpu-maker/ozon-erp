@@ -34,7 +34,7 @@ import {
   DialogFooter,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { toast } from 'sonner';
+import { toast, Toaster } from 'sonner';
 
 interface ApiKey {
   id: number;
@@ -70,7 +70,7 @@ export default function ExtensionSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // 使用说明折叠状态
+  // 使用说明折叠状态：首次展开，配置过后（有Key）默认折叠
   const [helpExpanded, setHelpExpanded] = useState(true);
   
   // 创建Key弹窗
@@ -95,6 +95,13 @@ export default function ExtensionSettingsPage() {
     loadKeys();
     loadShops();
   }, []);
+
+  // 配置过后（有Key）自动折叠使用说明
+  useEffect(() => {
+    if (keys.length > 0 && helpExpanded) {
+      setHelpExpanded(false);
+    }
+  }, [keys.length]);
 
   const loadShops = async () => {
     try {
@@ -235,6 +242,7 @@ export default function ExtensionSettingsPage() {
 
   return (
     <div className="min-h-screen bg-background p-6">
+      <Toaster position="top-center" richColors />
       {/* Page Header */}
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-2">
@@ -357,7 +365,9 @@ export default function ExtensionSettingsPage() {
                 {keys.map((key) => (
                   <tr key={key.id} className={`border-b border-border/30 ${!key.isActive ? 'opacity-60' : ''}`}>
                     <td className="px-4 py-3">
-                      <code className="text-sm font-mono text-foreground">{key.keyPrefix}...</code>
+                      <code className="text-sm font-mono text-foreground">
+                        {key.keyPrefix}_****{key.id.toString().padStart(4, '0').slice(-4)}
+                      </code>
                     </td>
                     <td className="px-4 py-3 text-sm text-foreground">{key.shopName || key.shopId}</td>
                     <td className="px-4 py-3 text-sm text-muted-foreground">
