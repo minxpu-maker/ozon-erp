@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { toast, Toaster } from 'sonner';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -270,6 +271,12 @@ export default function SelectionPage() {
   const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null);
   const [addedSignalIds, setAddedSignalIds] = useState<Set<number>>(new Set());
   const [selectedSignalForPopup, setSelectedSignalForPopup] = useState<MarketSignal | null>(null);
+  
+  // Batch selection states
+  const [selectedSignalIds, setSelectedSignalIds] = useState<Set<number>>(new Set());
+  const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
+  const [isBatchOperating, setIsBatchOperating] = useState(false);
+  const [ignoredSignalIds, setIgnoredSignalIds] = useState<Set<number>>(new Set());
   
   // ============ Effects ============
   
@@ -724,14 +731,125 @@ export default function SelectionPage() {
         setSignals(prev => prev.map(s => 
           s.id === signalId ? { ...s, isAdded: true } : s
         ));
+        toast.success('已加入选品', {
+          description: signal.productTitleZh || signal.productTitle,
+        });
+      } else {
+        toast.error('加入选品失败', {
+          description: result.error || '请稍后重试',
+        });
       }
     } catch (error) {
       console.error('Failed to add to selection:', error);
+      toast.error('加入选品失败', {
+        description: '网络错误，请稍后重试',
+      });
     }
   };
   
   const handleIgnoreSignal = (signalId: number) => {
+    // Add to ignored set and remove from display
+    setIgnoredSignalIds(prev => new Set([...prev, signalId]));
     setSignals(prev => prev.filter(s => s.id !== signalId));
+    setSelectedSignalIds(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(signalId);
+      return newSet;
+    });
+    toast.success('已忽略该信号');
+  };
+  
+  // Batch operations
+  const handleBatchAddToSelection = async () => {
+    if (selectedSignalIds.size === 0) return;
+    setIsBatchOperating(true);
+    
+    const signalIds = Array.from(selectedSignalIds);
+    let successCount = 0;
+    let failCount = 0;
+    
+    for (const signalId of signalIds) {
+      const signal = signals.find(s => s.id === signalId);
+      if (!signal || addedSignalIds.has(signalId)) continue;
+      
+      try {
+        const response = await fetch('/api/selection/opportunities', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            shopId,
+            source: 'system_recommend',
+            selectionMode: mode,
+            targetType: 'product',
+            marketSignalId: signalId,
+            status: 'suggested',
+            targetName: signal.productTitleZh || signal.productTitle,
+            targetImage: signal.imageUrl,
+          }),
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+          successCount++;
+          setAddedSignalIds(prev => new Set([...prev, signalId]));
+          setSignals(prev => prev.map(s => 
+            s.id === signalId ? { ...s, isAdded: true } : s
+          ));
+        } else {
+          failCount++;
+        }
+      } catch (error) {
+        failCount++;
+      }
+    }
+    
+    setIsBatchOperating(false);
+    setSelectedSignalIds(new Set());
+    setIsMultiSelectMode(false);
+    
+    if (successCount > 0) {
+      toast.success(`已加入${successCount}个选品`);
+    }
+    if (failCount > 0) {
+      toast.error(`${failCount}个加入失败`);
+    }
+  };
+  
+  const handleBatchIgnore = () => {
+    if (selectedSignalIds.size === 0) return;
+    
+    const count = selectedSignalIds.size;
+    setIgnoredSignalIds(prev => new Set([...prev, ...Array.from(selectedSignalIds)]));
+    setSignals(prev => prev.filter(s => !selectedSignalIds.has(s.id)));
+    setSelectedSignalIds(new Set());
+    setIsMultiSelectMode(false);
+    toast.success(`已忽略${count}个信号`);
+  };
+  
+  const toggleSignalSelection = (signalId: number) => {
+    setSelectedSignalIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(signalId)) {
+        newSet.delete(signalId);
+      } else {
+        newSet.add(signalId);
+      }
+      return newSet;
+    });
+  };
+  
+  const toggleAllSignalSelection = () => {
+    const displayedSignals = signals.filter(s => !ignoredSignalIds.has(s.id));
+    if (selectedSignalIds.size === displayedSignals.length) {
+      setSelectedSignalIds(new Set());
+    } else {
+      setSelectedSignalIds(new Set(displayedSignals.map(s => s.id)));
+    }
+  };
+  
+  const exitMultiSelectMode = () => {
+    setIsMultiSelectMode(false);
+    setSelectedSignalIds(new Set());
   };
   
   // Selection handlers
@@ -1321,27 +1439,95 @@ export default function SelectionPage() {
                 </div>
               ) : viewMode === 'card' ? (
                 /* Signals Card View */
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {filteredSignals.map(signal => (
-                    <Card key={signal.id} className="transition-all hover:shadow-lg bg-white">
-                      <CardContent className="p-4">
-                        {/* Image */}
-                        <div className="aspect-square bg-muted rounded-lg mb-3 flex items-center justify-center relative overflow-hidden">
-                          {signal.imageUrl ? (
-                            <ProxiedImage
-                              src={signal.imageUrl}
-                              alt={signal.productTitleZh || signal.productTitle}
-                              className="w-full h-full object-cover"
-                              iconSize="lg"
-                            />
-                          ) : (
-                            <Package className="w-12 h-12 text-muted-foreground/30" />
+                <>
+                  {/* Batch operation bar for multi-select mode */}
+                  {isMultiSelectMode && selectedSignalIds.size > 0 && (
+                    <div className="sticky top-0 z-10 bg-[#2F6BFF] text-white px-4 py-2 rounded-lg mb-4 flex items-center justify-between">
+                      <span>已选 {selectedSignalIds.size} 项</span>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={handleBatchAddToSelection}
+                          disabled={isBatchOperating}
+                        >
+                          {isBatchOperating ? '处理中...' : '批量加入选品'}
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={handleBatchIgnore}
+                          className="bg-white/20 hover:bg-white/30"
+                        >
+                          批量忽略
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={exitMultiSelectMode}
+                          className="text-white hover:bg-white/20"
+                        >
+                          取消
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {filteredSignals.map(signal => (
+                      <Card 
+                        key={signal.id} 
+                        className={cn(
+                          'transition-all hover:shadow-lg bg-white',
+                          isMultiSelectMode && selectedSignalIds.has(signal.id) && 'ring-2 ring-[#2F6BFF]',
+                          signal.isAdded && 'opacity-75'
+                        )}
+                        onClick={() => {
+                          if (isMultiSelectMode) {
+                            toggleSignalSelection(signal.id);
+                          }
+                        }}
+                        onContextMenu={(e) => {
+                          e.preventDefault();
+                          if (!isMultiSelectMode) {
+                            setIsMultiSelectMode(true);
+                            setSelectedSignalIds(new Set([signal.id]));
+                          }
+                        }}
+                      >
+                        <CardContent className="p-4">
+                          {/* Selection indicator for multi-select mode */}
+                          {isMultiSelectMode && (
+                            <div className="absolute top-2 right-2 z-10">
+                              <div className={cn(
+                                'w-5 h-5 rounded-full border-2 flex items-center justify-center',
+                                selectedSignalIds.has(signal.id)
+                                  ? 'bg-[#2F6BFF] border-[#2F6BFF]'
+                                  : 'bg-white border-gray-300'
+                              )}>
+                                {selectedSignalIds.has(signal.id) && (
+                                  <CheckCircle className="w-3 h-3 text-white" />
+                                )}
+                              </div>
+                            </div>
                           )}
-                          {/* Source Badge */}
-                          <Badge className={cn('absolute top-2 left-2 text-xs', getSourceTypeColor(signal.sourceType))}>
-                            {getSourceTypeLabel(signal.sourceType)}
-                          </Badge>
-                        </div>
+                          
+                          {/* Image */}
+                          <div className="aspect-square bg-muted rounded-lg mb-3 flex items-center justify-center relative overflow-hidden">
+                            {signal.imageUrl ? (
+                              <ProxiedImage
+                                src={signal.imageUrl}
+                                alt={signal.productTitleZh || signal.productTitle}
+                                className="w-full h-full object-cover"
+                                iconSize="lg"
+                              />
+                            ) : (
+                              <Package className="w-12 h-12 text-muted-foreground/30" />
+                            )}
+                            {/* Source Badge */}
+                            <Badge className={cn('absolute top-2 left-2 text-xs', getSourceTypeColor(signal.sourceType))}>
+                              {getSourceTypeLabel(signal.sourceType)}
+                            </Badge>
+                          </div>
                         
                         {/* Title */}
                         <h3 className="font-medium text-sm mb-2 line-clamp-2">
@@ -1413,12 +1599,58 @@ export default function SelectionPage() {
                     </Card>
                   ))}
                 </div>
+                </>
               ) : viewMode === 'list' ? (
                 /* Signals List View */
+                <>
+                  {/* Batch operation bar for list mode */}
+                  {selectedSignalIds.size > 0 && (
+                    <div className="sticky top-0 z-10 bg-[#2F6BFF] text-white px-4 py-2 rounded-lg mb-4 flex items-center justify-between">
+                      <span>已选 {selectedSignalIds.size} 项</span>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={handleBatchAddToSelection}
+                          disabled={isBatchOperating}
+                        >
+                          {isBatchOperating ? '处理中...' : '批量加入选品'}
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={handleBatchIgnore}
+                          className="bg-white/20 hover:bg-white/30"
+                        >
+                          批量忽略
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSelectedSignalIds(new Set())}
+                          className="text-white hover:bg-white/20"
+                        >
+                          取消选择
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 <div className="bg-white rounded-lg border">
                   <table className="w-full">
                     <thead>
                       <tr className="border-b bg-muted/30">
+                        <th className="p-3 text-left text-sm font-medium w-[50px]">
+                          <Checkbox
+                            checked={filteredSignals.length > 0 && filteredSignals.every(s => selectedSignalIds.has(s.id))}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedSignalIds(new Set(filteredSignals.map(s => s.id)));
+                              } else {
+                                setSelectedSignalIds(new Set());
+                              }
+                            }}
+                          />
+                        </th>
                         <th className="p-3 text-left text-sm font-medium">图片</th>
                         <th className="p-3 text-left text-sm font-medium">标题</th>
                         <th className="p-3 text-left text-sm font-medium">来源</th>
@@ -1432,6 +1664,22 @@ export default function SelectionPage() {
                     <tbody>
                       {filteredSignals.map(signal => (
                         <tr key={signal.id} className="border-b hover:bg-muted/30">
+                          <td className="p-3 w-[40px]">
+                            <Checkbox
+                              checked={selectedSignalIds.has(signal.id)}
+                              onCheckedChange={(checked) => {
+                                setSelectedSignalIds(prev => {
+                                  const newSet = new Set(prev);
+                                  if (checked) {
+                                    newSet.add(signal.id);
+                                  } else {
+                                    newSet.delete(signal.id);
+                                  }
+                                  return newSet;
+                                });
+                              }}
+                            />
+                          </td>
                           <td className="p-3">
                             <div className="w-[50px] h-[50px] bg-muted rounded flex items-center justify-center">
                               {signal.imageUrl ? (
@@ -1499,10 +1747,41 @@ export default function SelectionPage() {
                     </tbody>
                   </table>
                 </div>
+                </>
               ) : (
                 /* Signals Matrix View */
                 <div className="bg-white rounded-lg border p-4">
-                  <h3 className="text-sm font-medium mb-4">价格-热度矩阵图</h3>
+                  {/* 批量操作栏 */}
+                  {selectedSignalIds.size > 0 && (
+                    <div className="mb-4 p-3 bg-primary/5 rounded-lg flex items-center justify-between">
+                      <span className="text-sm font-medium">已选 {selectedSignalIds.size} 项</span>
+                      <div className="flex gap-2">
+                        <Button 
+                          size="sm" 
+                          className="bg-primary text-primary-foreground"
+                          onClick={handleBatchAddToSelection}
+                        >
+                          批量加入选品
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={handleBatchIgnore}
+                        >
+                          批量忽略
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                          onClick={() => setSelectedSignalIds(new Set())}
+                        >
+                          取消选择
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  <h3 className="text-sm font-medium mb-2">价格-热度矩阵图</h3>
+                  <p className="text-xs text-muted-foreground mb-4">点击气泡查看详情，按住 Shift 点击可多选</p>
                   <div className="h-[500px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <ScatterChart margin={{ top: 20, right: 20, bottom: 40, left: 40 }}>
@@ -1544,14 +1823,40 @@ export default function SelectionPage() {
                             return null;
                           }}
                         />
-                        <Scatter name="市场信号" data={signalScatterData} onClick={(data) => {
+                        <Scatter name="市场信号" data={signalScatterData} onClick={(data, mouseEvent) => {
                           if (data && data.payload) {
-                            setSelectedSignalForPopup(data.payload.signal);
+                            // Shift + 点击：多选模式
+                            const evt = mouseEvent as unknown as { shiftKey?: boolean } | undefined;
+                            if (evt && evt.shiftKey) {
+                              setSelectedSignalIds(prev => {
+                                const newSet = new Set(prev);
+                                const signalId = data.payload.signal.id;
+                                if (newSet.has(signalId)) {
+                                  newSet.delete(signalId);
+                                } else {
+                                  newSet.add(signalId);
+                                }
+                                return newSet;
+                              });
+                            } else {
+                              // 普通点击：弹出详情卡片
+                              setSelectedSignalForPopup(data.payload.signal);
+                            }
                           }
                         }}>
-                          {signalScatterData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} style={{ cursor: 'pointer' }} />
-                          ))}
+                          {signalScatterData.map((entry, index) => {
+                            const isSelected = selectedSignalIds.has(entry.signal.id);
+                            return (
+                              <Cell 
+                                key={`cell-${index}`} 
+                                fill={entry.color} 
+                                fillOpacity={isSelected ? 1 : 0.7}
+                                stroke={isSelected ? '#152033' : 'transparent'}
+                                strokeWidth={isSelected ? 2 : 0}
+                                style={{ cursor: 'pointer' }} 
+                              />
+                            );
+                          })}
                         </Scatter>
                       </ScatterChart>
                     </ResponsiveContainer>
@@ -1802,6 +2107,9 @@ export default function SelectionPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Toast 提示 */}
+      <Toaster position="top-center" richColors />
     </AppLayout>
   );
 }
