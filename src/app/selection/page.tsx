@@ -99,7 +99,7 @@ interface Opportunity {
     differentiation: number;
     supply: number;
   } | null;
-  status: 'discovered' | 'confirmed' | 'abandoned';
+  status: 'discovered' | 'suggested' | 'confirmed' | 'abandoned';
   createdAt: string;
   updatedAt: string;
 }
@@ -532,6 +532,8 @@ export default function SelectionPage() {
         id: opp.id,
         name: opp.targetName,
         grade,
+        signalSourceType: opp.signalSourceType,
+        marketSignalId: opp.marketSignalId,
       };
     });
   }, [filteredOpportunities]);
@@ -1424,9 +1426,22 @@ export default function SelectionPage() {
                             if (active && payload && payload.length) {
                               const data = payload[0].payload;
                               return (
-                                <div className="bg-white border rounded-lg p-2 shadow-lg">
-                                  <p className="font-medium text-sm">{data.name}</p>
-                                  <p className="text-xs text-muted-foreground">竞争: {Math.round(data.x)} | 利润: {Math.round(data.y)} | 需求: {Math.round(data.z)}</p>
+                                <div className="bg-white border rounded-lg p-3 shadow-lg max-w-xs">
+                                  <p className="font-medium text-sm mb-1 line-clamp-2">{data.name}</p>
+                                  <p className="text-xs text-muted-foreground mb-2">竞争: {Math.round(data.x)} | 利润: {Math.round(data.y)} | 需求: {Math.round(data.z)}</p>
+                                  {/* 来源和数据完整度标签 */}
+                                  <div className="flex flex-wrap gap-1">
+                                    {data.signalSourceType && (
+                                      <Badge className={cn('text-xs', getSourceTypeColor(data.signalSourceType))}>
+                                        {getSourceTypeLabel(data.signalSourceType)}
+                                      </Badge>
+                                    )}
+                                    {data.marketSignalId && (
+                                      <Badge className="text-xs bg-yellow-500/80 text-white">
+                                        单源数据
+                                      </Badge>
+                                    )}
+                                  </div>
                                 </div>
                               );
                             }
