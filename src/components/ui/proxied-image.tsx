@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { Image as ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -25,26 +25,18 @@ interface ProxiedImageProps {
   onClick?: () => void;
 }
 
-// 白名单域名（与后端 image-proxy 保持一致）
-const ALLOWED_DOMAINS = [
-  'wildberries.ru',
-  'wb.ru',
-  'wbbasket.ru',
-  'ozon.ru',
-  'ozon-cdn.ru',
-  '1688.com',
-  'alicdn.com',
-  'aliexpress.ru',
-  'ae01.alicdn.com',
+// 白名单域名（需要通过image-proxy代理的域名）
+const NEEDS_PROXY_DOMAINS = [
+  'ozonstatic.cn',
 ];
 
 /**
- * 检查URL是否在白名单中
+ * 检查URL是否需要代理
  */
-function isAllowedDomain(url: string): boolean {
+function needsProxy(url: string): boolean {
   try {
     const hostname = new URL(url).hostname.toLowerCase();
-    return ALLOWED_DOMAINS.some(domain => 
+    return NEEDS_PROXY_DOMAINS.some(domain => 
       hostname === domain || hostname.endsWith(`.${domain}`)
     );
   } catch {
@@ -77,41 +69,63 @@ export function ProxiedImage({
   iconSize = 'md',
   onClick,
 }: ProxiedImageProps) {
-  // 如果没有 src，直接显示占位符（不设置 loading 状态避免内存泄漏）
-  const needsProxy = useMemo(() => {
-    if (!src) return { shouldProxy: false, proxyUrl: null };
+  const [loadState, setLoadState] = useState<'idle' | 'direct' | 'proxy' | 'error'>('idle');
+  const retryCountRef = useRef(0);
+  const maxRetries = 1;
+
+  // 计算图片源策略
+  const imageSource = useMemo(() => {
+    if (!src) return { type: 'none' as const, url: null };
     
-    // 如果是相对路径或本站路径，直接使用
+    // 相对路径或data URI，直接使用
     if (src.startsWith('/') || src.startsWith('data:')) {
-      return { shouldProxy: false, proxyUrl: src };
+      return { type: 'direct' as const, url: src };
     }
     
-    // 检查是否在白名单中
-    if (isAllowedDomain(src)) {
-      return { shouldProxy: true, proxyUrl: buildProxyUrl(src) };
+    // 需要代理的域名，使用image-proxy
+    if (needsProxy(src)) {
+      return { type: 'proxy' as const, url: buildProxyUrl(src) };
     }
     
-    // 不在白名单，直接使用原始URL（可能会被防盗链拒绝）
-    console.warn(`[ProxiedImage] Domain not in whitelist, image may fail to load: ${src}`);
-    return { shouldProxy: false, proxyUrl: src };
+    // 其他CDN（如WB、1688等），优先直连
+    return { type: 'direct' as const, url: src };
   }, [src]);
 
-  const [loading, setLoading] = useState(!!needsProxy.proxyUrl);
-  const [error, setError] = useState(false);
-
   const handleError = () => {
-    setError(true);
-    setLoading(false);
-    onError?.();
+    retryCountRef.current += 1;
+    
+    // 如果直连失败，且还有重试机会，尝试代理
+    if (loadState === 'direct' && retryCountRef.current <= maxRetries && src) {
+      setLoadState('proxy');
+      return;
+    }
+    
+    // 如果是代理也失败，或者已经是代理，设置为错误状态
+    setLoadState('error');
+    setTimeout(() => {
+      onError?.();
+    }, 0);
   };
 
   const handleLoad = () => {
-    setLoading(false);
+    setLoadState('idle');
+    retryCountRef.current = 0;
     onLoad?.();
   };
 
+  const handleLoadStart = () => {
+    if (loadState === 'idle') {
+      // 初始状态，根据imageSource判断是直连还是代理
+      if (imageSource.type === 'direct') {
+        setLoadState('direct');
+      } else if (imageSource.type === 'proxy') {
+        setLoadState('proxy');
+      }
+    }
+  };
+
   // 无图片或加载失败时显示占位符
-  if (!needsProxy.proxyUrl || error) {
+  if (imageSource.type === 'none' || loadState === 'error') {
     return (
       <div 
         className={cn(
@@ -126,6 +140,11 @@ export function ProxiedImage({
     );
   }
 
+  // 确定当前要显示的图片URL
+  const currentUrl = loadState === 'proxy' 
+    ? buildProxyUrl(src!) 
+    : imageSource.url;
+
   return (
     <div 
       className={cn(
@@ -136,7 +155,7 @@ export function ProxiedImage({
       onClick={onClick}
     >
       {/* 加载占位符 */}
-      {loading && showLoading && (
+      {showLoading && loadState !== 'idle' && (
         <div className="absolute inset-0 bg-muted animate-pulse flex items-center justify-center rounded-lg">
           <ImageIcon className={cn(iconSizeMap[iconSize], 'text-muted-foreground/30')} />
         </div>
@@ -144,13 +163,16 @@ export function ProxiedImage({
       
       {/* 实际图片 */}
       <img
-        src={needsProxy.proxyUrl}
+        src={currentUrl || ''}
         alt={alt}
+        referrerPolicy="no-referrer"
+        crossOrigin="anonymous"
         className={cn(
           'rounded-lg',
-          loading && 'opacity-0',
+          loadState !== 'idle' && 'opacity-0',
           className
         )}
+        onLoadStart={handleLoadStart}
         onLoad={handleLoad}
         onError={handleError}
         loading="lazy"
@@ -160,23 +182,22 @@ export function ProxiedImage({
 }
 
 /**
- * 简化版：仅返回代理后的URL
+ * 简化版：获取最佳图片URL（用于需要URL字符串的地方）
+ * 注意：这是同步的，不支持动态fallback
  */
 export function getProxiedImageUrl(originalUrl: string | null | undefined): string | null {
   if (!originalUrl) return null;
   
-  // 如果是相对路径或本站路径，直接使用
+  // 相对路径或data URI，直接使用
   if (originalUrl.startsWith('/') || originalUrl.startsWith('data:')) {
     return originalUrl;
   }
   
-  // 检查是否在白名单中
-  if (isAllowedDomain(originalUrl)) {
+  // 需要代理的域名
+  if (needsProxy(originalUrl)) {
     return buildProxyUrl(originalUrl);
   }
   
-  // 不在白名单，直接使用原始URL
+  // 其他CDN直连（不带referrer）
   return originalUrl;
 }
-
-export default ProxiedImage;
