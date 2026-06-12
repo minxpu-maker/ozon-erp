@@ -31,6 +31,24 @@ const NEEDS_PROXY_DOMAINS = [
 ];
 
 /**
+ * 从代理URL中解析出原始URL
+ */
+function extractOriginalUrl(proxyUrl: string): string | null {
+  try {
+    if (!proxyUrl.includes('/api/image-proxy?url=')) {
+      return null;
+    }
+    const match = proxyUrl.match(/\/api\/image-proxy\?url=(.+)$/);
+    if (match && match[1]) {
+      return decodeURIComponent(match[1]);
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * 检查URL是否需要代理
  */
 function needsProxy(url: string): boolean {
@@ -77,14 +95,21 @@ export function ProxiedImage({
   const imageSource = useMemo(() => {
     if (!src) return { type: 'none' as const, url: null };
     
+    // 如果是已代理的URL（/api/image-proxy?url=...），提取原始URL后重新判断
+    let actualUrl = src;
+    const originalUrl = extractOriginalUrl(src);
+    if (originalUrl) {
+      actualUrl = originalUrl;
+    }
+    
     // 相对路径或data URI，直接使用
-    if (src.startsWith('/') || src.startsWith('data:')) {
+    if (actualUrl.startsWith('/') || actualUrl.startsWith('data:')) {
       return { type: 'direct' as const, url: src };
     }
     
-    // 需要代理的域名，使用image-proxy
-    if (needsProxy(src)) {
-      return { type: 'proxy' as const, url: buildProxyUrl(src) };
+    // 需要代理的域名（ozonstatic），使用image-proxy
+    if (needsProxy(actualUrl)) {
+      return { type: 'proxy' as const, url: src };
     }
     
     // 其他CDN（如WB、1688等），优先直连
