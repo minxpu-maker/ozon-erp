@@ -7,7 +7,8 @@ import { SourceType, SignalType } from './types';
 /**
  * 默认的 ERP 后端地址
  */
-export const DEFAULT_ERP_URL = 'https://292b3syh46.coze.site';
+// ERP服务器地址（沙箱环境）
+export const DEFAULT_ERP_URL = 'https://2a6de6c9-bb2f-4d85-ad54-97d3489ac991.dev.coze.site';
 
 /**
  * 平台规则定义

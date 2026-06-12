@@ -9,7 +9,7 @@
     "https://wildberries.ru/*",
     "https://ozon.ru/*",
     "https://www.ozon.ru/*",
-    "https://292b3syh46.coze.site/*"
+    "https://*.coze.site/*"
   ],
   "action": {
     "default_popup": "index.html",
