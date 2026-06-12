@@ -149,6 +149,31 @@ async function pushBatchToBackend(signals: MarketSignalPayload[]): Promise<Batch
 }
 
 // ============================================================================
+// Service Worker 初始化状态管理
+// ============================================================================
+
+let isInitialized = false;
+let initPromise: Promise<void> | null = null;
+
+/**
+ * 确保service worker完全初始化
+ */
+async function ensureInitialized(): Promise<void> {
+  if (isInitialized) return;
+  
+  // 如果正在初始化，等待完成
+  if (initPromise) {
+    await initPromise;
+    return;
+  }
+  
+  // 否则执行初始化
+  initPromise = init();
+  await initPromise;
+  isInitialized = true;
+}
+
+// ============================================================================
 // 采集历史管理
 // ============================================================================
 
@@ -329,6 +354,9 @@ async function handlePushSignal(
   message: { data: MarketSignalPayload; source?: string },
   sender: chrome.runtime.MessageSender
 ): Promise<{ success: boolean; signalId?: number; error?: string }> {
+  // 确保service worker已初始化
+  await ensureInitialized();
+  
   const signal = message.data;
   const tabId = sender.tab?.id;
   
@@ -379,10 +407,46 @@ async function handlePushSignal(
 async function handlePushBatch(
   message: { signals?: MarketSignalPayload[]; data?: MarketSignalPayload[] }
 ): Promise<BatchPushResponse> {
+  // 确保service worker已初始化
+  await ensureInitialized();
+  
   // 支持两种消息格式：signals 或 data
   const signals = message.signals || message.data || [];
   console.log('[BG] Batch push received:', signals.length, 'signals');
-  return pushBatchToBackend(signals);
+  
+  // 推送到后端
+  const result = await pushBatchToBackend(signals);
+  
+  // 为每条信号创建采集记录
+  for (let i = 0; i < signals.length; i++) {
+    const signal = signals[i];
+    const signalResult = result.results?.[i];
+    
+    // 创建采集记录
+    addCollectionRecord({
+      platform: signal.sourceType,
+      productTitle: signal.productTitle,
+      price: signal.price ?? 0,
+      imageUrl: signal.imageUrl,
+      pushStatus: result.ok && signalResult ? 'pushed' : 'failed',
+      signalId: signalResult?.signalId,
+      error: result.ok ? undefined : 'Push failed',
+    });
+    
+    // 如果推送失败，添加到离线队列
+    if (!result.ok || !signalResult) {
+      addToOfflineQueue(signal);
+    }
+  }
+  
+  // 通知 popup 更新
+  chrome.runtime.sendMessage({
+    type: MESSAGE_TYPES.PUSH_RESULT,
+    success: result.ok,
+    pushed: signals.length,
+  }).catch(() => {});
+  
+  return result;
 }
 
 /**
@@ -729,6 +793,9 @@ async function init(): Promise<void> {
       });
     }, 2000);
   }
+  
+  // 标记初始化完成
+  isInitialized = true;
 }
 
 // 监听扩展安装事件
