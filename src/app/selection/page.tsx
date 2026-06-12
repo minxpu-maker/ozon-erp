@@ -278,6 +278,9 @@ export default function SelectionPage() {
   const [isBatchOperating, setIsBatchOperating] = useState(false);
   const [ignoredSignalIds, setIgnoredSignalIds] = useState<Set<number>>(new Set());
   
+  // Ref for long press timer
+  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  
   // ============ Effects ============
   
   // Fetch initial data
@@ -1095,6 +1098,15 @@ export default function SelectionPage() {
                 </div>
               </Card>
             )}
+            {addedSignalIds.size > 0 && (
+              <Card className="px-4 py-2 bg-white">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span className="text-sm text-muted-foreground">已加入</span>
+                  <span className="text-lg font-semibold text-green-500">{addedSignalIds.size}</span>
+                </div>
+              </Card>
+            )}
             {lastRefreshTime && (
               <span className="text-xs text-muted-foreground ml-auto">
                 最后刷新: {getRelativeTime(lastRefreshTime.toISOString())}
@@ -1477,7 +1489,7 @@ export default function SelectionPage() {
                       <Card 
                         key={signal.id} 
                         className={cn(
-                          'transition-all hover:shadow-lg bg-white',
+                          'transition-all hover:shadow-lg bg-white select-none',
                           isMultiSelectMode && selectedSignalIds.has(signal.id) && 'ring-2 ring-[#2F6BFF]',
                           signal.isAdded && 'opacity-75'
                         )}
@@ -1491,6 +1503,46 @@ export default function SelectionPage() {
                           if (!isMultiSelectMode) {
                             setIsMultiSelectMode(true);
                             setSelectedSignalIds(new Set([signal.id]));
+                          }
+                        }}
+                        onTouchStart={(e) => {
+                          if (!isMultiSelectMode && !signal.isAdded) {
+                            longPressTimerRef.current = setTimeout(() => {
+                              setIsMultiSelectMode(true);
+                              setSelectedSignalIds(new Set([signal.id]));
+                            }, 500);
+                          }
+                        }}
+                        onTouchEnd={() => {
+                          if (longPressTimerRef.current) {
+                            clearTimeout(longPressTimerRef.current);
+                            longPressTimerRef.current = null;
+                          }
+                        }}
+                        onTouchMove={() => {
+                          if (longPressTimerRef.current) {
+                            clearTimeout(longPressTimerRef.current);
+                            longPressTimerRef.current = null;
+                          }
+                        }}
+                        onMouseDown={(e) => {
+                          if (!isMultiSelectMode && !signal.isAdded && e.button === 0) {
+                            longPressTimerRef.current = setTimeout(() => {
+                              setIsMultiSelectMode(true);
+                              setSelectedSignalIds(new Set([signal.id]));
+                            }, 500);
+                          }
+                        }}
+                        onMouseUp={() => {
+                          if (longPressTimerRef.current) {
+                            clearTimeout(longPressTimerRef.current);
+                            longPressTimerRef.current = null;
+                          }
+                        }}
+                        onMouseLeave={() => {
+                          if (longPressTimerRef.current) {
+                            clearTimeout(longPressTimerRef.current);
+                            longPressTimerRef.current = null;
                           }
                         }}
                       >
