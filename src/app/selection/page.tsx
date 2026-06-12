@@ -1201,6 +1201,14 @@ export default function SelectionPage() {
                                 </Badge>
                               )}
                             </div>
+                            {/* 数据完整度标签 */}
+                            {opp.marketSignalId && (
+                              <div className="absolute top-2 right-2">
+                                <Badge className="text-xs bg-yellow-500/80 text-white">
+                                  单源数据
+                                </Badge>
+                              </div>
+                            )}
                           </div>
                           
                           <h3 className="font-medium text-sm mb-2 line-clamp-2">{opp.targetName}</h3>
@@ -1305,6 +1313,7 @@ export default function SelectionPage() {
                         </th>
                         <th className="p-3 text-left text-sm font-medium">商品</th>
                         <th className="p-3 text-left text-sm font-medium">来源</th>
+                        <th className="p-3 text-left text-sm font-medium">数据</th>
                         <th className="p-3 text-left text-sm font-medium">类目</th>
                         <th className="p-3 text-left text-sm font-medium">价格</th>
                         <th className="p-3 text-left text-sm font-medium">评分</th>
@@ -1350,6 +1359,15 @@ export default function SelectionPage() {
                                   </Badge>
                                 )}
                               </div>
+                            </td>
+                            <td className="p-3">
+                              {opp.marketSignalId ? (
+                                <Badge className="text-xs bg-yellow-500/80 text-white">
+                                  单源数据
+                                </Badge>
+                              ) : (
+                                <span className="text-sm text-muted-foreground">—</span>
+                              )}
                             </td>
                             <td className="p-3 text-sm text-muted-foreground">{opp.targetCategoryName || '-'}</td>
                             <td className="p-3 text-sm">₽{opp.marketAnalysis?.priceRange?.min?.toLocaleString() || '-'}</td>

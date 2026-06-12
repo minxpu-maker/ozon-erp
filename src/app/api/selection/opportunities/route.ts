@@ -55,14 +55,12 @@ export async function GET(request: NextRequest) {
           .from(schema.marketSignals)
           .where(inArray(schema.marketSignals.id, validSignalIds));
         
-        // 建立信号ID到图片的映射
+        // 建立信号ID到图片和来源的映射（即使imageUrl为null也要获取sourceType）
         signals.forEach(signal => {
-          if (signal.imageUrl) {
-            signalImages[signal.id] = {
-              imageUrl: signal.imageUrl,
-              sourceType: signal.sourceType,
-            };
-          }
+          signalImages[signal.id] = {
+            imageUrl: signal.imageUrl || '',
+            sourceType: signal.sourceType,
+          };
         });
       } catch (err) {
         console.error('[API] 获取市场信号图片失败:', err);
