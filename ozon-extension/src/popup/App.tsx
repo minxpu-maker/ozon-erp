@@ -76,10 +76,12 @@ function App() {
     }
   };
 
-  // 平台识别 - 必须与 manifest.json 中的 content_scripts 匹配规则一致
+  // 平台识别 - 支持新旧URL格式
   const detectPlatform = (url: string): PlatformInfo | null => {
-    // WB 商品详情页: /catalog/数字/detail.aspx
-    if (/wildberries\.ru\/catalog\/\d+\/detail\.aspx/i.test(url)) {
+    // WB 商品详情页: 
+    //   旧格式: /catalog/数字/detail.aspx
+    //   新格式: /catalog/数字/ 或 /products/数字/
+    if (/wildberries\.ru\/(catalog\/\d+|products\/\d+)/i.test(url)) {
       return { platform: 'wb', name: 'Wildberries' };
     }
     // Ozon 商品详情页或搜索页

@@ -25,7 +25,12 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://www.wildberries.ru/catalog/*/detail.aspx", "https://wildberries.ru/catalog/*/detail.aspx"],
+      "matches": [
+        "https://www.wildberries.ru/catalog/*/*",
+        "https://wildberries.ru/catalog/*/*",
+        "https://www.wildberries.ru/products/*",
+        "https://wildberries.ru/products/*"
+      ],
       "js": ["src/content/platforms/wildberries.ts"],
       "run_at": "document_idle"
     },

@@ -10,9 +10,15 @@ import { extractWbSignal, collectWbData } from '../wb';
 
 console.log('[Ozon Extension] Wildberries content script loaded');
 
-// 检测页面类型
+// 检测页面类型 - 支持新旧两种URL格式
 const isProductPage = (): boolean => {
-  return window.location.pathname.includes('/catalog/') && window.location.pathname.includes('/detail.aspx');
+  const pathname = window.location.pathname;
+  // 新格式: /catalog/12345678/ 或 /catalog/12345678/info
+  // 旧格式: /catalog/12345678/detail.aspx
+  // 新格式2: /products/12345678
+  const catalogMatch = pathname.includes('/catalog/') && !!pathname.split('/catalog/')[1]?.split('/')[0];
+  const productsMatch = pathname.includes('/products/');
+  return catalogMatch || productsMatch;
 };
 
 if (isProductPage()) {
