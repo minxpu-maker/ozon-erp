@@ -388,6 +388,11 @@ function SettingsPage({ onBack, config, onConfigUpdate }: {
       };
 
       await chrome.storage.local.set({ [STORAGE_KEYS.CONFIG]: newConfig });
+      // 通知 service worker 更新配置
+      await chrome.runtime.sendMessage({
+        type: MESSAGE_TYPES.SET_CONFIG,
+        config: newConfig,
+      });
       onConfigUpdate(newConfig);
       setMessage('✅ 保存成功');
       setTimeout(onBack, 1000);
