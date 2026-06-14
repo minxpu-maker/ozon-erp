@@ -660,6 +660,42 @@ export default function SelectionPage() {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(false);
 
+  // 批量操作处理
+  const handleBatchAction = async (actionId: string) => {
+    if (selectedIds.size === 0) {
+      alert('请先选择商品');
+      return;
+    }
+
+    const selectedItems = filteredData.filter(item => selectedIds.has((item as { id: number }).id));
+    
+    switch (actionId) {
+      case 'collect':
+        // 批量采集
+        alert(`已发起采集 ${selectedItems.length} 件商品`);
+        setSelectedIds(new Set());
+        break;
+      case 'addToLibrary':
+        // 加入产品库
+        alert(`已添加 ${selectedItems.length} 件商品到产品库`);
+        setSelectedIds(new Set());
+        break;
+      case 'export':
+        // 导出
+        alert('正在导出数据...');
+        break;
+      case 'delete':
+        // 删除
+        if (confirm(`确定删除选中的 ${selectedItems.length} 件商品？`)) {
+          alert(`已删除 ${selectedItems.length} 件商品`);
+          setSelectedIds(new Set());
+        }
+        break;
+      default:
+        break;
+    }
+  };
+
   const handleTabChange = useCallback((tab: TabId) => {
     setActiveTab(tab);
     setFilters({ _tab: tab });
@@ -855,6 +891,7 @@ export default function SelectionPage() {
                   size="sm"
                   variant={action.variant || 'outline'}
                   disabled={selectedIds.size === 0 && action.id !== 'export'}
+                  onClick={() => handleBatchAction(action.id)}
                   className={action.variant !== 'outline' ? 'bg-[#1677FF] hover:bg-[#1668E0]' : ''}
                 >
                   {action.icon}
