@@ -152,7 +152,7 @@ export async function POST(request: NextRequest) {
  * GET /api/profit-calculator/commission-rates
  * 获取类目佣金率列表
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const rates = await db
       .select({

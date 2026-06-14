@@ -12,7 +12,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/storage/database/client';
-import { marketSignals } from '@/storage/database/shared/schema';
+import { marketSignals, collectionItems } from '@/storage/database/shared/schema';
 import { eq, and, desc } from 'drizzle-orm';
 import { 
   authenticateExtension, 
@@ -418,6 +418,32 @@ async function processSignal(
   
   // 检查跨平台匹配
   const triggeredMatching = await checkCrossPlatformMatch(sourceType, signal.categoryPath);
+  
+  // 自动创建采集箱项（仅新建或更新时，已有关联则跳过）
+  if (status === 'created' || status === 'updated' || status === 'created_with_history') {
+    try {
+      // 检查是否已存在采集箱项
+      const existingCollectionItem = await db
+        .select({ id: collectionItems.id })
+        .from(collectionItems)
+        .where(eq(collectionItems.signalId, signalId))
+        .limit(1);
+      
+      // 仅在不存在时创建
+      if (existingCollectionItem.length === 0) {
+        await db.insert(collectionItems).values({
+          signalId: signalId,
+          shopId: shopId,
+          status: 'pending',
+          createdAt: new Date(),
+        });
+        debugLog(`Created collection item for signal ${signalId}`);
+      }
+    } catch (collectionErr) {
+      // 采集箱创建失败不影响主流程，仅记录日志
+      console.error('[CollectionItem] Failed to create collection item:', collectionErr);
+    }
+  }
   
   return {
     signalId,
