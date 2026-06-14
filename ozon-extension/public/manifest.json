@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Ozon智能选品助手",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "description": "一键采集WB和Ozon商品数据，同步到Ozon AI选品系统",
   "permissions": ["activeTab", "storage", "contextMenus", "sidePanel"],
   "host_permissions": [
@@ -26,24 +26,18 @@
   "content_scripts": [
     {
       "matches": [
-        "https://www.wildberries.ru/catalog/*/*",
-        "https://wildberries.ru/catalog/*/*",
-        "https://www.wildberries.ru/products/*",
-        "https://wildberries.ru/products/*"
+        "https://www.wildberries.ru/*",
+        "https://wildberries.ru/*"
       ],
-      "js": ["src/content/platforms/wildberries.ts"],
+      "js": ["src/content/main.ts"],
       "run_at": "document_idle"
     },
     {
       "matches": [
-        "https://ozon.ru/product/*",
-        "https://www.ozon.ru/product/*",
-        "https://ozon.ru/search*",
-        "https://www.ozon.ru/search*",
-        "https://ozon.ru/category/*",
-        "https://www.ozon.ru/category/*"
+        "https://ozon.ru/*",
+        "https://www.ozon.ru/*"
       ],
-      "js": ["src/content/platforms/ozon.ts"],
+      "js": ["src/content/main.ts"],
       "run_at": "document_idle"
     }
   ],

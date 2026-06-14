@@ -112,3 +112,60 @@
 | 扫描枪 | 入库验货、库位扫描 | 模拟键盘输入，扫描结束自动触发 |
 | 电子秤 | 打包称重 | 串口/USB HID，格式：WEIGHT:XX.XXkg |
 | 打印机 | 面单打印 | 系统打印API，PDF直接打印 |
+
+## Chrome 插件 (ozon-extension)
+
+### 概述
+Chrome扩展插件，用于在Ozon/WB网站注入数据采集面板和导航栏。
+
+### 目录结构
+```
+ozon-extension/
+├── public/
+│   └── manifest.json        # Chrome扩展清单
+├── src/
+│   ├── background/          # Service Worker
+│   │   └── service-worker.ts
+│   ├── content/             # Content Script
+│   │   ├── main.ts         # 主入口（协调各组件）
+│   │   ├── navbar.ts       # 导航栏组件
+│   │   ├── overlay.ts      # 数据面板组件
+│   │   ├── selection.ts    # 选品模式组件
+│   │   ├── helpers.ts      # 辅助元素组件
+│   │   ├── ozon.ts        # Ozon平台提取器
+│   │   └── wb.ts          # WB平台提取器
+│   ├── popup/              # 插件弹窗
+│   │   └── App.tsx
+│   └── shared/             # 共享代码
+│       ├── types.ts        # 类型定义
+│       ├── message-bus.ts  # 消息总线
+│       └── store.ts        # 状态管理
+├── package.json
+└── vite.config.ts
+```
+
+### 插件版本
+- **v1.1.0**: 导航栏+数据面板+选品模式+辅助元素
+
+### 功能特性
+1. **导航栏**: 蓝色顶部栏，4个Tab，品牌Logo，控制按钮
+2. **数据面板**: 商品详情页显示29列数据，利润计算器
+3. **选品模式**: 搜索/类目页批量勾选和采集
+4. **辅助元素**: 回到顶部、语言切换、反馈按钮
+
+### 构建命令
+```bash
+cd ozon-extension
+pnpm build
+```
+
+### 安装
+1. 打开Chrome，访问 `chrome://extensions/`
+2. 开启"开发者模式"
+3. 点击"加载已解压的扩展程序"
+4. 选择 `ozon-extension/dist` 目录
+
+### 打包
+```bash
+tar -czvf ozon-extension-v1.1.0.tar.gz dist/
+```

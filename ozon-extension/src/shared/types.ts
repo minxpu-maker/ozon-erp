@@ -380,3 +380,81 @@ export function isConfigValid(config: ExtensionConfig): boolean {
   
   return true;
 }
+
+// ============================================================================
+// 插件面板类型（content script 使用）
+// ============================================================================
+
+/**
+ * 插件运行配置（简化版，用于content script）
+ */
+export interface OzonExtConfig {
+  /** 启用状态 */
+  enabled: boolean;
+  /** API地址 */
+  apiUrl?: string;
+  /** API Key */
+  apiKey?: string;
+  /** 店铺ID */
+  shopId?: string;
+  /** 语言设置 */
+  language?: 'zh' | 'ru';
+}
+
+/**
+ * 商品信息（content script 提取的数据）
+ */
+export interface ProductInfo {
+  /** 平台 */
+  platform: 'ozon' | 'wb';
+  /** 商品ID */
+  productId: string;
+  /** 标题 */
+  title?: string;
+  /** 价格 */
+  price?: number;
+  /** 原价 */
+  originalPrice?: number;
+  /** 评分 */
+  rating?: number;
+  /** 评价数 */
+  reviewsCount?: number;
+  /** 销量 */
+  salesVolume?: number;
+  /** 销售额 */
+  revenue?: number;
+  /** 利润率 */
+  profitRate?: number;
+  /** 图片URL */
+  imageUrl?: string;
+  /** 图片URLs */
+  images?: string[];
+  /** 卖家名称 */
+  sellerName?: string;
+  /** 卖家类型 */
+  sellerType?: SellerType;
+  /** 粉丝数 */
+  followerCount?: number;
+  /** 变体数 */
+  variantCount?: number;
+  /** 配送类型 */
+  deliveryType?: DeliveryType;
+  /** 重量 */
+  weight?: number;
+  /** 尺寸 */
+  dimensions?: ProductDimensions;
+  /** 体积 */
+  volume?: number;
+  /** 上架日期 */
+  listedDate?: string;
+  /** 库存 */
+  stock?: number;
+  /** 类目 */
+  category?: string;
+  /** 品牌 */
+  brand?: string;
+  /** 销量排名 */
+  salesRank?: number;
+  /** 销量排名类目 */
+  salesVolumeRank?: number;
+}
