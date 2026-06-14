@@ -61,6 +61,20 @@ export interface PanelTranslations {
   costPrice: string;
   profitRate: string;
   close: string;
+  // 利润计算器增强
+  category: string;
+  commissionRate: string;
+  logisticsCost: string;
+  suggestedPrice: string;
+  targetProfitRate: string;
+  recentHistory: string;
+  noHistory: string;
+  confirm: string;
+  profitRateHigh: string;
+  profitRateMedium: string;
+  profitRateLow: string;
+  profitRateWarning: string;
+  applyProfitRate: string;
   // 其他
   comingSoon: string;
   local: string;
@@ -115,8 +129,21 @@ const ZH_TRANSLATIONS: PanelTranslations = {
   roi: 'ROI',
   grossProfit: '毛利率',
   costPrice: '成本价',
-  profitRate: '利润率',
   close: '关闭',
+  category: '类目',
+  commissionRate: '佣金率',
+  suggestedPrice: '建议售价',
+  applyProfitRate: '应用利润率',
+  profitRate: '利润率',
+  profitRateLow: '利润率过低',
+  profitRateMedium: '利润率一般',
+  profitRateHigh: '利润率良好',
+  profitRateWarning: '请输入成本计算利润率',
+  logisticsCost: '物流费(¥)',
+  targetProfitRate: '目标利润率',
+  recentHistory: '最近计算记录',
+  noHistory: '暂无历史记录',
+  confirm: '确认',
   comingSoon: '即将上线',
   local: '本土',
   crossBorder: '跨境',
@@ -170,7 +197,20 @@ const RU_TRANSLATIONS: PanelTranslations = {
   roi: 'ROI',
   grossProfit: 'Маржа',
   costPrice: 'Себестоимость',
-  profitRate: 'Рентабельность',
+  category: 'Категория',
+  commissionRate: 'Комиссия',
+  suggestedPrice: 'Рек. цена',
+  applyProfitRate: 'Применить',
+  profitRate: 'Маржа (%)',
+  profitRateLow: 'Низкая',
+  profitRateMedium: 'Средняя',
+  profitRateHigh: 'Хорошая',
+  profitRateWarning: 'Введите стоимость',
+  logisticsCost: 'Логистика(¥)',
+  targetProfitRate: 'Целевая маржа',
+  recentHistory: 'История',
+  noHistory: 'Нет записей',
+  confirm: 'Подтвердить',
   close: 'Закрыть',
   comingSoon: 'Скоро',
   local: 'Местный',
@@ -339,6 +379,10 @@ export class PanelManager {
     const rating = p.rating ? p.rating.toFixed(1) : '--';
     const reviewsCount = p.reviewsCount ? this.formatNumber(p.reviewsCount) : '--';
     const profitRate = p.profitRate ? `${p.profitRate.toFixed(1)}%` : '--';
+    // 利润率颜色预警
+    const profitRateColorClass = p.profitRate
+      ? (p.profitRate > 20 ? 'ozon-ext-panel-field-positive' : p.profitRate >= 10 ? 'ozon-ext-panel-field-warning' : 'ozon-ext-panel-field-negative')
+      : '';
 
     // 商家信息
     const sellerName = p.sellerName || '--';
@@ -426,7 +470,7 @@ export class PanelManager {
           </div>
           <div class="ozon-ext-panel-field">
             <span class="ozon-ext-panel-field-label">${t.estimatedProfitRate}</span>
-            <span class="ozon-ext-panel-field-value ozon-ext-panel-field-profit">${profitRate}</span>
+            <span class="ozon-ext-panel-field-value ozon-ext-panel-field-profit ${profitRateColorClass}">${profitRate}</span>
           </div>
           <div class="ozon-ext-panel-field">
             <span class="ozon-ext-panel-field-label">${t.returnRate}</span>
@@ -518,6 +562,10 @@ export class PanelManager {
           </div>
           <div class="ozon-ext-profit-calculator-body">
             <div class="ozon-ext-profit-field">
+              <label>${t.category}</label>
+              <input type="text" class="ozon-ext-profit-input" id="ozon-ext-category" placeholder="自动填充" value="${p.category || ''}" readonly>
+            </div>
+            <div class="ozon-ext-profit-field">
               <label>${t.costPrice} (₽)</label>
               <input type="number" class="ozon-ext-profit-input" id="ozon-ext-cost-price" placeholder="0.00" value="${p.price ? (p.price * 0.9).toFixed(2) : ''}">
             </div>
@@ -550,6 +598,14 @@ export class PanelManager {
               <span class="ozon-ext-profit-result-label">${t.roi}</span>
               <span class="ozon-ext-profit-result-value" id="ozon-ext-roi">--</span>
             </div>
+            <div class="ozon-ext-profit-result-item">
+              <span class="ozon-ext-profit-result-label">${t.suggestedPrice}</span>
+              <span class="ozon-ext-profit-result-value" id="ozon-ext-suggested-price">--</span>
+            </div>
+          </div>
+          <div class="ozon-ext-profit-history" id="ozon-ext-profit-history">
+            <span class="ozon-ext-profit-history-title">${t.recentHistory}</span>
+            <div class="ozon-ext-profit-history-list" id="ozon-ext-profit-history-list"></div>
           </div>
         </div>
       </div>
@@ -736,7 +792,6 @@ export class PanelManager {
       listedDate: this.productInfo.listedDate,
       stock: this.productInfo.stock,
       revenue: this.productInfo.revenue,
-      profitRate: this.productInfo.profitRate,
       brandName: this.productInfo.brand,
     };
 
@@ -1018,6 +1073,12 @@ export class PanelManager {
         color: #16A37B !important;
       }
 
+      /* 利润率颜色预警 */
+      .ozon-ext-profit-high { color: #16A37B !important; }  /* >20% 绿色 */
+      .ozon-ext-profit-medium { color: #F59E0B !important; }  /* 10-20% 黄色 */
+      .ozon-ext-profit-low { color: #EF4444 !important; }  /* <10% 红色 */
+      .ozon-ext-profit-placeholder { color: #B4BAC6 !important; }
+      
       .ozon-ext-panel-field-placeholder {
         color: #B4BAC6 !important;
       }

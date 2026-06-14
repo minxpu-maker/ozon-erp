@@ -191,6 +191,11 @@ ozon-extension/
   - 修复main.ts未集成CollectedStore导致已采集标记功能失效
   - 详情页初始化时检查并传递已采集状态
   - 采集成功后更新本地已采集存储
+- **v1.1.0-enhanced**: 利润计算器增强(5-A1)
+  - 面板利润率展示带颜色预警(>20%绿/10-20%黄/<10%红)
+  - 利润计算器增强(类目自动填充佣金率、建议售价反推)
+  - 历史记录缓存到chrome.storage.local
+  - 采集数据携带profitRate字段
 - **v1.0.6**: 采集箱批量操作修复
   - 批量发布/删除操作实现
   - 已发布Tab自动刷新功能
@@ -264,5 +269,5 @@ pnpm build
 
 ### 打包
 ```bash
-tar -czvf ozon-extension-v1.1.0.tar.gz dist/
+tar -czvf ozon-extension-v1.1.0-enhanced.tar.gz dist/
 ```
