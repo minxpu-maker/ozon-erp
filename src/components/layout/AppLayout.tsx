@@ -2,61 +2,46 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState } from 'react';
 import {
   LayoutDashboard,
-  ShoppingCart,
+  Search,
+  BarChart2,
   Package,
-  ClipboardList,
+  Bot,
+  Settings,
+  ShoppingCart,
   Truck,
   Calculator,
-  PackageSearch,
-  Warehouse,
-  Database,
-  Users,
-  BarChart3,
-  UserCircle,
-  Shield,
-  Settings,
-  Bell,
   Box,
-  Target,
-  Image,
-  Activity,
-  FolderOpen,
+  Lock,
   LucideIcon,
+  ChevronDown,
 } from 'lucide-react';
 
 interface NavItem {
   href?: string;
   icon?: LucideIcon;
   label: string;
-  type?: 'divider' | 'link';
+  locked?: boolean;
   children?: NavItem[];
 }
 
-const navItems: NavItem[] = [
+const mainNavItems: NavItem[] = [
   { href: '/dashboard', icon: LayoutDashboard, label: '仪表盘' },
+  { href: '/selection', icon: Search, label: '选品' },
+  { href: '/keywords', icon: BarChart2, label: '关键词', locked: true },
+  { href: '/monitor', icon: Package, label: '监控', locked: true },
+  { href: '/collection-box', icon: Box, label: '采集箱' },
+  { href: '/ai-tools', icon: Bot, label: 'AI工具', locked: true },
+  { href: '/operations', icon: Settings, label: '运营', locked: true },
+];
+
+const erpNavItems: NavItem[] = [
+  { href: '/orders', icon: ShoppingCart, label: '订单管理' },
   { href: '/purchase', icon: Package, label: '采购管理' },
-  { href: '/quick-entry', icon: ClipboardList, label: '快捷录单' },
-  { href: '/logistics', icon: Truck, label: '入库验货' },
-  { href: '/packaging', icon: Box, label: '打包发货' },
-  { href: '/finance', icon: Calculator, label: '财务核算' },
-  { type: 'divider', label: 'AI 选品' },
-  { href: '/selection', icon: Target, label: 'AI 选品' },
-  { href: '/image-listing', icon: Image, label: '修图上架' },
-  { type: 'divider', label: '库存管理' },
-  { href: '/inventory', icon: PackageSearch, label: '库存管理' },
-  { href: '/wms', icon: Warehouse, label: '仓库管理' },
-  { type: 'divider', label: '数据中心' },
-  { href: '/sku-management', icon: Database, label: 'SKU管理' },
-  { href: '/suppliers', icon: Users, label: '供应商管理' },
-  { href: '/reports', icon: BarChart3, label: '数据报表' },
-  { href: '/data-center/source-health', icon: Activity, label: '数据源健康度' },
-  { href: '/data-center/source-management', icon: FolderOpen, label: '数据源管理' },
-  { href: '/data-center/notifications', icon: Bell, label: '知识库通知中心' },
-  { type: 'divider', label: '系统' },
-  { href: '/accounts', icon: UserCircle, label: '账号管理' },
-  { href: '/roles', icon: Shield, label: '角色权限' },
+  { href: '/logistics', icon: Truck, label: '物流管理' },
+  { href: '/finance', icon: Calculator, label: '财务管理' },
   { href: '/settings', icon: Settings, label: '系统设置' },
 ];
 
@@ -68,23 +53,69 @@ interface AppLayoutProps {
 
 export function AppLayout({ children, title, subtitle }: AppLayoutProps) {
   const pathname = usePathname();
+  const [hoveredLocked, setHoveredLocked] = useState<string | null>(null);
+
+  const renderNavItem = (item: NavItem, index: number) => {
+    if (item.locked) {
+      return (
+        <div
+          key={`locked-${index}`}
+          className="relative"
+          onMouseEnter={() => setHoveredLocked(item.label)}
+          onMouseLeave={() => setHoveredLocked(null)}
+        >
+          <div
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm cursor-not-allowed text-[#9CA3AF] hover:bg-[#F3F4F6]"
+          >
+            {item.icon && <item.icon className="w-4 h-4" />}
+            {item.label}
+            <Lock className="w-3 h-3 ml-auto opacity-50" />
+          </div>
+          {hoveredLocked === item.label && (
+            <div className="absolute left-0 top-full mt-1 px-3 py-1.5 bg-[#152033] text-white text-xs rounded whitespace-nowrap z-50">
+              即将上线
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    const Icon = item.icon!;
+    const isActive = pathname === item.href || pathname?.startsWith(item.href! + '/');
+    
+    return (
+      <Link
+        key={item.href!}
+        href={item.href!}
+        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition-colors ${
+          isActive
+            ? 'bg-[#1677FF] text-white'
+            : 'text-[#637089] hover:bg-[#EEF1F6] hover:text-[#152033]'
+        }`}
+      >
+        <Icon className="w-4 h-4" />
+        {item.label}
+      </Link>
+    );
+  };
 
   return (
-    <div className="min-h-screen bg-[#F6F8FB]">
+    <div className="min-h-screen bg-[#F5F7FA]">
       {/* 顶部导航 */}
       <header className="bg-white sticky top-0 z-40 h-14 flex items-center justify-between px-6 border-b border-[#E6EAF2]">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-[#2F6BFF] rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 bg-[#1677FF] rounded-lg flex items-center justify-center">
             <Box className="w-4 h-4 text-white" />
           </div>
-          <span className="font-semibold text-base text-[#152033]">Ozon ERP</span>
+          <span className="font-semibold text-base text-[#152033]">选品引擎</span>
         </div>
         <div className="flex items-center gap-4">
-          <button className="flex items-center gap-2 text-sm text-[#637089] hover:text-[#152033] transition-colors">
-            <Bell className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-[#F0F7FF] rounded-full">
+            <span className="text-xs text-[#1677FF]">插件已连接</span>
+            <div className="w-2 h-2 bg-[#1677FF] rounded-full animate-pulse" />
+          </div>
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-[#2F6BFF]/10 rounded-full flex items-center justify-center text-[#2F6BFF] font-medium text-sm">
+            <div className="w-8 h-8 bg-[#1677FF]/10 rounded-full flex items-center justify-center text-[#1677FF] font-medium text-sm">
               管
             </div>
             <span className="text-sm font-medium text-[#152033]">管理员</span>
@@ -93,46 +124,41 @@ export function AppLayout({ children, title, subtitle }: AppLayoutProps) {
       </header>
 
       <div className="flex" style={{ height: 'calc(100vh - 3.5rem)' }}>
-        {/* 左侧导航 */}
+        {/* 左侧导航 - 精简版 */}
         <aside className="w-56 shrink-0 bg-white border-r border-[#E6EAF2] overflow-y-auto">
-          <div className="p-3 space-y-0.5">
-            {navItems.map((item, idx) => {
-              if (item.type === 'divider') {
-                return (
-                  <div key={idx} className="pt-3 pb-1">
-                    <span className="px-3 text-xs font-medium text-[#637089]/60 uppercase tracking-wider">
-                      {item.label}
-                    </span>
-                  </div>
-                );
-              }
-              const Icon = item.icon!;
-              const isActive = pathname === item.href || pathname?.startsWith(item.href! + '/');
-              return (
-                <Link
-                  key={item.href!}
-                  href={item.href!}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition-colors ${
-                    isActive
-                      ? 'bg-[#2F6BFF]/10 text-[#2F6BFF]'
-                      : 'text-[#637089] hover:bg-[#EEF1F6] hover:text-[#152033]'
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  {item.label}
-                </Link>
-              );
-            })}
+          <div className="p-3">
+            {/* 主导航区 */}
+            <div className="space-y-0.5">
+              <div className="px-3 py-2">
+                <span className="text-xs font-medium text-[#637089]/60 uppercase tracking-wider">
+                  选品工具
+                </span>
+              </div>
+              {mainNavItems.map((item, index) => renderNavItem(item, index))}
+            </div>
+
+            {/* 分隔线 */}
+            <div className="my-4 border-t border-[#E6EAF2]" />
+
+            {/* ERP保留模块 */}
+            <div className="space-y-0.5">
+              <div className="px-3 py-2">
+                <span className="text-xs font-medium text-[#637089]/60 uppercase tracking-wider">
+                  ERP管理
+                </span>
+              </div>
+              {erpNavItems.map((item, index) => renderNavItem(item, index))}
+            </div>
           </div>
         </aside>
 
         {/* 主内容区 */}
-        <main className="flex-1 min-w-0 overflow-y-auto bg-[#F6F8FB] p-6">
+        <main className="flex-1 min-w-0 overflow-y-auto bg-[#F5F7FA] p-6">
           {/* 页面标题 */}
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-[#152033]">{title}</h1>
+            <h1 className="text-2xl font-bold text-[#1F2937]">{title}</h1>
             {subtitle && (
-              <p className="text-sm text-[#637089] mt-1">{subtitle}</p>
+              <p className="text-sm text-[#4B5563] mt-1">{subtitle}</p>
             )}
           </div>
 
