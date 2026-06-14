@@ -396,6 +396,9 @@ export function extractOzonProduct(): MarketSignalPayload | null {
     // 提取品牌
     const brandName = extractBrandName();
     
+    // 提取V4扩展数据（双策略：JSON + DOM兜底）
+    const v4Data = extractV4Data();
+    
     // 组装结果
     const signal: MarketSignalPayload = {
       sourceType: 'ozon_market' as SourceType,
@@ -411,7 +414,20 @@ export function extractOzonProduct(): MarketSignalPayload | null {
       imageUrl,
       images,
       brandName,
-      categoryPath
+      categoryPath,
+      // V4新增字段
+      sellerName: v4Data.sellerName,
+      sellerType: v4Data.sellerType,
+      followerCount: v4Data.followerCount,
+      variantCount: v4Data.variantCount,
+      deliveryType: v4Data.deliveryType,
+      weight: v4Data.weight,
+      dimensions: v4Data.dimensions,
+      volume: v4Data.volume,
+      listedDate: v4Data.listedDate,
+      stock: v4Data.stock,
+      // 计算字段（需要后续通过利润计算器填充）
+      revenue: price && reviewsCount ? price * reviewsCount * 0.01 : undefined
     };
     
     console.log('[Ozon] Extracted product:', signal);
@@ -516,6 +532,16 @@ function extractFromCard(card: Element): MarketSignalPayload | null {
       imageUrl = normalizeImageUrl(src || '') || undefined;
     }
     
+    // 提取配送类型（卡片级别）
+    let deliveryType: 'FBO' | 'FBS' | 'RFBS' | 'FBP' | undefined;
+    const fulfillmentEl = card.querySelector('[class*="fulfillment"], [class*="fbo"], [class*="fbs"], [class*="badge"]');
+    if (fulfillmentEl?.textContent) {
+      const text = fulfillmentEl.textContent.toLowerCase();
+      if (text.includes('ozon') || text.includes('fbo')) deliveryType = 'FBO';
+      else if (text.includes('seller') || text.includes('fbs')) deliveryType = 'FBS';
+      else if (text.includes('rfbs')) deliveryType = 'RFBS';
+    }
+    
     // 组装结果
     const signal: MarketSignalPayload = {
       sourceType: 'ozon_market' as SourceType,
@@ -524,7 +550,9 @@ function extractFromCard(card: Element): MarketSignalPayload | null {
       productTitle,
       productUrl,
       price,
-      imageUrl
+      imageUrl,
+      // V4新增字段（卡片级简化数据）
+      deliveryType
     };
     
     return signal;
@@ -604,6 +632,364 @@ function handleCollect(): ExtractResult {
     isBatch: false,
     error: 'Not a supported Ozon page'
   };
+}
+
+// ============================================================================
+// V4 Schema 新增字段提取函数
+// ============================================================================
+
+/**
+ * 策略1：尝试从页面内嵌JSON中提取数据（主策略）
+ */
+function extractFromEmbeddedJson(): {
+  sellerName?: string;
+  sellerType?: 'local' | 'cross_border';
+  followerCount?: number;
+  variantCount?: number;
+  deliveryType?: 'FBO' | 'FBS' | 'RFBS' | 'FBP';
+  weight?: number;
+  dimensions?: { length: number; width: number; height: number };
+  volume?: number;
+  listedDate?: string;
+  stock?: number;
+} | null {
+  try {
+    // 查找 __NEXT_DATA__ 或 Redux/Redwood 状态
+    const scripts = document.querySelectorAll('script[type="application/json"], script[id*="state"], script[id*="data"]');
+    
+    for (const script of scripts) {
+      try {
+        const content = script.textContent || '';
+        // 尝试解析为 JSON
+        if (content.includes('"seller"') || content.includes('"brand"') || content.includes('"weight"')) {
+          const data = JSON.parse(content);
+          // 递归搜索关键字段
+          const result = searchJsonForProductData(data);
+          if (result && (result.sellerName || result.weight)) {
+            console.log('[Ozon] Extracted from embedded JSON:', result);
+            return result;
+          }
+        }
+      } catch {}
+    }
+  } catch (error) {
+    console.log('[Ozon] Failed to extract from embedded JSON:', error);
+  }
+  return null;
+}
+
+/**
+ * 递归搜索JSON中的商品数据
+ */
+function searchJsonForProductData(obj: any, depth = 0): any | null {
+  if (depth > 10 || !obj) return null;
+  
+  // 检查是否是商品数据
+  if (obj && typeof obj === 'object') {
+    if (obj.sellerName || obj.seller_name || obj.brand || obj.brand_name) {
+      return {
+        sellerName: obj.sellerName || obj.seller_name || obj.brand || obj.brand_name,
+        sellerType: obj.sellerType || obj.seller_type,
+        followerCount: obj.followerCount || obj.follower_count || obj.followers,
+        variantCount: obj.variantCount || obj.variants_count || obj.variants,
+        weight: obj.weight || obj.weight_gram,
+        listedDate: obj.listedDate || obj.first_online_date || obj.created_at
+      };
+    }
+  }
+  
+  // 递归搜索
+  for (const key of Object.keys(obj)) {
+    const value = obj[key];
+    if (typeof value === 'object' && value !== null) {
+      const result = searchJsonForProductData(value, depth + 1);
+      if (result) return result;
+    }
+  }
+  
+  return null;
+}
+
+/**
+ * 策略2：DOM选择器兜底提取
+ */
+function extractFromDOM(): {
+  sellerName?: string;
+  sellerType?: 'local' | 'cross_border';
+  followerCount?: number;
+  variantCount?: number;
+  deliveryType?: 'FBO' | 'FBS' | 'RFBS' | 'FBP';
+  weight?: number;
+  dimensions?: { length: number; width: number; height: number };
+  volume?: number;
+  listedDate?: string;
+  stock?: number;
+} {
+  const result = {
+    sellerName: undefined as string | undefined,
+    sellerType: undefined as 'local' | 'cross_border' | undefined,
+    followerCount: undefined as number | undefined,
+    variantCount: undefined as number | undefined,
+    deliveryType: undefined as 'FBO' | 'FBS' | 'RFBS' | 'FBP' | undefined,
+    weight: undefined as number | undefined,
+    dimensions: undefined as { length: number; width: number; height: number } | undefined,
+    volume: undefined as number | undefined,
+    listedDate: undefined as string | undefined,
+    stock: undefined as number | undefined
+  };
+  
+  // 卖家名称 - 多选择器尝试
+  const sellerSelectors = [
+    '[class*="seller-name"]',
+    '[class*="brand-link"] a',
+    '[class*="seller"] a',
+    '[data-widget="sellerInfo"] [class*="name"]',
+    'a[href*="/seller/"]'
+  ];
+  for (const selector of sellerSelectors) {
+    const el = document.querySelector(selector);
+    if (el?.textContent?.trim()) {
+      result.sellerName = el.textContent.trim();
+      break;
+    }
+  }
+  
+  // 卖家类型 - 本土/跨境标签
+  const sellerTypeSelectors = [
+    '[class*="type-badge"]',
+    '[class*="local"]',
+    '[class*="cross-border"]',
+    '[class*="international"]'
+  ];
+  for (const selector of sellerTypeSelectors) {
+    const el = document.querySelector(selector);
+    if (el?.textContent) {
+      const text = el.textContent.toLowerCase();
+      if (text.includes('本土') || text.includes('российский') || text.includes('local')) {
+        result.sellerType = 'local';
+      } else if (text.includes('跨境') || text.includes('international') || text.includes('cross')) {
+        result.sellerType = 'cross_border';
+      }
+      break;
+    }
+  }
+  
+  // 卖家关注者数量
+  const followerSelectors = [
+    '[class*="follower"]',
+    '[class*="subscriber"]',
+    '[data-widget="sellerInfo"] [class*="count"]'
+  ];
+  for (const selector of followerSelectors) {
+    const el = document.querySelector(selector);
+    if (el?.textContent) {
+      const match = el.textContent.match(/[\d\s]+/);
+      if (match) {
+        result.followerCount = parseInt(match[0].replace(/\s/g, ''));
+        break;
+      }
+    }
+  }
+  
+  // 变体数量
+  const variantSelectors = [
+    '[class*="variant"] [class*="count"]',
+    '[class*="color-count"]',
+    '[data-widget="variants"] [class*="count"]'
+  ];
+  for (const selector of variantSelectors) {
+    const el = document.querySelector(selector);
+    if (el?.textContent) {
+      const match = el.textContent.match(/\d+/);
+      if (match) {
+        result.variantCount = parseInt(match[0]);
+        break;
+      }
+    }
+  }
+  
+  // 配送类型
+  const deliverySelectors = [
+    '[class*="delivery-type"]',
+    '[class*=" fulfilment"]',
+    '[data-widget="fulfillmentBadge"]',
+    '[class*="ozon-fulfillment"]',
+    '[class*="fbs"]',
+    '[class*="fbo"]'
+  ];
+  for (const selector of deliverySelectors) {
+    const el = document.querySelector((selector));
+    if (el?.textContent || el) {
+      const text = (el.textContent || '').toLowerCase();
+      if (text.includes('ozon') || text.includes('fbo')) {
+        result.deliveryType = 'FBO';
+      } else if (text.includes('seller') || text.includes('fbs')) {
+        result.deliveryType = 'FBS';
+      } else if (text.includes('rfbs')) {
+        result.deliveryType = 'RFBS';
+      } else if (text.includes('野生')) {
+        result.deliveryType = 'RFBS';
+      }
+      break;
+    }
+  }
+  
+  // 商品重量
+  const weightSelectors = [
+    '[class*="weight"]',
+    '[class*="mass"]',
+    '[data-widget="characteristics"] [class*="Вес"]',
+    '[data-widget="product-Charasteristics"] span'
+  ];
+  for (const selector of weightSelectors) {
+    const el = document.querySelector(selector);
+    if (el?.textContent) {
+      const match = el.textContent.match(/(\d+(?:\.\d+)?)\s*(г|кг|g|kg)?/i);
+      if (match) {
+        let weight = parseFloat(match[1]);
+        const unit = (match[2] || 'г').toLowerCase();
+        if (unit === 'кг' || unit === 'kg') {
+          weight *= 1000; // 转换为克
+        }
+        result.weight = weight;
+        break;
+      }
+    }
+  }
+  
+  // 尺寸
+  const dimensionSelectors = [
+    '[class*="dimensions"]',
+    '[class*="size"]',
+    '[data-widget="characteristics"]'
+  ];
+  for (const selector of dimensionSelectors) {
+    const el = document.querySelector(selector);
+    if (el?.textContent) {
+      const text = el.textContent;
+      // 匹配格式如: 30 × 20 × 10 см
+      const dimMatch = text.match(/(\d+(?:\.\d+)?)\s*[×xX]\s*(\d+(?:\.\d+)?)\s*[×xX]\s*(\d+(?:\.\d+)?)/);
+      if (dimMatch) {
+        result.dimensions = {
+          length: parseFloat(dimMatch[1]),
+          width: parseFloat(dimMatch[2]),
+          height: parseFloat(dimMatch[3])
+        };
+        // 计算体积（升）：长×宽×高/1000000
+        if (result.dimensions) {
+          result.volume = 
+            (result.dimensions.length * result.dimensions.width * result.dimensions.height) / 1000000;
+        }
+        break;
+      }
+    }
+  }
+  
+  // 上架日期
+  const dateSelectors = [
+    '[class*="first-on-line"]',
+    '[class*="created"]',
+    '[data-widget="characteristics"] [class*="Дата"]',
+    '[class*="date-added"]'
+  ];
+  for (const selector of dateSelectors) {
+    const el = document.querySelector(selector);
+    if (el?.textContent) {
+      // 尝试解析日期
+      const dateStr = el.textContent.trim();
+      const parsed = parseRussianDate(dateStr);
+      if (parsed) {
+        result.listedDate = parsed;
+        break;
+      }
+    }
+  }
+  
+  // 库存数量
+  const stockSelectors = [
+    '[class*="stock"] [class*="count"]',
+    '[class*="quantity"]',
+    '[data-widget="addToCart"] [class*="count"]'
+  ];
+  for (const selector of stockSelectors) {
+    const el = document.querySelector(selector);
+    if (el?.textContent) {
+      const match = el.textContent.match(/\d+/);
+      if (match) {
+        result.stock = parseInt(match[0]);
+        break;
+      }
+    }
+  }
+  
+  return result;
+}
+
+/**
+ * 解析俄语日期格式
+ */
+function parseRussianDate(dateStr: string): string | null {
+  const months: Record<string, string> = {
+    'янв': '01', 'фев': '02', 'мар': '03', 'апр': '04',
+    'май': '05', 'июн': '06', 'июл': '07', 'авг': '08',
+    'сен': '09', 'окт': '10', 'ноя': '11', 'дек': '12',
+    'января': '01', 'февраля': '02', 'марта': '03', 'апреля': '04',
+    'мая': '05', 'июня': '06', 'июля': '07', 'августа': '08',
+    'сентября': '09', 'октября': '10', 'ноября': '11', 'декабря': '12'
+  };
+  
+  // 格式: DD Month YYYY 或 DD.MM.YYYY
+  const ruMatch = dateStr.match(/(\d{1,2})\s+(\w+)\s+(\d{4})/i);
+  if (ruMatch) {
+    const month = months[ruMatch[2].toLowerCase().substring(0, 3)];
+    if (month) {
+      return `${ruMatch[3]}-${month}-${ruMatch[1].padStart(2, '0')}`;
+    }
+  }
+  
+  // 格式: DD.MM.YYYY
+  const dotMatch = dateStr.match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+  if (dotMatch) {
+    return `${dotMatch[3]}-${dotMatch[2].padStart(2, '0')}-${dotMatch[1].padStart(2, '0')}`;
+  }
+  
+  return null;
+}
+
+/**
+ * 提取完整的V4扩展数据（双策略）
+ */
+function extractV4Data(): {
+  sellerName?: string;
+  sellerType?: 'local' | 'cross_border';
+  followerCount?: number;
+  variantCount?: number;
+  deliveryType?: 'FBO' | 'FBS' | 'RFBS' | 'FBP';
+  weight?: number;
+  dimensions?: { length: number; width: number; height: number };
+  volume?: number;
+  listedDate?: string;
+  stock?: number;
+} {
+  // 策略1：优先从内嵌JSON提取
+  const jsonData = extractFromEmbeddedJson();
+  if (jsonData) {
+    const result = { ...jsonData };
+    // 计算体积
+    if (jsonData.dimensions) {
+      result.volume = (jsonData.dimensions.length * jsonData.dimensions.width * jsonData.dimensions.height) / 1000000;
+    }
+    return result;
+  }
+  
+  // 策略2：DOM选择器兜底
+  const domData = extractFromDOM();
+  const result = { ...domData };
+  // 计算体积
+  if (domData.dimensions) {
+    result.volume = (domData.dimensions.length * domData.dimensions.width * domData.dimensions.height) / 1000000;
+  }
+  return result;
 }
 
 /**

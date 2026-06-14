@@ -534,6 +534,28 @@ export function extractWbSignal(): MarketSignalPayload | null {
     imageUrl: images[0] || undefined,
     images,
     brandName: sellerName,
+    // ========== V4 新增字段 ==========
+    // 商家与配送
+    sellerName,
+    sellerType: (productData?.sellerType as string || extractSellerTypeFromDOM()) as 'local' | 'cross_border' | undefined,
+    followerCount: (productData?.supplierVolume as number || productData?.volume as number || 0) || undefined,
+    variantCount: (productData?.variantsCount as number || 0) || undefined,
+    deliveryType: extractDeliveryType() as 'FBO' | 'FBS' | 'RFBS' | 'FBP' | undefined,
+    // 商品规格
+    weight: extractWeightFromDOM(),
+    dimensions: extractDimensionsFromDOM(),
+    volume: extractVolumeFromDOM(),
+    listedDate: productData?.addDate as string || extractListedDateFromDOM(),
+    stock: (productData?.stocks as number) || extractStockFromDOM(),
+    // 计算字段
+    revenue: currentPrice > 0 && salesVolume > 0 ? currentPrice * salesVolume : undefined,
+    // API占位字段（一期为空）
+    returnRate: undefined,
+    impressions: undefined,
+    cardViews: undefined,
+    cartRate: undefined,
+    adShare: undefined,
+    // ========== V4 新增字段结束 ==========
     rawData: rawData ? { 
       nextData: true,
       sellerName,
@@ -553,6 +575,155 @@ export function extractWbSignal(): MarketSignalPayload | null {
   });
   
   return signal;
+}
+
+// ============================================================================
+// V4 扩展字段提取函数
+// ============================================================================
+
+/**
+ * 提取卖家类型（本土/跨境）
+ * WB通常展示在商品详情页的卖家信息区
+ */
+function extractSellerTypeFromDOM(): 'local' | 'cross_border' | undefined {
+  try {
+    // 尝试从__NEXT_DATA__中获取
+    const nextDataScript = document.getElementById('__NEXT_DATA__');
+    if (nextDataScript) {
+      const data = JSON.parse(nextDataScript.textContent || '{}');
+      const isCountry = data?.props?.pageProps?.product?.isCountry;
+      if (isCountry === true) return 'local';
+      if (isCountry === false) return 'cross_border';
+    }
+    
+    // DOM兜底：查找"Страна"或国家标识
+    const countryText = document.body.textContent || '';
+    if (countryText.includes('российский') || countryText.includes('Россия')) {
+      return 'local';
+    }
+    if (countryText.includes('Китай') || countryText.includes('Турция')) {
+      return 'cross_border';
+    }
+    
+    return undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * 提取配送类型
+ * WB展示FBS/FBO等标签
+ */
+function extractDeliveryType(): 'FBO' | 'FBS' | 'RFBS' | undefined {
+  try {
+    // 查找配送类型标识
+    const deliveryElements = document.querySelectorAll('[class*="delivery"], [class*="shipping"]');
+    for (const el of deliveryElements) {
+      const text = el.textContent || '';
+      if (text.includes('Wildberries') && text.includes('FBS')) return 'FBS';
+      if (text.includes('со склада')) return 'FBO';
+    }
+    return 'FBS'; // WB默认FBS
+  } catch {
+    return 'FBS';
+  }
+}
+
+/**
+ * 提取商品重量（克）
+ */
+function extractWeightFromDOM(): number | undefined {
+  try {
+    const text = document.body.textContent || '';
+    // 匹配 "Вес: 500 г" 或 "500 г"
+    const weightMatch = text.match(/(?:Вес|вес)[^0-9]*(\d+)\s*г/i) || 
+                       text.match(/(\d+)\s*г\s*$/);
+    if (weightMatch) {
+      return parseInt(weightMatch[1], 10);
+    }
+    return undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * 提取商品尺寸（长宽高，mm）
+ */
+function extractDimensionsFromDOM(): { length: number; width: number; height: number } | undefined {
+  try {
+    const text = document.body.textContent || '';
+    // 匹配 "Размер: 20x30x10 см"
+    const dimMatch = text.match(/(\d+)\s*[xх×]\s*(\d+)\s*[xх×]\s*(\d+)/i);
+    if (dimMatch) {
+      const [, length, width, height] = dimMatch;
+      // 转换为mm（假设是cm单位）
+      return {
+        length: parseInt(length, 10) * 10,
+        width: parseInt(width, 10) * 10,
+        height: parseInt(height, 10) * 10,
+      };
+    }
+    return undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * 计算体积（升）
+ */
+function extractVolumeFromDOM(): number | undefined {
+  const dims = extractDimensionsFromDOM();
+  if (dims) {
+    // 长×宽×高 / 1,000,000 = 体积(升)
+    return (dims.length * dims.width * dims.height) / 1000000;
+  }
+  return undefined;
+}
+
+/**
+ * 提取上架日期
+ */
+function extractListedDateFromDOM(): string | undefined {
+  try {
+    const text = document.body.textContent || '';
+    // 匹配日期格式 "01.01.2024" 或 "2024-01-01"
+    const dateMatch = text.match(/(\d{1,2})[.\-](\d{1,2})[.\-](\d{4})/) ||
+                      text.match(/(\d{4})[.\-](\d{1,2})[.\-](\d{1,2})/);
+    if (dateMatch) {
+      const [, a, b, c] = dateMatch;
+      // 转换为ISO格式
+      if (c.length === 4) {
+        // YYYY-MM-DD格式
+        return `${c}-${b.padStart(2, '0')}-${a.padStart(2, '0')}`;
+      } else {
+        // DD-MM-YYYY格式
+        return `${a}-${b}-${c}`;
+      }
+    }
+    return undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * 提取库存数量
+ */
+function extractStockFromDOM(): number | undefined {
+  try {
+    const nextDataScript = document.getElementById('__NEXT_DATA__');
+    if (nextDataScript) {
+      const data = JSON.parse(nextDataScript.textContent || '{}');
+      const stocks = data?.props?.pageProps?.product?.stocks;
+      if (typeof stocks === 'number') return stocks;
+    }
+    return undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 /**

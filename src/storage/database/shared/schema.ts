@@ -1231,6 +1231,35 @@ export const marketSignals = pgTable('market_signals', {
   
   // 原始数据
   rawData: jsonb('raw_data'),
+  
+  // ========== V4新增字段：商家与配送（6项）==========
+  sellerName: varchar('seller_name', { length: 255 }), // 卖家名称
+  sellerType: varchar('seller_type', { length: 50 }), // 'local' | 'cross_border'
+  followerCount: integer('follower_count').default(0), // 卖家粉丝数量
+  variantCount: integer('variant_count').default(0), // 商品变体数量
+  deliveryType: varchar('delivery_type', { length: 50 }), // 'FBO' | 'FBS' | 'RFBS' | 'FBP'
+  
+  // ========== V4新增字段：商品规格（5项）==========
+  weight: numeric('weight', { precision: 10, scale: 2 }), // 重量(g)
+  dimensionLength: numeric('dimension_length', { precision: 10, scale: 2 }), // 长度(mm)
+  dimensionWidth: numeric('dimension_width', { precision: 10, scale: 2 }), // 宽度(mm)
+  dimensionHeight: numeric('dimension_height', { precision: 10, scale: 2 }), // 高度(mm)
+  volume: numeric('volume', { precision: 10, scale: 6 }), // 体积(L)
+  listedDate: date('listed_date'), // 上架日期
+  stock: integer('stock').default(0), // 库存数量
+  
+  // ========== V4新增字段：计算/估算（3项）==========
+  revenue: numeric('revenue', { precision: 15, scale: 2 }), // 估算营收
+  profitRate: numeric('profit_rate', { precision: 5, scale: 2 }), // 利润率
+  purchaseCost: numeric('purchase_cost', { precision: 10, scale: 2 }), // 采购成本(¥)
+  
+  // ========== V4新增字段：API占位（5项）==========
+  returnRate: numeric('return_rate', { precision: 5, scale: 2 }), // 退货率
+  impressions: integer('impressions').default(0), // 展示次数
+  cardViews: integer('card_views').default(0), // 商品卡片浏览量
+  cartRate: numeric('cart_rate', { precision: 5, scale: 4 }), // 加购率
+  adShare: numeric('ad_share', { precision: 5, scale: 4 }), // 广告占比
+  
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 }, (table) => [
@@ -1238,6 +1267,11 @@ export const marketSignals = pgTable('market_signals', {
   index('idx_market_signals_product').on(table.productId),
   index('idx_market_signals_source').on(table.sourceType),
   index('idx_market_signals_collected').on(table.collectedAt),
+  // V4新增索引
+  index('idx_market_signals_seller_type').on(table.sellerType),
+  index('idx_market_signals_delivery_type').on(table.deliveryType),
+  index('idx_market_signals_sales_volume').on(table.salesVolume),
+  index('idx_market_signals_revenue').on(table.revenue),
 ]);
 
 /**

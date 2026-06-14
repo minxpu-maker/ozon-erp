@@ -49,9 +49,38 @@ export type ProcessStatus = 'created' | 'updated' | 'created_with_history';
 // ============================================================================
 
 /**
- * 一条商品采集数据
+ * 卖家类型
+ * - local: 本土卖家
+ * - cross_border: 跨境卖家
+ */
+export type SellerType = 'local' | 'cross_border';
+
+/**
+ * 配送类型
+ * - FBO: Ozon fulfillment
+ * - FBS: 卖家自发货
+ * - RFBS: RFBS
+ * - FBP: FBP
+ */
+export type DeliveryType = 'FBO' | 'FBS' | 'RFBS' | 'FBP';
+
+/**
+ * 商品尺寸
+ */
+export interface ProductDimensions {
+  /** 长度 mm */
+  length: number;
+  /** 宽度 mm */
+  width: number;
+  /** 高度 mm */
+  height: number;
+}
+
+/**
+ * 一条商品采集数据 (Schema V4)
  */
 export interface MarketSignalPayload {
+  // ========== 基础字段（已存在） ==========
   /** 来源平台 */
   sourceType: SourceType;
   /** 信号类型 */
@@ -84,6 +113,50 @@ export interface MarketSignalPayload {
   brandName?: string;
   /** 原始页面数据（调试用） */
   rawData?: Record<string, unknown>;
+
+  // ========== 商家与配送（6项） ==========
+  /** 卖家名称 */
+  sellerName?: string;
+  /** 卖家类型：本土/跨境 */
+  sellerType?: SellerType;
+  /** 卖家粉丝/关注数量 */
+  followerCount?: number;
+  /** 商品变体数量 */
+  variantCount?: number;
+  /** 配送类型：FBO/FBS/RFBS/FBP */
+  deliveryType?: DeliveryType;
+
+  // ========== 商品规格（5项） ==========
+  /** 商品重量 g */
+  weight?: number;
+  /** 商品尺寸 mm */
+  dimensions?: ProductDimensions;
+  /** 体积 L（自动计算：长×宽×高/1000000） */
+  volume?: number;
+  /** 上架日期 */
+  listedDate?: string;
+  /** 库存数量 */
+  stock?: number;
+
+  // ========== 计算/估算（3项） ==========
+  /** 估算营收（price × salesVolume） */
+  revenue?: number;
+  /** 利润率（利润计算器算出） */
+  profitRate?: number;
+  /** 用户输入的采购成本 */
+  purchaseCost?: number;
+
+  // ========== API占位（5项，一期为空） ==========
+  /** 退货率 */
+  returnRate?: number;
+  /** 展示次数 */
+  impressions?: number;
+  /** 商品卡片浏览量 */
+  cardViews?: number;
+  /** 加购率 */
+  cartRate?: number;
+  /** 广告占比 */
+  adShare?: number;
 }
 
 /**

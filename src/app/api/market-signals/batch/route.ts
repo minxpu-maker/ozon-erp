@@ -48,6 +48,25 @@ interface SignalInput {
   images: string[] | null;
   brandName: string | null;
   rawData: Record<string, unknown> | null;
+  // V4新增字段
+  sellerName?: string | null;
+  sellerType?: string | null;
+  followerCount?: number | null;
+  variantCount?: number | null;
+  deliveryType?: string | null;
+  weight?: number | null;
+  dimensions?: { length?: number | null; width?: number | null; height?: number | null } | null;
+  volume?: number | null;
+  listedDate?: string | null;
+  stock?: number | null;
+  revenue?: number | null;
+  profitRate?: number | null;
+  purchaseCost?: number | null;
+  returnRate?: number | null;
+  impressions?: number | null;
+  cardViews?: number | null;
+  cartRate?: number | null;
+  adShare?: number | null;
 }
 
 interface BatchRequest {
@@ -272,6 +291,28 @@ async function processSignal(
         imageUrl: signal.imageUrl || null,
         images: signal.images || null,
         brandName: signal.brandName || null,
+        // ========== V4 新增字段 ==========
+        sellerName: signal.sellerName || null,
+        sellerType: signal.sellerType || null,
+        followerCount: Math.floor(Number(signal.followerCount)) || null,
+        variantCount: Math.floor(Number(signal.variantCount)) || null,
+        deliveryType: signal.deliveryType || null,
+        weight: signal.weight != null ? String(signal.weight) : null,
+        dimensionLength: signal.dimensions?.length != null ? String(signal.dimensions.length) : null,
+        dimensionWidth: signal.dimensions?.width != null ? String(signal.dimensions.width) : null,
+        dimensionHeight: signal.dimensions?.height != null ? String(signal.dimensions.height) : null,
+        volume: signal.volume != null ? String(signal.volume) : null,
+        listedDate: signal.listedDate || null,
+        stock: Math.floor(Number(signal.stock)) || null,
+        revenue: signal.revenue != null ? String(signal.revenue) : null,
+        profitRate: signal.profitRate != null ? String(signal.profitRate) : null,
+        purchaseCost: signal.purchaseCost != null ? String(signal.purchaseCost) : null,
+        returnRate: signal.returnRate != null ? String(signal.returnRate) : null,
+        impressions: Math.floor(Number(signal.impressions)) || null,
+        cardViews: Math.floor(Number(signal.cardViews)) || null,
+        cartRate: signal.cartRate != null ? String(signal.cartRate) : null,
+        adShare: signal.adShare != null ? String(signal.adShare) : null,
+        // ========== V4 字段结束 ==========
         productTitleZh: null,
         previousSignalId: null,
         rawData: signal.rawData || {},
@@ -279,6 +320,12 @@ async function processSignal(
         processedAt: null,
       })
       .returning({ id: marketSignals.id });
+    
+    // Debug: check inserted values
+    const inserted = await db.query.marketSignals.findFirst({
+      where: eq(marketSignals.id, newRecord.id),
+    });
+    console.log('[V4 DEBUG] Inserted sellerName:', inserted?.sellerName, 'weight:', inserted?.weight);
     
     signalId = newRecord.id;
     status = 'created';
@@ -298,6 +345,28 @@ async function processSignal(
         imageUrl: signal.imageUrl || null,
         images: signal.images || null,
         brandName: signal.brandName || null,
+        // ========== V4 新增字段 ==========
+        sellerName: signal.sellerName || null,
+        sellerType: signal.sellerType || null,
+        followerCount: Math.floor(Number(signal.followerCount)) || null,
+        variantCount: Math.floor(Number(signal.variantCount)) || null,
+        deliveryType: signal.deliveryType || null,
+        weight: signal.weight != null ? String(signal.weight) : null,
+        dimensionLength: signal.dimensions?.length != null ? String(signal.dimensions.length) : null,
+        dimensionWidth: signal.dimensions?.width != null ? String(signal.dimensions.width) : null,
+        dimensionHeight: signal.dimensions?.height != null ? String(signal.dimensions.height) : null,
+        volume: signal.volume != null ? String(signal.volume) : null,
+        listedDate: signal.listedDate || null,
+        stock: Math.floor(Number(signal.stock)) || null,
+        revenue: signal.revenue != null ? String(signal.revenue) : null,
+        profitRate: signal.profitRate != null ? String(signal.profitRate) : null,
+        purchaseCost: signal.purchaseCost != null ? String(signal.purchaseCost) : null,
+        returnRate: signal.returnRate != null ? String(signal.returnRate) : null,
+        impressions: Math.floor(Number(signal.impressions)) || null,
+        cardViews: Math.floor(Number(signal.cardViews)) || null,
+        cartRate: signal.cartRate != null ? String(signal.cartRate) : null,
+        adShare: signal.adShare != null ? String(signal.adShare) : null,
+        // ========== V4 字段结束 ==========
         rawData: signal.rawData || {},
         processedAt: null, // 标记为未处理，让引擎重新分析
         updatedAt: now,
