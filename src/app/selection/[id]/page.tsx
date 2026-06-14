@@ -350,8 +350,8 @@ function BasicInfoTab({ data }: { data: MarketSignal }) {
 }
 
 function TrendsTab({ data }: { data: TrendData[] }) {
-  const maxSales = Math.max(...data.map((d) => d.sales));
-  const maxRevenue = Math.max(...data.map((d) => d.revenue));
+  const maxSales = data.length > 0 ? Math.max(...data.map((d) => d.sales)) : 0;
+  const maxRevenue = data.length > 0 ? Math.max(...data.map((d) => d.revenue)) : 0;
 
   return (
     <div className="space-y-6">
