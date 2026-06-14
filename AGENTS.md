@@ -105,6 +105,35 @@
 - **认证方式**: Client-Id + Api-Key
 - **基础URL**: https://api-seller.ozon.ru
 
+### 市场信号 API
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| `/api/market-signals/batch` | POST | 批量推送采集数据 |
+| `/api/market-signals` | GET | 查询市场信号列表 |
+| `/api/market-signals/stats` | GET | 采集统计 |
+| `/api/market-signals/collected-ids` | GET | 获取已采集ID列表 |
+
+### 采集箱 API
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| `/api/collection-items` | GET | 采集箱列表 |
+| `/api/collection-items` | POST | 创建采集箱项 |
+| `/api/collection-items/:id` | GET/PUT/DELETE | 采集箱项CRUD |
+| `/api/collection-items/:id/claim` | PATCH | 认领采集箱项 |
+| `/api/collection-items/batch-claim` | POST | 批量认领 |
+| `/api/collection-items/batch-publish` | POST | 批量发布到Ozon |
+| `/api/collection-items/stats` | GET | 采集箱统计 |
+
+### 产品发布 API
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| `/api/products/publish` | POST | 发布商品到Ozon |
+
+### 利润计算 API
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| `/api/profit-calculator` | POST | 计算利润和ROI |
+
 ## 硬件集成
 
 | 硬件 | 用途 | 数据协议 |

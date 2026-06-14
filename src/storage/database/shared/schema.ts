@@ -1318,3 +1318,104 @@ export type PolicyChangeEvent = typeof policyChangeEvents.$inferSelect;
 export type SyncSchedule = typeof syncSchedules.$inferSelect;
 export type MarketSignal = typeof marketSignals.$inferSelect;
 export type ExtensionApiKey = typeof extensionApiKeys.$inferSelect;
+
+/**
+ * 采集箱表 - 管理采集的商品
+ */
+export const collectionItems = pgTable('collection_items', {
+  id: serial('id').primaryKey(),
+  signalId: integer('signal_id').references(() => marketSignals.id, { onDelete: 'cascade' }),
+  shopId: varchar('shop_id', { length: 36 }).references(() => shops.id),
+  
+  // 状态: pending/claimed/published/rejected
+  status: varchar('status', { length: 20 }).default('pending').notNull(),
+  
+  // 认领信息
+  claimedAt: timestamp('claimed_at', { withTimezone: true }),
+  claimedBy: varchar('claimed_by', { length: 50 }),
+  warehouseId: integer('warehouse_id'),
+  
+  // 发布信息
+  publishedAt: timestamp('published_at', { withTimezone: true }),
+  ozonTaskId: varchar('ozon_task_id', { length: 100 }),
+  ozonProductId: varchar('ozon_product_id', { length: 100 }),
+  publishStatus: varchar('publish_status', { length: 30 }).default('pending'),  // pending/pending_review/listed/rejected
+  publishError: text('publish_error'),
+  
+  // 编辑数据（JSONB覆盖原始信号数据）
+  editedData: jsonb('edited_data').default(sql`'{}'`),
+  
+  // 元数据
+  notes: text('notes'),
+  priority: integer('priority').default(0),  // 优先级：0普通, 1重要, 2紧急
+  tags: text('tags').array(),
+  
+  // 时间戳
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+}, (table) => [
+  index('idx_collection_status').on(table.status),
+  index('idx_collection_shop').on(table.shopId),
+  index('idx_collection_signal').on(table.signalId),
+  index('idx_collection_publish_status').on(table.publishStatus),
+  index('idx_collection_created').on(table.createdAt),
+]);
+
+/**
+ * Ozon类目佣金率表
+ */
+export const ozonCategoryCommissions = pgTable('ozon_category_commissions', {
+  id: serial('id').primaryKey(),
+  ozonCategoryId: varchar('ozon_category_id', { length: 50 }).notNull(),
+  categoryName: varchar('category_name', { length: 200 }).notNull(),
+  commissionRate: numeric('commission_rate', { precision: 5, scale: 4 }).notNull(),  // 佣金率
+  minCommission: numeric('min_commission', { precision: 10, scale: 2 }).default('0'),  // 最低佣金(卢布)
+  effectiveFrom: date('effective_from'),
+  effectiveTo: date('effective_to'),
+  isActive: boolean('is_active').default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+}, (table) => [
+  index('idx_category_comm_ozon_id').on(table.ozonCategoryId),
+  index('idx_category_comm_active').on(table.isActive),
+]);
+
+/**
+ * 物流费用估算表
+ */
+export const logisticsEstimates = pgTable('logistics_estimates', {
+  id: serial('id').primaryKey(),
+  weightMin: numeric('weight_min', { precision: 10, scale: 2 }).notNull(),  // 最小重量(g)
+  weightMax: numeric('weight_max', { precision: 10, scale: 2 }).notNull(),  // 最大重量(g)
+  logisticsType: varchar('logistics_type', { length: 20 }).notNull(),  // FBS/FBO/FBP
+  estimatedCostCny: numeric('estimated_cost_cny', { precision: 10, scale: 2 }).notNull(),  // 估算费用(人民币)
+  notes: varchar('notes', { length: 200 }),
+  isActive: boolean('is_active').default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+}, (table) => [
+  index('idx_logistics_weight').on(table.weightMin, table.weightMax),
+]);
+
+/**
+ * 汇率表
+ */
+export const exchangeRates = pgTable('exchange_rates', {
+  id: serial('id').primaryKey(),
+  currencyPair: varchar('currency_pair', { length: 10 }).notNull(),  // RUB_CNY
+  rate: numeric('rate', { precision: 10, scale: 6 }).notNull(),
+  source: varchar('source', { length: 50 }),
+  fetchedAt: timestamp('fetched_at', { withTimezone: true }),
+  isCurrent: boolean('is_current').default(false),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+}, (table) => [
+  index('idx_exchange_current').on(table.currencyPair, table.isCurrent),
+]);
+
+// ============================================================================
+// 采集箱模块类型导出
+// ============================================================================
+
+export type CollectionItem = typeof collectionItems.$inferSelect;
+export type OzonCategoryCommission = typeof ozonCategoryCommissions.$inferSelect;
+export type LogisticsEstimate = typeof logisticsEstimates.$inferSelect;
+export type ExchangeRate = typeof exchangeRates.$inferSelect;

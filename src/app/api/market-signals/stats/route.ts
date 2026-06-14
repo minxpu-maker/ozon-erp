@@ -4,7 +4,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { db, marketSignals } from '@/storage/database/shared/schema';
+import { db } from '@/storage/database/client';
+import { marketSignals } from '@/storage/database/shared/schema';
 import { sql, desc, gte, and } from 'drizzle-orm';
 
 // 获取今天开始时间戳
@@ -44,23 +45,17 @@ export async function GET(request: NextRequest) {
     // 查询最近采集的信号（用于获取待认领/已认领/已发布状态）
     // 注意：这里假设有status字段，如果schema没有需要先添加
     // 暂时返回0，后续可以根据实际需求添加状态统计
-    const recentSignals = await db
-      .select({
-        count: sql<number>`count(*)`,
-      })
-      .from(marketSignals)
-      .where(gte(marketSignals.createdAt, weekStartTs))
-      .limit(1);
+    // 注：market_signals表目前没有status字段，状态统计需要通过collection_items表实现
 
     const result = {
       success: true,
       data: {
-        todayCollect: stats[0]?.todayCount || 0,
-        weekCollect: stats[0]?.weekCount || 0,
-        totalCollect: stats[0]?.totalCount || 0,
-        pending: 0,  // 待认领数量（需要status字段支持）
-        claimed: 0,  // 已认领数量（需要status字段支持）
-        published: 0, // 已发布数量（需要status字段支持）
+        todayCollect: Number(stats[0]?.todayCount) || 0,
+        weekCollect: Number(stats[0]?.weekCount) || 0,
+        totalCollect: Number(stats[0]?.totalCount) || 0,
+        pending: 0,  // 待认领数量（需通过collection_items统计）
+        claimed: 0,  // 已认领数量（需通过collection_items统计）
+        published: 0, // 已发布数量（需通过collection_items统计）
       }
     };
 

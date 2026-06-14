@@ -4,7 +4,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { db, marketSignals } from '@/storage/database/shared/schema';
+import { db } from '@/storage/database/client';
+import { marketSignals } from '@/storage/database/shared/schema';
 import { desc } from 'drizzle-orm';
 
 export async function GET(request: NextRequest) {
