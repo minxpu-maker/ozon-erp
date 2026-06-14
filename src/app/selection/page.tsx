@@ -69,14 +69,14 @@ interface FilterConfig {
 
 // ============ Constants ============
 
-const TABS: { id: TabType; label: string; icon: React.ReactNode }[] = [
+const TABS: { id: TabType; label: string; icon: React.ReactNode; separator?: boolean }[] = [
   { id: 'hot-ranking', label: '热销榜单', icon: <TrendingUp className="w-4 h-4" /> },
   { id: 'hot-words', label: '市场热词', icon: <Search className="w-4 h-4" /> },
   { id: 'hot-tags', label: '热销标签', icon: <Tag className="w-4 h-4" /> },
   { id: 'hot-categories', label: '热销类目', icon: <Grid3X3 className="w-4 h-4" /> },
   { id: 'hot-shops', label: '热销店铺', icon: <Store className="w-4 h-4" /> },
   { id: 'hot-brands', label: '热销品牌', icon: <Building2 className="w-4 h-4" /> },
-  { id: 'product-library', label: '产品库', icon: <Database className="w-4 h-4" /> },
+  { id: 'product-library', label: '产品库', icon: <Database className="w-4 h-4" />, separator: true },
 ];
 
 const SELECTION_MODES: { id: SelectionMode; label: string; locked?: boolean }[] = [
@@ -118,22 +118,23 @@ function TabBar({
     <div className="bg-white border-b border-[#E6EAF2] sticky top-0 z-10">
       <div className="flex items-center gap-1 px-4 py-2 overflow-x-auto">
         {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => onTabChange(tab.id)}
-            className={cn(
-              'flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm whitespace-nowrap transition-colors',
-              activeTab === tab.id
-                ? 'bg-[#1677FF]/10 text-[#1677FF]'
-                : 'text-[#637089] hover:bg-[#F3F4F6] hover:text-[#1F2937]'
+          <div key={tab.id} className="flex items-center">
+            {tab.separator && (
+              <div className="w-px h-6 bg-[#E6EAF2] mx-2" />
             )}
-          >
-            {tab.icon}
-            {tab.label}
-            {activeTab === tab.id && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#1677FF] rounded-t-full" />
-            )}
-          </button>
+            <button
+              onClick={() => onTabChange(tab.id)}
+              className={cn(
+                'flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm whitespace-nowrap transition-colors',
+                activeTab === tab.id
+                  ? 'bg-[#1677FF]/10 text-[#1677FF]'
+                  : 'text-[#637089] hover:bg-[#F3F4F6] hover:text-[#1F2937]'
+              )}
+            >
+              {tab.icon}
+              {tab.label}
+            </button>
+          </div>
         ))}
       </div>
     </div>
