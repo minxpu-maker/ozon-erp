@@ -4,6 +4,7 @@
  */
 
 import { MessageBus } from '../shared/message-bus';
+import { collectedStore } from '../shared/collected-store';
 import { OzonExtConfig, ProductInfo, MarketSignalPayload } from '../shared/types';
 import { NavbarManager } from './navbar';
 import { PanelManager } from './overlay';
@@ -72,6 +73,9 @@ class ContentScriptMain {
 
     // 加载配置
     await this.loadConfig();
+
+    // 初始化已采集状态存储
+    await collectedStore.init();
 
     // 初始化组件
     this.initComponents();
@@ -148,6 +152,9 @@ class ContentScriptMain {
     }
 
     if (payload) {
+      // 检查是否已采集
+      const isCollected = collectedStore.isCollected(payload.productId);
+
       // 转换为ProductInfo格式
       const productInfo: ProductInfo = {
         platform: this.platform as 'ozon' | 'wb',
@@ -177,7 +184,8 @@ class ContentScriptMain {
       };
 
       this.currentProduct = productInfo;
-      this.panel.init(productInfo);
+      // 传递已采集状态
+      this.panel.init(productInfo, isCollected);
     }
   }
 
@@ -300,6 +308,8 @@ class ContentScriptMain {
         const result = await response.json();
         if (result.ok) {
           this.panel.setCollected(true);
+          // 更新本地已采集状态
+          collectedStore.markCollected(payload.productId);
           // 通知选品模式该商品已采集
           this.messageBus.send('SIGNAL_COLLECTED', { productId: payload.productId });
         }

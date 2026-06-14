@@ -210,9 +210,9 @@ export class PanelManager {
   /**
    * 初始化面板
    */
-  init(productInfo: ProductInfo): void {
+  init(productInfo: ProductInfo, isCollected: boolean = false): void {
     this.productInfo = productInfo;
-    this.collected = false;
+    this.collected = isCollected;
 
     // 移除已存在的面板
     this.destroy();
