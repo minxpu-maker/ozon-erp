@@ -45,6 +45,11 @@ export class SelectionManager {
 
   constructor(messageBus: MessageBus) {
     this.messageBus = messageBus;
+
+    // 监听采集成功消息
+    this.messageBus.on('SIGNAL_COLLECTED', (data: { productId: string }) => {
+      this.markAsCollected(data.productId);
+    });
   }
 
   /**
@@ -614,6 +619,25 @@ export class SelectionManager {
         opacity: 1 !important;
       }
 
+      /* 已采集标记 */
+      .ozon-ext-collected::after {
+        content: '✓' !important;
+        position: absolute !important;
+        top: 8px !important;
+        right: 8px !important;
+        width: 24px !important;
+        height: 24px !important;
+        background: #52c41a !important;
+        color: white !important;
+        border-radius: 50% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 14px !important;
+        font-weight: bold !important;
+        z-index: 10 !important;
+      }
+
       /* 响应式 */
       @media (max-width: 768px) {
         .ozon-ext-selection-bar-inner {
@@ -635,5 +659,25 @@ export class SelectionManager {
       }
     `;
     document.head.appendChild(style);
+  }
+
+  /**
+   * 标记商品已采集（收到采集成功消息后调用）
+   */
+  private markAsCollected(productId: string): void {
+    // 从选中列表移除
+    this.selectedIds.delete(productId);
+
+    // 更新操作栏计数
+    this.updateBar();
+
+    // 可选：在卡片上显示已采集标记
+    const cards = document.querySelectorAll('.js-catalogue-tile, [data-widget="searchResultsV2"] .tile, .catalog-tile, .product-card, .c-card');
+    cards.forEach((card) => {
+      const id = this.extractProductId(card);
+      if (id === productId) {
+        card.classList.add('ozon-ext-collected');
+      }
+    });
   }
 }

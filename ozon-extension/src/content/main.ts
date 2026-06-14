@@ -4,11 +4,13 @@
  */
 
 import { MessageBus } from '../shared/message-bus';
-import { OzonExtConfig, ProductInfo } from '../shared/types';
+import { OzonExtConfig, ProductInfo, MarketSignalPayload } from '../shared/types';
 import { NavbarManager } from './navbar';
 import { PanelManager } from './overlay';
 import { SelectionManager } from './selection';
 import { HelperManager } from './helpers';
+import { extractOzonProduct, extractOzonSearchResults } from './ozon';
+import { extractWbSignal } from './wb';
 
 // 检测页面类型
 type PageType = 'ozon-product' | 'ozon-search' | 'ozon-category' | 'wb-product' | 'wb-search' | 'unknown';
@@ -16,14 +18,14 @@ type PageType = 'ozon-product' | 'ozon-search' | 'ozon-category' | 'wb-product' 
 function detectPageType(): PageType {
   const url = window.location.href;
 
-  // Ozon
-  if (/ozon\.ru\/product\//.test(url)) return 'ozon-product';
-  if (/ozon\.ru\/search/.test(url)) return 'ozon-search';
-  if (/ozon\.ru\/category/.test(url)) return 'ozon-category';
+  // Ozon（支持 ozon.ru, ozon.by 等）
+  if (/ozon\.(ru|by|kg|kz|uz)\/product\//.test(url)) return 'ozon-product';
+  if (/ozon\.(ru|by|kg|kz|uz)\/search/.test(url)) return 'ozon-search';
+  if (/ozon\.(ru|by|kg|kz|uz)\/category/.test(url)) return 'ozon-category';
 
-  // Wildberries
-  if (/wildberries\.ru\/catalog\/.*\/.*/.test(url)) return 'wb-product';
-  if (/wildberries\.ru\/search/.test(url)) return 'wb-search';
+  // Wildberries（支持 wildberries.ru, wildberries.by 等）
+  if (/wildberries\.(ru|by|cn|ua|kz|kg|uz)\/catalog\//.test(url)) return 'wb-product';
+  if (/wildberries\.(ru|by|cn|ua|kz|kg|uz)\/search/.test(url)) return 'wb-search';
 
   return 'unknown';
 }
@@ -31,8 +33,8 @@ function detectPageType(): PageType {
 // 检测平台
 function detectPlatform(): 'ozon' | 'wb' | null {
   const url = window.location.href;
-  if (/ozon\.ru/.test(url)) return 'ozon';
-  if (/wildberries\.ru/.test(url)) return 'wb';
+  if (/ozon\.(ru|by|kg|kz|uz)/.test(url)) return 'ozon';
+  if (/wildberries\.(ru|by|cn|ua|kz|kg|uz)/.test(url)) return 'wb';
   return null;
 }
 
@@ -136,9 +138,44 @@ class ContentScriptMain {
   }
 
   private initProductPage(): void {
-    // 提取商品信息
-    const productInfo = this.extractProductInfo();
-    if (productInfo) {
+    // 使用V4提取器提取商品信息
+    let payload: MarketSignalPayload | null = null;
+
+    if (this.platform === 'ozon') {
+      payload = extractOzonProduct();
+    } else if (this.platform === 'wb') {
+      payload = extractWbSignal();
+    }
+
+    if (payload) {
+      // 转换为ProductInfo格式
+      const productInfo: ProductInfo = {
+        platform: this.platform as 'ozon' | 'wb',
+        productId: payload.productId,
+        title: payload.productTitle,
+        imageUrl: payload.imageUrl || '',
+        images: payload.images,
+        price: payload.price,
+        originalPrice: payload.originalPrice,
+        rating: payload.rating,
+        reviewsCount: payload.reviewsCount,
+        salesVolume: payload.salesVolume,
+        revenue: payload.revenue,
+        profitRate: payload.profitRate,
+        sellerName: payload.sellerName,
+        sellerType: payload.sellerType,
+        followerCount: payload.followerCount,
+        variantCount: payload.variantCount,
+        deliveryType: payload.deliveryType,
+        weight: payload.weight,
+        dimensions: payload.dimensions,
+        volume: payload.volume,
+        listedDate: payload.listedDate,
+        stock: payload.stock,
+        brand: payload.brandName,
+        category: payload.categoryPath,
+      };
+
       this.currentProduct = productInfo;
       this.panel.init(productInfo);
     }
@@ -149,9 +186,64 @@ class ContentScriptMain {
     this.selection.enable(true);
     this.navbar.setActiveTab('selection-mode');
 
-    // 提取搜索结果中的商品列表
-    const products = this.extractProductList();
+    // 使用V4提取器提取搜索结果
+    let payloads: MarketSignalPayload[] = [];
+
+    if (this.platform === 'ozon') {
+      payloads = extractOzonSearchResults();
+    } else if (this.platform === 'wb') {
+      // WB暂未实现批量提取，使用简单提取
+      payloads = this.extractWbSearchResultsSimple();
+    }
+
+    // 转换为ProductInfo格式
+    const products: ProductInfo[] = payloads.map((p) => ({
+      platform: this.platform as 'ozon' | 'wb',
+      productId: p.productId,
+      title: p.productTitle,
+      imageUrl: p.imageUrl || '',
+      price: p.price,
+      rating: p.rating,
+      reviewsCount: p.reviewsCount,
+      sellerName: p.sellerName,
+      sellerType: p.sellerType,
+      weight: p.weight,
+      volume: p.volume,
+      brand: p.brandName,
+      category: p.categoryPath,
+    }));
+
     this.selection.updateProducts(products);
+  }
+
+  /**
+   * 简单的WB搜索结果提取（待V4实现）
+   */
+  private extractWbSearchResultsSimple(): MarketSignalPayload[] {
+    const payloads: MarketSignalPayload[] = [];
+    const cards = document.querySelectorAll('.product-card, .c-card');
+
+    cards.forEach((card) => {
+      const productId = card.getAttribute('data-card-id') ||
+                       card.querySelector('[data-nm-id]')?.getAttribute('data-nm-id') || '';
+      const titleEl = card.querySelector('.product-card__name, h3');
+      const title = titleEl?.textContent?.trim() || '';
+      const priceEl = card.querySelector('[class*="price"] span');
+      const price = priceEl ? parseFloat(priceEl.textContent?.replace(/[^\d.,]/g, '').replace(',', '.') || '0') : undefined;
+
+      if (productId && title) {
+        payloads.push({
+          sourceType: 'wb',
+          signalType: 'demand',
+          productId,
+          productTitle: title,
+          price,
+          imageUrl: card.querySelector('img')?.getAttribute('src') || undefined,
+        });
+      }
+    });
+
+    return payloads;
   }
 
   private toggleSelectionMode(enabled: boolean): void {
@@ -159,95 +251,10 @@ class ContentScriptMain {
 
     if (enabled) {
       this.panel.hide();
-      const products = this.extractProductList();
-      this.selection.updateProducts(products);
+      // initSearchPage会调用updateProducts，无需重复
     } else {
       this.selection.enable(false);
     }
-  }
-
-  private extractProductInfo(): ProductInfo | null {
-    const platform = this.platform;
-    if (!platform) return null;
-
-    // 尝试从页面提取
-    const url = window.location.href;
-    const productIdMatch = url.match(/\/product\/([^\/\?]+)/);
-    const productId = productIdMatch?.[1] || '';
-
-    // 从页面获取标题
-    let title = '';
-    const titleEl = document.querySelector('h1') || document.querySelector('[data-widget="webProductHeading"] span:first-child');
-    if (titleEl) title = titleEl.textContent?.trim() || '';
-
-    // 从页面获取价格
-    let price = 0;
-    const priceEl = document.querySelector('[data-widget="webPrice"] span:first-child') ||
-                    document.querySelector('.price-block__final-price') ||
-                    document.querySelector('[class*="price"] span');
-    if (priceEl) {
-      const priceText = priceEl.textContent?.replace(/[^\d.,]/g, '').replace(',', '.') || '0';
-      price = parseFloat(priceText);
-    }
-
-    // 基础商品信息
-    const info: ProductInfo = {
-      platform: platform as 'ozon' | 'wb',
-      productId,
-      title,
-      price,
-      imageUrl: '',
-      // 其他字段将从V4提取器获取
-    };
-
-    return info;
-  }
-
-  private extractProductList(): ProductInfo[] {
-    const products: ProductInfo[] = [];
-    const platform = this.platform;
-    if (!platform) return products;
-
-    // Ozon商品卡片
-    const ozonCards = document.querySelectorAll('.js-catalogue-tile, [data-widget="searchResultsV2"] .tile, .catalog-tile');
-
-    // WB商品卡片
-    const wbCards = document.querySelectorAll('.product-card, .c-card');
-
-    const allCards = [...ozonCards, ...wbCards];
-
-    allCards.forEach((card) => {
-      const productId = card.getAttribute('data-id') ||
-                       card.getAttribute('data-product-id') ||
-                       card.getAttribute('data-card-id') ||
-                       card.querySelector('[data-nm-id]')?.getAttribute('data-nm-id') ||
-                       '';
-
-      const titleEl = card.querySelector('.goods-name, .product-card__name, h3, [class*="title"]');
-      const title = titleEl?.textContent?.trim() || '';
-
-      const priceEl = card.querySelector('[class*="price"] span, .price-block__final-price');
-      let price = 0;
-      if (priceEl) {
-        const priceText = priceEl.textContent?.replace(/[^\d.,]/g, '').replace(',', '.') || '0';
-        price = parseFloat(priceText);
-      }
-
-      const imgEl = card.querySelector('img');
-      const imageUrl = imgEl?.getAttribute('src') || imgEl?.getAttribute('data-src') || '';
-
-      if (productId && title) {
-        products.push({
-          platform: platform as 'ozon' | 'wb',
-          productId,
-          title,
-          price,
-          imageUrl,
-        });
-      }
-    });
-
-    return products;
   }
 
   private setupMessageListener(): void {
@@ -276,17 +283,28 @@ class ContentScriptMain {
 
   private async pushSignalToERP(payload: any): Promise<void> {
     try {
-      const response = await fetch(`${this.config?.apiUrl}/api/market-signals/push`, {
+      // 使用批量推送API
+      const response = await fetch(`${this.config?.apiUrl}/api/market-signals/batch`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-API-Key': this.config?.apiKey || '',
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          shopId: this.config?.shopId,
+          signals: [payload],
+        }),
       });
 
       if (response.ok) {
-        this.panel.setCollected(true);
+        const result = await response.json();
+        if (result.ok) {
+          this.panel.setCollected(true);
+          // 通知选品模式该商品已采集
+          this.messageBus.send('SIGNAL_COLLECTED', { productId: payload.productId });
+        }
+      } else {
+        console.error('[OzonExt] Push failed:', response.status);
       }
     } catch (error) {
       console.error('[OzonExt] Failed to push signal:', error);
