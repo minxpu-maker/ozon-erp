@@ -364,6 +364,80 @@ export default function CollectionBoxPage() {
     }
   };
 
+  // 批量发布
+  const handleBatchPublish = async (itemIds: number[]) => {
+    if (itemIds.length === 0) return;
+    
+    if (!confirm(`确定要发布选中的 ${itemIds.length} 件商品到Ozon吗？`)) {
+      return;
+    }
+
+    let success = 0;
+    let failed = 0;
+
+    for (const id of itemIds) {
+      try {
+        const res = await fetch('/api/products/publish', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ collectionItemId: id }),
+        });
+        if (res.ok) {
+          success++;
+        } else {
+          failed++;
+        }
+      } catch {
+        failed++;
+      }
+    }
+
+    await loadItems();
+    await loadStats();
+    
+    if (failed === 0) {
+      alert(`批量发布完成！成功 ${success} 件。`);
+    } else {
+      alert(`批量发布完成！成功 ${success} 件，失败 ${failed} 件。`);
+    }
+  };
+
+  // 批量删除
+  const handleBatchDelete = async (itemIds: number[]) => {
+    if (itemIds.length === 0) return;
+    
+    if (!confirm(`确定要删除选中的 ${itemIds.length} 件商品吗？此操作不可恢复。`)) {
+      return;
+    }
+
+    let success = 0;
+    let failed = 0;
+
+    for (const id of itemIds) {
+      try {
+        const res = await fetch(`/api/collection-items/${id}`, {
+          method: 'DELETE',
+        });
+        if (res.ok) {
+          success++;
+        } else {
+          failed++;
+        }
+      } catch {
+        failed++;
+      }
+    }
+
+    await loadItems();
+    await loadStats();
+    
+    if (failed === 0) {
+      alert(`删除成功！已删除 ${success} 件。`);
+    } else {
+      alert(`删除完成！成功 ${success} 件，失败 ${failed} 件。`);
+    }
+  };
+
   // 编辑完成回调
   const handleEditComplete = () => {
     setModalOpen(false);
@@ -726,6 +800,8 @@ export default function CollectionBoxPage() {
               onModalOpen={setModalOpen}
               onPublish={handlePublish}
               onDelete={handleDelete}
+              onBatchPublish={handleBatchPublish}
+              onBatchDelete={handleBatchDelete}
             />
           )}
         </TabsContent>
@@ -739,7 +815,7 @@ export default function CollectionBoxPage() {
           ) : items.length === 0 ? (
             <EmptyState type="published" />
           ) : (
-            <PublishedTable items={items} />
+            <PublishedTable items={items} onRefresh={loadItems} />
           )}
         </TabsContent>
       </Tabs>
@@ -836,6 +912,8 @@ function ClaimedTable({
   onModalOpen,
   onPublish,
   onDelete,
+  onBatchPublish,
+  onBatchDelete,
 }: {
   items: CollectionItem[];
   selectedIds: Set<number>;
@@ -845,6 +923,8 @@ function ClaimedTable({
   onModalOpen: (open: boolean) => void;
   onPublish: (id: number) => void;
   onDelete: (id: number) => void;
+  onBatchPublish: (ids: number[]) => void;
+  onBatchDelete: (ids: number[]) => void;
 }) {
   // 状态标签
   const StatusBadgeClaimed = ({ status }: { status: string }) => {
@@ -958,8 +1038,12 @@ function ClaimedTable({
           <span className="text-sm text-muted-foreground">
             已选择 {selectedIds.size} 件商品
           </span>
-          <Button>批量发布</Button>
-          <Button variant="outline">批量删除</Button>
+          <Button onClick={() => onBatchPublish(Array.from(selectedIds))}>
+            批量发布
+          </Button>
+          <Button variant="outline" onClick={() => onBatchDelete(Array.from(selectedIds))}>
+            批量删除
+          </Button>
           <Button variant="ghost" onClick={() => onToggleSelect(-1)}>
             取消
           </Button>
@@ -970,9 +1054,29 @@ function ClaimedTable({
 }
 
 // 已发布列表
-function PublishedTable({ items }: { items: CollectionItem[] }) {
+function PublishedTable({ 
+  items, 
+  onRefresh 
+}: { 
+  items: CollectionItem[]; 
+  onRefresh: () => void;
+}) {
+  // 自动刷新：每60秒刷新一次
+  useEffect(() => {
+    const interval = setInterval(() => {
+      onRefresh();
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [onRefresh]);
+
   return (
     <Card>
+      <div className="flex justify-end p-2 border-b">
+        <Button variant="outline" size="sm" onClick={onRefresh}>
+          <RefreshCw className="h-4 w-4 mr-2" />
+          刷新状态
+        </Button>
+      </div>
       <Table>
         <TableHeader>
           <TableRow>
