@@ -198,6 +198,14 @@ ozon-extension/
 ### 侧边栏改造 + 选品页面 (4-C1)
 - **侧边栏精简**: 7个一级入口 + ERP保留模块
 - **选品页面Tab**: 7个Tab切换（热销榜单/热词/标签/类目/店铺/品牌/产品库）
+- **统一页面模板**: 筛选区 + 表格 + 批量操作 + 分页 + 推荐模式
+- **蓝白风格**: 主色#1677FF，背景白，趋势指标色
+
+### 热销榜单 + 详情页 (4-C2)
+- **热销榜单Tab**: 29列数据表格，推荐模式/进阶筛选
+- **详情页4个Tab**: 基本信息/销售趋势/关键词/引擎分析(灰)
+- **销售趋势图表**: 近30天销量/价格/销售额折线图
+- **29列字段**: rank, image, title, sku, brand, category, price, sales, revenue, profitRate, impressions, cardViews, cartRate, adShare, returnRate, reviewCount, rating, listedDate, weight, volume, sellerName, sellerType, deliveryType, qaCount, variants, engineScore, etc.
 
 ### 采集箱前端页面 (4-B1)
 - **页面路由**: `/collection-box`
