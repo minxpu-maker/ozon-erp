@@ -5,6 +5,7 @@
 
 import { MessageBus } from '../shared/message-bus';
 import { OzonExtConfig, ProductInfo } from '../shared/types';
+import { showCollectResult } from './preview';
 
 export interface SelectionTranslations {
   selectedCount: string;
@@ -13,6 +14,7 @@ export interface SelectionTranslations {
   collectAll: string;
   collecting: string;
   collected: string;
+  collectingProgress: string;
 }
 
 const ZH_TRANSLATIONS: SelectionTranslations = {
@@ -22,6 +24,7 @@ const ZH_TRANSLATIONS: SelectionTranslations = {
   collectAll: '采集全页',
   collecting: '采集中...',
   collected: '已采集',
+  collectingProgress: '正在采集',
 };
 
 const RU_TRANSLATIONS: SelectionTranslations = {
@@ -31,6 +34,7 @@ const RU_TRANSLATIONS: SelectionTranslations = {
   collectAll: 'Собрать все',
   collecting: 'Сбор...',
   collected: 'Собрано',
+  collectingProgress: 'Сбор',
 };
 
 export class SelectionManager {
@@ -326,51 +330,92 @@ export class SelectionManager {
   }
 
   /**
-   * 采集选中的商品
+   * 采集选中的商品（带进度显示）
    */
   private collectSelected(): void {
     if (this.selectedIds.size === 0) return;
 
-    this.setButtonLoading(true);
-
-    // 发送采集请求
-    const promises: Promise<void>[] = [];
-
-    this.selectedIds.forEach((productId) => {
-      const product = this.products.find((p) => p.productId === productId);
-      if (product) {
-        promises.push(this.pushSignal(product));
-      }
-    });
-
-    Promise.all(promises)
-      .then(() => {
-        this.setButtonSuccess();
-      })
-      .catch(() => {
-        this.setButtonLoading(false);
-      });
+    const products = this.products.filter((p) => this.selectedIds.has(p.productId));
+    this.collectWithProgress(products);
   }
 
   /**
-   * 采集全部商品
+   * 采集全部商品（带进度显示）
    */
   private collectAll(): void {
+    this.collectWithProgress(this.products);
+  }
+
+  /**
+   * 带进度显示的批量采集
+   */
+  private async collectWithProgress(products: ProductInfo[]): Promise<void> {
+    if (products.length === 0) return;
+
     this.setButtonLoading(true);
+    this.updateProgress(0, products.length);
 
-    const promises: Promise<void>[] = [];
+    let success = 0;
+    let failed = 0;
+    const total = products.length;
 
-    this.products.forEach((product) => {
-      promises.push(this.pushSignal(product));
-    });
+    for (let i = 0; i < products.length; i++) {
+      const product = products[i];
+      try {
+        await this.pushSignal(product);
+        success++;
+      } catch {
+        failed++;
+      }
+      this.updateProgress(i + 1, total);
+    }
 
-    Promise.all(promises)
-      .then(() => {
-        this.setButtonSuccess();
-      })
-      .catch(() => {
+    this.setButtonSuccess();
+    
+    // 显示结果
+    setTimeout(() => {
+      showCollectResult(success, failed, () => {
         this.setButtonLoading(false);
       });
+    }, 500);
+  }
+
+  /**
+   * 更新进度显示
+   */
+  private updateProgress(current: number, total: number): void {
+    const bar = this.container;
+    if (!bar) return;
+
+    // 查找进度条
+    let progressBar = bar.querySelector('.ozon-ext-selection-progress');
+    let progressText = bar.querySelector('.ozon-ext-selection-progress-text');
+
+    if (!progressBar) {
+      progressBar = document.createElement('div');
+      progressBar.className = 'ozon-ext-selection-progress';
+      
+      const progressFill = document.createElement('div');
+      progressFill.className = 'ozon-ext-selection-progress-fill';
+      progressBar.appendChild(progressFill);
+
+      progressText = document.createElement('div');
+      progressText.className = 'ozon-ext-selection-progress-text';
+      
+      bar.querySelector('.ozon-ext-selection-actions')?.appendChild(progressBar);
+      bar.querySelector('.ozon-ext-selection-actions')?.appendChild(progressText as HTMLElement);
+    }
+
+    const progressFill = progressBar.querySelector('.ozon-ext-selection-progress-fill') as HTMLElement;
+    const percent = Math.round((current / total) * 100);
+    
+    if (progressFill) {
+      progressFill.style.width = `${percent}%`;
+    }
+    
+    if (progressText) {
+      progressText.textContent = `${this.translations.collectingProgress} ${current}/${total}`;
+    }
   }
 
   /**
@@ -656,6 +701,48 @@ export class SelectionManager {
           min-width: 100px !important;
           text-align: center !important;
         }
+      }
+
+      /* 采集进度条 */
+      .ozon-ext-selection-progress {
+        width: 100% !important;
+        height: 4px !important;
+        background: rgba(255, 255, 255, 0.3) !important;
+        border-radius: 2px !important;
+        overflow: hidden !important;
+        margin-top: 8px !important;
+      }
+
+      .ozon-ext-selection-progress-fill {
+        height: 100% !important;
+        background: #fff !important;
+        transition: width 0.2s ease !important;
+      }
+
+      .ozon-ext-selection-progress-text {
+        font-size: 12px !important;
+        color: rgba(255, 255, 255, 0.9) !important;
+        margin-top: 4px !important;
+        text-align: center !important;
+      }
+
+      /* 已采集卡片标记 */
+      .ozon-ext-collected::after {
+        content: '✓' !important;
+        position: absolute !important;
+        top: 8px !important;
+        right: 8px !important;
+        width: 20px !important;
+        height: 20px !important;
+        background: #16A37B !important;
+        color: white !important;
+        border-radius: 50% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 12px !important;
+        font-weight: bold !important;
+        z-index: 10 !important;
       }
     `;
     document.head.appendChild(style);

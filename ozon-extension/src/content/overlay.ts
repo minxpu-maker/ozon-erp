@@ -5,6 +5,7 @@
 
 import { MessageBus } from '../shared/message-bus';
 import { OzonExtConfig, MarketSignalPayload, ProductInfo } from '../shared/types';
+import { showCollectPreview, addDetailCollectedBadge } from './preview';
 
 export interface PanelTranslations {
   // 标题区
@@ -267,6 +268,13 @@ export class PanelManager {
         btn.textContent = this.translations.collected;
         btn.classList.add('ozon-ext-btn-success');
         (btn as HTMLButtonElement).disabled = true;
+      }
+      // 添加已采集标签
+      if (collected) {
+        const titleSection = this.container.querySelector('.ozon-ext-panel-title-section');
+        if (titleSection) {
+          addDetailCollectedBadge(titleSection);
+        }
       }
     }
   }
@@ -696,18 +704,12 @@ export class PanelManager {
   }
 
   /**
-   * 采集到ERP
+   * 采集到ERP（带预览）
    */
   private collectToERP(): void {
     if (!this.productInfo || this.collected) return;
 
-    const btn = this.container?.querySelector('.ozon-ext-panel-collect-btn');
-    if (btn) {
-      btn.textContent = this.translations.collecting;
-      (btn as HTMLButtonElement).disabled = true;
-    }
-
-    // 构建payload - 匹配MarketSignalPayload类型定义
+    // 构建payload
     const sourceType: 'wb' | 'ozon_market' = this.productInfo.platform === 'wb' ? 'wb' : 'ozon_market';
     const payload: MarketSignalPayload = {
       sourceType,
@@ -737,6 +739,52 @@ export class PanelManager {
       profitRate: this.productInfo.profitRate,
       brandName: this.productInfo.brand,
     };
+
+    // 计算可采集字段数量
+    let collectableCount = 0;
+    const totalFields = 29;
+    const fields = [
+      payload.productId, payload.productTitle, payload.imageUrl,
+      payload.price, payload.originalPrice, payload.rating,
+      payload.reviewsCount, payload.salesVolume, payload.revenue,
+      payload.sellerName, payload.sellerType, payload.followerCount,
+      payload.variantCount, payload.deliveryType, payload.weight,
+      payload.dimensions, payload.volume, payload.listedDate, payload.stock
+    ];
+    fields.forEach(f => {
+      if (f !== undefined && f !== null && f !== '') collectableCount++;
+    });
+
+    // 显示预览面板
+    showCollectPreview({
+      productId: this.productInfo.productId,
+      title: this.productInfo.title || '',
+      imageUrl: this.productInfo.imageUrl || '',
+      price: this.productInfo.price || 0,
+      originalPrice: this.productInfo.originalPrice,
+      salesVolume: this.productInfo.salesVolume,
+      rating: this.productInfo.rating,
+      reviewCount: this.productInfo.reviewsCount,
+      sellerName: this.productInfo.sellerName,
+      deliveryType: this.productInfo.deliveryType,
+      collectableCount,
+      totalFields
+    }, this.collected, (confirmed, _overwrite) => {
+      if (confirmed) {
+        this.doCollect(payload);
+      }
+    });
+  }
+
+  /**
+   * 执行采集
+   */
+  private doCollect(payload: MarketSignalPayload): void {
+    const btn = this.container?.querySelector('.ozon-ext-panel-collect-btn');
+    if (btn) {
+      btn.textContent = this.translations.collecting;
+      (btn as HTMLButtonElement).disabled = true;
+    }
 
     // 发送采集请求
     this.messageBus.send('PUSH_SIGNAL', payload);
@@ -1177,6 +1225,269 @@ export class PanelManager {
           max-height: 80vh !important;
           overflow: auto !important;
         }
+      }
+
+      /* 已采集标签 */
+      .ozon-ext-collected-tag {
+        display: inline-flex !important;
+        align-items: center !important;
+        padding: 4px 10px !important;
+        background: #E6F7ED !important;
+        color: #16A37B !important;
+        font-size: 12px !important;
+        font-weight: 500 !important;
+        border-radius: 4px !important;
+        margin-left: 8px !important;
+      }
+
+      .ozon-ext-collected-badge {
+        position: absolute !important;
+        top: 8px !important;
+        right: 8px !important;
+        padding: 2px 6px !important;
+        background: #16A37B !important;
+        color: white !important;
+        font-size: 10px !important;
+        font-weight: 600 !important;
+        border-radius: 3px !important;
+        z-index: 10 !important;
+      }
+
+      .ozon-ext-collected-badge-top-left {
+        right: auto !important;
+        left: 8px !important;
+      }
+
+      /* 预览面板 */
+      .ozon-ext-preview-modal {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        background: rgba(0, 0, 0, 0.5) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        z-index: 2147483647 !important;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+        animation: ozon-ext-fade-in 0.2s ease !important;
+      }
+
+      .ozon-ext-preview-modal.ozon-ext-preview-fade-out {
+        animation: ozon-ext-fade-out 0.2s ease forwards !important;
+      }
+
+      @keyframes ozon-ext-fade-in {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+
+      @keyframes ozon-ext-fade-out {
+        from { opacity: 1; }
+        to { opacity: 0; }
+      }
+
+      .ozon-ext-preview-content {
+        background: white !important;
+        border-radius: 12px !important;
+        width: 90% !important;
+        max-width: 480px !important;
+        max-height: 90vh !important;
+        overflow: hidden !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
+      }
+
+      .ozon-ext-preview-content.ozon-ext-preview-result {
+        padding: 32px !important;
+        text-align: center !important;
+      }
+
+      .ozon-ext-preview-result-icon {
+        font-size: 48px !important;
+        margin-bottom: 16px !important;
+      }
+
+      .ozon-ext-preview-result-title {
+        font-size: 18px !important;
+        font-weight: 600 !important;
+        color: #152033 !important;
+        margin-bottom: 8px !important;
+      }
+
+      .ozon-ext-preview-result-message {
+        font-size: 14px !important;
+        color: #637089 !important;
+        margin-bottom: 24px !important;
+      }
+
+      .ozon-ext-preview-header {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        padding: 16px 20px !important;
+        border-bottom: 1px solid #E6EAF2 !important;
+      }
+
+      .ozon-ext-preview-title {
+        font-size: 16px !important;
+        font-weight: 600 !important;
+        color: #152033 !important;
+      }
+
+      .ozon-ext-preview-close {
+        background: none !important;
+        border: none !important;
+        font-size: 24px !important;
+        color: #637089 !important;
+        cursor: pointer !important;
+        padding: 0 !important;
+        line-height: 1 !important;
+      }
+
+      .ozon-ext-preview-close:hover {
+        color: #152033 !important;
+      }
+
+      .ozon-ext-preview-body {
+        padding: 20px !important;
+        max-height: 60vh !important;
+        overflow-y: auto !important;
+      }
+
+      .ozon-ext-preview-product {
+        display: flex !important;
+        gap: 12px !important;
+        margin-bottom: 16px !important;
+      }
+
+      .ozon-ext-preview-img {
+        width: 80px !important;
+        height: 80px !important;
+        object-fit: cover !important;
+        border-radius: 6px !important;
+        background: #F6F8FB !important;
+      }
+
+      .ozon-ext-preview-info {
+        flex: 1 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+      }
+
+      .ozon-ext-preview-product-title {
+        font-size: 14px !important;
+        font-weight: 500 !important;
+        color: #152033 !important;
+        line-height: 1.4 !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 2 !important;
+        -webkit-box-orient: vertical !important;
+        overflow: hidden !important;
+        margin-bottom: 4px !important;
+      }
+
+      .ozon-ext-preview-product-id {
+        font-size: 12px !important;
+        color: #637089 !important;
+      }
+
+      .ozon-ext-preview-stats {
+        background: #F6F8FB !important;
+        border-radius: 8px !important;
+        padding: 12px !important;
+        margin-bottom: 16px !important;
+      }
+
+      .ozon-ext-preview-stat-row {
+        display: flex !important;
+        justify-content: space-between !important;
+        padding: 4px 0 !important;
+      }
+
+      .ozon-ext-preview-stat-label {
+        font-size: 13px !important;
+        color: #637089 !important;
+      }
+
+      .ozon-ext-preview-stat-value {
+        font-size: 13px !important;
+        font-weight: 500 !important;
+        color: #152033 !important;
+      }
+
+      .ozon-ext-preview-progress {
+        margin-top: 8px !important;
+      }
+
+      .ozon-ext-preview-progress-label {
+        font-size: 12px !important;
+        color: #637089 !important;
+        margin-bottom: 6px !important;
+      }
+
+      .ozon-ext-preview-progress-percent {
+        color: #16A37B !important;
+      }
+
+      .ozon-ext-preview-progress-bar {
+        height: 6px !important;
+        background: #E6EAF2 !important;
+        border-radius: 3px !important;
+        overflow: hidden !important;
+      }
+
+      .ozon-ext-preview-progress-fill {
+        height: 100% !important;
+        background: linear-gradient(90deg, #16A37B, #2ECC71) !important;
+        border-radius: 3px !important;
+        transition: width 0.3s ease !important;
+      }
+
+      .ozon-ext-preview-footer {
+        display: flex !important;
+        gap: 12px !important;
+        padding: 16px 20px !important;
+        border-top: 1px solid #E6EAF2 !important;
+        justify-content: flex-end !important;
+      }
+
+      .ozon-ext-preview-btn {
+        padding: 10px 20px !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+        border: none !important;
+        border-radius: 6px !important;
+        cursor: pointer !important;
+        transition: all 0.2s !important;
+      }
+
+      .ozon-ext-preview-btn-primary {
+        background: #1677FF !important;
+        color: white !important;
+      }
+
+      .ozon-ext-preview-btn-primary:hover {
+        background: #4096FF !important;
+      }
+
+      .ozon-ext-preview-btn-warning {
+        background: #FFB800 !important;
+        color: #152033 !important;
+      }
+
+      .ozon-ext-preview-btn-warning:hover {
+        background: #FFC840 !important;
+      }
+
+      .ozon-ext-preview-btn-cancel {
+        background: #F6F8FB !important;
+        color: #637089 !important;
+      }
+
+      .ozon-ext-preview-btn-cancel:hover {
+        background: #E6EAF2 !important;
       }
     `;
     document.head.appendChild(style);

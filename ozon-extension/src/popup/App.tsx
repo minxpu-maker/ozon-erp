@@ -28,6 +28,18 @@ function App() {
   const [offlineQueue, setOfflineQueue] = useState<OfflineQueueItem[]>([]);
   const [config, setConfig] = useState<ExtensionConfig | null>(null);
   
+  // 统计状态
+  const [stats, setStats] = useState<{
+    todayCollect: number;
+    weekCollect: number;
+    totalCollect: number;
+    pending: number;
+    claimed: number;
+    published: number;
+  } | null>(null);
+  const [statsLoading, setStatsLoading] = useState(false);
+  const [statsOffline, setStatsOffline] = useState(false);
+  
   // 操作状态
   const [isCollecting, setIsCollecting] = useState(false);
   const [isContinuousActive, setIsContinuousActive] = useState(false);
@@ -71,8 +83,72 @@ function App() {
       // 检查连续采集状态
       const stateData = await chrome.storage.local.get('continuousCollectionActive');
       setIsContinuousActive(!!stateData.continuousCollectionActive);
+
+      // 获取统计数据
+      fetchStats();
     } catch (error) {
       console.error('初始化失败:', error);
+    }
+  };
+
+  // 获取统计数据
+  const fetchStats = async () => {
+    setStatsLoading(true);
+    try {
+      const configData = await chrome.storage.local.get(STORAGE_KEYS.CONFIG);
+      const cfg = configData[STORAGE_KEYS.CONFIG];
+      if (!cfg?.erpUrl) {
+        setStatsLoading(false);
+        return;
+      }
+
+      const response = await fetch(`${cfg.erpUrl}/api/market-signals/stats`, {
+        headers: {
+          'X-API-Key': cfg.apiKey || '',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setStats(data.data);
+        setStatsOffline(false);
+        // 缓存统计数据
+        await chrome.storage.local.set({ cachedStats: data.data, cachedStatsTime: Date.now() });
+      } else {
+        // 尝试使用缓存数据
+        loadCachedStats();
+      }
+    } catch {
+      // 网络错误，尝试使用缓存数据
+      loadCachedStats();
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
+  // 加载缓存的统计数据
+  const loadCachedStats = async () => {
+    try {
+      const cached = await chrome.storage.local.get(['cachedStats', 'cachedStatsTime']);
+      if (cached.cachedStats) {
+        setStats(cached.cachedStats);
+        // 如果缓存超过5分钟，标记为离线数据
+        if (cached.cachedStatsTime && Date.now() - cached.cachedStatsTime > 5 * 60 * 1000) {
+          setStatsOffline(true);
+        }
+      } else {
+        // 设置默认空数据
+        setStats({
+          todayCollect: 0,
+          weekCollect: 0,
+          totalCollect: 0,
+          pending: 0,
+          claimed: 0,
+          published: 0,
+        });
+      }
+    } catch {
+      setStatsOffline(true);
     }
   };
 
@@ -250,6 +326,44 @@ function App() {
           <div style={styles.platformCardInactive}>
             <span style={styles.platformIcon}>⚠️</span>
             <span style={styles.platformText}>请打开Wildberries或Ozon页面</span>
+          </div>
+        )}
+
+        {/* 统计卡片 */}
+        {stats && (
+          <div style={styles.statsCard}>
+            <div style={styles.statsHeader}>
+              <span style={styles.statsTitle}>📊 采集统计</span>
+              {statsOffline && <span style={styles.statsOffline}>⚠️ 离线数据</span>}
+            </div>
+            <div style={styles.statsGrid}>
+              <div style={styles.statsItem}>
+                <span style={styles.statsValue}>{stats.todayCollect}</span>
+                <span style={styles.statsLabel}>今日采集</span>
+              </div>
+              <div style={styles.statsItem}>
+                <span style={styles.statsValue}>{stats.weekCollect}</span>
+                <span style={styles.statsLabel}>本周采集</span>
+              </div>
+              <div style={styles.statsItem}>
+                <span style={styles.statsValue}>{stats.totalCollect}</span>
+                <span style={styles.statsLabel}>总计</span>
+              </div>
+            </div>
+            <div style={styles.statsGrid}>
+              <div style={styles.statsItem}>
+                <span style={styles.statsValue}>{stats.pending}</span>
+                <span style={styles.statsLabel}>待认领</span>
+              </div>
+              <div style={styles.statsItem}>
+                <span style={styles.statsValue}>{stats.claimed}</span>
+                <span style={styles.statsLabel}>已认领</span>
+              </div>
+              <div style={styles.statsItem}>
+                <span style={styles.statsValue}>{stats.published}</span>
+                <span style={styles.statsLabel}>已发布</span>
+              </div>
+            </div>
           </div>
         )}
 
@@ -565,6 +679,55 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '2px 8px',
     borderRadius: 4,
     fontWeight: 500,
+  },
+  statsCard: {
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+    border: '1px solid #e6eaf2',
+  },
+  statsHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  statsTitle: {
+    fontSize: 13,
+    fontWeight: 600,
+    color: '#152033',
+  },
+  statsOffline: {
+    fontSize: 11,
+    color: '#f59e0b',
+    backgroundColor: '#fef3c7',
+    padding: '2px 6px',
+    borderRadius: 4,
+  },
+  statsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, 1fr)',
+    gap: 8,
+    marginBottom: 8,
+  },
+  statsItem: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    padding: '8px 4px',
+    backgroundColor: '#f6f8fb',
+    borderRadius: 6,
+  },
+  statsValue: {
+    fontSize: 18,
+    fontWeight: 700,
+    color: '#2f6bff',
+  },
+  statsLabel: {
+    fontSize: 11,
+    color: '#637089',
+    marginTop: 2,
   },
   previewCard: {
     padding: '10px 12px',
