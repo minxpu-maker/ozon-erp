@@ -433,6 +433,7 @@ function SelectionModeSelector({
     { id: 'potential', label: '潜力市场', emoji: '🎯' },
     { id: 'unsatisfied', label: '未被满足', emoji: '💡' },
     { id: 'low-stock', label: '不压库存', emoji: '📦' },
+    { id: 'custom', label: '自定义', emoji: '🎨', locked: false },
     { id: 'engine', label: '引擎推荐', emoji: '🤖', locked: true },
   ];
 
@@ -657,17 +658,23 @@ export default function SelectionPage() {
   const [activeTab, setActiveTab] = useState<TabId>(
     (searchParams.get('tab') as TabId) || 'hot-ranking'
   );
-  const [platform, setPlatform] = useState('all');
-  const [selectionMode, setSelectionMode] = useState('surge');
+  const [platform, setPlatform] = useState(
+    searchParams.get('platform') || 'all'
+  );
+  // 从URL读取推荐模式参数，默认surge
+  const initialMode = searchParams.get('mode') || 'surge';
+  const [selectionMode, setSelectionMode] = useState(initialMode);
   
   // 带URL参数更新的selectionMode setter
   const handleSelectionModeChange = useCallback((mode: string) => {
     setSelectionMode(mode);
     setPage(1); // 切换模式重置分页
     // 更新URL参数
-    const url = new URL(window.location.href);
-    url.searchParams.set('mode', mode);
-    window.history.pushState({}, '', url.toString());
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('mode', mode);
+      window.history.pushState({}, '', url.toString());
+    }
   }, []);
   const [filters, setFilters] = useState<Record<string, unknown>>({ _tab: activeTab });
   const [page, setPage] = useState(1);
@@ -734,12 +741,36 @@ export default function SelectionPage() {
     try {
       // 热销榜单Tab调用推荐API
       if (activeTab === 'hot-ranking' && selectionMode) {
+        // custom模式使用原有筛选逻辑（模拟数据）
+        if (selectionMode === 'custom') {
+          const mockData = generateMockData(activeTab);
+          setData(mockData);
+          setTotal(mockData.length);
+          setLoading(false);
+          return;
+        }
+
         const params = new URLSearchParams({
           mode: selectionMode,
-          platform: platform,
+          platform: platform === 'all' ? 'ozon' : platform,
           page: String(page),
           pageSize: String(pageSize),
         });
+
+        // 叠加进阶筛选参数
+        if (filters.category && filters.category !== 'all') {
+          params.set('category', filters.category as string);
+        }
+        if (filters.minPrice) {
+          params.set('minPrice', String(filters.minPrice));
+        }
+        if (filters.maxPrice) {
+          params.set('maxPrice', String(filters.maxPrice));
+        }
+        if (filters.minSales) {
+          params.set('minSales', String(filters.minSales));
+        }
+
         const res = await fetch(`/api/selection/recommend?${params}`);
         if (res.ok) {
           const result = await res.json();
@@ -747,44 +778,48 @@ export default function SelectionPage() {
           const items = result.items || result.data?.items || [];
           const total = result.total || result.data?.total || items.length;
           
-          if (items.length > 0) {
-            // 转换API数据格式为前端格式
-            const apiData = items.map((item: {
-              id: number;
-              productTitle?: string;
-              productTitleZh?: string;
-              salesVolume?: number;
-              price?: string | number;
-              rating?: string | number;
-              growthScore?: string | number;
-              growthRate?: number;
-              sellerCount?: number;
-              potentialScore?: string | number;
-              supplyDemandRatio?: number;
-              imageUrl?: string;
-              categoryPath?: string;
-            }, idx: number) => ({
-              id: item.id,
-              rank: (page - 1) * pageSize + idx + 1,
-              image: item.imageUrl,
-              title: item.productTitleZh || item.productTitle || `商品 ${item.id}`,
-              salesVolume: Number(item.salesVolume) || 0,
-              price: Number(item.price) || 0,
-              rating: Number(item.rating) || 0,
-              category: item.categoryPath || '',
-              // 模式特有字段
-              growthScore: Number(item.growthScore) || 0,
-              growthRate: item.growthRate || 0,
-              sellerCount: item.sellerCount || 0,
-              potentialScore: Number(item.potentialScore) || 0,
-              supplyDemandRatio: item.supplyDemandRatio || 0,
-            }));
-            setData(apiData);
-            setTotal(total);
-            setLoading(false);
-            return;
-          }
+          // 转换API数据格式为前端格式
+          const apiData = items.map((item: {
+            id: number;
+            productTitle?: string;
+            productTitleZh?: string;
+            salesVolume?: number;
+            price?: string | number;
+            rating?: string | number;
+            growthScore?: string | number;
+            growthRate?: number;
+            sellerCount?: number;
+            potentialScore?: string | number;
+            supplyDemandRatio?: number;
+            imageUrl?: string;
+            categoryPath?: string;
+          }, idx: number) => ({
+            id: item.id,
+            rank: (page - 1) * pageSize + idx + 1,
+            image: item.imageUrl,
+            title: item.productTitleZh || item.productTitle || `商品 ${item.id}`,
+            salesVolume: Number(item.salesVolume) || 0,
+            price: Number(item.price) || 0,
+            rating: Number(item.rating) || 0,
+            category: item.categoryPath || '',
+            // 模式特有字段
+            growthScore: Number(item.growthScore) || 0,
+            growthRate: item.growthRate || 0,
+            sellerCount: item.sellerCount || 0,
+            potentialScore: Number(item.potentialScore) || 0,
+            supplyDemandRatio: item.supplyDemandRatio || 0,
+          }));
+          setData(apiData);
+          setTotal(total);
+          setLoading(false);
+          return;
         }
+        
+        // API调用失败，显示空状态
+        setData([]);
+        setTotal(0);
+        setLoading(false);
+        return;
       }
 
       // 产品库Tab
@@ -833,10 +868,11 @@ export default function SelectionPage() {
     } finally {
       setLoading(false);
     }
-  }, [activeTab, selectionMode, platform, page, pageSize]);
+  }, [activeTab, selectionMode, platform, page, pageSize, filters]);
 
   useEffect(() => {
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadData]);
 
   // 生成模拟数据
