@@ -1417,5 +1417,40 @@ export const exchangeRates = pgTable('exchange_rates', {
 
 export type CollectionItem = typeof collectionItems.$inferSelect;
 export type OzonCategoryCommission = typeof ozonCategoryCommissions.$inferSelect;
-export type LogisticsEstimate = typeof logisticsEstimates.$inferSelect;
-export type ExchangeRate = typeof exchangeRates.$inferSelect;
+
+// ============================================================================
+// 产品库模块
+// ============================================================================
+
+/**
+ * 产品库分组表
+ */
+export const productGroups = pgTable('product_groups', {
+  id: serial('id').primaryKey(),
+  userId: varchar('user_id', { length: 36 }).notNull(), // 用户ID
+  name: varchar('name', { length: 100 }).notNull(), // 分组名称
+  description: varchar('description', { length: 500 }), // 分组描述
+  isDefault: boolean('is_default').default(false), // 是否默认分组
+  sortOrder: integer('sort_order').default(0), // 排序
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+}, (table) => [
+  index('idx_product_group_user').on(table.userId),
+  index('idx_product_group_sort').on(table.sortOrder),
+]);
+
+/**
+ * 产品库分组商品关联表
+ */
+export const productGroupItems = pgTable('product_group_items', {
+  id: serial('id').primaryKey(),
+  groupId: integer('group_id').notNull().references(() => productGroups.id, { onDelete: 'cascade' }),
+  signalId: integer('signal_id').notNull().references(() => marketSignals.id, { onDelete: 'cascade' }),
+  sortOrder: integer('sort_order').default(0), // 排序
+  notes: varchar('notes', { length: 500 }), // 备注
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+}, (table) => [
+  index('idx_pgi_group').on(table.groupId),
+  index('idx_pgi_signal').on(table.signalId),
+]);
+

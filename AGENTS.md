@@ -156,6 +156,18 @@ GET /api/selection/recommend?mode=surge&platform=ozon&page=1&pageSize=20
 - **platform**: ozon | wb
 - **缓存**: 10分钟
 
+### 产品库 API
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| `/api/product-groups` | GET/POST | 获取/创建分组 |
+| `/api/product-groups/[id]` | GET/PUT/DELETE | 单个分组CRUD |
+| `/api/product-library` | GET/POST | 获取/添加商品 |
+| `/api/product-library/batch` | POST/DELETE/PATCH | 批量添加/删除/移动 |
+
+### 数据库表
+- `product_groups`: 产品分组表
+- `product_group_items`: 分组商品关联表
+
 ## 硬件集成
 
 | 硬件 | 用途 | 数据协议 |

@@ -36,6 +36,7 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
+  DialogDescription,
   DialogTitle,
 } from '@/components/ui/dialog';
 import {
@@ -59,6 +60,11 @@ import {
   Tag,
   Store,
   Award,
+  FolderOpen,
+  FolderPlus,
+  GitCompare,
+  Check,
+  AlertCircle,
 } from 'lucide-react';
 
 // ============================================================================
@@ -660,6 +666,10 @@ export default function SelectionPage() {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const [selectedProducts, setSelectedProducts] = useState<Record<string, unknown>[]>([]);
+  const [showGroupModal, setShowGroupModal] = useState(false);
+  const [showComparePanel, setShowComparePanel] = useState(false);
 
   // 批量操作处理
   const handleBatchAction = async (actionId: string) => {
@@ -756,6 +766,42 @@ export default function SelectionPage() {
             setLoading(false);
             return;
           }
+        }
+      }
+
+      // 产品库Tab
+      if (activeTab === 'products') {
+        try {
+          const params = new URLSearchParams({
+            groupId: selectedGroupId || '',
+            page: String(page),
+            pageSize: String(pageSize),
+          });
+          const response = await fetch(`/api/product-library?${params}`);
+          const result = await response.json();
+          
+          if (result.success && result.data.items) {
+            const apiData = result.data.items.map((item: Record<string, unknown>) => ({
+              id: item.signalId || item.id,
+              image: item.imageUrl,
+              title: item.productTitle,
+              sku: item.productId || item.sku || '',
+              price: item.price || 0,
+              salesVolume: item.salesVolume || 0,
+              rating: item.rating || 0,
+              category: item.categoryPath || '',
+              seller: item.sellerName || '',
+              sourceType: item.sourceType || 'ozon_market',
+              profitRate: item.profitRate || 0,
+              collectedAt: item.collectedAt || '',
+            }));
+            setData(apiData);
+            setTotal(result.data.total || apiData.length);
+            setLoading(false);
+            return;
+          }
+        } catch (error) {
+          console.error('加载产品库失败:', error);
         }
       }
       // 其他Tab使用模拟数据
@@ -1106,5 +1152,199 @@ export default function SelectionPage() {
         </div>
       </div>
     </AppLayout>
+  );
+}
+
+// 产品库分组管理弹窗
+function GroupManagementModal({ 
+  open, 
+  onClose, 
+  groups, 
+  onCreateGroup,
+  onDeleteGroup,
+  onRenameGroup 
+}: {
+  open: boolean;
+  onClose: () => void;
+  groups: Array<{ id: number; name: string; productCount: number }>;
+  onCreateGroup: (name: string) => void;
+  onDeleteGroup: (id: number) => void;
+  onRenameGroup: (id: number, name: string) => void;
+}) {
+  const [newGroupName, setNewGroupName] = useState('');
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingName, setEditingName] = useState('');
+
+  const handleCreate = () => {
+    if (newGroupName.trim()) {
+      onCreateGroup(newGroupName.trim());
+      setNewGroupName('');
+    }
+  };
+
+  const handleRename = (id: number) => {
+    if (editingName.trim()) {
+      onRenameGroup(id, editingName.trim());
+      setEditingId(null);
+      setEditingName('');
+    }
+  };
+
+  if (!open) return null;
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>分组管理</DialogTitle>
+          <DialogDescription>创建和管理产品库分组</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          {/* 新建分组 */}
+          <div className="flex items-center gap-2">
+            <Input
+              placeholder="新分组名称"
+              value={newGroupName}
+              onChange={(e) => setNewGroupName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
+            />
+            <Button size="sm" onClick={handleCreate}>创建</Button>
+          </div>
+          {/* 分组列表 */}
+          <div className="space-y-2 max-h-[300px] overflow-y-auto">
+            {groups.map((group) => (
+              <div key={group.id} className="flex items-center justify-between p-2 rounded hover:bg-[#F6F8FB]">
+                {editingId === group.id ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <Input
+                      value={editingName}
+                      onChange={(e) => setEditingName(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleRename(group.id)}
+                      className="flex-1"
+                    />
+                    <Button size="sm" variant="ghost" onClick={() => handleRename(group.id)}>保存</Button>
+                    <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>取消</Button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <FolderOpen className="w-4 h-4 text-[#637089]" />
+                      <span>{group.name}</span>
+                      <span className="text-xs text-[#9CA3AF]">({group.productCount}件)</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => { setEditingId(group.id); setEditingName(group.name); }}>
+                        <span className="sr-only">编辑</span>
+                        <span className="text-xs">✏️</span>
+                      </Button>
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-[#EF4444]" onClick={() => onDeleteGroup(group.id)}>
+                        <span className="sr-only">删除</span>
+                        <span className="text-xs">🗑️</span>
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </div>
+            ))}
+            {groups.length === 0 && (
+              <div className="text-center py-4 text-[#9CA3AF]">
+                暂无分组，从上方创建第一个分组
+              </div>
+            )}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// 商品对比面板
+function ComparePanel({
+  products,
+  open,
+  onClose
+}: {
+  products: Record<string, unknown>[];
+  open: boolean;
+  onClose: () => void;
+}) {
+  if (!open || products.length < 2) return null;
+
+  const comparisonFields = [
+    { key: 'price', label: '售价', higher: false },
+    { key: 'salesVolume', label: '销量', higher: true },
+    { key: 'rating', label: '评分', higher: true },
+    { key: 'profitRate', label: '利润率', higher: true },
+  ];
+
+  const getFieldValue = (product: Record<string, unknown>, key: string): number => {
+    const value = product[key];
+    return typeof value === 'number' ? value : 0;
+  };
+
+  const getBestValue = (key: string, higher: boolean): number => {
+    const values = products.map(p => getFieldValue(p, key));
+    return higher ? Math.max(...values) : Math.min(...values);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-auto">
+        <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
+          <h2 className="text-lg font-semibold">商品对比 ({products.length}件)</h2>
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+        <div className="p-6 overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr>
+                <th className="border p-2 text-left bg-[#F9FAFB]">对比项</th>
+                {products.map((product, idx) => (
+                  <th key={idx} className="border p-2 text-center bg-[#F9FAFB] min-w-[150px]">
+                    <div className="flex flex-col items-center gap-2">
+                      {typeof product.image === 'string' && product.image && (
+                        <img src={product.image as string} alt="" className="w-16 h-16 object-cover rounded" />
+                      )}
+                      <span className="text-sm truncate max-w-[140px]" title={product.title as string}>
+                        {product.title as string}
+                      </span>
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {comparisonFields.map((field) => {
+                const bestValue = getBestValue(field.key, field.higher);
+                return (
+                  <tr key={field.key}>
+                    <td className="border p-2 font-medium bg-[#F9FAFB]">{field.label}</td>
+                    {products.map((product, idx) => {
+                      const value = getFieldValue(product, field.key);
+                      const isBest = value === bestValue && bestValue !== 0;
+                      return (
+                        <td
+                          key={idx}
+                          className={`border p-2 text-center ${
+                            isBest ? 'bg-[#D1FAE5] text-[#065F46]' : ''
+                          }`}
+                        >
+                          {field.key === 'price' ? `₽${value.toLocaleString()}` : 
+                           field.key === 'profitRate' ? `${value.toFixed(1)}%` :
+                           typeof value === 'number' ? value.toLocaleString() : value}
+                          {isBest && <span className="ml-1 text-xs">✓</span>}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   );
 }
