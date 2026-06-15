@@ -4,6 +4,9 @@
  */
 
 import { MessageBus } from '../shared/message-bus';
+// API Base URL
+const EXT_API_BASE = 'http://localhost:5000';
+
 import { OzonExtConfig, MarketSignalPayload, ProductInfo } from '../shared/types';
 import { showCollectPreview, addDetailCollectedBadge } from './preview';
 
@@ -17,6 +20,11 @@ export interface PanelTranslations {
   profitCalculator: string;
   viewDetails: string;
   collectToERP: string;
+  // 监控
+  addMonitor: string;
+  monitoring: string;
+  priceChanged: string;
+  salesChanged: string;
   // 核心数据
   price: string;
   originalPrice: string;
@@ -42,6 +50,7 @@ export interface PanelTranslations {
   cartRate: string;
   adShare: string;
   qaCount: string;
+  // 监控相关
   // 底部按钮
   salesTrend: string;
   reviewAnalysis: string;
@@ -121,6 +130,11 @@ const ZH_TRANSLATIONS: PanelTranslations = {
   salesTrend: '销售趋势',
   reviewAnalysis: '评论分析',
   collected: '已采集',
+  // Monitor
+  addMonitor: '加入监控',
+  monitoring: '监控中',
+  priceChanged: '价格变化',
+  salesChanged: '销量变化',
   collecting: '采集中...',
   apiRequired: '需对接API',
   profitCalculatorTitle: '利润计算器',
@@ -191,6 +205,11 @@ const RU_TRANSLATIONS: PanelTranslations = {
   salesTrend: 'Тренд продаж',
   reviewAnalysis: 'Анализ отзывов',
   collected: 'Собрано',
+  // Monitor
+  addMonitor: 'Добавить в мониторинг',
+  monitoring: 'На мониторинге',
+  priceChanged: 'Изменение цены',
+  salesChanged: 'Изменение продаж',
   collecting: 'Сбор...',
   apiRequired: 'Требуется API',
   profitCalculatorTitle: 'Калькулятор прибыли',
@@ -240,6 +259,16 @@ export class PanelManager {
   private config: OzonExtConfig | null = null;
   private profitCalculatorEl: HTMLElement | null = null;
   private batchCollectionCount: number = 0;
+  private isMonitored: boolean = false;
+  private hasPriceChange: boolean = false;
+  private hasSalesChange: boolean = false;
+  private priceChangePercent: number = 0;
+  private salesChangeValue: number = 0;
+  private previousPrice: number = 0;
+  private previousSales: number = 0;
+  private alertBannerEl: HTMLElement | null = null;
+	  private hasChanges: boolean = false;
+	  private changeAlert: string = '';
 
   constructor(messageBus: MessageBus) {
     this.messageBus = messageBus;
@@ -257,12 +286,15 @@ export class PanelManager {
   /**
    * 初始化面板
    */
-  init(productInfo: ProductInfo, isCollected: boolean = false): void {
+  async init(productInfo: ProductInfo, isCollected: boolean = false): Promise<void> {
     this.productInfo = productInfo;
     this.collected = isCollected;
 
     // 移除已存在的面板
     this.destroy();
+
+    // 检查监控状态
+    await this.checkMonitorStatus();
 
     // 创建面板容器
     this.container = document.createElement('div');
@@ -280,6 +312,45 @@ export class PanelManager {
 
     // 绑定事件
     this.bindEvents();
+
+    // 更新监控按钮状态
+    this.updateMonitorButton();
+  }
+
+  /**
+   * 检查监控状态
+   */
+  private async checkMonitorStatus(): Promise<void> {
+    if (!this.productInfo) return;
+    
+    try {
+      const res = await fetch(`${EXT_API_BASE}/monitor?productId=${encodeURIComponent(this.productInfo.productId || '')}&limit=1`);
+      const data = await res.json();
+      this.isMonitored = data.total > 0;
+      
+      if (this.isMonitored && data.data && data.data.length > 0) {
+        const monitorItem = data.data[0];
+        const currentPrice = parseFloat(String(this.productInfo.price || 0))
+        const currentSales = parseInt(String((this.productInfo as any).sales || (this.productInfo as any).salesVolume || 0));
+        
+        this.previousPrice = monitorItem.currentPrice || currentPrice;
+        this.previousSales = monitorItem.currentSales || currentSales;
+        
+        // 检测价格变化
+        if (this.previousPrice > 0 && currentPrice !== this.previousPrice) {
+          this.hasPriceChange = true;
+          this.priceChangePercent = ((currentPrice - this.previousPrice) / this.previousPrice) * 100;
+        }
+        
+        // 检测销量变化
+        if (this.previousSales > 0 && currentSales !== this.previousSales) {
+          this.hasSalesChange = true;
+          this.salesChangeValue = currentSales - this.previousSales;
+        }
+      }
+    } catch (e) {
+      console.error('[OzonExt] 检查监控状态失败:', e);
+    }
   }
 
   /**
@@ -572,6 +643,22 @@ export class PanelManager {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             ${t.collectToERP}
           </button>
+          <button class="ozon-ext-panel-btn ozon-ext-panel-btn-icon ozon-ext-panel-monitor-btn" data-action="toggle-monitor">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <span class="ozon-ext-monitor-text">${this.isMonitored ? t.monitoring : t.addMonitor}</span>
+          </button>
+          ${this.hasChanges ? `
+          <div class="ozon-ext-panel-alert">
+            <span class="ozon-ext-panel-alert-icon">⚠️</span>
+            <span>${this.changeAlert || t.priceChanged}</span>
+          </div>
+          ` : ''}
+          ${this.isMonitored ? `
+          <div class="ozon-ext-panel-monitor-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            ${t.monitoring}
+          </div>
+          ` : ''}
           <button class="ozon-ext-panel-btn ozon-ext-panel-btn-icon" data-action="view-details">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             ${t.viewDetails}
@@ -703,6 +790,73 @@ export class PanelManager {
         }
       });
     });
+
+    // 监控按钮事件
+    const monitorBtn = document.querySelector('.ozon-ext-btn-monitor');
+    if (monitorBtn) {
+      monitorBtn.addEventListener('click', () => this.handleMonitorToggle());
+    }
+  }
+
+  /**
+   * 处理监控开关
+   */
+  private async handleMonitorToggle(): Promise<void> {
+    if (!this.productInfo?.productId) return;
+
+    const productId = this.productInfo.productId;
+    const isCurrentlyMonitored = this.isMonitored;
+
+    if (isCurrentlyMonitored) {
+      // 取消监控
+      try {
+        const res = await fetch(`/api/monitor/${productId}`, { method: 'DELETE' });
+        if (res.ok) {
+          this.isMonitored = false;
+          this.updateMonitorButton();
+        }
+      } catch (err) {
+        console.error('取消监控失败:', err);
+      }
+    } else {
+      // 加入监控
+      try {
+        const res = await fetch('/api/monitor', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            productId: this.productInfo.productId,
+            productTitle: this.productInfo.title || (this.productInfo as any).productTitle,
+            imageUrl: this.productInfo.imageUrl,
+            price: this.productInfo.price,
+            salesVolume: this.productInfo.salesVolume,
+            platform: this.productInfo.platform || 'ozon'
+          })
+        });
+        if (res.ok) {
+          this.isMonitored = true;
+          this.updateMonitorButton();
+        }
+      } catch (err) {
+        console.error('加入监控失败:', err);
+      }
+    }
+  }
+
+  /**
+   * 更新监控按钮状态
+   */
+  private updateMonitorButton(): void {
+    const monitorBtn = document.querySelector('.ozon-ext-btn-monitor');
+    if (monitorBtn) {
+      if (this.isMonitored) {
+        monitorBtn.innerHTML = '👁 监控中';
+        monitorBtn.classList.add('ozon-ext-btn-monitored');
+      } else {
+        monitorBtn.innerHTML = '👁 加入监控';
+        monitorBtn.classList.remove('ozon-ext-btn-monitored');
+      }
+    }
   }
 
   /**
@@ -1638,6 +1792,67 @@ export class PanelManager {
         font-size: 11px !important;
         color: #637089 !important;
         white-space: nowrap !important;
+      }
+
+      /* 监控按钮 */
+      .ozon-ext-panel-monitor-btn {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        padding: 8px 16px !important;
+        background: #E6EAF2 !important;
+        color: #152033 !important;
+        border: none !important;
+        border-radius: 6px !important;
+        font-size: 13px !important;
+        cursor: pointer !important;
+        transition: all 0.2s !important;
+        margin-top: 12px !important;
+      }
+
+      .ozon-ext-panel-monitor-btn:hover {
+        background: #2F6BFF !important;
+        color: white !important;
+      }
+
+      .ozon-ext-panel-monitor-btn.monitoring {
+        background: #2F6BFF !important;
+        color: white !important;
+      }
+
+      .ozon-ext-panel-monitor-btn.monitoring:hover {
+        background: #1E4FD9 !important;
+      }
+
+      /* 监控状态标签 */
+      .ozon-ext-panel-monitor-badge {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 4px !important;
+        padding: 4px 10px !important;
+        background: #2F6BFF !important;
+        color: white !important;
+        border-radius: 4px !important;
+        font-size: 12px !important;
+        margin-left: 8px !important;
+      }
+
+      /* 价格变化提醒 */
+      .ozon-ext-panel-alert {
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        padding: 10px 16px !important;
+        background: #FEF3C7 !important;
+        border: 1px solid #F59E0B !important;
+        border-radius: 6px !important;
+        font-size: 13px !important;
+        color: #92400E !important;
+        margin-bottom: 12px !important;
+      }
+
+      .ozon-ext-panel-alert-icon {
+        font-size: 16px !important;
       }
     `;
     document.head.appendChild(style);

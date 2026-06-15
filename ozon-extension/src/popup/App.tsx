@@ -2,7 +2,26 @@ import { useState, useEffect, useCallback } from 'react';
 import type { MarketSignalPayload, ExtensionConfig, CollectionRecord } from '../shared/types';
 import { MESSAGE_TYPES, STORAGE_KEYS, DEFAULT_ERP_URL } from '../shared/constants';
 
-type PageType = 'main' | 'settings';
+type PageType = 'main' | 'settings' | 'monitor';
+
+interface MonitoredProduct {
+  id: string;
+  productId: string;
+  productTitle: string;
+  imageUrl?: string;
+  price: number;
+  currentPrice: number;
+  currentSales: number;
+  lastPrice?: number;
+  lastSales?: number;
+  priceChange?: number;
+  salesChange?: number;
+  monitoredAt: string;
+  lastUpdated?: string;
+  hasAlert?: boolean;
+  alertType?: 'price_up' | 'price_down' | 'sales_up' | 'sales_down';
+  alertMessage?: string;
+}
 interface PlatformInfo {
   platform: 'wb' | 'ozon_market';
   name: string;
@@ -39,6 +58,10 @@ function App() {
   } | null>(null);
   const [statsLoading, setStatsLoading] = useState(false);
   const [statsOffline, setStatsOffline] = useState(false);
+  
+  // 监控状态
+  const [monitoredProducts, setMonitoredProducts] = useState<MonitoredProduct[]>([]);
+  const [monitorLoading, setMonitorLoading] = useState(false);
   
   // 操作状态
   const [isCollecting, setIsCollecting] = useState(false);
@@ -150,6 +173,35 @@ function App() {
     } catch {
       setStatsOffline(true);
     }
+  };
+
+  // 加载监控列表
+  const loadMonitorList = async () => {
+    setMonitorLoading(true);
+    try {
+      const data = await chrome.storage.local.get(STORAGE_KEYS.MONITORED_PRODUCTS);
+      if (data[STORAGE_KEYS.MONITORED_PRODUCTS]) {
+        setMonitoredProducts(data[STORAGE_KEYS.MONITORED_PRODUCTS]);
+      }
+    } catch (error) {
+      console.error('加载监控列表失败:', error);
+    } finally {
+      setMonitorLoading(false);
+    }
+  };
+
+  // 页面切换时加载监控列表
+  useEffect(() => {
+    if (currentPage === 'monitor') {
+      loadMonitorList();
+    }
+  }, [currentPage]);
+
+  // 删除监控商品
+  const handleRemoveMonitor = async (productId: string) => {
+    const updated = monitoredProducts.filter(p => p.productId !== productId);
+    setMonitoredProducts(updated);
+    await chrome.storage.local.set({ [STORAGE_KEYS.MONITORED_PRODUCTS]: updated });
   };
 
   // 平台识别 - 支持新旧URL格式
@@ -301,6 +353,11 @@ function App() {
   // 设置页面
   if (currentPage === 'settings') {
     return <SettingsPage onBack={() => setCurrentPage('main')} config={config} onConfigUpdate={setConfig} />;
+  }
+
+  // 监控页面
+  if (currentPage === 'monitor') {
+    return <MonitorPage onBack={() => setCurrentPage('main')} products={monitoredProducts} loading={monitorLoading} onRemove={handleRemoveMonitor} />;
   }
 
   // 主页面
@@ -463,6 +520,9 @@ function App() {
       {/* 底部 */}
       <div style={styles.footer}>
         <span style={styles.version}>v1.0.0</span>
+        <button style={styles.monitorButton} onClick={() => setCurrentPage('monitor')} title="监控列表">
+          👁 监控 ({monitoredProducts.length})
+        </button>
       </div>
     </div>
   );
@@ -600,6 +660,113 @@ function SettingsPage({ onBack, config, onConfigUpdate }: {
             {isSaving ? '保存中...' : '保存'}
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// 监控页面组件
+function MonitorPage({ onBack, products, loading, onRemove }: {
+  onBack: () => void;
+  products: MonitoredProduct[];
+  loading: boolean;
+  onRemove: (productId: string) => void;
+}) {
+  const truncate = (text: string, maxLen: number): string => {
+    if (!text) return '';
+    return text.length > maxLen ? text.slice(0, maxLen) + '...' : text;
+  };
+
+  const formatPrice = (price?: number): string => {
+    if (price === undefined || price === null) return '-';
+    return `${price.toLocaleString()}₽`;
+  };
+
+  const formatDate = (dateStr?: string): string => {
+    if (!dateStr) return '-';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  };
+
+  const getAlertStyle = (alertType?: string): React.CSSProperties => {
+    if (alertType === 'price_down' || alertType === 'sales_down') {
+      return { color: '#DC2626', fontWeight: 600 };
+    }
+    if (alertType === 'price_up' || alertType === 'sales_up') {
+      return { color: '#16A37B', fontWeight: 600 };
+    }
+    return {};
+  };
+
+  const alertCount = products.filter(p => p.hasAlert).length;
+
+  return (
+    <div style={styles.container}>
+      <div style={styles.header}>
+        <button style={styles.backButton} onClick={onBack}>← 返回</button>
+        <h1 style={styles.title}>监控列表</h1>
+        <span style={styles.alertBadge}>{alertCount}</span>
+      </div>
+      <div style={styles.monitorContent}>
+        {loading ? (
+          <div style={styles.loadingState}>加载中...</div>
+        ) : products.length === 0 ? (
+          <div style={styles.emptyState}>
+            <div style={styles.emptyIcon}>👁</div>
+            <div>暂无监控商品</div>
+            <div style={styles.emptyHint}>在商品详情页点击"加入监控"开始追踪</div>
+          </div>
+        ) : (
+          <div style={styles.monitorList}>
+            {products.map((product) => (
+              <div key={product.productId} style={styles.monitorItem}>
+                {product.hasAlert && (
+                  <div style={styles.alertBanner}>
+                    {product.alertMessage || '数据有变化'}
+                  </div>
+                )}
+                <div style={styles.monitorItemHeader}>
+                  <img 
+                    src={product.imageUrl || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect fill="%23e6eaf2" width="100" height="100"/><text x="50" y="55" text-anchor="middle" fill="%23999" font-size="12">无图</text></svg>'} 
+                    alt="" 
+                    style={styles.monitorItemImage}
+                  />
+                  <div style={styles.monitorItemInfo}>
+                    <div style={styles.monitorItemTitle}>{truncate(product.productTitle, 30)}</div>
+                    <div style={styles.monitorItemMeta}>
+                      {formatPrice(product.currentPrice)} | 销量: {product.currentSales}
+                    </div>
+                    <div style={styles.monitorItemTime}>
+                      监控: {formatDate(product.monitoredAt)}
+                    </div>
+                    {product.lastUpdated && (
+                      <div style={styles.monitorItemTime}>
+                        更新: {formatDate(product.lastUpdated)}
+                      </div>
+                    )}
+                    {product.priceChange !== undefined && product.priceChange !== 0 && (
+                      <div style={{...styles.monitorItemChange, ...getAlertStyle(product.priceChange < 0 ? 'price_down' : 'price_up')}}>
+                        价格: {product.priceChange > 0 ? '+' : ''}{product.priceChange}%
+                      </div>
+                    )}
+                    {product.salesChange !== undefined && product.salesChange !== 0 && (
+                      <div style={{...styles.monitorItemChange, ...getAlertStyle(product.salesChange < 0 ? 'sales_down' : 'sales_up')}}>
+                        销量: {product.salesChange > 0 ? '+' : ''}{product.salesChange}%
+                      </div>
+                    )}
+                  </div>
+                  <button 
+                    style={styles.removeButton}
+                    onClick={() => onRemove(product.productId)}
+                    title="移除监控"
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -881,11 +1048,119 @@ const styles: Record<string, React.CSSProperties> = {
   footer: {
     padding: '8px 16px',
     borderTop: '1px solid #e6eaf2',
-    textAlign: 'right',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   version: {
     fontSize: 11,
     color: '#9ca3af',
+  },
+  monitorButton: {
+    backgroundColor: '#6b7280',
+    color: 'white',
+    border: 'none',
+    borderRadius: 4,
+    padding: '4px 8px',
+    fontSize: 12,
+    cursor: 'pointer',
+  },
+  // Monitor page styles
+  monitorContent: {
+    padding: 12,
+    maxHeight: 450,
+    overflowY: 'auto' as const,
+  },
+  loadingState: {
+    textAlign: 'center' as const,
+    padding: 40,
+    color: '#637089',
+  },
+  emptyState: {
+    textAlign: 'center' as const,
+    padding: 40,
+    color: '#637089',
+  },
+  emptyIcon: {
+    fontSize: 48,
+    marginBottom: 12,
+  },
+  emptyHint: {
+    fontSize: 12,
+    color: '#9ca3af',
+    marginTop: 8,
+  },
+  monitorList: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: 8,
+  },
+  monitorItem: {
+    backgroundColor: 'white',
+    borderRadius: 8,
+    border: '1px solid #e6eaf2',
+    overflow: 'hidden',
+  },
+  alertBanner: {
+    backgroundColor: '#FEF3C7',
+    color: '#92400E',
+    fontSize: 11,
+    padding: '4px 8px',
+    fontWeight: 500,
+  },
+  monitorItemHeader: {
+    display: 'flex',
+    padding: 10,
+    gap: 10,
+  },
+  monitorItemImage: {
+    width: 50,
+    height: 50,
+    objectFit: 'cover' as const,
+    borderRadius: 4,
+    backgroundColor: '#f3f4f6',
+  },
+  monitorItemInfo: {
+    flex: 1,
+    minWidth: 0,
+  },
+  monitorItemTitle: {
+    fontSize: 13,
+    fontWeight: 500,
+    color: '#152033',
+    marginBottom: 2,
+    lineHeight: 1.3,
+  },
+  monitorItemMeta: {
+    fontSize: 12,
+    color: '#637089',
+    marginBottom: 2,
+  },
+  monitorItemTime: {
+    fontSize: 11,
+    color: '#9ca3af',
+    marginBottom: 1,
+  },
+  monitorItemChange: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  removeButton: {
+    backgroundColor: 'transparent',
+    border: 'none',
+    color: '#9ca3af',
+    fontSize: 20,
+    cursor: 'pointer',
+    padding: '0 4px',
+    alignSelf: 'flex-start',
+  },
+  alertBadge: {
+    backgroundColor: '#EF4444',
+    color: 'white',
+    fontSize: 11,
+    padding: '2px 6px',
+    borderRadius: 10,
+    marginLeft: 8,
   },
   // Settings page styles
   settingsContent: {

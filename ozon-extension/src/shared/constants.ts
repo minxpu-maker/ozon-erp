@@ -128,6 +128,8 @@ export const STORAGE_KEYS = {
   COLLECTION_STATE: 'ozon_extension_collection_state',
   /** 离线队列 */
   OFFLINE_QUEUE: 'ozon_extension_offline_queue',
+  /** 监控商品列表 */
+  MONITORED_PRODUCTS: 'ozon_extension_monitored_products',
 } as const;
 
 /**
