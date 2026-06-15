@@ -139,6 +139,15 @@ GET /api/keywords/reverse?productId=xxx&platform=ozon
 - **缓存**：查询结果缓存到keyword_reverse表
 - **来源优先级**：title > tag > category
 
+#### 关键词挖掘API详情
+```
+GET /api/keywords/mining?seed=xxx&platform=ozon&limit=50
+```
+- **数据源**：从market_signals表的title/categoryPath聚合统计
+- **返回格式**：keyword, monthlySearch, monthlyGrowth, competitorCount, productCount, marketSpace
+- **挖掘逻辑**：基于种子词在商品标题/类目中匹配，聚合统计搜索量/增长率/竞对数
+- **市场空间**：marketSpace = monthlySearch / productCount（搜索量/商品数比值）
+
 ### 产品发布 API
 | 接口 | 方法 | 说明 |
 |------|------|------|

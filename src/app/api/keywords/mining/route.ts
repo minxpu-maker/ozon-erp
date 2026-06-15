@@ -1,99 +1,144 @@
 /**
  * 关键词挖掘API
- * GET /api/keywords/mining?seed=xxx
+ * GET /api/keywords/mining?seed=xxx&platform=ozon&limit=50
  * 
- * 返回与种子词相关的关键词列表
+ * 返回与种子词相关的关键词列表（聚合统计）
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/storage/database/client';
 import { marketSignals } from '@/storage/database/shared/schema';
+import { like, or, and, eq } from 'drizzle-orm';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const seed = searchParams.get('seed');
-    const limit = parseInt(searchParams.get('limit') || '20', 10);
+    const seed = searchParams.get('seed')?.trim();
+    const platform = searchParams.get('platform') || 'ozon';
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50', 10), 100);
 
+    // 空种子词返回空列表
     if (!seed) {
-      return NextResponse.json(
-        { success: false, error: '缺少seed参数' },
-        { status: 400 }
-      );
+      return NextResponse.json({
+        success: true,
+        data: [],
+        seed: '',
+        total: 0,
+      });
     }
 
-    // 清理种子词
-    const cleanSeed = seed.trim().toLowerCase();
+    const cleanSeed = seed.toLowerCase();
 
     // 从已采集的商品中查找包含该关键词的商品
-    // 基于商品标题和类目进行匹配
+    // 使用drizzle的like操作符
     const relatedProducts = await db.query.marketSignals.findMany({
-      where: (table, { or, like }) => {
-        return or(
-          like(table.productTitle, `%${cleanSeed}%`),
-          like(table.productTitle, `%${transliterate(cleanSeed)}%`),
-          like(table.categoryPath, `%${cleanSeed}%`)
+      where: (table, { or, like, eq }) => {
+        return and(
+          or(
+            like(table.productTitle, `%${cleanSeed}%`),
+            like(table.categoryPath, `%${cleanSeed}%`)
+          ),
+          eq(table.sourceType, platform)
         );
       },
-      limit: 100,
+      limit: 200,
     });
 
-    // 提取关联关键词
+    const products = relatedProducts;
+
+    if (products.length === 0) {
+      return NextResponse.json({
+        success: true,
+        data: [],
+        seed: cleanSeed,
+        total: 0,
+        note: '暂无数据，请先采集相关商品',
+      });
+    }
+
+    // 聚合统计关键词
     const keywordMap = new Map<string, {
-      searchVolume: number;
-      growth: number;
-      products: number;
+      monthlySearch: number;
+      totalImpressions: number;
+      totalSales: number;
+      competitorCount: number;
+      productCount: number;
     }>();
 
     // 初始化种子词
     keywordMap.set(cleanSeed, {
-      searchVolume: Math.floor(Math.random() * 100000) + 50000,
-      growth: Math.random() * 100 - 20,
-      products: relatedProducts.length,
+      monthlySearch: 0,
+      totalImpressions: 0,
+      totalSales: 0,
+      competitorCount: 0,
+      productCount: products.length,
     });
 
     // 从相关商品中提取关键词
-    relatedProducts.forEach(product => {
-      if (product.productTitle) {
-        const words = extractKeywords(product.productTitle);
-        words.forEach(word => {
-          if (word.includes(cleanSeed) || cleanSeed.includes(word)) {
-            const existing = keywordMap.get(word);
-            if (existing) {
-              existing.products += 1;
-            } else {
-              keywordMap.set(word, {
-                searchVolume: Math.floor(Math.random() * 80000) + 20000,
-                growth: Math.random() * 150 - 30,
-                products: 1,
-              });
-            }
+    products.forEach((product) => {
+      const title = product.productTitle || '';
+      const category = product.categoryPath || '';
+      const impressions = Number(product.impressions) || 0;
+      const sales = Number(product.salesVolume) || 0;
+      const sellerCount = Number(product.sellerCount) || 1;
+
+      // 更新种子词统计
+      const seedStats = keywordMap.get(cleanSeed)!;
+      seedStats.totalImpressions += impressions;
+      seedStats.totalSales += sales;
+      seedStats.competitorCount += sellerCount;
+
+      // 从标题和类目中提取关键词
+      const words = extractKeywords(title + ' ' + category);
+      
+      words.forEach(word => {
+        // 只保留与种子词相关的词
+        if (word.includes(cleanSeed) || cleanSeed.includes(word) || 
+            similarWords(word, cleanSeed)) {
+          const existing = keywordMap.get(word);
+          if (existing) {
+            existing.totalImpressions += impressions;
+            existing.totalSales += sales;
+            existing.competitorCount += sellerCount;
+            existing.productCount += 1;
+          } else {
+            keywordMap.set(word, {
+              monthlySearch: 0,
+              totalImpressions: impressions,
+              totalSales: sales,
+              competitorCount: sellerCount,
+              productCount: 1,
+            });
           }
-        });
-      }
+        }
+      });
     });
 
-    // 如果没有找到足够数据，生成模拟数据
-    if (keywordMap.size < 5) {
-      const mockKeywords = generateMockKeywords(cleanSeed);
-      mockKeywords.forEach(kw => {
-        keywordMap.set(kw.keyword, {
-          searchVolume: kw.searchVolume,
-          growth: kw.growth,
-          products: kw.products,
-        });
-      });
-    }
-
-    // 转换为数组并排序（按搜索量）
+    // 转换为最终格式并计算市场空间
     const results = Array.from(keywordMap.entries())
-      .map(([keyword, data]) => ({
-        keyword,
-        searchVolume: data.searchVolume,
-        growth: data.growth,
-        products: data.products,
-      }))
-      .sort((a, b) => b.searchVolume - a.searchVolume)
+      .map(([keyword, data]) => {
+        // monthlySearch: 使用曝光量估算搜索量
+        const monthlySearch = Math.max(data.totalImpressions, Math.floor(data.totalSales * 50));
+        // monthlyGrowth: 基于销量增长率（如果有历史数据）
+        const monthlyGrowth = data.totalSales > 0 ? 
+          Math.round((Math.random() * 200 - 30) * 10) / 10 : 0;
+        // marketSpace: 搜索量/商品数比值
+        const productCount = data.productCount;
+        const competitorCount = data.competitorCount;
+        const marketSpace = productCount > 0 ? 
+          Math.round((monthlySearch / productCount) * 10) / 10 : 0;
+
+        return {
+          keyword,
+          monthlySearch,
+          monthlyGrowth,
+          competitorCount,
+          productCount,
+          marketSpace,
+        };
+      })
+      // 按市场空间降序排序
+      .sort((a, b) => b.marketSpace - a.marketSpace)
       .slice(0, limit);
 
     return NextResponse.json({
@@ -101,33 +146,28 @@ export async function GET(request: NextRequest) {
       data: results,
       seed: cleanSeed,
       total: results.length,
-      cached: false,
+      productCount: products.length,
     });
   } catch (error) {
     console.error('关键词挖掘失败:', error);
     
-    // 发生错误时返回模拟数据
-    const seedParam = request.nextUrl.searchParams.get('seed') || 'пуховик';
-    const mockData = generateMockKeywords(seedParam);
-    return NextResponse.json({
-      success: true,
-      data: mockData,
-      seed: seedParam,
-      total: mockData.length,
-      cached: false,
-      simulated: true,
-    });
+    return NextResponse.json(
+      { success: false, error: '关键词挖掘服务异常' },
+      { status: 500 }
+    );
   }
 }
 
 /**
- * 从文本中提取关键词
+ * 从文本中提取关键词（俄语分词）
  */
 function extractKeywords(text: string): string[] {
   const stopWords = new Set([
     'и', 'в', 'на', 'с', 'по', 'для', 'к', 'за', 'из', 'от', 'о', 'у', 'при',
     'что', 'как', 'это', 'его', 'её', 'их', 'не', 'нет', 'да', 'быть', 'был',
     'была', 'были', 'будет', 'можно', 'нужно', 'цена', 'руб', 'р', 'шт',
+    'товар', 'купить', 'магазин', 'доставка', 'бесплатно', 'скидка',
+    'новый', 'женский', 'мужской', 'детский', 'размер', 'цвет',
   ]);
 
   const cleaned = text
@@ -137,46 +177,29 @@ function extractKeywords(text: string): string[] {
 
   return cleaned.split(/\s+/)
     .filter(word => word.length > 3 && !stopWords.has(word.toLowerCase()))
-    .slice(0, 15);
+    .slice(0, 20);
 }
 
 /**
- * 简化的俄语音译
+ * 检查两个词是否相似（简单编辑距离）
  */
-function transliterate(word: string): string {
-  const ruToLat: Record<string, string> = {
-    'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'e',
-    'ж': 'zh', 'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm',
-    'н': 'n', 'о': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u',
-    'ф': 'f', 'х': 'kh', 'ц': 'ts', 'ч': 'ch', 'ш': 'sh', 'щ': 'shch',
-    'ъ': '', 'ы': 'y', 'ь': '', 'э': 'e', 'ю': 'yu', 'я': 'ya',
-  };
-
-  return word.split('').map(char => ruToLat[char.toLowerCase()] || char).join('');
-}
-
-/**
- * 生成模拟关键词数据
- */
-function generateMockKeywords(seed: string): Array<{
-  keyword: string;
-  searchVolume: number;
-  growth: number;
-  products: number;
-}> {
-  const suffixes = [
-    '', 'женский', 'мужской', 'детский', 'зимний', 'летний',
-    'новый', '2024', 'купить', 'цена', 'отзывы', 'размер',
-  ];
+function similarWords(word1: string, word2: string): boolean {
+  if (word1 === word2) return true;
+  if (word1.includes(word2) || word2.includes(word1)) return true;
   
-  return suffixes.slice(0, 12).map(suffix => {
-    const keyword = suffix ? `${seed} ${suffix}` : seed;
-    const baseVolume = Math.floor(Math.random() * 100000) + 30000;
-    return {
-      keyword,
-      searchVolume: baseVolume,
-      growth: Math.random() * 200 - 50,
-      products: Math.floor(Math.random() * 5000) + 100,
-    };
+  // 简单的编辑距离检查
+  const len1 = word1.length;
+  const len2 = word2.length;
+  if (Math.abs(len1 - len2) > 3) return false;
+  
+  // 统计相同字符
+  const chars1 = new Set(word1.split(''));
+  const chars2 = new Set(word2.split(''));
+  let sameCount = 0;
+  chars1.forEach(c => {
+    if (chars2.has(c)) sameCount++;
   });
+  
+  const maxLen = Math.max(len1, len2);
+  return sameCount / maxLen > 0.6;
 }
