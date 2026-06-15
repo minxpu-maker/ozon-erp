@@ -464,9 +464,12 @@ export default function MonitorOverviewPage() {
                             <Package className="w-5 h-5 text-[#637089]" />
                           </div>
                         )}
-                        <span className="text-sm font-medium text-[#152033] truncate max-w-xs">
+                        <Link 
+                          href={`/selection/editor/${item.signalId}`}
+                          className="text-sm font-medium text-[#152033] truncate max-w-xs hover:text-[#1677FF] hover:underline"
+                        >
                           {item.productTitle}
-                        </span>
+                        </Link>
                       </div>
                     </td>
                     <td className="px-5 py-4">
