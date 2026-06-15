@@ -96,10 +96,45 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { signalId, type = 'product' } = body;
+    let { signalId, productId, productTitle, imageUrl, price, sales, platform = 'ozon', type = 'product' } = body;
+
+    // 如果没有signalId但有productId，尝试从market_signals获取或创建
+    if (!signalId && productId) {
+      // 先尝试查找已有的market_signals记录
+      let signalResult = await executeQuery(
+        `SELECT id FROM market_signals WHERE ozon_product_id = $1 LIMIT 1`,
+        [productId]
+      );
+      
+      if (signalResult.length > 0) {
+        signalId = signalResult[0].id;
+      } else {
+        // 确保有默认店铺
+        let shopResult = await executeQuery(`SELECT id FROM shops WHERE is_primary = true LIMIT 1`);
+        let shopId = shopResult[0]?.id;
+        
+        if (!shopId) {
+          shopResult = await executeQuery(`SELECT id FROM shops LIMIT 1`);
+          shopId = shopResult[0]?.id;
+        }
+        
+        if (!shopId) {
+          return NextResponse.json({ success: false, error: '请先配置店铺' }, { status: 400 });
+        }
+        
+        // 创建market_signals记录（提供必填字段）
+        const insertResult = await executeQuery(
+          `INSERT INTO market_signals (shop_id, ozon_product_id, product_title, image_url, current_price, monthly_sales, source_type, created_at)
+           VALUES ($1, $2, $3, $4, $5, $6, 'plugin', NOW())
+           RETURNING id`,
+          [shopId, productId, productTitle || '未知商品', imageUrl || '', price || 0, sales || 0]
+        );
+        signalId = insertResult[0]?.id;
+      }
+    }
 
     if (!signalId) {
-      return NextResponse.json({ success: false, error: '缺少signalId' }, { status: 400 });
+      return NextResponse.json({ success: false, error: '缺少signalId或productId' }, { status: 400 });
     }
 
     // 检查是否已存在
@@ -109,7 +144,7 @@ export async function POST(request: NextRequest) {
     );
 
     if (existing.length > 0) {
-      return NextResponse.json({ success: true, message: '已在监控列表中', data: { id: existing[0].id } });
+      return NextResponse.json({ success: true, message: '已在监控列表中', data: { id: existing[0].id, signalId } });
     }
 
     // 创建监控项
@@ -119,6 +154,15 @@ export async function POST(request: NextRequest) {
     );
 
     const newItem = result[0];
+
+    // 如果提供了价格和销量，创建初始快照
+    if (price !== undefined || sales !== undefined) {
+      await executeQuery(
+        `INSERT INTO monitor_snapshots (monitor_item_id, price, sales, snapshot_data, captured_at)
+         VALUES ($1, $2, $3, $4, NOW())`,
+        [newItem.id, price || null, sales || null, JSON.stringify({ price, sales, productTitle, imageUrl })]
+      );
+    }
 
     return NextResponse.json({
       success: true,

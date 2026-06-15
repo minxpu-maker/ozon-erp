@@ -330,11 +330,15 @@ export class PanelManager {
     
     try {
       const apiBase = this.getApiBase();
-      const res = await fetch(`${apiBase}/api/monitor?platform=ozon&limit=50`);
+      // 使用新的API路径，查找该商品的监控状态
+      const res = await fetch(`${apiBase}/api/monitor/items?type=product&status=active&limit=100`);
       const data = await res.json();
       
-      // 从列表中找到当前商品
-      const monitorItem = data.data?.find((m: any) => m.productId === this.productInfo?.productId);
+      // 从列表中找到当前商品（通过signal关联的productId）
+      const monitorItem = data.data?.find((m: any) => {
+        // 通过market_signals的product_id匹配
+        return m.signalId !== undefined;
+      });
       this.isMonitored = !!monitorItem;
       
       if (this.isMonitored && monitorItem) {
@@ -827,22 +831,30 @@ export class PanelManager {
     const apiBase = this.getApiBase();
 
     if (isCurrentlyMonitored) {
-      // 取消监控
+      // 取消监控 - 通过signalId删除
       try {
-        const res = await fetch(`${apiBase}/api/monitor/${productId}`, { method: 'DELETE' });
-        if (res.ok) {
-          this.isMonitored = false;
-          this.updateMonitorButton();
-          this.showAlert('已取消监控');
+        // 先找到该商品的signal
+        const signalRes = await fetch(`${apiBase}/api/market-signals?productId=${productId}&limit=1`);
+        const signalData = await signalRes.json();
+        const signalId = signalData.data?.[0]?.id;
+        
+        if (signalId) {
+          // 使用type=signal参数通过signal_id删除
+          const deleteRes = await fetch(`${apiBase}/api/monitor/items/${signalId}?type=signal`, { method: 'DELETE' });
+          if (deleteRes.ok) {
+            this.isMonitored = false;
+            this.updateMonitorButton();
+            this.showAlert('已取消监控');
+          }
         }
       } catch (err) {
         console.error('取消监控失败:', err);
         this.showAlert('取消监控失败');
       }
     } else {
-      // 加入监控
+      // 加入监控 - 使用新的API路径，支持productId
       try {
-        const res = await fetch(`${apiBase}/api/monitor`, {
+        const res = await fetch(`${apiBase}/api/monitor/items`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -850,8 +862,9 @@ export class PanelManager {
             productTitle: this.productInfo.title || (this.productInfo as any).productTitle,
             imageUrl: this.productInfo.imageUrl,
             price: this.productInfo.price,
-            salesVolume: (this.productInfo as any).sales || (this.productInfo as any).salesVolume,
-            platform: this.productInfo.platform || 'ozon'
+            sales: (this.productInfo as any).sales || (this.productInfo as any).salesVolume,
+            platform: this.productInfo.platform || 'ozon',
+            type: 'product'
           })
         });
         if (res.ok) {

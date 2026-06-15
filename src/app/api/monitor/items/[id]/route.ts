@@ -134,18 +134,30 @@ export async function PUT(
 }
 
 // DELETE /api/monitor/items/[id] - 删除监控项
+// id 可以是 monitor_item_id 或 signal_id（通过type参数区分）
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
+    const { searchParams } = new URL(request.url);
+    const idType = searchParams.get('type') || 'monitor'; // 'monitor' 或 'signal'
 
-    // 软删除：更新状态为removed
-    await executeQuery(
-      `UPDATE monitor_items SET status = 'removed' WHERE id = $1`,
-      [parseInt(id)]
-    );
+    let query: string;
+    let param: any;
+
+    if (idType === 'signal') {
+      // 通过signal_id删除
+      query = `UPDATE monitor_items SET status = 'removed' WHERE signal_id = $1`;
+      param = parseInt(id);
+    } else {
+      // 通过monitor_item_id删除
+      query = `UPDATE monitor_items SET status = 'removed' WHERE id = $1`;
+      param = parseInt(id);
+    }
+
+    await executeQuery(query, [param]);
 
     return NextResponse.json({ success: true, message: '监控项已删除' });
   } catch (error) {
