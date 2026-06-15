@@ -52,6 +52,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         success: true,
         data: [],
+        productId,
+        productInfo: null,
         message: '未找到该商品的数据',
         cached: false,
       });
@@ -79,6 +81,14 @@ export async function GET(request: NextRequest) {
           source: item.source,
         })),
         productId,
+        productInfo: {
+          productId: product.productId,
+          productTitle: product.productTitle,
+          imageUrl: product.imageUrl,
+          price: product.price,
+          salesVolume: product.salesVolume,
+          rating: product.rating,
+        },
         cached: true,
       });
     }
@@ -139,6 +149,14 @@ export async function GET(request: NextRequest) {
         source: item.source,
       })),
       productId,
+      productInfo: {
+        productId: product.productId,
+        productTitle: product.productTitle,
+        imageUrl: product.imageUrl,
+        price: product.price,
+        salesVolume: product.salesVolume,
+        rating: product.rating,
+      },
       cached: false,
     });
   } catch (error) {
