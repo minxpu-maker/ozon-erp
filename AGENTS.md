@@ -130,6 +130,15 @@
 | `/api/keywords/reverse` | GET | 关键词反查（根据商品ID获取关联关键词） |
 | `/api/keywords/mining` | GET | 关键词挖掘（输入种子词获取相关关键词） |
 
+#### 关键词反查API详情
+```
+GET /api/keywords/reverse?productId=xxx&platform=ozon
+```
+- **数据源**：从商品标题/类目路径分词提取
+- **返回格式**：keyword, searchVolume, competition, competitionValue, rank, source
+- **缓存**：查询结果缓存到keyword_reverse表
+- **来源优先级**：title > tag > category
+
 ### 产品发布 API
 | 接口 | 方法 | 说明 |
 |------|------|------|

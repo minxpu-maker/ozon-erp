@@ -75,7 +75,7 @@ const RU_TRANSLATIONS: KeywordsPanelTranslations = {
 export interface KeywordData {
   keyword: string;
   searchVolume?: number;
-  competition?: 'low' | 'medium' | 'high';
+  competition?: 'low' | 'medium' | 'high' | 'unknown';
   competitionValue?: number;
   rank?: number;
   growth?: number;
