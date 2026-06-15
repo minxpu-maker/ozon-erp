@@ -197,6 +197,11 @@ ozon-extension/
   - Popup采集统计卡片
 - **v1.1.0-enhanced-bugfix**: 审查修复
   - 修复main.ts未集成CollectedStore导致已采集标记功能失效
+- **v1.1.0-enhanced-bugfix2**: 字段修复
+  - 采集箱列表添加profitRate字段显示
+  - 修复API与前端字段命名不一致问题(title→productTitle, platform→sourceType)
+  - PlatformBadge组件支持sourceType
+  - 添加ProfitRateBadge颜色预警组件
   - 详情页初始化时检查并传递已采集状态
   - 采集成功后更新本地已采集存储
 - **v1.1.0-enhanced**: 利润计算器增强(5-A1)

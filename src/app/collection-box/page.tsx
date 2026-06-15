@@ -58,19 +58,24 @@ import { CollectionItemModal } from './collection-item-modal';
 interface MarketSignal {
   id: number;
   productId: string;
-  title: string;
+  productTitle: string;
+  productUrl?: string;
   imageUrl?: string;
-  imageS3Url?: string;
-  price: number;
-  originalPrice?: number;
+  price: string | number;
   salesVolume?: number;
-  rating?: number;
-  commentCount?: number;
+  rating?: string | number;
+  reviewsCount?: number;
   sellerName?: string;
-  platform: 'ozon' | 'wb';
-  category?: string;
-  createdAt: string;
-  updatedAt: string;
+  sellerType?: string;
+  deliveryType?: string;
+  weight?: string | number;
+  categoryPath?: string;
+  categoryName?: string;
+  sourceType: string;
+  profitRate?: string | number;
+  revenue?: string | number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface CollectionItem {
@@ -447,10 +452,25 @@ export default function CollectionBoxPage() {
 
   // 平台图标
   const PlatformBadge = ({ platform }: { platform: string }) => {
-    if (platform === 'ozon') {
+    if (platform === 'ozon' || platform === 'ozon_market') {
       return <Badge className="bg-blue-500 hover:bg-blue-600">Ozon</Badge>;
     }
-    return <Badge className="bg-purple-500 hover:bg-purple-600">WB</Badge>;
+    if (platform === 'wb' || platform === 'wildberries') {
+      return <Badge className="bg-purple-500 hover:bg-purple-600">WB</Badge>;
+    }
+    return <Badge variant="outline">{platform}</Badge>;
+  };
+
+  // 利润率标签（带颜色预警）
+  const ProfitRateBadge = ({ value }: { value: number }) => {
+    const displayValue = (value).toFixed(1) + '%';
+    if (value > 20) {
+      return <Badge className="bg-green-500 hover:bg-green-600">{displayValue}</Badge>;
+    }
+    if (value >= 10) {
+      return <Badge className="bg-yellow-500 hover:bg-yellow-600">{displayValue}</Badge>;
+    }
+    return <Badge variant="destructive">{displayValue}</Badge>;
   };
 
   // 状态标签
@@ -671,6 +691,7 @@ export default function CollectionBoxPage() {
                       <TableHead className="text-right">售价</TableHead>
                       <TableHead className="text-right">销量</TableHead>
                       <TableHead className="text-center">评分</TableHead>
+                      <TableHead className="text-right">利润率</TableHead>
                       <TableHead>卖家</TableHead>
                       <TableHead>采集时间</TableHead>
                       <TableHead>状态</TableHead>
@@ -688,10 +709,10 @@ export default function CollectionBoxPage() {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            {item.signal.imageUrl || item.signal.imageS3Url ? (
+                            {item.signal.imageUrl ? (
                               <img
-                                src={item.signal.imageS3Url || item.signal.imageUrl}
-                                alt={item.signal.title}
+                                src={item.signal.imageUrl}
+                                alt={item.signal.productTitle}
                                 className="w-12 h-12 object-cover rounded"
                                 referrerPolicy="no-referrer"
                               />
@@ -701,12 +722,12 @@ export default function CollectionBoxPage() {
                               </div>
                             )}
                             <span className="font-medium line-clamp-2 max-w-[200px]">
-                              {item.signal.title}
+                              {item.signal.productTitle}
                             </span>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <PlatformBadge platform={item.signal.platform} />
+                          <PlatformBadge platform={item.signal.sourceType} />
                         </TableCell>
                         <TableCell className="text-right font-mono">
                           ₽{item.signal.price?.toLocaleString()}
@@ -719,6 +740,11 @@ export default function CollectionBoxPage() {
                             <span className="flex items-center justify-center gap-1">
                               ⭐ {item.signal.rating}
                             </span>
+                          ) : '-'}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {item.signal.profitRate ? (
+                            <ProfitRateBadge value={Number(item.signal.profitRate)} />
                           ) : '-'}
                         </TableCell>
                         <TableCell>{item.signal.sellerName || '-'}</TableCell>
@@ -965,10 +991,10 @@ function ClaimedTable({
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-3">
-                    {item.signal.imageUrl || item.signal.imageS3Url ? (
+                    {item.signal.imageUrl ? (
                       <img
-                        src={item.signal.imageS3Url || item.signal.imageUrl}
-                        alt={item.signal.title}
+                        src={item.signal.imageUrl}
+                        alt={item.signal.productTitle}
                         className="w-12 h-12 object-cover rounded"
                         referrerPolicy="no-referrer"
                       />
@@ -978,7 +1004,7 @@ function ClaimedTable({
                       </div>
                     )}
                     <span className="font-medium line-clamp-2 max-w-[200px]">
-                      {item.signal.title}
+                      {item.signal.productTitle}
                     </span>
                   </div>
                 </TableCell>
@@ -1093,10 +1119,10 @@ function PublishedTable({
             <TableRow key={item.id}>
               <TableCell>
                 <div className="flex items-center gap-3">
-                  {item.signal.imageUrl || item.signal.imageS3Url ? (
+                  {item.signal.imageUrl ? (
                     <img
-                      src={item.signal.imageS3Url || item.signal.imageUrl}
-                      alt={item.signal.title}
+                      src={item.signal.imageUrl}
+                      alt={item.signal.productTitle}
                       className="w-12 h-12 object-cover rounded"
                       referrerPolicy="no-referrer"
                     />
@@ -1106,7 +1132,7 @@ function PublishedTable({
                     </div>
                   )}
                   <span className="font-medium line-clamp-2 max-w-[200px]">
-                    {item.signal.title}
+                    {item.signal.productTitle}
                   </span>
                 </div>
               </TableCell>

@@ -48,19 +48,24 @@ interface CollectionItem {
   signal: {
     id: number;
     productId: string;
-    title: string;
+    productTitle: string;
+    productUrl?: string;
     description?: string;
     imageUrl?: string;
-    imageS3Url?: string;
-    price: number;
-    originalPrice?: number;
+    price: string | number;
+    originalPrice?: string | number;
     salesVolume?: number;
-    rating?: number;
-    commentCount?: number;
+    rating?: string | number;
+    reviewsCount?: number;
     sellerName?: string;
-    platform: 'ozon' | 'wb';
-    category?: string;
-    weight?: number;
+    sellerType?: string;
+    deliveryType?: string;
+    weight?: string | number;
+    categoryPath?: string;
+    categoryName?: string;
+    sourceType: string;
+    profitRate?: string | number;
+    revenue?: string | number;
   };
   shopId?: string;
   status: string;
@@ -117,10 +122,10 @@ export function CollectionItemModal({
   // 初始化数据
   useEffect(() => {
     if (item) {
-      setTitle(item.editedData?.title || item.signal.title || '');
+      setTitle(item.editedData?.title || item.signal.productTitle || '');
       setDescription(item.editedData?.description || '');
-      setPrice(item.editedData?.price || item.signal.price || 0);
-      setImages(item.editedData?.images || [item.signal.imageUrl, item.signal.imageS3Url].filter(Boolean) as string[]);
+      setPrice(item.editedData?.price || Number(item.signal.price) || 0);
+      setImages(item.editedData?.images || [item.signal.imageUrl].filter(Boolean) as string[]);
       setProfitResult(null);
       setProfitOpen(false);
     }
@@ -232,8 +237,8 @@ export function CollectionItemModal({
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <span className="line-clamp-1 flex-1">{title || item.signal.title}</span>
-            <Badge variant="outline">{item.signal.platform.toUpperCase()}</Badge>
+            <span className="line-clamp-1 flex-1">{title || item.signal.productTitle}</span>
+            <Badge variant="outline">{item.signal.sourceType === 'ozon_market' ? 'OZON' : item.signal.sourceType?.toUpperCase() || '-'}</Badge>
           </DialogTitle>
         </DialogHeader>
 
@@ -268,7 +273,7 @@ export function CollectionItemModal({
               </div>
               <div className="space-y-2">
                 <Label>类目</Label>
-                <Input value={item.signal.category || '-'} disabled />
+                <Input value={item.signal.categoryName || item.signal.categoryPath || '-'} disabled />
               </div>
             </div>
 
@@ -283,7 +288,7 @@ export function CollectionItemModal({
               </div>
               <div className="space-y-2">
                 <Label>评论数</Label>
-                <Input value={item.signal.commentCount?.toLocaleString() || '-'} disabled />
+                <Input value={item.signal.reviewsCount?.toLocaleString() || '-'} disabled />
               </div>
             </div>
 

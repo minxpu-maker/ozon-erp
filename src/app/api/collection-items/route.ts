@@ -60,7 +60,10 @@ export async function GET(request: NextRequest) {
           deliveryType: marketSignals.deliveryType,
           weight: marketSignals.weight,
           categoryPath: marketSignals.categoryPath,
+          categoryName: marketSignals.categoryName,
           sourceType: marketSignals.sourceType,
+          profitRate: marketSignals.profitRate,
+          revenue: marketSignals.revenue,
         },
       })
       .from(collectionItems)
