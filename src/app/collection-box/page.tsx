@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
   SelectContent,
@@ -172,7 +173,8 @@ function BatchClaimDialog({ open, onOpenChange, selectedIds, onConfirm, shops }:
   );
 }
 
-export default function CollectionBoxPage() {
+// 内部组件（使用useSearchParams）
+function CollectionBoxPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialTab = searchParams.get('tab') || 'pending';
@@ -1190,4 +1192,24 @@ function PublishStatusBadge({
     );
   }
   return <Badge className="bg-yellow-500">待审核</Badge>;
+}
+
+// 包装组件（带Suspense边界）
+export default function CollectionBoxPage() {
+  return (
+    <Suspense fallback={
+      <div className="p-6 space-y-4">
+        <Skeleton className="h-10 w-[200px]" />
+        <div className="grid gap-4 md:grid-cols-4">
+          <Skeleton className="h-24" />
+          <Skeleton className="h-24" />
+          <Skeleton className="h-24" />
+          <Skeleton className="h-24" />
+        </div>
+        <Skeleton className="h-[400px]" />
+      </div>
+    }>
+      <CollectionBoxPageInner />
+    </Suspense>
+  );
 }

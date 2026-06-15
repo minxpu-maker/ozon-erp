@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
   SelectContent,
@@ -78,7 +79,7 @@ interface LogisticsTemplate {
   type: string;
 }
 
-export default function ProductCardEditorPage() {
+function ProductCardEditorPageInner() {
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -1095,5 +1096,19 @@ export default function ProductCardEditorPage() {
         )}
       </div>
     </AppLayout>
+  );
+}
+
+// 带Suspense的包装组件
+export default function ProductCardEditorPage() {
+  return (
+    <Suspense fallback={
+      <div className="p-6 space-y-4">
+        <Skeleton className="h-10 w-[200px]" />
+        <Skeleton className="h-[400px]" />
+      </div>
+    }>
+      <ProductCardEditorPageInner />
+    </Suspense>
   );
 }

@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { Search, TrendingUp, BarChart3, Package, DollarSign, TrendingDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useSearchParams, useRouter } from 'next/navigation';
 
 interface TrendItem {
@@ -29,7 +30,7 @@ interface RelatedKeyword {
   monthlyGrowth: number;
 }
 
-export default function KeywordTrendPage() {
+function KeywordTrendPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [keyword, setKeyword] = useState(searchParams.get('keyword') || '');
@@ -380,5 +381,19 @@ export default function KeywordTrendPage() {
         </Card>
       )}
     </div>
+  );
+}
+
+// 带Suspense的包装组件
+export default function KeywordTrendPage() {
+  return (
+    <Suspense fallback={
+      <div className="p-6 space-y-4">
+        <Skeleton className="h-10 w-[300px]" />
+        <Skeleton className="h-[400px]" />
+      </div>
+    }>
+      <KeywordTrendPageInner />
+    </Suspense>
   );
 }

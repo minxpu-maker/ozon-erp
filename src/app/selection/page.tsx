@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
   SelectContent,
@@ -651,7 +652,7 @@ function EngineScoreCell() {
 // 主页面组件
 // ============================================================================
 
-export default function SelectionPage() {
+function SelectionPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -1400,5 +1401,25 @@ function ComparePanel({
         </div>
       </div>
     </div>
+  );
+}
+
+// 带Suspense的包装组件
+export default function SelectionPage() {
+  return (
+    <Suspense fallback={
+      <div className="p-6 space-y-4">
+        <Skeleton className="h-10 w-[200px]" />
+        <div className="grid gap-4 md:grid-cols-4">
+          <Skeleton className="h-24" />
+          <Skeleton className="h-24" />
+          <Skeleton className="h-24" />
+          <Skeleton className="h-24" />
+        </div>
+        <Skeleton className="h-[400px]" />
+      </div>
+    }>
+      <SelectionPageInner />
+    </Suspense>
   );
 }

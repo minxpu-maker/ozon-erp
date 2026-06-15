@@ -4,9 +4,6 @@
  */
 
 import { MessageBus } from '../shared/message-bus';
-// API Base URL
-const EXT_API_BASE = 'http://localhost:5000';
-
 import { OzonExtConfig, MarketSignalPayload, ProductInfo } from '../shared/types';
 import { showCollectPreview, addDetailCollectedBadge } from './preview';
 
@@ -318,19 +315,30 @@ export class PanelManager {
   }
 
   /**
+   * 获取API基础地址
+   */
+  private getApiBase(): string {
+    // 从config读取ERP后端地址，默认为localhost:5000
+    return this.config?.apiUrl?.replace(/\/$/, '') || 'http://localhost:5000';
+  }
+
+  /**
    * 检查监控状态
    */
   private async checkMonitorStatus(): Promise<void> {
-    if (!this.productInfo) return;
+    if (!this.productInfo?.productId) return;
     
     try {
-      const res = await fetch(`${EXT_API_BASE}/monitor?productId=${encodeURIComponent(this.productInfo.productId || '')}&limit=1`);
+      const apiBase = this.getApiBase();
+      const res = await fetch(`${apiBase}/api/monitor?platform=ozon&limit=50`);
       const data = await res.json();
-      this.isMonitored = data.total > 0;
       
-      if (this.isMonitored && data.data && data.data.length > 0) {
-        const monitorItem = data.data[0];
-        const currentPrice = parseFloat(String(this.productInfo.price || 0))
+      // 从列表中找到当前商品
+      const monitorItem = data.data?.find((m: any) => m.productId === this.productInfo?.productId);
+      this.isMonitored = !!monitorItem;
+      
+      if (this.isMonitored && monitorItem) {
+        const currentPrice = parseFloat(String(this.productInfo.price || 0));
         const currentSales = parseInt(String((this.productInfo as any).sales || (this.productInfo as any).salesVolume || 0));
         
         this.previousPrice = monitorItem.currentPrice || currentPrice;
@@ -346,6 +354,16 @@ export class PanelManager {
         if (this.previousSales > 0 && currentSales !== this.previousSales) {
           this.hasSalesChange = true;
           this.salesChangeValue = currentSales - this.previousSales;
+        }
+        
+        // 更新变化提示
+        this.hasChanges = this.hasPriceChange || this.hasSalesChange;
+        if (this.hasPriceChange) {
+          const direction = this.priceChangePercent > 0 ? '↑' : '↓';
+          this.changeAlert = `价格${direction}${Math.abs(this.priceChangePercent).toFixed(1)}%`;
+        } else if (this.hasSalesChange) {
+          const direction = this.salesChangeValue > 0 ? '↑' : '↓';
+          this.changeAlert = `销量${direction}${Math.abs(this.salesChangeValue)}`;
         }
       }
     } catch (e) {
@@ -791,10 +809,10 @@ export class PanelManager {
       });
     });
 
-    // 监控按钮事件
-    const monitorBtn = document.querySelector('.ozon-ext-btn-monitor');
-    if (monitorBtn) {
-      monitorBtn.addEventListener('click', () => this.handleMonitorToggle());
+    // 监控按钮事件（使用data-action选择器）
+    const toggleMonitorBtn = this.container.querySelector('[data-action="toggle-monitor"]');
+    if (toggleMonitorBtn) {
+      toggleMonitorBtn.addEventListener('click', () => this.handleMonitorToggle());
     }
   }
 
@@ -806,22 +824,25 @@ export class PanelManager {
 
     const productId = this.productInfo.productId;
     const isCurrentlyMonitored = this.isMonitored;
+    const apiBase = this.getApiBase();
 
     if (isCurrentlyMonitored) {
       // 取消监控
       try {
-        const res = await fetch(`/api/monitor/${productId}`, { method: 'DELETE' });
+        const res = await fetch(`${apiBase}/api/monitor/${productId}`, { method: 'DELETE' });
         if (res.ok) {
           this.isMonitored = false;
           this.updateMonitorButton();
+          this.showAlert('已取消监控');
         }
       } catch (err) {
         console.error('取消监控失败:', err);
+        this.showAlert('取消监控失败');
       }
     } else {
       // 加入监控
       try {
-        const res = await fetch('/api/monitor', {
+        const res = await fetch(`${apiBase}/api/monitor`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -829,33 +850,72 @@ export class PanelManager {
             productTitle: this.productInfo.title || (this.productInfo as any).productTitle,
             imageUrl: this.productInfo.imageUrl,
             price: this.productInfo.price,
-            salesVolume: this.productInfo.salesVolume,
+            salesVolume: (this.productInfo as any).sales || (this.productInfo as any).salesVolume,
             platform: this.productInfo.platform || 'ozon'
           })
         });
         if (res.ok) {
           this.isMonitored = true;
           this.updateMonitorButton();
+          this.showAlert('已加入监控');
         }
       } catch (err) {
         console.error('加入监控失败:', err);
+        this.showAlert('加入监控失败');
       }
     }
+  }
+
+  /**
+   * 显示临时提示
+   */
+  private showAlert(message: string): void {
+    // 创建临时提示
+    const existingAlert = document.querySelector('.ozon-ext-temp-alert');
+    if (existingAlert) existingAlert.remove();
+
+    const alert = document.createElement('div');
+    alert.className = 'ozon-ext-temp-alert';
+    alert.textContent = message;
+    alert.style.cssText = `
+      position: fixed;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.8);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 4px;
+      font-size: 13px;
+      z-index: 999999;
+    `;
+    document.body.appendChild(alert);
+    setTimeout(() => alert.remove(), 2000);
   }
 
   /**
    * 更新监控按钮状态
    */
   private updateMonitorButton(): void {
-    const monitorBtn = document.querySelector('.ozon-ext-btn-monitor');
+    const monitorBtn = document.querySelector('.ozon-ext-panel-monitor-btn');
+    const monitorText = document.querySelector('.ozon-ext-monitor-text');
+    const monitorBadge = document.querySelector('.ozon-ext-panel-monitor-badge');
+    
+    if (monitorText) {
+      monitorText.textContent = this.isMonitored ? this.translations.monitoring : this.translations.addMonitor;
+    }
+    
     if (monitorBtn) {
       if (this.isMonitored) {
-        monitorBtn.innerHTML = '👁 监控中';
         monitorBtn.classList.add('ozon-ext-btn-monitored');
       } else {
-        monitorBtn.innerHTML = '👁 加入监控';
         monitorBtn.classList.remove('ozon-ext-btn-monitored');
       }
+    }
+    
+    // 更新监控状态标签显示
+    if (monitorBadge) {
+      (monitorBadge as HTMLElement).style.display = this.isMonitored ? 'flex' : 'none';
     }
   }
 
