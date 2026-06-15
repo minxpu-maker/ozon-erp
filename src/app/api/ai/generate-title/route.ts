@@ -1,70 +1,95 @@
-import { NextRequest, NextResponse } from "next/server";
-import { LLMClient, Config } from "coze-coding-dev-sdk";
+import { NextRequest, NextResponse } from 'next/server';
+import { LLMClient, Config } from 'coze-coding-dev-sdk';
+import { pool } from '@/storage/database/client';
 
-const config = new Config();
-const client = new LLMClient(config);
+interface GenerateTitleRequest {
+  sourceTitle: string;
+  category?: string;
+  language?: string;
+  style?: 'seo' | 'natural';
+}
 
 export async function POST(request: NextRequest) {
   try {
-    const { productInfo, keywords } = await request.json();
+    const body: GenerateTitleRequest = await request.json();
+    const { sourceTitle, category, language = 'ru', style = 'seo' } = body;
 
-    if (!productInfo) {
-      return NextResponse.json({
-        success: false,
-        error: "缺少商品信息"
-      }, { status: 400 });
+    if (!sourceTitle) {
+      return NextResponse.json(
+        { error: 'sourceTitle is required' },
+        { status: 400 }
+      );
     }
 
-    // 构建提示词
-    const categoryPath = productInfo.categoryPath || productInfo.category || "";
-    const brand = productInfo.brand || "";
-    const currentTitle = productInfo.title || productInfo.productTitle || "";
-    const features = productInfo.features || productInfo.characteristics || "";
-    const existingKeywords = keywords?.join(", ") || "";
+    const config = new Config();
+    const client = new LLMClient(config);
+    const model = 'doubao-seed-2-0-lite-260215';
 
-    const prompt = `你是一个专业的Ozon电商标题优化专家。请根据以下信息生成一个高质量的商品标题。
+    // 构建俄语提示词
+    const prompt = `Вы аналитик электронной коммерции. Сгенерируйте 3 варианта заголовков для товара.
 
-商品信息：
-- 类目路径：${categoryPath}
-- 品牌：${brand}
-- 当前标题：${currentTitle}
-- 商品特征：${features}
-- 相关关键词：${existingKeywords}
+Оригинальный заголовок: ${sourceTitle}
+${category ? `Категория товара: ${category}` : ''}
+Язык: ${language === 'ru' ? 'Русский' : language === 'en' ? 'Английский' : language}
+Стиль: ${style === 'seo' ? 'SEO-оптимизированный (с ключевыми словами)' : 'Естественный (читабельный)'}
 
-要求：
-1. 标题长度30-200字符（俄语）
-2. 包含核心关键词（搜索权重最高）
-3. 突出商品卖点（材质、功能、适用人群等）
-4. 使用Ozon平台常用的标题格式
-5. 避免堆砌关键词，保持可读性
+Требования:
+1. Каждый заголовок должен содержать ключевые слова для поисковой оптимизации
+2. Заголовок должен быть привлекательным для покупателей
+3. Длина: 60-120 символов
+4. Формат: вернуть 3 заголовка в формате JSON: {"titles": ["заголовок1", "заголовок2", "заголовок3"], "keywords": ["ключевое слово1", "ключевое слово2", ...]}
 
-请直接返回标题，不要解释。`;
+Верните ТОЛЬКО JSON, без дополнительного текста.`;
 
-    const messages: Array<{ role: string; content: string }> = [
-      { role: "system", content: "你是一个专业的电商标题优化专家，擅长生成符合平台规范的高转化标题。" },
-      { role: "user", content: prompt }
-    ];
+    const response = await client.invoke(
+      [{ role: 'user', content: prompt }],
+      { model, temperature: 0.8 }
+    );
 
-    const response = await (client as any).invoke(messages);
+    const text = response.content || '';
 
-    const title = response.content?.trim() || response.toString();
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        title,
-        tips: [
-          "标题前30个字符最重要，确保包含核心关键词",
-          "使用阿拉伯数字比俄语数字更醒目",
-          "避免使用特殊字符和全大写"
-        ]
+    // 解析JSON响应
+    let result = { titles: [] as string[], keywords: [] as string[] };
+    try {
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        result = {
+          titles: parsed.titles || [],
+          keywords: parsed.keywords || [],
+        };
       }
-    });
-  } catch (error: any) {
-    console.error("标题生成错误:", error);
+    } catch {
+      const lines = text.split('\n').filter(line => line.trim());
+      result.titles = lines.slice(0, 3).map(line => line.replace(/^["\d.]+/, '').trim());
+    }
+
+    // 确保返回3个标题
+    while (result.titles.length < 3) {
+      result.titles.push(sourceTitle);
+    }
+
+    // 记录到日志
+    try {
+      await pool.query(
+        `INSERT INTO ai_generation_logs (type, input, output, model) 
+         VALUES ($1, $2, $3, $4)`,
+        ['title', JSON.stringify(body), JSON.stringify(result), model]
+      );
+    } catch (logError) {
+      console.error('Failed to log AI generation:', logError);
+    }
+
     return NextResponse.json({
-      success: false,
-      error: error.message || "生成失败"
-    }, { status: 500 });
+      titles: result.titles.slice(0, 3),
+      keywords: result.keywords.slice(0, 10),
+    });
+
+  } catch (error) {
+    console.error('Generate title error:', error);
+    return NextResponse.json(
+      { error: 'Failed to generate titles', details: String(error) },
+      { status: 500 }
+    );
   }
 }

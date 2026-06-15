@@ -1,68 +1,106 @@
-import { NextRequest, NextResponse } from "next/server";
-import { LLMClient, Config } from "coze-coding-dev-sdk";
+import { NextRequest, NextResponse } from 'next/server';
+import { LLMClient, Config } from 'coze-coding-dev-sdk';
+import { pool } from '@/storage/database/client';
 
-const config = new Config();
-const client = new LLMClient(config);
+interface GenerateDescriptionRequest {
+  title: string;
+  category?: string;
+  features?: string;
+  language?: string;
+  length?: 'short' | 'medium' | 'long';
+}
 
 export async function POST(request: NextRequest) {
   try {
-    const { productInfo, keywords } = await request.json();
+    const body: GenerateDescriptionRequest = await request.json();
+    const { title, category, features, language = 'ru', length = 'medium' } = body;
 
-    if (!productInfo) {
-      return NextResponse.json({
-        success: false,
-        error: "缺少商品信息"
-      }, { status: 400 });
+    if (!title) {
+      return NextResponse.json(
+        { error: 'title is required' },
+        { status: 400 }
+      );
     }
 
-    // 构建提示词
-    const title = productInfo.title || productInfo.productTitle || "";
-    const categoryPath = productInfo.categoryPath || productInfo.category || "";
-    const features = productInfo.features || productInfo.characteristics || "";
-    const existingKeywords = keywords?.join(", ") || "";
+    const config = new Config();
+    const client = new LLMClient(config);
+    const model = 'doubao-seed-2-0-lite-260215';
 
-    const prompt = `你是一个专业的Ozon电商描述撰写专家。请根据以下信息生成高质量的商品描述。
+    // 根据长度设置字数
+    const lengthMap = {
+      short: '200-300',
+      medium: '400-600',
+      long: '800-1200'
+    };
+    const charCount = lengthMap[length];
 
-商品信息：
-- 商品标题：${title}
-- 类目路径：${categoryPath}
-- 商品特征：${features}
-- 相关关键词：${existingKeywords}
+    // 构建俄语提示词
+    const prompt = `Вы эксперт по написанию описаний товаров для маркетплейса Ozon. 
+Создайте привлекательное описание товара.
 
-要求：
-1. 描述长度200-500字符（俄语）
-2. 分为2-3个段落，结构清晰
-3. 包含商品核心卖点、使用场景、规格参数
-4. 自然融入关键词，提升搜索排名
-5. 使用HTML标签（<p>、<li>）格式化
+Название товара: ${title}
+${category ? `Категория: ${category}` : ''}
+${features ? `Характеристики товара: ${features}` : ''}
+Язык: ${language === 'ru' ? 'Русский' : language === 'en' ? 'Английский' : language}
+Объём описания: ${charCount} символов
 
-请直接返回HTML格式的描述，不要解释。`;
+Требования к описанию:
+1. Используйте HTML-теги для форматирования: <p>, <ul>, <li>, <strong>
+2. Опишите преимущества товара
+3. Укажите ключевые характеристики
+4. Добавьте призыв к действию
+5. Формат: вернуть JSON {"description": "описание с HTML"}
 
-    const messages: Array<{ role: string; content: string }> = [
-      { role: "system", content: "你是一个专业的电商描述撰写专家，擅长生成符合平台规范的高转化商品描述。" },
-      { role: "user", content: prompt }
-    ];
+Верните ТОЛЬКО JSON, без дополнительного текста.`;
 
-    const response = await (client as any).invoke(messages);
+    const response = await client.invoke(
+      [{ role: 'user', content: prompt }],
+      { model, temperature: 0.7 }
+    );
 
-    const description = response.content?.trim() || response.toString();
+    const text = response.content || '';
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        description,
-        tips: [
-          "描述前100字符最重要，确保核心卖点突出",
-          "使用项目符号列表提升可读性",
-          "避免夸大宣传，确保描述与实际商品一致"
-        ]
+    // 解析JSON响应
+    let description = '';
+    try {
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        description = parsed.description || '';
       }
-    });
-  } catch (error: any) {
-    console.error("描述生成错误:", error);
-    return NextResponse.json({
-      success: false,
-      error: error.message || "生成失败"
-    }, { status: 500 });
+    } catch {
+      description = text;
+    }
+
+    // 如果没有返回描述，生成一个默认的
+    if (!description) {
+      description = `<p>Качественный товар: ${title}</p>
+<ul>
+<li>Отличное соотношение цены и качества</li>
+<li>Быстрая доставка</li>
+<li>Гарантия качества</li>
+</ul>
+<p>Закажите сейчас!</p>`;
+    }
+
+    // 记录到日志
+    try {
+      await pool.query(
+        `INSERT INTO ai_generation_logs (type, input, output, model) 
+         VALUES ($1, $2, $3, $4)`,
+        ['description', JSON.stringify(body), JSON.stringify({ description }), model]
+      );
+    } catch (logError) {
+      console.error('Failed to log AI generation:', logError);
+    }
+
+    return NextResponse.json({ description });
+
+  } catch (error) {
+    console.error('Generate description error:', error);
+    return NextResponse.json(
+      { error: 'Failed to generate description', details: String(error) },
+      { status: 500 }
+    );
   }
 }

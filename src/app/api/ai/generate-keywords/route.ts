@@ -1,80 +1,92 @@
-import { NextRequest, NextResponse } from "next/server";
-import { LLMClient, Config } from "coze-coding-dev-sdk";
+import { NextRequest, NextResponse } from 'next/server';
+import { LLMClient, Config } from 'coze-coding-dev-sdk';
+import { pool } from '@/storage/database/client';
 
-const config = new Config();
-const client = new LLMClient(config);
+interface GenerateKeywordsRequest {
+  title: string;
+  category?: string;
+  language?: string;
+}
 
 export async function POST(request: NextRequest) {
   try {
-    const { productInfo, existingKeywords } = await request.json();
+    const body: GenerateKeywordsRequest = await request.json();
+    const { title, category, language = 'ru' } = body;
 
-    if (!productInfo) {
-      return NextResponse.json({
-        success: false,
-        error: "缺少商品信息"
-      }, { status: 400 });
+    if (!title) {
+      return NextResponse.json(
+        { error: 'title is required' },
+        { status: 400 }
+      );
     }
 
-    // 构建提示词
-    const title = productInfo.title || productInfo.productTitle || "";
-    const categoryPath = productInfo.categoryPath || productInfo.category || "";
-    const features = productInfo.features || productInfo.characteristics || "";
-    const existKw = existingKeywords?.join(", ") || "无";
+    const config = new Config();
+    const client = new LLMClient(config);
+    const model = 'doubao-seed-2-0-lite-260215';
 
-    const prompt = `你是一个专业的Ozon电商关键词优化专家。请根据以下信息生成一组高效的搜索关键词。
+    // 构建俄语提示词
+    const prompt = `Вы SEO-специалист для маркетплейса Ozon. 
+Сгенерируйте список релевантных ключевых слов для товара.
 
-商品信息：
-- 商品标题：${title}
-- 类目路径：${categoryPath}
-- 商品特征：${features}
-- 已有关键词：${existKw}
+Название товара: ${title}
+${category ? `Категория: ${category}` : ''}
+Язык: ${language === 'ru' ? 'Русский' : language === 'en' ? 'Английский' : language}
 
-要求：
-1. 生成10-20个关键词
-2. 包含短尾关键词（1-2词，如：рюкзак）
-3. 包含长尾关键词（3-5词，如：рюкзак женский кожаный）
-4. 包含品牌词（如果有）
-5. 包含功能/材质/场景词
-6. 已有关键词不要重复
+Требования:
+1. Сгенерируйте 15-20 ключевых слов
+2. Включите общие и специфичные термины
+3. Включите синонимы и варианты написания
+4. Добавьте бренды и характеристики если применимо
+5. Упорядочьте по релевантности
+6. Формат: вернуть JSON {"keywords": ["слово1", "слово2", ...]}
 
-请返回JSON格式的关键词列表：
-{
-  "keywords": ["关键词1", "关键词2", ...],
-  "highPriority": ["高优先级关键词1", ...],
-  "reason": "关键词选取理由（50字以内）"
-}`;
+Верните ТОЛЬКО JSON, без дополнительного текста.`;
 
-    const messages: Array<{ role: string; content: string }> = [
-      { role: "system", content: "你是一个专业的电商关键词优化专家，擅长从商品信息中提取高效的搜索关键词。" },
-      { role: "user", content: prompt }
-    ];
+    const response = await client.invoke(
+      [{ role: 'user', content: prompt }],
+      { model, temperature: 0.6 }
+    );
 
-    const response = await (client as any).invoke(messages);
+    const text = response.content || '';
 
-    let result;
+    // 解析JSON响应
+    let keywords: string[] = [];
     try {
-      const content = response.content?.trim() || response;
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        result = JSON.parse(jsonMatch[0]);
-      } else {
-        // 如果解析失败，尝试按行分割返回
-        const lines = content.split("\n").filter((l: string) => l.trim());
-        result = { keywords: lines.slice(0, 15) };
+        const parsed = JSON.parse(jsonMatch[0]);
+        keywords = parsed.keywords || [];
       }
-    } catch (parseError) {
-      result = { keywords: response.content?.split("\n").filter((l: string) => l.trim()).slice(0, 15) || [] };
+    } catch {
+      // 按行解析
+      keywords = text.split(/[,\n]/)
+        .map(k => k.trim().replace(/^["\d.]+/, ''))
+        .filter(k => k.length > 2);
     }
 
-    return NextResponse.json({
-      success: true,
-      data: result
-    });
-  } catch (error: any) {
-    console.error("关键词生成错误:", error);
-    return NextResponse.json({
-      success: false,
-      error: error.message || "生成失败"
-    }, { status: 500 });
+    // 确保返回关键词
+    if (keywords.length === 0) {
+      keywords = ['товар', 'купить', 'цена', 'качество', 'доставка'];
+    }
+
+    // 记录到日志
+    try {
+      await pool.query(
+        `INSERT INTO ai_generation_logs (type, input, output, model) 
+         VALUES ($1, $2, $3, $4)`,
+        ['keywords', JSON.stringify(body), JSON.stringify({ keywords }), model]
+      );
+    } catch (logError) {
+      console.error('Failed to log AI generation:', logError);
+    }
+
+    return NextResponse.json({ keywords: keywords.slice(0, 20) });
+
+  } catch (error) {
+    console.error('Generate keywords error:', error);
+    return NextResponse.json(
+      { error: 'Failed to generate keywords', details: String(error) },
+      { status: 500 }
+    );
   }
 }
