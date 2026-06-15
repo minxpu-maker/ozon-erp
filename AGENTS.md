@@ -134,6 +134,14 @@
 |------|------|------|
 | `/api/profit-calculator` | POST | 计算利润和ROI |
 
+### Dashboard API
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| `/api/dashboard/market-overview` | GET | 市场概览（总商品/新增/价格变化/热销类目/销量趋势） |
+| `/api/dashboard/category-ranking` | GET | 类目排行（按营收排序） |
+| `/api/dashboard/search-trending` | GET | 搜索飙升关键词（基于标题词频分析） |
+| `/api/dashboard/new-arrivals` | GET | 新品榜（按上架日期筛选） |
+
 ## 硬件集成
 
 | 硬件 | 用途 | 数据协议 |
