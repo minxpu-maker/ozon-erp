@@ -143,6 +143,19 @@
 | `/api/dashboard/search-trending` | GET | 搜索飙升关键词（基于标题词频分析） |
 | `/api/dashboard/new-arrivals` | GET | 新品榜（按上架日期筛选） |
 
+### 选品推荐 API
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| `/api/selection/recommend` | GET | 推荐模式查询（销量飙升/潜力市场/未被满足/不压库存） |
+
+### 选品推荐模式参数
+```
+GET /api/selection/recommend?mode=surge&platform=ozon&page=1&pageSize=20
+```
+- **mode**: surge（销量飙升榜）| potential（潜力市场）| unsatisfied（未被满足）| low-stock（不压库存）
+- **platform**: ozon | wb
+- **缓存**: 10分钟
+
 ## 硬件集成
 
 | 硬件 | 用途 | 数据协议 |
