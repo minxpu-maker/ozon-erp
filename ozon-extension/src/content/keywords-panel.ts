@@ -335,6 +335,7 @@ export class KeywordsPanelManager {
             <th>${t.relatedKeywords}</th>
             <th>${t.monthlySearches}</th>
             <th>${t.searchGrowth}</th>
+            <th>${t.competitors}</th>
             <th>${t.products}</th>
             <th></th>
           </tr>
@@ -345,6 +346,7 @@ export class KeywordsPanelManager {
               <td class="ozon-ext-kw-keyword">${kw.keyword}</td>
               <td>${(kw as any).monthlySearch?.toLocaleString() || kw.searchVolume?.toLocaleString() || '-'}</td>
               <td><span class="ozon-ext-kw-growth ${getGrowthClass((kw as any).monthlyGrowth || kw.growth || 0)}">${((kw as any).monthlyGrowth || kw.growth) ? (((kw as any).monthlyGrowth || kw.growth) > 0 ? '+' : '') + ((kw as any).monthlyGrowth || kw.growth).toFixed(1) + '%' : '-'}</span></td>
+              <td>${(kw as any).competitorCount?.toLocaleString() || '-'}</td>
               <td>${(kw as any).productCount?.toLocaleString() || kw.products?.toLocaleString() || '-'}</td>
               <td><button class="ozon-ext-kw-btn-small" data-action="collect" data-keyword="${kw.keyword}">${t.collectToLibrary}</button></td>
             </tr>
