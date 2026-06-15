@@ -8,6 +8,7 @@ import { collectedStore } from '../shared/collected-store';
 import { OzonExtConfig, ProductInfo, MarketSignalPayload } from '../shared/types';
 import { NavbarManager } from './navbar';
 import { PanelManager } from './overlay';
+import { KeywordsPanelManager } from './keywords-panel';
 import { SelectionManager } from './selection';
 import { HelperManager } from './helpers';
 import { extractOzonProduct, extractOzonSearchResults } from './ozon';
@@ -43,6 +44,7 @@ class ContentScriptMain {
   private messageBus: MessageBus;
   private navbar: NavbarManager;
   private panel: PanelManager;
+  private keywordsPanel: KeywordsPanelManager;
   private selection: SelectionManager;
   private helpers: HelperManager;
   private config: OzonExtConfig | null = null;
@@ -55,6 +57,7 @@ class ContentScriptMain {
     this.messageBus = new MessageBus();
     this.navbar = new NavbarManager(this.messageBus);
     this.panel = new PanelManager(this.messageBus);
+    this.keywordsPanel = new KeywordsPanelManager(this.messageBus);
     this.selection = new SelectionManager(this.messageBus);
     this.helpers = new HelperManager(this.messageBus);
 
@@ -110,6 +113,7 @@ class ContentScriptMain {
 
     this.navbar.setConfig(this.config);
     this.panel.setConfig(this.config);
+    this.keywordsPanel.setConfig(this.config);
     this.selection.setConfig(this.config);
     this.helpers.setConfig(this.config);
   }
@@ -122,8 +126,14 @@ class ContentScriptMain {
     this.navbar.setCallbacks({
       onToggleSelectionMode: (enabled) => this.toggleSelectionMode(enabled),
       onToggleFullscreen: () => this.panel.toggleFullscreen(),
-      onClose: () => this.panel.hide(),
+      onClose: () => {
+        this.panel.hide();
+        this.keywordsPanel.hide();
+      },
     });
+
+    // 初始化关键词面板
+    this.keywordsPanel.init();
 
     // 根据页面类型初始化对应组件
     if (this.pageType.includes('product')) {
@@ -137,7 +147,7 @@ class ContentScriptMain {
     this.helpers.setOnLanguageChange((lang) => {
       this.navbar.setLanguage(lang);
       this.panel.setLanguage(lang);
-      this.selection.setLanguage(lang);
+      this.keywordsPanel.setConfig({ language: lang });
     });
   }
 
@@ -287,6 +297,33 @@ class ContentScriptMain {
     this.messageBus.on('SAVE_CONFIG', (config) => {
       chrome.runtime.sendMessage({ type: 'SAVE_CONFIG', config });
     });
+
+    // 监听Tab切换事件
+    this.messageBus.on('tab-changed', (data: { tab: string }) => {
+      this.handleTabChange(data.tab);
+    });
+  }
+
+  private handleTabChange(tab: string): void {
+    // 关闭其他面板
+    this.panel.hide();
+    this.selection.enable(false);
+
+    switch (tab) {
+      case 'keyword-reverse':
+        // 关键词反查 - 需要在商品详情页
+        if (this.pageType.includes('product') && this.currentProduct) {
+          this.keywordsPanel.show('reverse', this.currentProduct.productId);
+        } else {
+          // 不在商品详情页，提示用户
+          alert('关键词反查需要在商品详情页使用');
+        }
+        break;
+      case 'keyword-mining':
+        // 关键词挖掘
+        this.keywordsPanel.show('mining');
+        break;
+    }
   }
 
   private async pushSignalToERP(payload: any): Promise<void> {
@@ -357,6 +394,7 @@ class ContentScriptMain {
   private destroy(): void {
     this.navbar.destroy();
     this.panel.destroy();
+    this.keywordsPanel.destroy();
     this.selection.destroy();
     this.helpers.destroy();
     this.isInitialized = false;

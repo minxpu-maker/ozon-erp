@@ -183,10 +183,10 @@ export class NavbarManager {
           <button class="ozon-ext-nav-tab active" data-tab="product-query">
             ${t.productQuery}
           </button>
-          <button class="ozon-ext-nav-tab ozon-ext-nav-tab-disabled" data-tab="keyword-reverse">
+          <button class="ozon-ext-nav-tab" data-tab="keyword-reverse">
             ${t.keywordReverse}
           </button>
-          <button class="ozon-ext-nav-tab ozon-ext-nav-tab-disabled" data-tab="keyword-mining">
+          <button class="ozon-ext-nav-tab" data-tab="keyword-mining">
             ${t.keywordMining}
           </button>
           <button class="ozon-ext-nav-tab" data-tab="selection-mode">
@@ -229,12 +229,6 @@ export class NavbarManager {
         const tab = (e.currentTarget as HTMLElement).dataset.tab;
         if (!tab) return;
 
-        // 检查是否是禁用Tab
-        if ((e.currentTarget as HTMLElement).classList.contains('ozon-ext-nav-tab-disabled')) {
-          this.showComingSoonTooltip(e.currentTarget as HTMLElement);
-          return;
-        }
-
         this.setActiveTab(tab);
 
         // 通知选品模式切换
@@ -243,6 +237,9 @@ export class NavbarManager {
         } else {
           this.onToggleSelectionMode(false);
         }
+
+        // 发送Tab切换事件
+        this.messageBus.send('tab-changed', { tab });
       });
     });
 

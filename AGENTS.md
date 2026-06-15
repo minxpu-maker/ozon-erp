@@ -124,6 +124,12 @@
 | `/api/collection-items/batch-publish` | POST | 批量发布到Ozon |
 | `/api/collection-items/stats` | GET | 采集箱统计 |
 
+### 关键词 API
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| `/api/keywords/reverse` | GET | 关键词反查（根据商品ID获取关联关键词） |
+| `/api/keywords/mining` | GET | 关键词挖掘（输入种子词获取相关关键词） |
+
 ### 产品发布 API
 | 接口 | 方法 | 说明 |
 |------|------|------|
@@ -193,6 +199,7 @@ ozon-extension/
 │   │   ├── main.ts         # 主入口（协调各组件）
 │   │   ├── navbar.ts       # 导航栏组件
 │   │   ├── overlay.ts      # 数据面板组件
+│   │   ├── keywords-panel.ts # 关键词面板组件
 │   │   ├── selection.ts    # 选品模式组件
 │   │   ├── helpers.ts      # 辅助元素组件
 │   │   ├── ozon.ts        # Ozon平台提取器
@@ -241,6 +248,11 @@ ozon-extension/
 - **v1.0.8**: 选品页面5个子Tab(4-C3)
   - 市场热词/热销标签/热销类目/热销店铺/热销品牌Tab
   - 各Tab特有筛选条件和结果列
+- **v1.1.1**: 关键词Tab激活(6-A1)
+  - 激活"关键词反查"和"关键词挖掘"Tab
+  - 实现关键词反查面板（显示商品关联关键词）
+  - 实现关键词挖掘面板（输入种子词搜索相关词）
+  - 新增关键词API（/api/keywords/reverse, /api/keywords/mining）
   - 共用统一页面模板组件
 - **v1.0.8**: 选品页面5个子Tab(4-C3)
   - 市场热词/热销标签/热销类目/热销店铺/热销品牌/产品库
