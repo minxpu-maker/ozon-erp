@@ -653,17 +653,17 @@ export class PanelManager {
 
         <!-- 底部按钮 -->
         <div class="ozon-ext-panel-section ozon-ext-panel-bottom-actions">
-          <button class="ozon-ext-panel-btn ozon-ext-panel-btn-disabled" data-action="sales-trend" disabled>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-            ${t.salesTrend}
-          </button>
-          <button class="ozon-ext-panel-btn ozon-ext-panel-btn-disabled" data-action="review-analysis" disabled>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            ${t.reviewAnalysis}
-          </button>
           <button class="ozon-ext-panel-btn ozon-ext-panel-btn-primary ozon-ext-panel-collect-btn" data-action="collect">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             ${t.collectToERP}
+          </button>
+          <button class="ozon-ext-panel-btn ozon-ext-panel-btn-ai" data-action="review-analysis">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            ${t.reviewAnalysis}
+          </button>
+          <button class="ozon-ext-panel-btn ozon-ext-panel-btn-ai" data-action="ai-generate">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            AI生成
           </button>
           <button class="ozon-ext-panel-btn ozon-ext-panel-btn-icon ozon-ext-panel-monitor-btn" data-action="toggle-monitor">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -956,7 +956,24 @@ export class PanelManager {
         // 灰按钮，暂不支持
         break;
       case 'review-analysis':
-        // 灰按钮，暂不支持
+        this.toggleReviewAnalysis();
+        break;
+      case 'ai-generate':
+        this.toggleAIGenerator();
+        break;
+      case 'generate-title':
+      case 'generate-description':
+      case 'generate-keywords':
+        this.generateContent(action.replace('generate-', ''));
+        break;
+      case 'close-review-analysis':
+        this.closeReviewAnalysis();
+        break;
+      case 'close-ai-generator':
+        this.closeAIGenerator();
+        break;
+      case 'apply-ai-result':
+        this.applyAIResult();
         break;
     }
   }
@@ -1111,6 +1128,230 @@ export class PanelManager {
 
     // 发送采集请求
     this.messageBus.send('PUSH_SIGNAL', payload);
+  }
+
+  /**
+   * 切换评论分析面板
+   */
+  private toggleReviewAnalysis(): void {
+    const panel = document.getElementById('ozon-ext-review-analysis');
+    if (panel) {
+      panel.classList.toggle('ozon-ext-panel-hidden');
+      // 如果打开且没有数据，则加载数据
+      if (!panel.classList.contains('ozon-ext-panel-hidden')) {
+        this.loadReviewAnalysis();
+      }
+    }
+  }
+
+  /**
+   * 关闭评论分析面板
+   */
+  private closeReviewAnalysis(): void {
+    const panel = document.getElementById('ozon-ext-review-analysis');
+    if (panel) {
+      panel.classList.add('ozon-ext-panel-hidden');
+    }
+  }
+
+  /**
+   * 加载评论分析
+   */
+  private async loadReviewAnalysis(): Promise<void> {
+    const content = document.getElementById('ozon-ext-review-content');
+    if (content) {
+      content.innerHTML = '<div class="ozon-ext-analysis-loading">AI分析中...</div>';
+    }
+
+    try {
+      const apiBase = this.getApiBase();
+      const response = await fetch(`${apiBase}/api/ai/review-analysis`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productId: this.productInfo?.productId,
+          productTitle: this.productInfo?.title || '',
+          reviewCount: this.productInfo?.reviewsCount || 0,
+          rating: this.productInfo?.rating || 0
+        })
+      });
+
+      const result = await response.json();
+      if (result.success && content) {
+        this.showReviewAnalysis(result.data);
+      } else if (content) {
+        content.innerHTML = '<div class="ozon-ext-analysis-error">评论数据不足，请先采集足够的评论信息</div>';
+      }
+    } catch (error) {
+      if (content) {
+        content.innerHTML = '<div class="ozon-ext-analysis-error">加载失败，请重试</div>';
+      }
+    }
+  }
+
+  /**
+   * 显示评论分析结果
+   */
+  private showReviewAnalysis(data: any): void {
+    const content = document.getElementById('ozon-ext-review-content');
+    if (!content) return;
+
+    const sentimentHtml = data.sentimentDistribution ? `
+      <div class="ozon-ext-analysis-section">
+        <h4>评论情感分布</h4>
+        <div class="ozon-ext-sentiment-bars">
+          <div class="ozon-ext-sentiment-bar positive">
+            <span>好评</span>
+            <div class="bar" style="width: ${data.sentimentDistribution.positive || 0}%"></div>
+            <span>${data.sentimentDistribution.positive || 0}%</span>
+          </div>
+          <div class="ozon-ext-sentiment-bar neutral">
+            <span>中评</span>
+            <div class="bar" style="width: ${data.sentimentDistribution.neutral || 0}%"></div>
+            <span>${data.sentimentDistribution.neutral || 0}%</span>
+          </div>
+          <div class="ozon-ext-sentiment-bar negative">
+            <span>差评</span>
+            <div class="bar" style="width: ${data.sentimentDistribution.negative || 0}%"></div>
+            <span>${data.sentimentDistribution.negative || 0}%</span>
+          </div>
+        </div>
+      </div>
+    ` : '';
+
+    const keywordsHtml = data.keywords ? `
+      <div class="ozon-ext-analysis-section">
+        <h4>高频关键词</h4>
+        <div class="ozon-ext-keywords">
+          ${(data.keywords.topPositive || []).map((k: string) => `<span class="tag positive">${k}</span>`).join('')}
+          ${(data.keywords.topNegative || []).map((k: string) => `<span class="tag negative">${k}</span>`).join('')}
+        </div>
+      </div>
+    ` : '';
+
+    const profileHtml = data.userProfile ? `
+      <div class="ozon-ext-analysis-section">
+        <h4>用户画像摘要</h4>
+        <p>${data.userProfile}</p>
+      </div>
+    ` : '';
+
+    content.innerHTML = sentimentHtml + keywordsHtml + profileHtml || '<div class="ozon-ext-analysis-empty">暂无分析数据</div>';
+  }
+
+  /**
+   * 切换AI生成面板
+   */
+  private toggleAIGenerator(): void {
+    const panel = document.getElementById('ozon-ext-ai-generator');
+    if (panel) {
+      panel.classList.toggle('ozon-ext-panel-hidden');
+    }
+  }
+
+  /**
+   * 关闭AI生成面板
+   */
+  private closeAIGenerator(): void {
+    const panel = document.getElementById('ozon-ext-ai-generator');
+    if (panel) {
+      panel.classList.add('ozon-ext-panel-hidden');
+    }
+  }
+
+  /**
+   * 生成内容
+   */
+  private async generateContent(type: string): Promise<void> {
+    const resultArea = document.getElementById('ozon-ext-ai-result');
+    if (resultArea) {
+      resultArea.innerHTML = '<div class="ozon-ext-analysis-loading">AI生成中...</div>';
+    }
+
+    try {
+      const apiBase = this.getApiBase();
+      const endpoint = type === 'title' ? 'generate-title' : type === 'description' ? 'generate-description' : 'generate-keywords';
+      
+      const response = await fetch(`${apiBase}/api/ai/${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productId: this.productInfo?.productId,
+          productTitle: this.productInfo?.title || '',
+          category: this.productInfo?.category || '',
+          keywords: this.productInfo?.keywords || []
+        })
+      });
+
+      const result = await response.json();
+      if (result.success && resultArea) {
+        this.showAIGeneratedContent(result.data, type);
+      } else if (resultArea) {
+        resultArea.innerHTML = '<div class="ozon-ext-analysis-error">生成失败，请重试</div>';
+      }
+    } catch (error) {
+      if (resultArea) {
+        resultArea.innerHTML = '<div class="ozon-ext-analysis-error">生成失败，请重试</div>';
+      }
+    }
+  }
+
+  /**
+   * 显示AI生成的内容
+   */
+  private showAIGeneratedContent(data: any, type: string): void {
+    const resultArea = document.getElementById('ozon-ext-ai-result');
+    if (!resultArea) return;
+
+    let content = '';
+    if (type === 'title') {
+      content = `<textarea id="ozon-ext-generated-title" class="ozon-ext-textarea">${data.title || ''}</textarea>`;
+    } else if (type === 'description') {
+      content = `<textarea id="ozon-ext-generated-description" class="ozon-ext-textarea" rows="5">${data.description || ''}</textarea>`;
+    } else {
+      content = `<textarea id="ozon-ext-generated-keywords" class="ozon-ext-textarea">${(data.keywords || []).join(', ')}</textarea>`;
+    }
+
+    content += '<button class="ozon-ext-btn primary" data-action="apply-ai-result" data-type="${type}">应用到采集数据</button>';
+    
+    resultArea.innerHTML = content;
+  }
+
+  /**
+   * 应用AI结果到采集数据
+   */
+  private applyAIResult(): void {
+    const titleEl = document.getElementById('ozon-ext-generated-title') as HTMLTextAreaElement;
+    const descEl = document.getElementById('ozon-ext-generated-description') as HTMLTextAreaElement;
+    const keywordsEl = document.getElementById('ozon-ext-generated-keywords') as HTMLTextAreaElement;
+
+    if (titleEl && titleEl.value) {
+      // 更新采集预览中的标题
+      const titlePreview = document.querySelector('.ozon-ext-preview-title');
+      if (titlePreview) {
+        titlePreview.textContent = titleEl.value;
+      }
+    }
+
+    if (descEl && descEl.value) {
+      // 更新采集预览中的描述
+      const descPreview = document.querySelector('.ozon-ext-preview-description');
+      if (descPreview) {
+        descPreview.textContent = descEl.value;
+      }
+    }
+
+    if (keywordsEl && keywordsEl.value) {
+      // 更新采集预览中的关键词
+      const keywords = keywordsEl.value.split(',').map(k => k.trim()).filter(k => k);
+      const keywordsPreview = document.querySelector('.ozon-ext-preview-keywords');
+      if (keywordsPreview) {
+        keywordsPreview.innerHTML = keywords.map(k => `<span class="tag">${k}</span>`).join('');
+      }
+    }
+
+    this.closeAIGenerator();
+    this.showAlert('AI生成内容已应用');
   }
 
   /**

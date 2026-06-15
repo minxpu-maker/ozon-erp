@@ -457,4 +457,6 @@ export interface ProductInfo {
   salesRank?: number;
   /** 销量排名类目 */
   salesVolumeRank?: number;
+  /** 关键词列表 */
+  keywords?: string[];
 }
