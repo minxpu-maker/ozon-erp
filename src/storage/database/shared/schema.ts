@@ -1454,3 +1454,43 @@ export const productGroupItems = pgTable('product_group_items', {
   index('idx_pgi_signal').on(table.signalId),
 ]);
 
+// ============================================================================
+// 关键词模块
+// ============================================================================
+
+/**
+ * 关键词反查表
+ */
+export const keywordReverse = pgTable('keyword_reverse', {
+  id: serial('id').primaryKey(),
+  signalId: integer('signal_id').notNull().references(() => marketSignals.id, { onDelete: 'cascade' }),
+  keyword: varchar('keyword', { length: 200 }).notNull(),
+  searchVolume: integer('search_volume'), // 搜索量
+  competition: numeric('competition', { precision: 3, scale: 2 }), // 竞争度 0-1
+  rankPosition: integer('rank_position'), // 排名位置
+  source: varchar('source', { length: 20 }).default('title'), // title/tag/category
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+}, (table) => [
+  index('idx_kr_signal').on(table.signalId),
+  index('idx_kr_keyword').on(table.keyword),
+]);
+
+/**
+ * 关键词挖掘表
+ */
+export const keywordMining = pgTable('keyword_mining', {
+  id: serial('id').primaryKey(),
+  seedKeyword: varchar('seed_keyword', { length: 200 }).notNull(), // 种子词
+  keyword: varchar('keyword', { length: 200 }).notNull(), // 挖掘出的关键词
+  searchVolume: integer('search_volume'), // 月搜热度
+  growthRate: numeric('growth_rate', { precision: 5, scale: 2 }), // 增长趋势
+  competition: integer('competition'), // 竞对数
+  productCount: integer('product_count'), // 商品数
+  source: varchar('source', { length: 20 }).default('seed'), // seed/related
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+}, (table) => [
+  index('idx_km_seed').on(table.seedKeyword),
+  index('idx_km_keyword').on(table.keyword),
+  index('idx_km_volume').on(table.searchVolume),
+]);
+
