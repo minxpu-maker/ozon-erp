@@ -659,6 +659,16 @@ export default function SelectionPage() {
   );
   const [platform, setPlatform] = useState('all');
   const [selectionMode, setSelectionMode] = useState('surge');
+  
+  // 带URL参数更新的selectionMode setter
+  const handleSelectionModeChange = useCallback((mode: string) => {
+    setSelectionMode(mode);
+    setPage(1); // 切换模式重置分页
+    // 更新URL参数
+    const url = new URL(window.location.href);
+    url.searchParams.set('mode', mode);
+    window.history.pushState({}, '', url.toString());
+  }, []);
   const [filters, setFilters] = useState<Record<string, unknown>>({ _tab: activeTab });
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
@@ -733,36 +743,44 @@ export default function SelectionPage() {
         const res = await fetch(`/api/selection/recommend?${params}`);
         if (res.ok) {
           const result = await res.json();
-          if (result.success && result.data) {
+          // API返回格式：{ items: [], total: number }
+          const items = result.items || result.data?.items || [];
+          const total = result.total || result.data?.total || items.length;
+          
+          if (items.length > 0) {
             // 转换API数据格式为前端格式
-            const apiData = result.data.items.map((item: {
+            const apiData = items.map((item: {
               id: number;
-              product_title?: string;
-              sales_volume?: number;
-              price?: number;
-              rating?: number;
-              growth_score?: number;
-              growth_rate?: number;
-              seller_count?: number;
-              potential_score?: number;
-              supply_demand_ratio?: number;
+              productTitle?: string;
+              productTitleZh?: string;
+              salesVolume?: number;
+              price?: string | number;
+              rating?: string | number;
+              growthScore?: string | number;
+              growthRate?: number;
+              sellerCount?: number;
+              potentialScore?: string | number;
+              supplyDemandRatio?: number;
+              imageUrl?: string;
+              categoryPath?: string;
             }, idx: number) => ({
               id: item.id,
               rank: (page - 1) * pageSize + idx + 1,
-              title: item.product_title || `商品 ${item.id}`,
-              salesVolume: item.sales_volume || 0,
-              price: item.price || 0,
-              rating: item.rating || 0,
+              image: item.imageUrl,
+              title: item.productTitleZh || item.productTitle || `商品 ${item.id}`,
+              salesVolume: Number(item.salesVolume) || 0,
+              price: Number(item.price) || 0,
+              rating: Number(item.rating) || 0,
+              category: item.categoryPath || '',
               // 模式特有字段
-              growthScore: item.growth_score,
-              growthRate: item.growth_rate,
-              sellerCount: item.seller_count,
-              potentialScore: item.potential_score,
-              supplyDemandRatio: item.supply_demand_ratio,
+              growthScore: Number(item.growthScore) || 0,
+              growthRate: item.growthRate || 0,
+              sellerCount: item.sellerCount || 0,
+              potentialScore: Number(item.potentialScore) || 0,
+              supplyDemandRatio: item.supplyDemandRatio || 0,
             }));
             setData(apiData);
-            // 更新总数
-            setTotal(result.data.total || apiData.length);
+            setTotal(total);
             setLoading(false);
             return;
           }
@@ -962,7 +980,7 @@ export default function SelectionPage() {
           <PlatformSwitch value={platform} onChange={setPlatform} />
 
           {/* 推荐模式 */}
-          <SelectionModeSelector value={selectionMode} onChange={setSelectionMode} tabId={activeTab} />
+          <SelectionModeSelector value={selectionMode} onChange={handleSelectionModeChange} tabId={activeTab} />
 
           {/* 筛选区 */}
           <FilterSection
