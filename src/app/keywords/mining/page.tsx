@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Search, TrendingUp, Users, Package, Star, Plus, BarChart3, ChevronDown } from 'lucide-react';
+import { Search, TrendingUp, Users, Package, Star, Plus, BarChart3, ChevronDown, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -316,14 +316,25 @@ export default function KeywordMiningPage() {
                       {formatNumber(item.marketSpace)}
                     </TableCell>
                     <TableCell className="text-center">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleAddToLibrary(item.keyword)}
-                        disabled={addingToLibrary}
-                      >
-                        <Star className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center justify-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          title="查看关联商品"
+                          onClick={() => window.open(`/selection?keyword=${encodeURIComponent(item.keyword)}`, '_blank')}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          title="添加到词库"
+                          onClick={() => handleAddToLibrary(item.keyword)}
+                          disabled={addingToLibrary}
+                        >
+                          <Star className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
