@@ -1494,3 +1494,19 @@ export const keywordMining = pgTable('keyword_mining', {
   index('idx_km_volume').on(table.searchVolume),
 ]);
 
+
+/**
+ * 关键词库表
+ */
+export const keywordLibrary = pgTable('keyword_library', {
+  id: serial('id').primaryKey(),
+  keyword: varchar('keyword', { length: 200 }).notNull(),
+  platform: varchar('platform', { length: 10 }).default('ozon'),
+  groupName: varchar('group_name', { length: 100 }),
+  isFavorite: boolean('is_favorite').default(false),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+}, (table) => [
+  index('idx_kl_keyword').on(table.keyword),
+  index('idx_kl_platform').on(table.platform),
+  index('idx_kl_group').on(table.groupName),
+]);

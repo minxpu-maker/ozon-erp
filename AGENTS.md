@@ -129,6 +129,10 @@
 |------|------|------|
 | `/api/keywords/reverse` | GET | 关键词反查（根据商品ID获取关联关键词） |
 | `/api/keywords/mining` | GET | 关键词挖掘（输入种子词获取相关关键词） |
+| `/api/keywords/trend` | GET | 关键词搜索趋势（按天聚合数据） |
+| `/api/keywords/library` | GET/POST | 词库列表/添加关键词 |
+| `/api/keywords/library/:id` | GET/PATCH/DELETE | 单个关键词操作 |
+| `/api/keywords/library/batch` | POST | 批量添加关键词 |
 
 #### 关键词反查API详情
 ```
@@ -147,6 +151,26 @@ GET /api/keywords/mining?seed=xxx&platform=ozon&limit=50
 - **返回格式**：keyword, monthlySearch, monthlyGrowth, competitorCount, productCount, marketSpace
 - **挖掘逻辑**：基于种子词在商品标题/类目中匹配，聚合统计搜索量/增长率/竞对数
 - **市场空间**：marketSpace = monthlySearch / productCount（搜索量/商品数比值）
+
+#### 搜索趋势API详情
+```
+GET /api/keywords/trend?keyword=xxx&platform=ozon&days=30
+```
+- **数据源**：market_signals历史记录按天聚合
+- **返回格式**：{ keyword, trend: [{ date, searchVolume, productCount, avgPrice }] }
+- **缓存**：5分钟内存缓存
+- **默认天数**：30天
+
+#### 词库管理API详情
+```
+GET /api/keywords/library?platform=ozon&group=xxx&favorite=true&page=1&pageSize=50
+POST /api/keywords/library { keyword, group?, platform? }
+PATCH /api/keywords/library/:id { groupName?, isFavorite? }
+DELETE /api/keywords/library/:id
+POST /api/keywords/library/batch { keywords: [], group?, platform? }
+```
+- **去重**：UNIQUE(keyword, platform)约束
+- **批量添加**：自动跳过已存在的关键词
 
 ### 产品发布 API
 | 接口 | 方法 | 说明 |
