@@ -485,14 +485,14 @@ function FilterSection({
               <Label className="text-xs text-[#637089]">{filter.label}</Label>
               {filter.type === 'select' ? (
                 <Select
-                  value={(filters[filter.id] as string) || ''}
+                  value={filters[filter.id] as string}
                   onValueChange={(v) => onChange({ ...filters, [filter.id]: v })}
                 >
                   <SelectTrigger className="h-9">
                     <SelectValue placeholder={filter.placeholder || '请选择'} />
                   </SelectTrigger>
                   <SelectContent>
-                    {filter.options?.map((opt) => (
+                    {filter.options?.filter(opt => opt.value).map((opt) => (
                       <SelectItem key={opt.value} value={opt.value}>
                         {opt.label}
                       </SelectItem>

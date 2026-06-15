@@ -659,7 +659,7 @@ export default function ProductCardEditorPage() {
                                   <SelectValue placeholder={`选择${attr.attribute_name}`} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {attr.dictionary?.map(opt => (
+                                  {attr.dictionary?.filter(opt => opt.value).map(opt => (
                                     <SelectItem key={opt.id} value={opt.value}>{opt.value}</SelectItem>
                                   ))}
                                 </SelectContent>
