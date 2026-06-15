@@ -26,9 +26,8 @@ pool.on('connect', () => {
   console.log('新的数据库连接已建立');
 });
 
-export const db = drizzle(pool, { schema });
-export { pool };
-
+export const db = drizzle(pool, { schema, logger: false });
+export { pool, Pool };
 export { schema };
 
 // 获取连接池状态

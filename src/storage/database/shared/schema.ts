@@ -576,6 +576,23 @@ export const operationLogs = pgTable(
   ]
 );
 
+// 店铺监控表
+export const monitorShop = pgTable(
+  "monitor_shop",
+  {
+    id: serial("id").primaryKey(),
+    seller_name: varchar("seller_name", { length: 200 }).notNull(),
+    platform: varchar("platform", { length: 10 }).default("ozon"),
+    status: varchar("status", { length: 20 }).default("active"),
+    created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("monitor_shop_seller_platform_idx").on(table.seller_name, table.platform),
+    index("monitor_shop_seller_idx").on(table.seller_name),
+    index("monitor_shop_platform_idx").on(table.platform),
+  ]
+);
+
 // 类型导出
 export type Shop = typeof shops.$inferSelect;
 export type InsertShop = typeof shops.$inferInsert;
@@ -612,6 +629,8 @@ export type Role = typeof roles.$inferSelect;
 export type InsertRole = typeof roles.$inferInsert;
 export type Account = typeof accounts.$inferSelect;
 export type InsertAccount = typeof accounts.$inferInsert;
+export type MonitorShop = typeof monitorShop.$inferSelect;
+export type InsertMonitorShop = typeof monitorShop.$inferInsert;
 
 // 系统配置表 - 存储汇率等系统设置
 export const systemConfigs = pgTable("system_configs", {
