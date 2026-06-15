@@ -17,6 +17,10 @@ import {
   Lock,
   LucideIcon,
   ChevronDown,
+  Sparkles,
+  ArrowUpDown,
+  TrendingUp,
+  Library,
 } from 'lucide-react';
 
 interface NavItem {
@@ -30,7 +34,17 @@ interface NavItem {
 const mainNavItems: NavItem[] = [
   { href: '/dashboard', icon: LayoutDashboard, label: '仪表盘' },
   { href: '/selection', icon: Search, label: '选品' },
-  { href: '/keywords', icon: BarChart2, label: '关键词', locked: true },
+  { 
+    href: '/keywords/mining', 
+    icon: BarChart2, 
+    label: '关键词',
+    children: [
+      { href: '/keywords/mining', icon: Sparkles, label: '关键词挖掘' },
+      { href: '/keywords/reverse', icon: ArrowUpDown, label: '关键词反查' },
+      { href: '/keywords/trend', icon: TrendingUp, label: '搜索趋势' },
+      { href: '/keywords/library', icon: Library, label: '关键词库' },
+    ]
+  },
   { href: '/monitor', icon: Package, label: '监控', locked: true },
   { href: '/collection-box', icon: Box, label: '采集箱' },
   { href: '/ai-tools', icon: Bot, label: 'AI工具', locked: true },
@@ -54,6 +68,7 @@ interface AppLayoutProps {
 export function AppLayout({ children, title, subtitle }: AppLayoutProps) {
   const pathname = usePathname();
   const [hoveredLocked, setHoveredLocked] = useState<string | null>(null);
+  const [expandedMenu, setExpandedMenu] = useState<string | null>('关键词');
 
   const renderNavItem = (item: NavItem, index: number) => {
     if (item.locked) {
@@ -74,6 +89,54 @@ export function AppLayout({ children, title, subtitle }: AppLayoutProps) {
           {hoveredLocked === item.label && (
             <div className="absolute left-0 top-full mt-1 px-3 py-1.5 bg-[#152033] text-white text-xs rounded whitespace-nowrap z-50">
               即将上线
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // 有子菜单的项
+    if (item.children && item.children.length > 0) {
+      const Icon = item.icon!;
+      const isExpanded = expandedMenu === item.label;
+      const hasActiveChild = item.children.some(
+        child => pathname === child.href || pathname?.startsWith(child.href! + '/')
+      );
+      
+      return (
+        <div key={item.label}>
+          <div
+            onClick={() => setExpandedMenu(isExpanded ? null : item.label)}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm cursor-pointer transition-colors ${
+              hasActiveChild
+                ? 'bg-[#1677FF] text-white'
+                : 'text-[#637089] hover:bg-[#EEF1F6] hover:text-[#152033]'
+            }`}
+          >
+            <Icon className="w-4 h-4" />
+            {item.label}
+            <ChevronDown className={`w-4 h-4 ml-auto transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+          </div>
+          {isExpanded && (
+            <div className="ml-4 mt-1 space-y-0.5 border-l-2 border-[#E6EAF2] pl-3">
+              {item.children.map((child, childIndex) => {
+                const ChildIcon = child.icon!;
+                const isChildActive = pathname === child.href || pathname?.startsWith(child.href! + '/');
+                return (
+                  <Link
+                    key={child.href!}
+                    href={child.href!}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+                      isChildActive
+                        ? 'bg-[#1677FF]/10 text-[#1677FF] font-medium'
+                        : 'text-[#637089] hover:bg-[#EEF1F6] hover:text-[#152033]'
+                    }`}
+                  >
+                    <ChildIcon className="w-3.5 h-3.5" />
+                    {child.label}
+                  </Link>
+                );
+              })}
             </div>
           )}
         </div>
