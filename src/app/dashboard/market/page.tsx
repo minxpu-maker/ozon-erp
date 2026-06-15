@@ -56,6 +56,7 @@ interface SearchTrending {
 
 // 新品榜数据类型
 interface NewArrival {
+  id?: number;
   productTitle: string;
   price: number;
   salesVolume: number;
@@ -462,7 +463,7 @@ export default function MarketDashboard() {
                   新品榜
                 </h2>
                 <Link 
-                  href="/selection?tab=new-arrivals"
+                  href="/selection?tab=products"
                   className="text-sm text-primary hover:underline"
                 >
                   查看全部
