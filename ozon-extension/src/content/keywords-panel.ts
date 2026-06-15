@@ -118,7 +118,7 @@ export class KeywordsPanelManager {
     }
   }
 
-  show(mode: 'reverse' | 'mining', productId?: string): void {
+  show(mode: 'reverse' | 'mining', productId?: string, initialKeyword?: string): void {
     if (!this.container) this.init();
     this.currentMode = mode;
     this.currentProductId = productId || null;
@@ -127,6 +127,13 @@ export class KeywordsPanelManager {
 
     if (mode === 'reverse' && productId) {
       this.loadReverseKeywords(productId);
+    } else if (mode === 'mining' && initialKeyword) {
+      // 预填关键词并自动搜索
+      const input = this.container?.querySelector('[data-action="search-input"]') as HTMLInputElement;
+      if (input) {
+        input.value = initialKeyword;
+        this.loadMiningKeywords(initialKeyword);
+      }
     }
   }
 
@@ -134,9 +141,9 @@ export class KeywordsPanelManager {
     this.container?.classList.add('ozon-ext-hidden');
   }
 
-  toggle(mode: 'reverse' | 'mining', productId?: string): void {
+  toggle(mode: 'reverse' | 'mining', productId?: string, initialKeyword?: string): void {
     if (this.container?.classList.contains('ozon-ext-hidden') || this.currentMode !== mode) {
-      this.show(mode, productId);
+      this.show(mode, productId, initialKeyword);
     } else {
       this.hide();
     }

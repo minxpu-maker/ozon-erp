@@ -84,6 +84,9 @@ export interface PanelTranslations {
   kg: string;
   liter: string;
   pieces: string;
+  // 关键词
+  relatedKeywords: string;
+  clickToSearch: string;
 }
 
 const ZH_TRANSLATIONS: PanelTranslations = {
@@ -152,6 +155,8 @@ const ZH_TRANSLATIONS: PanelTranslations = {
   kg: 'kg',
   liter: 'L',
   pieces: '件',
+  relatedKeywords: '关键词',
+  clickToSearch: '点击搜索',
 };
 
 const RU_TRANSLATIONS: PanelTranslations = {
@@ -220,6 +225,8 @@ const RU_TRANSLATIONS: PanelTranslations = {
   kg: 'кг',
   liter: 'л',
   pieces: 'шт',
+  relatedKeywords: 'Ключевые слова',
+  clickToSearch: 'Клик для поиска',
 };
 
 export class PanelManager {
@@ -396,6 +403,19 @@ export class PanelManager {
     const variants = p.variantCount ? `${p.variantCount}${t.pieces}` : '--';
     const listed = p.listedDate || '--';
 
+    // 提取关键词（从标题和类目）
+    const extractKeywords = (text: string): string[] => {
+      if (!text) return [];
+      // 俄语分词：按空格和特殊字符分割
+      const words = text.split(/[\s,.!?()\/\\]+/).filter(w => w.length > 3);
+      // 去重并限制5个
+      return [...new Set(words)].slice(0, 5);
+    };
+    const keywords = extractKeywords(p.title || '') || [];
+    const relatedKeywordsHtml = keywords.map(kw => 
+      `<span class="ozon-ext-panel-keyword-tag" data-keyword="${this.escapeHtml(kw)}">${this.escapeHtml(kw)}</span>`
+    ).join('');
+
     // API占位字段
     const apiPlaceholder = (field: string) => `
       <div class="ozon-ext-panel-field">
@@ -517,6 +537,17 @@ export class PanelManager {
             <span class="ozon-ext-panel-field-value">${listed}</span>
           </div>
         </div>
+
+        <!-- 关键词行 -->
+        ${keywords.length > 0 ? `
+        <div class="ozon-ext-panel-section ozon-ext-panel-keywords-row">
+          <span class="ozon-ext-panel-field-label">${t.relatedKeywords}</span>
+          <div class="ozon-ext-panel-keyword-tags">
+            ${relatedKeywordsHtml}
+          </div>
+          <span class="ozon-ext-panel-field-hint">${t.clickToSearch}</span>
+        </div>
+        ` : ''}
 
         <!-- API占位行 -->
         <div class="ozon-ext-panel-section ozon-ext-panel-api-row">
@@ -660,6 +691,16 @@ export class PanelManager {
       el.addEventListener('mouseleave', (e) => {
         const note = (e.currentTarget as HTMLElement).nextElementSibling;
         if (note) note.classList.remove('ozon-ext-visible');
+      });
+    });
+
+    // 关键词标签点击 → 跳转到关键词挖掘Tab
+    this.container.querySelectorAll('.ozon-ext-panel-keyword-tag').forEach((el) => {
+      el.addEventListener('click', (e) => {
+        const keyword = (e.currentTarget as HTMLElement).dataset.keyword;
+        if (keyword) {
+          this.messageBus.send('OPEN_KEYWORD_MINING', { keyword });
+        }
       });
     });
   }
@@ -1549,6 +1590,54 @@ export class PanelManager {
 
       .ozon-ext-preview-btn-cancel:hover {
         background: #E6EAF2 !important;
+      }
+
+      /* 关键词行 */
+      .ozon-ext-panel-keywords-row {
+        display: flex !important;
+        align-items: center !important;
+        gap: 12px !important;
+        padding: 12px 20px !important;
+        background: #F6F8FB !important;
+        border-top: 1px solid #E6EAF2 !important;
+        border-bottom: 1px solid #E6EAF2 !important;
+      }
+
+      .ozon-ext-panel-keywords-row .ozon-ext-panel-field-label {
+        font-size: 13px !important;
+        color: #637089 !important;
+        white-space: nowrap !important;
+        margin: 0 !important;
+      }
+
+      .ozon-ext-panel-keyword-tags {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+        flex: 1 !important;
+      }
+
+      .ozon-ext-panel-keyword-tag {
+        display: inline-flex !important;
+        align-items: center !important;
+        padding: 4px 10px !important;
+        background: #E6EAF2 !important;
+        color: #152033 !important;
+        font-size: 12px !important;
+        border-radius: 4px !important;
+        cursor: pointer !important;
+        transition: all 0.2s !important;
+      }
+
+      .ozon-ext-panel-keyword-tag:hover {
+        background: #2F6BFF !important;
+        color: white !important;
+      }
+
+      .ozon-ext-panel-field-hint {
+        font-size: 11px !important;
+        color: #637089 !important;
+        white-space: nowrap !important;
       }
     `;
     document.head.appendChild(style);

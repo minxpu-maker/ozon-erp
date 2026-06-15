@@ -298,6 +298,12 @@ class ContentScriptMain {
       chrome.runtime.sendMessage({ type: 'SAVE_CONFIG', config });
     });
 
+    // 监听关键词挖掘请求（从商品面板点击关键词标签）
+    this.messageBus.on('OPEN_KEYWORD_MINING', (data: { keyword: string }) => {
+      this.navbar.setActiveTab('keyword-mining');
+      this.keywordsPanel.show('mining', undefined, data.keyword);
+    });
+
     // 监听Tab切换事件
     this.messageBus.on('tab-changed', (data: { tab: string }) => {
       this.handleTabChange(data.tab);
