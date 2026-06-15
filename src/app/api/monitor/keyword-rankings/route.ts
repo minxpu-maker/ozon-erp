@@ -124,3 +124,104 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: '保存失败' }, { status: 500 });
   }
 }
+
+// 批量推送关键词排名
+export async function PUT(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { rankings } = body;
+
+    if (!rankings || !Array.isArray(rankings)) {
+      return NextResponse.json(
+        { error: '缺少参数: rankings (数组)' },
+        { status: 400 }
+      );
+    }
+
+    const results: { monitorItemId: number; keyword: string; status: string }[] = [];
+    const errors: { item: any; error: string }[] = [];
+
+    for (const item of rankings) {
+      const { monitorItemId, keyword, rank, page } = item;
+
+      if (!monitorItemId || !keyword) {
+        errors.push({ item, error: '缺少必填参数' });
+        continue;
+      }
+
+      try {
+        const mid = parseInt(monitorItemId);
+        const kw = keyword.trim();
+        const rk = rank !== undefined ? parseInt(rank) : null;
+        const pg = page !== undefined ? parseInt(page) : null;
+
+        await db.execute(sql`
+          INSERT INTO monitor_keyword_rankings (monitor_item_id, keyword, rank_position, page, captured_at)
+          VALUES (${mid}, ${kw}, ${rk}, ${pg}, NOW())
+        `);
+        results.push({ monitorItemId: mid, keyword: kw, status: 'ok' });
+      } catch (err) {
+        errors.push({ item, error: String(err) });
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        inserted: results.length,
+        errorCount: errors.length,
+        results,
+        errors
+      }
+    });
+  } catch (error) {
+    console.error('批量保存关键词排名失败:', error);
+    return NextResponse.json({ error: '保存失败' }, { status: 500 });
+  }
+}
+
+// 删除关键词排名
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    const keyword = searchParams.get('keyword');
+    const monitorItemId = searchParams.get('monitorItemId');
+    const olderThan = searchParams.get('olderThan'); // 天数
+
+    if (!id && !keyword && !monitorItemId) {
+      return NextResponse.json(
+        { error: '缺少参数: id, keyword 或 monitorItemId' },
+        { status: 400 }
+      );
+    }
+
+    let whereClause = 'WHERE 1=1';
+    
+    if (id) {
+      whereClause += ` AND id = ${parseInt(id)}`;
+    }
+    if (keyword) {
+      whereClause += ` AND LOWER(keyword) = LOWER('${keyword.trim()}')`;
+    }
+    if (monitorItemId) {
+      whereClause += ` AND monitor_item_id = ${parseInt(monitorItemId)}`;
+    }
+    if (olderThan) {
+      const date = new Date();
+      date.setDate(date.getDate() - parseInt(olderThan));
+      whereClause += ` AND captured_at < '${date.toISOString()}'`;
+    }
+
+    const result = await db.execute(sql`DELETE FROM monitor_keyword_rankings ${sql.raw(whereClause)}`);
+    const rowCount = (result as any).rowCount || 0;
+
+    return NextResponse.json({
+      success: true,
+      deleted: rowCount
+    });
+  } catch (error) {
+    console.error('删除关键词排名失败:', error);
+    return NextResponse.json({ error: '删除失败' }, { status: 500 });
+  }
+}
