@@ -39,6 +39,8 @@ import {
   GripVertical,
   Loader2,
   AlertTriangle,
+  Sparkles,
+  Languages,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -107,6 +109,9 @@ export function CollectionItemModal({
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState<number>(0);
+  const [isGeneratingTitle, setIsGeneratingTitle] = useState(false);
+  const [isGeneratingDesc, setIsGeneratingDesc] = useState(false);
+  const [isTranslating, setIsTranslating] = useState(false);
   const [images, setImages] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -155,6 +160,82 @@ export function CollectionItemModal({
       console.error('Failed to calculate profit:', error);
     } finally {
       setCalculating(false);
+    }
+  };
+
+  // AI生成标题
+  const handleGenerateTitle = async () => {
+    if (!item?.signal?.categoryPath) return;
+    setIsGeneratingTitle(true);
+    try {
+      const res = await fetch('/api/ai/generate-title', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sourceTitle: (item as any).productTitle || (item as any).signal?.productTitle || (item as any).signal?.title,
+          category: item.signal?.categoryPath,
+          style: 'seo',
+        }),
+      });
+      const data = await res.json();
+      if (data.titles?.length > 0) {
+        setTitle(data.titles[0]);
+      }
+    } catch (error) {
+      console.error('Failed to generate title:', error);
+    } finally {
+      setIsGeneratingTitle(false);
+    }
+  };
+
+  // AI生成描述
+  const handleGenerateDescription = async () => {
+    if (!item?.signal?.categoryPath) return;
+    setIsGeneratingDesc(true);
+    try {
+      const res = await fetch('/api/ai/generate-description', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: title || (item as any).productTitle,
+          category: (item as any).signal?.categoryPath,
+          length: 'medium',
+        }),
+      });
+      const data = await res.json();
+      if (data.description) {
+        setDescription(data.description);
+      }
+    } catch (error) {
+      console.error('Failed to generate description:', error);
+    } finally {
+      setIsGeneratingDesc(false);
+    }
+  };
+
+  // 翻译标题和描述
+  const handleTranslate = async (_field?: string) => {
+    if (!item?.signal?.productTitle && !description) return;
+    setIsTranslating(true);
+    try {
+      const res = await fetch('/api/ai/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          texts: [title || item?.signal?.productTitle, description].filter(Boolean),
+          from: 'zh',
+          to: 'ru',
+        }),
+      });
+      const data = await res.json();
+      if (data.translations && data.translations.length > 0) {
+        if (data.translations[0]) setTitle(data.translations[0]);
+        if (data.translations[1]) setDescription(data.translations[1]);
+      }
+    } catch (error) {
+      console.error('Failed to translate:', error);
+    } finally {
+      setIsTranslating(false);
     }
   };
 
@@ -264,6 +345,25 @@ export function CollectionItemModal({
               <p className="text-xs text-muted-foreground">
                 {title.length} / 200 字符
               </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleGenerateTitle}
+                disabled={isGeneratingTitle || !title}
+                className="w-full"
+              >
+                {isGeneratingTitle ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    AI生成中...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    AI生成标题
+                  </>
+                )}
+              </Button>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -312,6 +412,44 @@ export function CollectionItemModal({
               <p className="text-xs text-muted-foreground">
                 {description.length} 字符
               </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleGenerateDescription}
+                disabled={isGeneratingDesc || !title}
+                className="w-full"
+              >
+                {isGeneratingDesc ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    AI生成中...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    AI生成描述
+                  </>
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleTranslate('description')}
+                disabled={isTranslating || !description}
+                className="w-full mt-2"
+              >
+                {isTranslating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    翻译中...
+                  </>
+                ) : (
+                  <>
+                    <Languages className="mr-2 h-4 w-4" />
+                    翻译为俄语
+                  </>
+                )}
+              </Button>
             </div>
           </TabsContent>
 
