@@ -268,7 +268,7 @@ const TAB_CONFIGS: Record<TabId, {
       { id: 'add', label: '加入产品库', icon: <Database className="w-4 h-4" /> },
       { id: 'export', label: '导出', icon: <Download className="w-4 h-4" />, variant: 'outline' as const },
     ],
-    defaultMode: 'sales-spike',
+    defaultMode: 'surge',
   },
   'hot-keywords': {
     filters: HOT_KEYWORDS_FILTERS,
@@ -423,10 +423,10 @@ function SelectionModeSelector({
   tabId: TabId;
 }) {
   const modes = [
-    { id: 'sales-spike', label: '销量飙升榜', emoji: '📈' },
+    { id: 'surge', label: '销量飙升榜', emoji: '📈' },
     { id: 'potential', label: '潜力市场', emoji: '🎯' },
     { id: 'unsatisfied', label: '未被满足', emoji: '💡' },
-    { id: 'no-stock', label: '不压库存', emoji: '📦' },
+    { id: 'low-stock', label: '不压库存', emoji: '📦' },
     { id: 'engine', label: '引擎推荐', emoji: '🤖', locked: true },
   ];
 
@@ -652,13 +652,14 @@ export default function SelectionPage() {
     (searchParams.get('tab') as TabId) || 'hot-ranking'
   );
   const [platform, setPlatform] = useState('all');
-  const [selectionMode, setSelectionMode] = useState('sales-spike');
+  const [selectionMode, setSelectionMode] = useState('surge');
   const [filters, setFilters] = useState<Record<string, unknown>>({ _tab: activeTab });
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
   const [data, setData] = useState<Record<string, unknown>[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(false);
+  const [total, setTotal] = useState(0);
 
   // 批量操作处理
   const handleBatchAction = async (actionId: string) => {
@@ -711,15 +712,64 @@ export default function SelectionPage() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      // 根据Tab加载不同数据
+      // 热销榜单Tab调用推荐API
+      if (activeTab === 'hot-ranking' && selectionMode) {
+        const params = new URLSearchParams({
+          mode: selectionMode,
+          platform: platform,
+          page: String(page),
+          pageSize: String(pageSize),
+        });
+        const res = await fetch(`/api/selection/recommend?${params}`);
+        if (res.ok) {
+          const result = await res.json();
+          if (result.success && result.data) {
+            // 转换API数据格式为前端格式
+            const apiData = result.data.items.map((item: {
+              id: number;
+              product_title?: string;
+              sales_volume?: number;
+              price?: number;
+              rating?: number;
+              growth_score?: number;
+              growth_rate?: number;
+              seller_count?: number;
+              potential_score?: number;
+              supply_demand_ratio?: number;
+            }, idx: number) => ({
+              id: item.id,
+              rank: (page - 1) * pageSize + idx + 1,
+              title: item.product_title || `商品 ${item.id}`,
+              salesVolume: item.sales_volume || 0,
+              price: item.price || 0,
+              rating: item.rating || 0,
+              // 模式特有字段
+              growthScore: item.growth_score,
+              growthRate: item.growth_rate,
+              sellerCount: item.seller_count,
+              potentialScore: item.potential_score,
+              supplyDemandRatio: item.supply_demand_ratio,
+            }));
+            setData(apiData);
+            // 更新总数
+            setTotal(result.data.total || apiData.length);
+            setLoading(false);
+            return;
+          }
+        }
+      }
+      // 其他Tab使用模拟数据
       const mockData = generateMockData(activeTab);
       setData(mockData);
     } catch (error) {
       console.error('加载数据失败:', error);
+      // 失败时降级到模拟数据
+      const mockData = generateMockData(activeTab);
+      setData(mockData);
     } finally {
       setLoading(false);
     }
-  }, [activeTab]);
+  }, [activeTab, selectionMode, platform, page, pageSize]);
 
   useEffect(() => {
     loadData();
