@@ -21,6 +21,9 @@ import {
   ArrowUpDown,
   TrendingUp,
   Library,
+  Eye,
+  LineChart,
+  Building2,
 } from 'lucide-react';
 
 interface NavItem {
@@ -45,7 +48,17 @@ const mainNavItems: NavItem[] = [
       { href: '/keywords/library', icon: Library, label: '关键词库' },
     ]
   },
-  { href: '/monitor', icon: Package, label: '监控', locked: true },
+  { 
+    href: '/monitor/overview', 
+    icon: Eye, 
+    label: '监控',
+    children: [
+      { href: '/monitor/overview', icon: BarChart2, label: '总览' },
+      { href: '/monitor/products', icon: Package, label: '产品监控' },
+      { href: '/monitor/keywords', icon: LineChart, label: '关键词排名' },
+      { href: '/monitor/shops', icon: Building2, label: '店铺监控' },
+    ]
+  },
   { href: '/collection-box', icon: Box, label: '采集箱' },
   { href: '/ai-tools', icon: Bot, label: 'AI工具', locked: true },
   { href: '/operations', icon: Settings, label: '运营', locked: true },
