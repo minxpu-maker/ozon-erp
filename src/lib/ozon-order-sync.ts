@@ -1,0 +1,493 @@
+/**
+ * Ozon订单同步服务核心逻辑
+ * 
+ * 功能：
+ * 1. 从Ozon API拉取FBS订单列表
+ * 2. 与本地ozon_orders对比，增量同步
+ * 3. 新订单入库并自动生成purchase_demands
+ * 4. 状态变更实时更新
+ */
+
+import { db } from '@/storage/database/client';
+import { ozonOrders, purchaseDemands } from '@/storage/database/shared/fulfillment';
+import { shops } from '@/storage/database/shared/schema';
+import { eq, and, inArray } from 'drizzle-orm';
+import { OzonClient } from './ozon-client';
+import { decrypt } from './crypto';
+import { sql } from 'drizzle-orm';
+
+// ============================================================================
+// 类型定义
+// ============================================================================
+
+/**
+ * Ozon API 返回的 posting 结构
+ */
+interface OzonPosting {
+  order_id: string;
+  posting_number: string;
+  status: string;
+  in_process_at: string;
+  customer?: {
+    name?: string;
+    address?: string;
+  };
+  products: Array<{
+    sku: string;
+    name: string;
+    quantity: number;
+    price: string; // Ozon API 返回的是字符串
+  }>;
+  shipping_method?: {
+    deadline?: string;
+  };
+}
+
+/**
+ * Ozon API 订单列表响应
+ */
+interface OzonPostingListResponse {
+  postings: OzonPosting[];
+  has_next: boolean;
+  last_id: string;
+}
+
+/**
+ * 同步结果
+ */
+export interface SyncResult {
+  shopId: string;
+  shopName: string;
+  success: boolean;
+  newOrders: number;
+  updatedOrders: number;
+  newDemands: number;
+  errors: string[];
+}
+
+/**
+ * 批量同步结果
+ */
+export interface BatchSyncResult {
+  success: boolean;
+  syncedShops: number;
+  failedShops: number;
+  newOrders: number;
+  updatedOrders: number;
+  newDemands: number;
+  shopResults: SyncResult[];
+  errors: Array<{ shopId: string; shopName: string; error: string }>;
+}
+
+/**
+ * 店铺同步状态
+ */
+export interface ShopSyncStatus {
+  shopId: string;
+  shopName: string;
+  lastSyncAt: Date | null;
+  status: 'success' | 'error' | 'never';
+  error?: string;
+  newOrders: number;
+  updatedOrders: number;
+}
+
+// ============================================================================
+// 状态映射
+// ============================================================================
+
+/**
+ * Ozon状态 → ERP状态映射
+ */
+const OZON_TO_ERP_STATUS_MAP: Record<string, string> = {
+  // 等待发货 → 待采购
+  awaiting_deliver: 'pending',
+  awaiting_pack: 'pending',
+  // 已发货 → 已发货
+  delivered: 'shipped',
+  // 取消
+  cancelled: 'cancelled',
+  // 其他未知状态保持原样
+};
+
+/**
+ * 获取ERP状态
+ */
+function getErpStatus(ozonStatus: string): string {
+  return OZON_TO_ERP_STATUS_MAP[ozonStatus] || 'pending';
+}
+
+// ============================================================================
+// Priority 计算
+// ============================================================================
+
+/**
+ * 根据发货截止时间计算优先级
+ * - deadline < now + 24h → 'high'
+ * - deadline < now + 72h → 'normal'
+ * - 其余 → 'low'
+ */
+function calculatePriority(shipmentDeadline: Date | null): 'high' | 'normal' | 'low' {
+  if (!shipmentDeadline) {
+    return 'normal';
+  }
+  
+  const now = new Date();
+  const hoursUntilDeadline = (shipmentDeadline.getTime() - now.getTime()) / (1000 * 60 * 60);
+  
+  if (hoursUntilDeadline < 24) {
+    return 'high';
+  } else if (hoursUntilDeadline < 72) {
+    return 'normal';
+  } else {
+    return 'low';
+  }
+}
+
+// ============================================================================
+// 核心同步逻辑
+// ============================================================================
+
+/**
+ * 为单个店铺同步订单
+ */
+export async function syncOrdersForShop(shop: {
+  id: string;
+  name: string;
+  clientId: string;
+  apiKey: string;
+}): Promise<SyncResult> {
+  const result: SyncResult = {
+    shopId: shop.id,
+    shopName: shop.name,
+    success: false,
+    newOrders: 0,
+    updatedOrders: 0,
+    newDemands: 0,
+    errors: [],
+  };
+
+  try {
+    // 创建Ozon客户端
+    const client = new OzonClient({
+      clientId: shop.clientId,
+      apiKey: shop.apiKey,
+    });
+
+    // 获取所有订单（分页）
+    const allPostings = await fetchAllPostings(client);
+    
+    if (allPostings.length === 0) {
+      result.success = true;
+      return result;
+    }
+
+    // 获取本地已有的订单
+    const ozonOrderIds = allPostings.map(p => p.order_id);
+    const existingOrders = await db
+      .select({
+        id: ozonOrders.id,
+        ozonOrderId: ozonOrders.ozonOrderId,
+        orderStatus: ozonOrders.orderStatus,
+        erpStatus: ozonOrders.erpStatus,
+      })
+      .from(ozonOrders)
+      .where(
+        and(
+          eq(ozonOrders.shopId, shop.id),
+          inArray(ozonOrders.ozonOrderId, ozonOrderIds)
+        )
+      );
+    
+    // 转换为Map方便查询
+    const existingOrderMap = new Map(
+      existingOrders.map(o => [o.ozonOrderId, o])
+    );
+
+    // 分类订单：新订单 vs 已有订单
+    const newPostings: OzonPosting[] = [];
+    const existingPostings: Array<{ posting: OzonPosting; localOrder: typeof existingOrders[0] }> = [];
+
+    for (const posting of allPostings) {
+      const existing = existingOrderMap.get(posting.order_id);
+      if (existing) {
+        existingPostings.push({ posting, localOrder: existing });
+      } else {
+        newPostings.push(posting);
+      }
+    }
+
+    // 处理新订单
+    if (newPostings.length > 0) {
+      const insertResults = await insertNewOrders(shop.id, newPostings);
+      result.newOrders = insertResults.orders;
+      result.newDemands = insertResults.demands;
+    }
+
+    // 处理已有订单（状态变更检测）
+    for (const { posting, localOrder } of existingPostings) {
+      if (posting.status !== localOrder.orderStatus) {
+        const newErpStatus = getErpStatus(posting.status);
+        await db
+          .update(ozonOrders)
+          .set({
+            orderStatus: posting.status,
+            erpStatus: newErpStatus,
+            lastSyncedAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .where(eq(ozonOrders.id, localOrder.id));
+        result.updatedOrders++;
+      } else {
+        // 仅更新时间
+        await db
+          .update(ozonOrders)
+          .set({
+            lastSyncedAt: new Date(),
+          })
+          .where(eq(ozonOrders.id, localOrder.id));
+      }
+    }
+
+    result.success = true;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : '未知错误';
+    result.errors.push(errorMessage);
+    console.error(`[OrderSync] 同步店铺 ${shop.name} 失败:`, errorMessage);
+  }
+
+  return result;
+}
+
+/**
+ * 获取所有订单（处理分页）
+ */
+async function fetchAllPostings(client: OzonClient): Promise<OzonPosting[]> {
+  const allPostings: OzonPosting[] = [];
+  let lastId: string | null = null;
+  let hasNext = true;
+  const maxPages = 20; // 防止无限循环
+
+  while (hasNext && maxPages > allPostings.length / 50) {
+    const body: Record<string, unknown> = {
+      dir: 'asc',
+      limit: 50,
+      with: {
+        analytics_data: true,
+        financial_data: true,
+        barcodes: true,
+      },
+    };
+
+    // 如果有last_id，添加分页参数
+    if (lastId) {
+      body.offset = { order_id: lastId };
+    }
+
+    const response = await client.post<OzonPostingListResponse>(
+      '/v3/posting/fbs/list',
+      body
+    );
+
+    if (!response.ok || !response.data) {
+      throw new Error(response.error || '获取Ozon订单列表失败');
+    }
+
+    allPostings.push(...response.data.postings);
+    
+    hasNext = response.data.has_next;
+    lastId = response.data.last_id || null;
+  }
+
+  return allPostings;
+}
+
+/**
+ * 插入新订单
+ */
+async function insertNewOrders(
+  shopId: string,
+  postings: OzonPosting[]
+): Promise<{ orders: number; demands: number }> {
+  let newOrdersCount = 0;
+  let newDemandsCount = 0;
+  const now = new Date();
+
+  for (const posting of postings) {
+    // 计算订单总金额
+    const orderAmount = posting.products.reduce((sum, item) => {
+      const price = parseFloat(item.price) || 0;
+      return sum + price * item.quantity;
+    }, 0);
+
+    // 转换发货截止时间
+    let shipmentDeadline: Date | null = null;
+    if (posting.shipping_method?.deadline) {
+      shipmentDeadline = new Date(posting.shipping_method.deadline);
+    }
+
+    // 构建itemsJson
+    const itemsJson = posting.products.map(item => ({
+      sku: item.sku,
+      name: item.name,
+      qty: item.quantity,
+      price: parseFloat(item.price) || 0,
+    }));
+
+    // 插入订单
+    const [insertedOrder] = await db
+      .insert(ozonOrders)
+      .values({
+        shopId,
+        ozonOrderId: posting.order_id,
+        ozonPostingNumber: posting.posting_number,
+        orderStatus: posting.status,
+        erpStatus: getErpStatus(posting.status),
+        customerName: posting.customer?.name || null,
+        deliveryAddress: posting.customer?.address || null,
+        orderAmount: orderAmount.toFixed(2),
+        currency: 'RUB',
+        itemsJson,
+        shipmentDeadline,
+        orderTime: posting.in_process_at ? new Date(posting.in_process_at) : null,
+        lastSyncedAt: now,
+      })
+      .returning({ id: ozonOrders.id });
+
+    newOrdersCount++;
+
+    // 为每个SKU创建采购需求
+    for (const product of posting.products) {
+      const priority = calculatePriority(shipmentDeadline);
+      
+      await db
+        .insert(purchaseDemands)
+        .values({
+          orderId: insertedOrder.id,
+          sku: product.sku,
+          productName: product.name,
+          quantity: product.quantity,
+          priority,
+          status: 'pending',
+        });
+      
+      newDemandsCount++;
+    }
+  }
+
+  return { orders: newOrdersCount, demands: newDemandsCount };
+}
+
+// ============================================================================
+// 批量同步
+// ============================================================================
+
+/**
+ * 同步所有活跃店铺的订单
+ */
+export async function syncAllShops(): Promise<BatchSyncResult> {
+  const result: BatchSyncResult = {
+    success: true,
+    syncedShops: 0,
+    failedShops: 0,
+    newOrders: 0,
+    updatedOrders: 0,
+    newDemands: 0,
+    shopResults: [],
+    errors: [],
+  };
+
+  // 获取所有活跃店铺
+  const activeShops = await db
+    .select({
+      id: shops.id,
+      name: shops.name,
+      clientId: shops.client_id,
+      apiKey: shops.api_key,
+    })
+    .from(shops)
+    .where(eq(shops.is_active, true));
+
+  if (activeShops.length === 0) {
+    console.log('[OrderSync] 没有找到活跃店铺');
+    return result;
+  }
+
+  // 按顺序同步每个店铺（单个失败不影响其他）
+  for (const shop of activeShops) {
+    // 解密API Key
+    let decryptedApiKey: string;
+    try {
+      decryptedApiKey = decrypt(shop.apiKey);
+    } catch {
+      result.errors.push({
+        shopId: shop.id,
+        shopName: shop.name,
+        error: 'API密钥解密失败',
+      });
+      result.failedShops++;
+      continue;
+    }
+
+    const shopResult = await syncOrdersForShop({
+      id: shop.id,
+      name: shop.name,
+      clientId: shop.clientId,
+      apiKey: decryptedApiKey,
+    });
+
+    result.shopResults.push(shopResult);
+
+    if (shopResult.success) {
+      result.syncedShops++;
+      result.newOrders += shopResult.newOrders;
+      result.updatedOrders += shopResult.updatedOrders;
+      result.newDemands += shopResult.newDemands;
+    } else {
+      result.failedShops++;
+      result.errors.push({
+        shopId: shop.id,
+        shopName: shop.name,
+        error: shopResult.errors.join('; '),
+      });
+    }
+  }
+
+  result.success = result.failedShops === 0;
+  
+  console.log(`[OrderSync] 同步完成: ${result.syncedShops}成功, ${result.failedShops}失败, 新订单${result.newOrders}, 更新${result.updatedOrders}, 新需求${result.newDemands}`);
+
+  return result;
+}
+
+/**
+ * 获取店铺同步状态
+ */
+export async function getShopSyncStatuses(): Promise<ShopSyncStatus[]> {
+  const statuses: ShopSyncStatus[] = [];
+
+  const orders = await db
+    .select({
+      shopId: ozonOrders.shopId,
+      shopName: shops.name,
+      lastSyncedAt: sql<Date>`MAX(${ozonOrders.lastSyncedAt})`.as('last_synced_at'),
+      newOrders: sql<number>`COUNT(*) FILTER (WHERE ${ozonOrders.lastSyncedAt} > NOW() - INTERVAL '5 minutes')`.as('new_orders'),
+      updatedOrders: sql<number>`0`.as('updated_orders'),
+    })
+    .from(ozonOrders)
+    .leftJoin(shops, eq(ozonOrders.shopId, shops.id))
+    .groupBy(ozonOrders.shopId, shops.name);
+
+  for (const order of orders) {
+    statuses.push({
+      shopId: order.shopId,
+      shopName: order.shopName || 'Unknown',
+      lastSyncAt: order.lastSyncedAt || null,
+      status: order.lastSyncedAt ? 'success' : 'never',
+      newOrders: Number(order.newOrders) || 0,
+      updatedOrders: 0,
+    });
+  }
+
+  return statuses;
+}
