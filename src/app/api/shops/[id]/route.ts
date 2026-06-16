@@ -1,20 +1,36 @@
+/**
+ * 店铺详情 API
+ * GET /api/shops/[id] - 获取店铺详情
+ * PUT /api/shops/[id] - 更新店铺信息
+ * DELETE /api/shops/[id] - 软删除店铺
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/storage/database/client';
 import { shops } from '@/storage/database/shared/schema';
 import { eq } from 'drizzle-orm';
-import { OzonApiClient } from '@/lib/ozon/client';
+import { encrypt } from '@/lib/crypto';
 
-interface RouteParams {
-  params: Promise<{ id: string }>;
+// 更新店铺请求类型
+interface UpdateShopBody {
+  shopName?: string;
+  ozonClientId?: string;
+  ozonApiKey?: string;
+  platform?: string;
 }
 
 /**
- * GET /api/shops/[id] - 获取店铺详情
+ * GET /api/shops/[id]
+ * 获取单个店铺详情（不返回API密钥明文）
  */
-export async function GET(_request: NextRequest, { params }: RouteParams) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     const { id } = await params;
 
+    // 查询店铺
     const [shop] = await db
       .select()
       .from(shops)
@@ -31,12 +47,19 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({
       success: true,
       data: {
-        ...shop,
-        api_key: `${shop.api_key.substring(0, 8)}****${shop.api_key.substring(shop.api_key.length - 4)}`,
+        id: shop.id,
+        shopName: shop.name,
+        platform: shop.platform,
+        isActive: shop.is_active,
+        ozonClientId: shop.client_id || shop.ozon_client_id,
+        hasApiKey: !!(shop.api_key || shop.ozon_api_key),
+        isPrimary: shop.is_primary,
+        createdAt: shop.created_at,
+        updatedAt: shop.updated_at,
       },
     });
   } catch (error) {
-    console.error('获取店铺详情失败:', error);
+    console.error('[Shop Detail API] GET error:', error);
     return NextResponse.json(
       { success: false, error: '获取店铺详情失败' },
       { status: 500 }
@@ -45,63 +68,120 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 }
 
 /**
- * PUT /api/shops/[id] - 更新店铺信息
+ * PUT /api/shops/[id]
+ * 更新店铺信息
  */
-export async function PUT(request: NextRequest, { params }: RouteParams) {
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     const { id } = await params;
-    const body = await request.json();
-    const { name, client_id, api_key, is_primary, is_active } = body;
+    const body: UpdateShopBody = await request.json();
 
     // 检查店铺是否存在
-    const [existing] = await db
+    const [existingShop] = await db
       .select()
       .from(shops)
       .where(eq(shops.id, id))
       .limit(1);
 
-    if (!existing) {
+    if (!existingShop) {
       return NextResponse.json(
         { success: false, error: '店铺不存在' },
         { status: 404 }
       );
     }
 
-    // 如果设为主店铺，先取消其他店铺的主店铺标记
-    if (is_primary) {
-      const allShops = await db.select().from(shops);
-      for (const shop of allShops.filter(s => s.is_primary && s.id !== id)) {
-        await db
-          .update(shops)
-          .set({ is_primary: false })
-          .where(eq(shops.id, shop.id));
+    // 构建更新数据 - 使用主字段 client_id/api_key
+    const updateData: Record<string, unknown> = {
+      updated_at: new Date(),
+    };
+
+    // 需要重新测试连接的标记
+    let connectionTestNeeded = false;
+
+    if (body.shopName !== undefined) {
+      if (!body.shopName.trim()) {
+        return NextResponse.json(
+          { success: false, error: '店铺名称不能为空' },
+          { status: 400 }
+        );
       }
+      // 检查名称是否与其他店铺冲突
+      const conflict = await db
+        .select({ id: shops.id })
+        .from(shops)
+        .where(eq(shops.name, body.shopName.trim()))
+        .limit(1);
+
+      if (conflict.length > 0 && conflict[0].id !== id) {
+        return NextResponse.json(
+          { success: false, error: '店铺名称已存在' },
+          { status: 409 }
+        );
+      }
+      updateData.name = body.shopName.trim();
     }
 
-    // 更新店铺
-    const updateData: Record<string, unknown> = {};
-    if (name !== undefined) updateData.name = name;
-    if (client_id !== undefined) updateData.client_id = client_id;
-    if (api_key !== undefined) updateData.api_key = api_key;
-    if (is_primary !== undefined) updateData.is_primary = is_primary;
-    if (is_active !== undefined) updateData.is_active = is_active;
+    if (body.ozonClientId !== undefined) {
+      if (!body.ozonClientId.trim()) {
+        return NextResponse.json(
+          { success: false, error: 'Ozon Client-ID 不能为空' },
+          { status: 400 }
+        );
+      }
+      updateData.client_id = body.ozonClientId.trim();
+      connectionTestNeeded = true;
+    }
 
-    const [updated] = await db
+    if (body.ozonApiKey !== undefined) {
+      if (!body.ozonApiKey.trim()) {
+        return NextResponse.json(
+          { success: false, error: 'Ozon API-Key 不能为空' },
+          { status: 400 }
+        );
+      }
+      // 重新加密API密钥 - 使用主字段 api_key
+      updateData.api_key = encrypt(body.ozonApiKey.trim());
+      connectionTestNeeded = true;
+    }
+
+    if (body.platform !== undefined) {
+      updateData.platform = body.platform;
+    }
+
+    // 执行更新
+    const [updatedShop] = await db
       .update(shops)
       .set(updateData)
       .where(eq(shops.id, id))
       .returning();
 
+    if (!updatedShop) {
+      return NextResponse.json(
+        { success: false, error: '更新店铺失败' },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json({
       success: true,
       data: {
-        ...updated,
-        api_key: `${updated.api_key.substring(0, 8)}****${updated.api_key.substring(updated.api_key.length - 4)}`,
+        id: updatedShop.id,
+        shopName: updatedShop.name,
+        platform: updatedShop.platform,
+        isActive: updatedShop.is_active,
+        ozonClientId: updatedShop.client_id,
+        hasApiKey: !!updatedShop.api_key,
+        createdAt: updatedShop.created_at,
+        updatedAt: updatedShop.updated_at,
       },
+      connectionTestNeeded, // 标记是否需要重新测试连接
       message: '店铺更新成功',
     });
   } catch (error) {
-    console.error('更新店铺失败:', error);
+    console.error('[Shop Detail API] PUT error:', error);
     return NextResponse.json(
       { success: false, error: '更新店铺失败' },
       { status: 500 }
@@ -110,103 +190,47 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 }
 
 /**
- * DELETE /api/shops/[id] - 删除店铺
+ * DELETE /api/shops/[id]
+ * 软删除店铺（设置isActive=false）
  */
-export async function DELETE(_request: NextRequest, { params }: RouteParams) {
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     const { id } = await params;
 
     // 检查店铺是否存在
-    const [existing] = await db
+    const [existingShop] = await db
       .select()
       .from(shops)
       .where(eq(shops.id, id))
       .limit(1);
 
-    if (!existing) {
+    if (!existingShop) {
       return NextResponse.json(
         { success: false, error: '店铺不存在' },
         { status: 404 }
       );
     }
 
-    // 删除店铺
-    await db.delete(shops).where(eq(shops.id, id));
+    // 软删除：设置is_active=false
+    await db
+      .update(shops)
+      .set({
+        is_active: false,
+        updated_at: new Date(),
+      })
+      .where(eq(shops.id, id));
 
     return NextResponse.json({
       success: true,
-      message: '店铺删除成功',
+      message: '店铺已删除',
     });
   } catch (error) {
-    console.error('删除店铺失败:', error);
+    console.error('[Shop Detail API] DELETE error:', error);
     return NextResponse.json(
       { success: false, error: '删除店铺失败' },
-      { status: 500 }
-    );
-  }
-}
-
-/**
- * PATCH /api/shops/[id] - 部分更新店铺信息
- */
-export async function PATCH(request: NextRequest, { params }: RouteParams) {
-  try {
-    const { id } = await params;
-    const body = await request.json();
-
-    // 检查店铺是否存在
-    const [existing] = await db
-      .select()
-      .from(shops)
-      .where(eq(shops.id, id))
-      .limit(1);
-
-    if (!existing) {
-      return NextResponse.json(
-        { success: false, error: '店铺不存在' },
-        { status: 404 }
-      );
-    }
-
-    const { name, client_id, api_key, is_primary, is_active } = body;
-
-    // 如果设为主店铺，先取消其他店铺的主店铺标记
-    if (is_primary) {
-      const allShops = await db.select().from(shops);
-      for (const shop of allShops.filter(s => s.is_primary && s.id !== id)) {
-        await db
-          .update(shops)
-          .set({ is_primary: false })
-          .where(eq(shops.id, shop.id));
-      }
-    }
-
-    // 更新店铺
-    const updateData: Record<string, unknown> = {};
-    if (name !== undefined) updateData.name = name;
-    if (client_id !== undefined) updateData.client_id = client_id;
-    if (api_key !== undefined) updateData.api_key = api_key;
-    if (is_primary !== undefined) updateData.is_primary = is_primary;
-    if (is_active !== undefined) updateData.is_active = is_active;
-
-    const [updated] = await db
-      .update(shops)
-      .set(updateData)
-      .where(eq(shops.id, id))
-      .returning();
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        ...updated,
-        api_key: `${updated.api_key.substring(0, 8)}****${updated.api_key.substring(updated.api_key.length - 4)}`,
-      },
-      message: '店铺更新成功',
-    });
-  } catch (error) {
-    console.error('更新店铺失败:', error);
-    return NextResponse.json(
-      { success: false, error: '更新店铺失败' },
       { status: 500 }
     );
   }

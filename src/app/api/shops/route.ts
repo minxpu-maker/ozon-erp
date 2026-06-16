@@ -1,118 +1,170 @@
+/**
+ * 店铺管理 API - 列表和创建
+ * GET /api/shops - 获取店铺列表
+ * POST /api/shops - 创建新店铺
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/storage/database/client';
 import { shops } from '@/storage/database/shared/schema';
+import { eq, desc } from 'drizzle-orm';
+import { encrypt } from '@/lib/crypto';
+
+// 店铺列表返回类型（不暴露API密钥）
+interface ShopListItem {
+  id: string;
+  shopName: string;
+  platform: string;
+  isActive: boolean;
+  ozonClientId: string | null;
+  hasApiKey: boolean;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+}
+
+// 创建店铺请求类型
+interface CreateShopBody {
+  shopName: string;
+  ozonClientId: string;
+  ozonApiKey: string;
+  platform?: string;
+}
 
 /**
- * GET /api/shops - 获取店铺列表
+ * GET /api/shops
+ * 获取店铺列表（默认只返回激活的店铺）
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const shopList = await db
-      .select({
-        id: shops.id,
-        name: shops.name,
-        client_id: shops.client_id,
-        api_key: shops.api_key,
-        is_primary: shops.is_primary,
-        is_active: shops.is_active,
-        last_sync_at: shops.last_sync_at,
-        seller_type: shops.seller_type,
-        current_stage: shops.current_stage,
-        selection_mode: shops.selection_mode,
-        price_range_min: shops.price_range_min,
-        price_range_max: shops.price_range_max,
-        created_at: shops.created_at,
-      })
-      .from(shops);
+    const searchParams = request.nextUrl.searchParams;
+    const includeInactive = searchParams.get('includeInactive') === 'true';
 
-    // 脱敏处理 API Key
-    const sanitizedShops = shopList.map(shop => ({
-      ...shop,
-      api_key: shop.api_key ? `${shop.api_key.slice(0, 6)}****${shop.api_key.slice(-4)}` : null,
+    // 构建查询条件 - 使用snake_case字段
+    const queryCondition = includeInactive ? undefined : eq(shops.is_active, true);
+
+    // 查询店铺列表
+    const shopList = await db
+      .select()
+      .from(shops)
+      .where(queryCondition)
+      .orderBy(desc(shops.created_at));
+
+    // 格式化返回数据，隐藏API密钥 - 使用主字段 client_id/api_key 或兼容字段 ozon_client_id/ozon_api_key
+    const result: ShopListItem[] = shopList.map(shop => ({
+      id: shop.id,
+      shopName: shop.name || '',
+      platform: shop.platform || 'ozon',
+      isActive: shop.is_active ?? true,
+      ozonClientId: shop.client_id || shop.ozon_client_id || null,
+      hasApiKey: !!(shop.api_key || shop.ozon_api_key),
+      createdAt: shop.created_at,
+      updatedAt: shop.updated_at,
     }));
 
     return NextResponse.json({
       success: true,
-      data: sanitizedShops,
+      data: result,
+      total: result.length,
     });
   } catch (error) {
-    console.error('获取店铺列表失败:', error);
-    // 返回模拟数据作为兜底
-    return NextResponse.json({
-      success: true,
-      data: [
-        {
-          id: 'shop-tiantan',
-          name: 'TIANTAN',
-          client_id: '1001',
-          is_primary: true,
-          is_active: true,
-          seller_type: 'cn_crossborder',
-          current_stage: 'mature',
-          selection_mode: 'follow',
-          price_range_min: 200,
-          price_range_max: 1500,
-        },
-        {
-          id: 'shop-test-1',
-          name: '测试店铺1',
-          client_id: '2001',
-          is_primary: false,
-          is_active: true,
-          seller_type: 'cn_crossborder',
-          current_stage: 'new',
-          selection_mode: 'follow',
-          price_range_min: 100,
-          price_range_max: 500,
-        },
-      ],
-    });
+    console.error('[Shops API] GET error:', error);
+    return NextResponse.json(
+      { success: false, error: '获取店铺列表失败' },
+      { status: 500 }
+    );
   }
 }
 
 /**
- * POST /api/shops - 添加新店铺
+ * POST /api/shops
+ * 创建新店铺
  */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { name, client_id, api_key, is_primary } = body;
+    const body: CreateShopBody = await request.json();
 
-    // 验证必填字段
-    if (!name || !client_id || !api_key) {
+    // 必填校验
+    if (!body.shopName?.trim()) {
       return NextResponse.json(
-        { success: false, error: '店铺名称、Client ID和API Key为必填项' },
+        { success: false, error: '店铺名称不能为空' },
         { status: 400 }
       );
     }
 
-    // 插入新店铺
-    const [newShop] = await db
-      .insert(shops)
-      .values({
-        name,
-        client_id,
-        api_key,
-        is_primary: is_primary || false,
-        is_active: true,
-      })
-      .returning();
+    if (!body.ozonClientId?.trim()) {
+      return NextResponse.json(
+        { success: false, error: 'Ozon Client-ID 不能为空' },
+        { status: 400 }
+      );
+    }
 
+    if (!body.ozonApiKey?.trim()) {
+      return NextResponse.json(
+        { success: false, error: 'Ozon API-Key 不能为空' },
+        { status: 400 }
+      );
+    }
+
+    // 检查店铺名称是否已存在
+    const existing = await db
+      .select({ id: shops.id })
+      .from(shops)
+      .where(eq(shops.name, body.shopName.trim()))
+      .limit(1);
+
+    if (existing.length > 0) {
+      return NextResponse.json(
+        { success: false, error: '店铺名称已存在' },
+        { status: 409 }
+      );
+    }
+
+    // 加密API密钥
+    const encryptedApiKey = encrypt(body.ozonApiKey.trim());
+
+    // 创建店铺 - 使用主字段 client_id/api_key（必填）
+    const now = new Date();
+    const newShop = {
+      name: body.shopName.trim(),
+      client_id: body.ozonClientId.trim(),
+      api_key: encryptedApiKey,
+      platform: body.platform || 'ozon',
+      is_active: true,
+      is_primary: false,
+      created_at: now,
+      updated_at: now,
+    };
+
+    const result = await db.insert(shops).values(newShop).returning();
+
+    if (!result || result.length === 0) {
+      return NextResponse.json(
+        { success: false, error: '创建店铺失败' },
+        { status: 500 }
+      );
+    }
+
+    const created = result[0];
+
+    // 返回创建的店铺（不包含API密钥明文）
     return NextResponse.json({
       success: true,
       data: {
-        id: newShop.id,
-        name: newShop.name,
-        client_id: newShop.client_id,
-        is_primary: newShop.is_primary,
-        is_active: newShop.is_active,
+        id: created.id,
+        shopName: created.name,
+        platform: created.platform,
+        isActive: created.is_active,
+        ozonClientId: created.client_id,
+        hasApiKey: true,
+        createdAt: created.created_at,
+        updatedAt: created.updated_at,
       },
-      message: '店铺添加成功',
-    });
+      message: '店铺创建成功',
+    }, { status: 201 });
   } catch (error) {
-    console.error('添加店铺失败:', error);
+    console.error('[Shops API] POST error:', error);
     return NextResponse.json(
-      { success: false, error: '添加店铺失败' },
+      { success: false, error: '创建店铺失败' },
       { status: 500 }
     );
   }
