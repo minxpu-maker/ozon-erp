@@ -12,7 +12,7 @@ import { pgTable, text, varchar, timestamp, integer, numeric, jsonb, index, seri
  */
 export const ozonOrders = pgTable('ozon_orders', {
   id: serial('id').primaryKey(),
-  shopId: integer('shop_id').notNull(), // 外键关联 shops.id (serial)
+  shopId: varchar('shop_id', { length: 36 }).notNull(), // 外键关联 shops.id (varchar)
   ozonOrderId: varchar('ozon_order_id', { length: 50 }).notNull(),
   ozonPostingNumber: varchar('ozon_posting_number', { length: 50 }),
   orderStatus: varchar('order_status', { length: 30 }).notNull(), // Ozon原始状态
@@ -64,7 +64,7 @@ export const purchaseDemands = pgTable('purchase_demands', {
 export const purchaseRecords = pgTable('purchase_records', {
   id: serial('id').primaryKey(),
   demandId: integer('demand_id').notNull().references(() => purchaseDemands.id, { onDelete: 'cascade' }),
-  shopId: integer('shop_id').notNull(),
+  shopId: varchar('shop_id', { length: 36 }).notNull(), // 外键关联 shops.id (varchar)
   ozonOrderIds: jsonb('ozon_order_ids').$type<number[]>(), // 聚合采购时对应的多个Ozon订单ID
   supplierName: varchar('supplier_name', { length: 200 }),
   supplierSource: varchar('supplier_source', { length: 20 }), // 1688/pdd/manual
@@ -81,6 +81,10 @@ export const purchaseRecords = pgTable('purchase_records', {
   orderedAt: timestamp('ordered_at', { withTimezone: true }),
   receivedAt: timestamp('received_at', { withTimezone: true }),
   verifiedAt: timestamp('verified_at', { withTimezone: true }),
+  // 人员操作记录
+  purchaserId: varchar('purchaser_id', { length: 36 }), // 采购员ID
+  boundBy: varchar('bound_by', { length: 50 }), // 绑定操作人
+  remark: text('remark'), // 备注
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => [
@@ -89,6 +93,7 @@ export const purchaseRecords = pgTable('purchase_records', {
   index('idx_purchase_records_domestic_tracking').on(table.domesticTrackingNo),
   index('idx_purchase_records_status').on(table.status),
   index('idx_purchase_records_ordered_at').on(table.orderedAt),
+  index('idx_purchase_records_purchaser').on(table.purchaserId),
 ]);
 
 /**
@@ -123,7 +128,7 @@ export const qcRecords = pgTable('qc_records', {
 export const shipmentRecords = pgTable('shipment_records', {
   id: serial('id').primaryKey(),
   orderId: integer('order_id').notNull().references(() => ozonOrders.id, { onDelete: 'cascade' }),
-  shopId: integer('shop_id').notNull(),
+  shopId: varchar('shop_id', { length: 36 }).notNull(), // 外键关联 shops.id (varchar)
   packageCount: integer('package_count').default(1),
   packages: jsonb('packages').$type<Array<{ weight: number; dimensions: string; trackingNo: string }>>(),
   totalWeight: numeric('total_weight', { precision: 8, scale: 3 }), // kg
@@ -152,7 +157,7 @@ export const shipmentRecords = pgTable('shipment_records', {
 export const orderFinance = pgTable('order_finance', {
   id: serial('id').primaryKey(),
   orderId: integer('order_id').notNull().references(() => ozonOrders.id, { onDelete: 'cascade' }),
-  shopId: integer('shop_id').notNull(),
+  shopId: varchar('shop_id', { length: 36 }).notNull(), // 外键关联 shops.id (varchar)
   ozonSettlementAmount: numeric('ozon_settlement_amount', { precision: 10, scale: 2 }), // Ozon结算金额RUB
   exchangeRate: numeric('exchange_rate', { precision: 10, scale: 6 }), // 下单时汇率
   settlementAmountCny: numeric('settlement_amount_cny', { precision: 10, scale: 2 }), // 售价折人民币
