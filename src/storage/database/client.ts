@@ -1,6 +1,10 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import * as schema from './shared/schema';
+import * as fulfillment from './shared/fulfillment';
+
+// 合并所有schema
+const allSchema = { ...schema, ...fulfillment };
 
 // 数据库连接池优化配置
 const connectionString = process.env.DATABASE_URL || process.env.PGDATABASE_URL;
@@ -26,9 +30,10 @@ pool.on('connect', () => {
   console.log('新的数据库连接已建立');
 });
 
-export const db = drizzle(pool, { schema, logger: false });
+export const db = drizzle(pool, { schema: allSchema, logger: false });
 export { pool, Pool };
 export { schema };
+export { fulfillment };
 
 // 获取连接池状态
 export function getPoolStatus() {

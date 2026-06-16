@@ -1,6 +1,9 @@
 {
   "$schema": "https://drizzle.team/drizzle-0.config.json",
-  "schema": "./src/storage/database/shared/schema.ts",
+  "schema": [
+    "./src/storage/database/shared/schema.ts",
+    "./src/storage/database/shared/fulfillment.ts"
+  ],
   "out": "./drizzle",
   "dialect": "postgresql",
   "dbCredentials": {

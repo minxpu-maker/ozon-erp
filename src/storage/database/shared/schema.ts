@@ -18,6 +18,8 @@ export const shops = pgTable(
     // Ozon API 凭证（兼容字段）
     ozon_client_id: varchar("ozon_client_id", { length: 64 }),
     ozon_api_key: varchar("ozon_api_key", { length: 128 }),
+    // 平台标识
+    platform: varchar("platform", { length: 20 }).default('ozon'), // ozon/wb
     is_primary: boolean("is_primary").default(false).notNull(),
     is_active: boolean("is_active").default(true).notNull(),
     last_sync_at: timestamp("last_sync_at", { withTimezone: true }),
