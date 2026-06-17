@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/storage/database/client';
-import { ozonOrders, shipmentRecords, orderFinance } from '@/storage/database/shared/schema';
-import { eq } from 'drizzle-orm';
+import { ozonOrders, purchaseRecords, purchaseDemands, shipmentRecords, orderFinance } from '@/storage/database/shared/schema';
+import { eq, and } from 'drizzle-orm';
 
 interface WeightRequest {
   totalWeight: number;
@@ -46,7 +46,7 @@ export async function POST(
       );
     }
 
-    // 验证订单存在
+    // 【业务验证1】验证订单存在
     const order = await db
       .select()
       .from(ozonOrders)
@@ -57,6 +57,44 @@ export async function POST(
       return NextResponse.json(
         { success: false, error: '订单不存在' },
         { status: 404 }
+      );
+    }
+
+    // 【业务验证2】验证采购记录状态必须是 'verified'（已验货）才能发货
+    const purchaseRecordResult = await db
+      .select()
+      .from(ozonOrders)
+      .innerJoin(purchaseDemands, eq(ozonOrders.id, purchaseDemands.orderId))
+      .innerJoin(purchaseRecords, eq(purchaseDemands.id, purchaseRecords.demandId))
+      .where(eq(ozonOrders.id, orderIdNum))
+      .limit(1);
+
+    if (purchaseRecordResult.length === 0) {
+      return NextResponse.json(
+        { success: false, error: '未找到采购记录' },
+        { status: 404 }
+      );
+    }
+
+    const purchaseRecord = purchaseRecordResult[0].purchase_records;
+    if (purchaseRecord.status !== 'verified') {
+      return NextResponse.json(
+        { success: false, error: `订单当前状态为 '${purchaseRecord.status}'，必须验货通过后才能发货` },
+        { status: 400 }
+      );
+    }
+
+    // 【业务验证3】检查是否已经发货，不能重复称重
+    const existingShipmentCheck = await db
+      .select()
+      .from(shipmentRecords)
+      .where(eq(shipmentRecords.orderId, orderIdNum))
+      .limit(1);
+
+    if (existingShipmentCheck.length > 0 && existingShipmentCheck[0].status === 'shipped') {
+      return NextResponse.json(
+        { success: false, error: '订单已发货，不能重复称重' },
+        { status: 400 }
       );
     }
 
@@ -76,6 +114,11 @@ export async function POST(
 
       let shipmentId: number;
       if (existingShipment.length > 0) {
+        const currentShipment = existingShipment[0];
+        // 已发货状态不能更新
+        if (currentShipment.status === 'shipped') {
+          throw new Error('订单已发货，不能重复称重');
+        }
         // 更新
         await tx
           .update(shipmentRecords)
@@ -86,8 +129,8 @@ export async function POST(
             status: 'packed',
             updatedAt: new Date(),
           })
-          .where(eq(shipmentRecords.id, existingShipment[0].id));
-        shipmentId = existingShipment[0].id;
+          .where(eq(shipmentRecords.id, currentShipment.id));
+        shipmentId = currentShipment.id;
       } else {
         // 新增
         const insertResult = await tx

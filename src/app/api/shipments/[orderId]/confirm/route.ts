@@ -1,19 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/storage/database/client';
-import { ozonOrders, shipmentRecords, shops, orderFinance } from '@/storage/database/shared/schema';
+import { ozonOrders, purchaseRecords, purchaseDemands, shipmentRecords, shops, orderFinance } from '@/storage/database/shared/schema';
 import { eq } from 'drizzle-orm';
-import { decrypt } from '@/lib/crypto';
 import { ozonRequest } from '@/lib/ozon-client';
 
-interface ConfirmRequest {
-  shippingProvider?: string; // 物流商
-  trackingNumber?: string; // 追踪号
-}
+// 最大重试次数
+const MAX_RETRIES = 3;
 
-interface ShipResult {
-  success: boolean;
-  shipmentId: number;
-  ozonResponse?: Record<string, unknown>;
+interface ConfirmRequest {
+  shipmentId?: number;
 }
 
 export async function POST(
@@ -23,8 +18,8 @@ export async function POST(
   try {
     const { orderId } = await params;
     const body: ConfirmRequest = await request.json();
-
     const orderIdNum = parseInt(orderId);
+
     if (isNaN(orderIdNum)) {
       return NextResponse.json(
         { success: false, error: '无效的订单ID' },
@@ -32,14 +27,10 @@ export async function POST(
       );
     }
 
-    // 查询订单和店铺信息
+    // 【业务验证1】验证订单存在
     const orderResult = await db
-      .select({
-        order: ozonOrders,
-        shop: shops,
-      })
+      .select()
       .from(ozonOrders)
-      .leftJoin(shops, eq(ozonOrders.shopId, shops.id))
       .where(eq(ozonOrders.id, orderIdNum))
       .limit(1);
 
@@ -50,174 +41,182 @@ export async function POST(
       );
     }
 
-    const { order, shop } = orderResult[0];
-    if (!shop?.client_id || !shop?.api_key) {
-      return NextResponse.json(
-        { success: false, error: '店铺API配置不完整' },
-        { status: 400 }
-      );
-    }
+    const order = orderResult[0];
 
-    // 获取 shipment_records
-    const shipment = await db
+    // 【业务验证2】验证采购记录状态必须是 'verified'
+    const purchaseRecordResult = await db
       .select()
-      .from(shipmentRecords)
-      .where(eq(shipmentRecords.orderId, orderIdNum))
+      .from(ozonOrders)
+      .innerJoin(purchaseDemands, eq(ozonOrders.id, purchaseDemands.orderId))
+      .innerJoin(purchaseRecords, eq(purchaseDemands.id, purchaseRecords.demandId))
+      .where(eq(ozonOrders.id, orderIdNum))
       .limit(1);
 
-    if (shipment.length === 0) {
+    if (purchaseRecordResult.length === 0) {
       return NextResponse.json(
-        { success: false, error: '请先完成称重' },
+        { success: false, error: '未找到采购记录' },
+        { status: 404 }
+      );
+    }
+
+    const purchaseRecord = purchaseRecordResult[0].purchase_records;
+    if (purchaseRecord.status !== 'verified') {
+      return NextResponse.json(
+        { success: false, error: `订单当前状态为 '${purchaseRecord.status}'，必须验货通过后才能发货` },
         { status: 400 }
       );
     }
 
-    if (shipment[0].status === 'shipped') {
+    // 【业务验证3】检查 shipment_records 是否存在
+    const shipmentQuery = body.shipmentId
+      ? db.select().from(shipmentRecords).where(eq(shipmentRecords.id, body.shipmentId)).limit(1)
+      : db.select().from(shipmentRecords).where(eq(shipmentRecords.orderId, orderIdNum)).limit(1);
+
+    const shipmentResult = await shipmentQuery;
+
+    if (shipmentResult.length === 0) {
+      return NextResponse.json(
+        { success: false, error: '请先完成称重和获取面单' },
+        { status: 400 }
+      );
+    }
+
+    const shipment = shipmentResult[0];
+
+    // 【业务验证4】检查状态：必须先获取面单才能发货
+    if (shipment.status === 'shipped') {
       return NextResponse.json(
         { success: false, error: '订单已发货' },
         { status: 400 }
       );
     }
 
-    // 解密 API Key
-    let apiKey: string;
-    try {
-      apiKey = decrypt(shop.api_key);
-    } catch {
+    if (shipment.status !== 'labeled') {
       return NextResponse.json(
-        { success: false, error: 'API密钥解密失败' },
-        { status: 500 }
-      );
-    }
-
-    const postingNumber = order.ozonPostingNumber;
-    if (!postingNumber) {
-      return NextResponse.json(
-        { success: false, error: '缺少posting_number' },
+        { success: false, error: '必须先获取面单才能确认发货' },
         { status: 400 }
       );
     }
 
-    // 调用 Ozon 发货确认 API（含3次重试）
-    const shipResult = await shipWithRetry(
-      postingNumber,
-      apiKey,
-      shop.client_id,
-      body.shippingProvider,
-      body.trackingNumber
-    );
+    // 获取店铺信息
+    const shopResult = await db
+      .select()
+      .from(shops)
+      .where(eq(shops.id, shipment.shopId))
+      .limit(1);
 
-    if (!shipResult.success) {
+    if (shopResult.length === 0) {
       return NextResponse.json(
-        { success: false, error: '发货确认失败，请重试' },
+        { success: false, error: '未找到店铺配置' },
+        { status: 404 }
+      );
+    }
+
+    const shop = shopResult[0];
+    const clientId = shop.client_id || '';
+    const apiKey = shop.api_key || '';
+
+    if (!clientId || !apiKey) {
+      return NextResponse.json(
+        { success: false, error: '店铺未配置Ozon API凭证' },
+        { status: 400 }
+      );
+    }
+
+    // 调用 Ozon API 确认发货（3次重试）
+    let lastError = '';
+    let retryCount = 0;
+
+    while (retryCount < MAX_RETRIES) {
+      try {
+        const ozonResponse = await ozonRequest(
+          'POST',
+          '/v3/posting/fbs/ship',
+          {
+            posting_number: order.ozonPostingNumber,
+          },
+          apiKey,
+          clientId
+        );
+
+        if (ozonResponse.ok) {
+          lastError = '';
+          break;
+        }
+
+        lastError = ozonResponse.error || `Ozon API错误: ${ozonResponse.status}`;
+        console.warn(`[Confirm] Ozon API retry ${retryCount + 1} failed:`, ozonResponse.error);
+      } catch (err) {
+        lastError = err instanceof Error ? err.message : '未知错误';
+        console.warn(`[Confirm] Retry ${retryCount + 1} error:`, err);
+      }
+
+      retryCount++;
+
+      if (retryCount < MAX_RETRIES) {
+        // 指数退避: 1s, 2s, 4s
+        await new Promise((resolve) => setTimeout(resolve, Math.pow(2, retryCount - 1) * 1000));
+      }
+    }
+
+    if (lastError) {
+      console.error('[Confirm] All retries failed:', lastError);
+      return NextResponse.json(
+        { success: false, error: `发货确认失败: ${lastError}` },
         { status: 502 }
       );
     }
 
-    // 事务：更新状态 + 触发财务核算
-    const result = await db.transaction(async (tx) => {
-      // 1. 更新 shipment_records 状态
+    // 【事务保证】Ozon API 成功后才更新状态
+    await db.transaction(async (tx) => {
+      // 更新 shipment 状态为 'shipped'
       await tx
         .update(shipmentRecords)
         .set({
           status: 'shipped',
           shipTime: new Date(),
-          shippingMethod: body.shippingProvider || null,
-          ozonTrackingNumber: body.trackingNumber || null,
           updatedAt: new Date(),
         })
-        .where(eq(shipmentRecords.id, shipment[0].id));
+        .where(eq(shipmentRecords.id, shipment.id));
 
-      // 2. 预留：触发财务核算（待实现 calculateFinance）
-      // await calculateFinance(orderIdNum);
+      // 更新 order_finance 状态为 'pending'（预留财务核算触发点）
+      const financeResult = await tx
+        .select()
+        .from(orderFinance)
+        .where(eq(orderFinance.orderId, orderIdNum))
+        .limit(1);
 
-      return { success: true };
+      if (financeResult.length > 0) {
+        await tx
+          .update(orderFinance)
+          .set({
+            status: 'pending', // 待核算
+            updatedAt: new Date(),
+          })
+          .where(eq(orderFinance.id, financeResult[0].id));
+      }
+
+      // 【预留】触发财务核算（当前阶段预留，未来集成）
+      // TODO: calculateFinance(orderIdNum);
     });
 
     return NextResponse.json({
       success: true,
       data: {
-        shipmentId: shipment[0].id,
-        ozonResponse: shipResult.ozonResponse,
-        status: 'shipped',
+        orderId: orderIdNum,
+        postingNumber: order.ozonPostingNumber,
+        shipmentId: shipment.id,
+        shippedAt: new Date().toISOString(),
+        retries: retryCount,
+        financeTriggered: true,
       },
       message: '发货确认成功',
     });
   } catch (error) {
-    console.error('[Shipments] Confirm error:', error);
+    console.error('[Confirm] Error:', error);
     return NextResponse.json(
       { success: false, error: '发货确认失败' },
       { status: 500 }
     );
   }
-}
-
-/**
- * 调用 Ozon 发货确认 API，3次重试机制
- */
-async function shipWithRetry(
-  postingNumber: string,
-  apiKey: string,
-  clientId: string,
-  shippingProvider?: string,
-  trackingNumber?: string,
-  maxRetries = 3
-): Promise<ShipResult> {
-  let lastError: string = '';
-
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      console.log(`[Shipments] 尝试发货确认 (${attempt}/${maxRetries}): ${postingNumber}`);
-
-      // Ozon 发货确认请求体
-      const requestBody: Record<string, unknown> = {
-        posting_number: postingNumber,
-      };
-
-      // 如果提供了物流信息，添加到请求中
-      if (shippingProvider || trackingNumber) {
-        requestBody.shipping_provider = shippingProvider;
-        requestBody.tracking_number = trackingNumber;
-      }
-
-      const ozonResponse = await ozonRequest(
-        'POST',
-        '/v3/posting/fbs/ship',
-        requestBody,
-        apiKey,
-        clientId
-      );
-
-      if (ozonResponse.ok) {
-        console.log(`[Shipments] 发货确认成功: ${postingNumber}`);
-        return {
-          success: true,
-          shipmentId: 0,
-          ozonResponse: ozonResponse.data as Record<string, unknown>,
-        };
-      }
-
-      lastError = ozonResponse.error || '未知错误';
-      console.warn(`[Shipments] 发货确认失败 (${attempt}/${maxRetries}):`, lastError);
-
-      // 如果还有重试次数，等待后重试
-      if (attempt < maxRetries) {
-        await sleep(1000 * attempt); // 递增等待时间
-      }
-    } catch (error) {
-      lastError = error instanceof Error ? error.message : '网络错误';
-      console.error(`[Shipments] 发货确认异常 (${attempt}/${maxRetries}):`, error);
-
-      if (attempt < maxRetries) {
-        await sleep(1000 * attempt);
-      }
-    }
-  }
-
-  console.error(`[Shipments] 发货确认最终失败 (${maxRetries}次):`, lastError);
-  return { success: false, shipmentId: 0 };
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }

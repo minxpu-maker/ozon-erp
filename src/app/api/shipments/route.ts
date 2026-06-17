@@ -1,16 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/storage/database/client';
 import { ozonOrders, purchaseRecords, purchaseDemands, shipmentRecords, shops } from '@/storage/database/shared/schema';
-import { eq, and, isNull, or, asc } from 'drizzle-orm';
+import { eq, and, isNull, asc } from 'drizzle-orm';
 
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const offset = parseInt(searchParams.get('offset') || '0');
     const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100);
+    const shopId = searchParams.get('shopId');
 
     // 查询待发货队列：
-    // 条件：purchase_records.status='verified' 且无对应有效的 shipment_records
+    // 条件：purchase_records.status='verified' 且无对应有效的 shipment_records（status != 'shipped'）
+    
+    // 构建查询条件
+    const baseConditions = [
+      eq(purchaseRecords.status, 'verified'),
+      isNull(shipmentRecords.id),
+    ];
+    
+    if (shopId) {
+      baseConditions.push(eq(ozonOrders.shopId, shopId));
+    }
+
     const queueItems = await db
       .select({
         // ozon_orders 信息
@@ -27,6 +39,7 @@ export async function GET(request: NextRequest) {
         // purchase_records 信息
         purchaseRecordId: purchaseRecords.id,
         demandId: purchaseRecords.demandId,
+        purchaseStatus: purchaseRecords.status,
         totalPurchaseCost: purchaseRecords.totalPurchaseCost,
         domesticTrackingNo: purchaseRecords.domesticTrackingNo,
         // purchase_demands 信息
@@ -34,7 +47,7 @@ export async function GET(request: NextRequest) {
         productName: purchaseDemands.productName,
         productImage: purchaseDemands.productImage,
         quantity: purchaseDemands.quantity,
-        // shipment_records 信息 (如存在)
+        // shipment_records 信息 (如存在，取最新的非shipped记录)
         shipmentId: shipmentRecords.id,
         shipmentStatus: shipmentRecords.status,
         totalWeight: shipmentRecords.totalWeight,
@@ -45,8 +58,8 @@ export async function GET(request: NextRequest) {
         shopName: shops.name,
       })
       .from(ozonOrders)
-      .innerJoin(purchaseRecords, eq(ozonOrders.id, purchaseRecords.demandId))
-      .innerJoin(purchaseDemands, eq(purchaseRecords.demandId, purchaseDemands.id))
+      .innerJoin(purchaseDemands, eq(ozonOrders.id, purchaseDemands.orderId))
+      .innerJoin(purchaseRecords, eq(purchaseDemands.id, purchaseRecords.demandId))
       .innerJoin(shops, eq(ozonOrders.shopId, shops.id))
       .leftJoin(
         shipmentRecords,
@@ -55,12 +68,7 @@ export async function GET(request: NextRequest) {
           eq(shipmentRecords.status, 'shipped')
         )
       )
-      .where(
-        and(
-          eq(purchaseRecords.status, 'verified'),
-          isNull(shipmentRecords.id)
-        )
-      )
+      .where(and(...baseConditions))
       .orderBy(asc(ozonOrders.shipmentDeadline))
       .limit(limit)
       .offset(offset);
@@ -69,7 +77,8 @@ export async function GET(request: NextRequest) {
     const totalResult = await db
       .select({ count: ozonOrders.id })
       .from(ozonOrders)
-      .innerJoin(purchaseRecords, eq(ozonOrders.id, purchaseRecords.demandId))
+      .innerJoin(purchaseDemands, eq(ozonOrders.id, purchaseDemands.orderId))
+      .innerJoin(purchaseRecords, eq(purchaseDemands.id, purchaseRecords.demandId))
       .leftJoin(
         shipmentRecords,
         and(
@@ -77,12 +86,7 @@ export async function GET(request: NextRequest) {
           eq(shipmentRecords.status, 'shipped')
         )
       )
-      .where(
-        and(
-          eq(purchaseRecords.status, 'verified'),
-          isNull(shipmentRecords.id)
-        )
-      );
+      .where(and(...baseConditions));
 
     const total = totalResult.length;
 
