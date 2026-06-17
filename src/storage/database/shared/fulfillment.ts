@@ -136,6 +136,7 @@ export const shipmentRecords = pgTable('shipment_records', {
   packageWidth: numeric('package_width', { precision: 10, scale: 2 }),
   packageHeight: numeric('package_height', { precision: 10, scale: 2 }),
   shippingFee: numeric('shipping_fee', { precision: 12, scale: 2 }),
+  actualShippingFee: numeric('actual_shipping_fee', { precision: 12, scale: 2 }),
   freightReconciled: boolean('freight_reconciled').default(false),
   reconciledAt: timestamp('reconciled_at', { withTimezone: true }),
   shippedAt: timestamp('shipped_at', { withTimezone: true }),
