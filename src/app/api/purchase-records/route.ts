@@ -159,7 +159,7 @@ export async function POST(request: NextRequest) {
     const order = await db
       .select({ shopId: ozonOrders.shopId })
       .from(ozonOrders)
-      .where(eq(ozonOrders.id, demand[0].orderId))
+      .where(eq(ozonOrders.id, Number(demand[0].orderId)))
       .limit(1);
 
     const shopId = order.length > 0 ? order[0].shopId : null;

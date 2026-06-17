@@ -41,7 +41,7 @@ export const ozonOrders = pgTable('ozon_orders', {
  */
 export const purchaseDemands = pgTable('purchase_demands', {
   id: serial('id').primaryKey(),
-  orderId: integer('order_id').notNull(),
+  orderId: varchar('order_id').notNull(),
   sku: varchar('sku', { length: 100 }).notNull(),
   productName: varchar('product_name', { length: 200 }),
   productImage: varchar('product_image', { length: 500 }),
@@ -127,7 +127,7 @@ export const qcRecords = pgTable('qc_records', {
  */
 export const shipmentRecords = pgTable('shipment_records', {
   id: varchar('id', { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
-  orderId: varchar('order_id', { length: 36 }).notNull(),
+  orderId: varchar('order_id').notNull(),
   shopId: varchar('shop_id', { length: 36 }),
   expressCompany: varchar('express_company', { length: 100 }),
   expressNo: varchar('express_no', { length: 100 }),
@@ -136,7 +136,6 @@ export const shipmentRecords = pgTable('shipment_records', {
   packageWidth: numeric('package_width', { precision: 10, scale: 2 }),
   packageHeight: numeric('package_height', { precision: 10, scale: 2 }),
   shippingFee: numeric('shipping_fee', { precision: 12, scale: 2 }),
-  actualShippingFee: numeric('actual_shipping_fee', { precision: 12, scale: 2 }),
   freightReconciled: boolean('freight_reconciled').default(false),
   reconciledAt: timestamp('reconciled_at', { withTimezone: true }),
   shippedAt: timestamp('shipped_at', { withTimezone: true }),
@@ -156,7 +155,7 @@ export const shipmentRecords = pgTable('shipment_records', {
  */
 export const orderFinance = pgTable('order_finance', {
   id: varchar('id', { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
-  orderId: varchar('order_id', { length: 36 }).notNull(),
+  orderId: varchar('order_id').notNull(),
   shopId: varchar('shop_id', { length: 36 }),
   ozonSettlementAmount: numeric('ozon_settlement_amount', { precision: 12, scale: 2 }),
   purchaseAmount: numeric('purchase_amount', { precision: 12, scale: 2 }),
@@ -167,7 +166,6 @@ export const orderFinance = pgTable('order_finance', {
   profit: numeric('profit', { precision: 12, scale: 2 }),
   profitRate: numeric('profit_rate', { precision: 8, scale: 4 }),
   currency: varchar('currency', { length: 10 }).default('RUB'),
-  actualShippingFee: numeric('actual_shipping_fee', { precision: 12, scale: 2 }),
   freightReconciled: boolean('freight_reconciled').default(false),
   reconciledAt: timestamp('reconciled_at', { withTimezone: true }),
   settledAt: timestamp('settled_at', { withTimezone: true }),

@@ -35,7 +35,6 @@ export async function GET(request: NextRequest) {
         finance: {
           id: orderFinance.id,
           orderId: orderFinance.orderId,
-          actualShippingFee: orderFinance.actualShippingFee,
           freightReconciled: orderFinance.freightReconciled,
           reconciledAt: orderFinance.reconciledAt,
         },
@@ -55,7 +54,7 @@ export async function GET(request: NextRequest) {
       orderId: row.order.id,
       ozonOrderId: row.order.ozonOrderId,
       createdAt: row.order.createdAt,
-      shippingFee: row.shipment?.shippingFee || row.finance?.actualShippingFee,
+      shippingFee: row.shipment?.shippingFee,
       packageWeight: row.shipment?.packageWeight,
       freightReconciled: row.finance?.freightReconciled,
       reconciledAt: row.finance?.reconciledAt,

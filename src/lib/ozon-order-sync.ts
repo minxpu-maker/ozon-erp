@@ -236,7 +236,7 @@ export async function syncOrdersForShop(shop: {
             lastSyncedAt: new Date(),
             updatedAt: new Date(),
           })
-          .where(eq(ozonOrders.id, localOrder.id));
+          .where(eq(ozonOrders.id, Number(localOrder.id)));
         result.updatedOrders++;
       } else {
         // 仅更新时间
@@ -245,7 +245,7 @@ export async function syncOrdersForShop(shop: {
           .set({
             lastSyncedAt: new Date(),
           })
-          .where(eq(ozonOrders.id, localOrder.id));
+          .where(eq(ozonOrders.id, Number(localOrder.id)));
       }
     }
 
@@ -363,7 +363,7 @@ async function insertNewOrders(
       await db
         .insert(purchaseDemands)
         .values({
-          orderId: insertedOrder.id,
+          orderId: String(insertedOrder.id),
           sku: product.sku,
           productName: product.name,
           quantity: product.quantity,
