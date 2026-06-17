@@ -164,7 +164,7 @@ export default function Sidebar() {
     const handleKeyDown = (e: KeyboardEvent) => {
       // 排除在输入框中
       const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
         return;
       }
 
@@ -189,7 +189,7 @@ export default function Sidebar() {
   return (
     <aside
       className={cn(
-        'h-full bg-slate-900 text-white flex flex-col transition-all duration-300',
+        'h-full bg-slate-900 text-white flex flex-col transition-all duration-300 shrink-0',
         collapsed ? 'w-16' : 'w-60'
       )}
     >

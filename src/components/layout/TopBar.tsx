@@ -167,14 +167,17 @@ function GlobalScanInput() {
       // 采购页面：搜索供应商/商品
       router.push(`/purchase/workspace?search=${encodeURIComponent(searchValue)}`);
     } else if (pathname.startsWith('/warehouse/inspection')) {
-      // 验货页面：匹配快递单号
-      router.push(`/warehouse/inspection/match?expressNo=${encodeURIComponent(searchValue)}`);
+      // 验货页面：跳转到验货页面并传递单号参数
+      router.push(`/warehouse/inspection?expressNo=${encodeURIComponent(searchValue)}`);
     } else if (pathname.startsWith('/warehouse/shipping')) {
       // 发货页面：搜索订单
       router.push(`/warehouse/shipping?search=${encodeURIComponent(searchValue)}`);
+    } else if (pathname.startsWith('/orders')) {
+      // 订单页面：搜索订单
+      router.push(`/orders/list?search=${encodeURIComponent(searchValue)}`);
     } else {
       // 其他页面：全局搜索订单
-      router.push(`/orders?search=${encodeURIComponent(searchValue)}`);
+      router.push(`/orders/list?search=${encodeURIComponent(searchValue)}`);
     }
 
     setValue('');

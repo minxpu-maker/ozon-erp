@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { Inspector } from 'react-dev-inspector';
-import { TopBar } from '@/components/layout/TopBar';
-import Sidebar from '@/components/layout/Sidebar';
+import MainLayout from '@/components/layout/MainLayout';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -69,20 +68,7 @@ export default function RootLayout({
     <html lang="zh-CN" suppressHydrationWarning>
       <body className="antialiased" suppressHydrationWarning>
         {isDev && <Inspector />}
-        <div className="min-h-screen bg-[#F6F8FB]">
-          {/* 顶部工作台栏 */}
-          <TopBar />
-
-          <div className="flex" style={{ height: 'calc(100vh - 3rem)' }}>
-            {/* 左侧导航 */}
-            <Sidebar />
-
-            {/* 主内容区 */}
-            <main className="flex-1 overflow-auto">
-              {children}
-            </main>
-          </div>
-        </div>
+        <MainLayout>{children}</MainLayout>
       </body>
     </html>
   );
