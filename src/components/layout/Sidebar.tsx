@@ -134,17 +134,26 @@ export default function Sidebar() {
   const { data: shops } = useSWR<Shop[]>('/api/shops');
   const currentShop = shops?.find(s => s.id === currentShopId);
   const [collapsed, setCollapsed] = useState(false);
+  // 初始状态使用默认值，避免 hydration 不匹配
   const [expandedGroups, setExpandedGroups] = useState<Record<number, boolean>>(() => {
     const initial: Record<number, boolean> = {};
     navGroups.forEach((group, idx) => {
-      // 默认展开有当前路径的分组
-      const hasActiveChild = group.items.some(
-        item => item.href && pathname.startsWith(item.href)
-      );
-      initial[idx] = group.defaultExpanded || hasActiveChild;
+      initial[idx] = group.defaultExpanded || false;
     });
     return initial;
   });
+
+  // 客户端 hydration 后根据实际路径更新展开状态
+  useEffect(() => {
+    const newState: Record<number, boolean> = {};
+    navGroups.forEach((group, idx) => {
+      const hasActiveChild = group.items.some(
+        item => item.href && pathname.startsWith(item.href)
+      );
+      newState[idx] = group.defaultExpanded || hasActiveChild;
+    });
+    setExpandedGroups(newState);
+  }, [pathname]);
 
   // 检查是否有子项高亮
   const isGroupActive = useCallback((group: NavGroup) => {
