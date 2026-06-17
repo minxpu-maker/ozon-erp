@@ -52,7 +52,7 @@ interface NavGroup {
   defaultExpanded?: boolean;
 }
 
-// 导航配置 - 按履约数据流组织
+// 导航配置 - 按履约数据流组织，指向旧功能页面
 const navGroups: NavGroup[] = [
   {
     label: '仪表盘',
@@ -75,9 +75,8 @@ const navGroups: NavGroup[] = [
     icon: Package,
     defaultExpanded: false,
     items: [
-      { label: '采购工作台', href: '/purchase/workspace', icon: Package },
-      { label: '货源池', icon: Boxes, disabled: true, badge: '即将上线' },
-      { label: '供应商管理', href: '/purchase/vendors', icon: Users },
+      { label: '采购工作台', href: '/quick-entry', icon: Package },
+      { label: '供应商管理', href: '/suppliers', icon: Users },
     ],
   },
   {
@@ -85,8 +84,10 @@ const navGroups: NavGroup[] = [
     icon: Warehouse,
     defaultExpanded: false,
     items: [
-      { label: '入库验货', href: '/warehouse/inspection', icon: Truck },
-      { label: '打包发货', href: '/warehouse/shipping', icon: Package },
+      { label: '入库验货', href: '/logistics', icon: Truck },
+      { label: '打包发货', href: '/packaging', icon: Package },
+      { label: '库存管理', href: '/inventory', icon: Boxes },
+      { label: '仓库管理', href: '/wms', icon: Warehouse },
     ],
   },
   {
@@ -94,7 +95,7 @@ const navGroups: NavGroup[] = [
     icon: DollarSign,
     defaultExpanded: false,
     items: [
-      { label: '利润看板', href: '/finance/profit', icon: BarChart3 },
+      { label: '利润核算', href: '/finance', icon: DollarSign },
       { label: '运费核对', href: '/finance/freight', icon: Scale },
     ],
   },
@@ -103,9 +104,13 @@ const navGroups: NavGroup[] = [
     icon: Database,
     defaultExpanded: false,
     items: [
-      { label: '数据驾驶舱', icon: Hexagon, disabled: true, badge: 'P4' },
-      { label: 'SKU管理', href: '/data/sku', icon: Tags },
-      { label: '数据报表', icon: BarChart3, disabled: true, badge: 'P4' },
+      { label: 'AI选品', href: '/selection', icon: Hexagon },
+      { label: '修图上架', href: '/image-listing', icon: Scan },
+      { label: 'SKU管理', href: '/sku-management', icon: Tags },
+      { label: '数据报表', href: '/reports', icon: BarChart3 },
+      { label: '数据源健康度', href: '/data-center/source-health', icon: Database },
+      { label: '数据源管理', href: '/data-center/source-management', icon: Database },
+      { label: '知识库通知', href: '/data-center/notifications', icon: Database },
     ],
   },
   {
@@ -115,6 +120,8 @@ const navGroups: NavGroup[] = [
     items: [
       { label: '店铺管理', href: '/settings/shops', icon: Store },
       { label: '硬件设备', href: '/settings/devices', icon: Scan },
+      { label: '账号管理', href: '/accounts', icon: Users },
+      { label: '角色权限', href: '/roles', icon: Settings },
     ],
   },
 ];
@@ -202,18 +209,18 @@ export default function Sidebar() {
   return (
     <aside
       className={cn(
-        'h-full bg-slate-900 text-white flex flex-col transition-all duration-300 shrink-0',
+        'h-full bg-white border-r border-gray-200 flex flex-col transition-all duration-300 shrink-0',
         collapsed ? 'w-16' : 'w-60'
       )}
     >
-      {/* Logo区域 */}
-      <div className="h-14 flex items-center px-4 border-b border-slate-800 shrink-0">
+      {/* Logo区域 - 蓝色品牌条 */}
+      <div className="h-14 flex items-center px-4 border-b border-gray-200 shrink-0 bg-blue-600">
         <Link href="/dashboard" className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center shrink-0">
-            <Store className="w-4 h-4 text-white" />
+          <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shrink-0">
+            <Store className="w-4 h-4 text-blue-600" />
           </div>
           {!collapsed && (
-            <span className="font-semibold text-sm">Ozon ERP</span>
+            <span className="font-semibold text-sm text-white">Ozon ERP</span>
           )}
         </Link>
       </div>
@@ -233,8 +240,8 @@ export default function Sidebar() {
                 className={cn(
                   'w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors',
                   isActive
-                    ? 'bg-blue-500/20 text-blue-400'
-                    : 'text-slate-300 hover:bg-slate-800 hover:text-white',
+                    ? 'bg-blue-50 text-blue-700'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900',
                   collapsed && 'justify-center'
                 )}
                 title={collapsed ? group.label : undefined}
@@ -244,9 +251,9 @@ export default function Sidebar() {
                   <>
                     <span className="flex-1 text-left">{group.label}</span>
                     {isExpanded ? (
-                      <ChevronDown className="w-4 h-4 text-slate-400" />
+                      <ChevronDown className="w-4 h-4 text-gray-400" />
                     ) : (
-                      <ChevronRight className="w-4 h-4 text-slate-400" />
+                      <ChevronRight className="w-4 h-4 text-gray-400" />
                     )}
                   </>
                 )}
@@ -263,13 +270,13 @@ export default function Sidebar() {
                       return (
                         <div
                           key={itemIdx}
-                          className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-slate-500 cursor-not-allowed"
+                          className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-gray-400 cursor-not-allowed"
                           title={item.badge}
                         >
                           {ItemIcon && <ItemIcon className="w-4 h-4 shrink-0" />}
                           <span className="flex-1">{item.label}</span>
                           {item.badge && (
-                            <span className="text-[10px] px-1.5 py-0.5 bg-slate-700 rounded text-slate-400">
+                            <span className="text-[10px] px-1.5 py-0.5 bg-gray-100 rounded text-gray-500">
                               {item.badge}
                             </span>
                           )}
@@ -287,14 +294,14 @@ export default function Sidebar() {
                         className={cn(
                           'flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors',
                           isItemActive
-                            ? 'bg-blue-500 text-white'
-                            : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                            ? 'bg-blue-500 text-white font-medium'
+                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                         )}
                       >
                         {ItemIcon && <ItemIcon className="w-4 h-4 shrink-0" />}
                         <span className="flex-1">{item.label}</span>
                         {item.badge && (
-                          <span className="text-[10px] px-1.5 py-0.5 bg-slate-700 rounded text-slate-400">
+                          <span className="text-[10px] px-1.5 py-0.5 bg-gray-100 rounded text-gray-500">
                             {item.badge}
                           </span>
                         )}
@@ -309,10 +316,10 @@ export default function Sidebar() {
       </nav>
 
       {/* 店铺信息 + 折叠按钮 */}
-      <div className="p-2 border-t border-slate-800 shrink-0">
+      <div className="p-2 border-t border-gray-200 shrink-0">
         {/* 店铺指示器 */}
         {!collapsed && currentShopId && (
-          <div className="px-3 py-2 mb-2 text-xs text-slate-400 bg-slate-800 rounded-lg">
+          <div className="px-3 py-2 mb-2 text-xs text-gray-600 bg-gray-50 rounded-lg">
             <div className="flex items-center gap-2">
               <Store className="w-3 h-3" />
               <span>店铺: {currentShopName || `ID ${currentShopId}`}</span>
@@ -323,7 +330,7 @@ export default function Sidebar() {
         {/* 折叠按钮 */}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
         >
           {collapsed ? (
             <PanelLeft className="w-4 h-4" />
@@ -337,13 +344,13 @@ export default function Sidebar() {
 
         {/* 快捷键提示 */}
         {!collapsed && (
-          <div className="mt-2 px-3 text-[10px] text-slate-500">
+          <div className="mt-2 px-3 text-[10px] text-gray-400">
             <div className="flex items-center gap-2 mb-1">
-              <kbd className="px-1 py-0.5 bg-slate-800 rounded text-slate-400">1-5</kbd>
+              <kbd className="px-1 py-0.5 bg-gray-100 rounded text-gray-500">1-5</kbd>
               <span>切换分组</span>
             </div>
             <div className="flex items-center gap-2">
-              <kbd className="px-1 py-0.5 bg-slate-800 rounded text-slate-400">/</kbd>
+              <kbd className="px-1 py-0.5 bg-gray-100 rounded text-gray-500">/</kbd>
               <span>全局搜索</span>
             </div>
           </div>
