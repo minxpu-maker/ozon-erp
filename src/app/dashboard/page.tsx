@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
+import { TopBar } from '@/components/layout/TopBar';
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -296,28 +297,10 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#F6F8FB]">
-      {/* 顶部导航 */}
-      <header className="bg-white sticky top-0 z-40 h-14 flex items-center justify-between px-6 border-b border-[#E6EAF2]">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-[#2F6BFF] rounded-lg flex items-center justify-center">
-            <Box className="w-4 h-4 text-white" />
-          </div>
-          <span className="font-semibold text-base text-[#152033]">Ozon ERP</span>
-        </div>
-        <div className="flex items-center gap-4">
-          <button className="flex items-center gap-2 text-sm text-[#637089] hover:text-[#152033] transition-colors">
-            <Bell className="w-4 h-4" />
-          </button>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-[#2F6BFF]/10 rounded-full flex items-center justify-center text-[#2F6BFF] font-medium text-sm">
-              管
-            </div>
-            <span className="text-sm font-medium text-[#152033]">管理员</span>
-          </div>
-        </div>
-      </header>
+      {/* 顶部工作台栏 */}
+      <TopBar />
 
-      <div className="flex" style={{ height: 'calc(100vh - 3.5rem)' }}>
+      <div className="flex" style={{ height: 'calc(100vh - 3rem)' }}>
         {/* 左侧导航 */}
         <aside className="w-56 shrink-0 bg-white border-r border-[#E6EAF2] overflow-y-auto">
           <div className="p-3 space-y-0.5">
