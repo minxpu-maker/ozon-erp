@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
-import { TopBar } from '@/components/layout/TopBar';
+import { AppLayout } from '@/components/layout/AppLayout';
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -131,32 +131,6 @@ import {
   ResponsiveContainer,
   Cell,
 } from 'recharts';
-
-const navItems = [
-  { href: '/dashboard', icon: LayoutDashboard, label: '仪表盘', active: true },
-  { href: '/purchase', icon: Package, label: '采购管理' },
-  { href: '/quick-entry', icon: ClipboardList, label: '快捷录单' },
-  { href: '/logistics', icon: Truck, label: '入库验货' },
-  { href: '/packaging', icon: Box, label: '打包发货' },
-  { href: '/finance', icon: Calculator, label: '利润核算' },
-  { type: 'divider', label: 'AI智能' },
-  { href: '/selection', icon: Target, label: 'AI 选品' },
-  { href: '/image-listing', icon: Image, label: '修图上架' },
-  { type: 'divider', label: '库存管理' },
-  { href: '/inventory', icon: PackageSearch, label: '库存管理' },
-  { href: '/wms', icon: Warehouse, label: '仓库管理' },
-  { type: 'divider', label: '数据中心' },
-  { href: '/sku-management', icon: Database, label: 'SKU管理' },
-  { href: '/suppliers', icon: Users, label: '供应商管理' },
-  { href: '/reports', icon: BarChart3, label: '数据报表' },
-  { href: '/data-center/source-health', icon: Activity, label: '数据源健康度' },
-  { href: '/data-center/source-management', icon: Server, label: '数据源管理' },
-  { href: '/data-center/notifications', icon: Bell, label: '知识库通知' },
-  { type: 'divider', label: '系统' },
-  { href: '/accounts', icon: UserCircle, label: '账号管理' },
-  { href: '/roles', icon: Shield, label: '角色权限' },
-  { href: '/settings', icon: Settings, label: '系统设置' },
-];
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -296,106 +270,68 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F6F8FB]">
-      {/* 顶部工作台栏 */}
-      <TopBar />
+    <AppLayout>
+      {/* 页面标题 */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-[#152033]">仪表盘</h1>
+        <p className="text-sm text-[#637089] mt-1">ERP系统首页 · 核心业务指标与流程状态</p>
+      </div>
 
-      <div className="flex" style={{ height: 'calc(100vh - 3rem)' }}>
-        {/* 左侧导航 */}
-        <aside className="w-56 shrink-0 bg-white border-r border-[#E6EAF2] overflow-y-auto">
-          <div className="p-3 space-y-0.5">
-            {navItems.map((item, idx) => {
-              if (item.type === 'divider') {
-                return (
-                  <div key={idx} className="pt-3 pb-1">
-                    <span className="px-3 text-xs font-medium text-[#637089]/60 uppercase tracking-wider">
-                      {item.label}
-                    </span>
-                  </div>
-                );
-              }
-              const Icon = item.icon!;
-              return (
-                <Link
-                  key={item.href!}
-                  href={item.href!}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition-colors ${
-                    item.active
-                      ? 'bg-[#2F6BFF]/10 text-[#2F6BFF]'
-                      : 'text-[#637089] hover:bg-[#EEF1F6] hover:text-[#152033]'
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  {item.label}
-                </Link>
-              );
-            })}
-          </div>
-        </aside>
-
-        {/* 主内容区 */}
-        <main className="flex-1 min-w-0 overflow-y-auto bg-[#F6F8FB] p-6">
-          {/* 页面标题 */}
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-[#152033]">仪表盘</h1>
-            <p className="text-sm text-[#637089] mt-1">ERP系统首页 · 核心业务指标与流程状态</p>
-          </div>
-
-          {loading ? (
-            <div className="flex items-center justify-center h-64">
-              <RefreshCw className="w-6 h-6 text-[#637089] animate-spin" />
-            </div>
-          ) : (
-            <>
-              {/* 业务流程可视化 */}
-              <section className="mb-8">
-                <h2 className="text-base font-semibold text-[#152033] mb-4">业务流程</h2>
-                <div className="bg-white rounded-xl shadow-sm p-5 border border-[#E6EAF2]">
-                  <div className="flex items-center justify-between flex-wrap gap-4">
-                    {[
-                      {
-                        href: '/orders',
-                        icon: RefreshCw,
-                        label: '订单同步',
-                        count: stats?.totalOrders || 0,
-                        color: 'primary',
-                      },
-                      {
-                        href: '/purchase',
-                        icon: ShoppingBag,
-                        label: '待采购任务',
-                        count: stats?.pendingPurchaseTasks || 0,
-                        color: 'warning',
-                      },
-                      {
-                        href: '/quick-entry',
-                        icon: Link2,
-                        label: '待绑定采购',
-                        count: stats?.purchasedTasks || 0,
-                        color: 'primary',
-                      },
-                      {
-                        href: '/logistics',
-                        icon: ClipboardCheck,
-                        label: '待入库验货',
-                        count: stats?.pendingInspection || 0,
-                        color: 'primary',
-                      },
-                      {
-                        href: '/packaging',
-                        icon: Package,
-                        label: '待打包发货',
-                        count: stats?.pendingPackaging || 0,
-                        color: 'primary',
-                      },
-                      {
-                        href: '/finance',
-                        icon: Calculator,
-                        label: '待核算订单',
-                        count: stats?.completed || 0,
-                        color: 'success',
-                      },
-                    ].map((node, idx) => {
+      {loading ? (
+        <div className="flex items-center justify-center h-64">
+          <RefreshCw className="w-6 h-6 text-[#637089] animate-spin" />
+        </div>
+      ) : (
+        <>
+          {/* 业务流程可视化 */}
+          <section className="mb-8">
+            <h2 className="text-base font-semibold text-[#152033] mb-4">业务流程</h2>
+            <div className="bg-white rounded-xl shadow-sm p-5 border border-[#E6EAF2]">
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                {[
+                  {
+                    href: '/orders/list',
+                    icon: RefreshCw,
+                    label: '订单同步',
+                    count: stats?.totalOrders || 0,
+                    color: 'primary',
+                  },
+                  {
+                    href: '/quick-entry',
+                    icon: ShoppingBag,
+                    label: '待采购任务',
+                    count: stats?.pendingPurchaseTasks || 0,
+                    color: 'warning',
+                  },
+                  {
+                    href: '/quick-entry',
+                    icon: Link2,
+                    label: '待绑定采购',
+                    count: stats?.purchasedTasks || 0,
+                    color: 'primary',
+                  },
+                  {
+                    href: '/logistics',
+                    icon: ClipboardCheck,
+                    label: '待入库验货',
+                    count: stats?.pendingInspection || 0,
+                    color: 'primary',
+                  },
+                  {
+                    href: '/packaging',
+                    icon: Package,
+                    label: '待打包发货',
+                    count: stats?.pendingPackaging || 0,
+                    color: 'primary',
+                  },
+                  {
+                    href: '/finance',
+                    icon: Calculator,
+                    label: '待核算订单',
+                    count: stats?.completed || 0,
+                    color: 'success',
+                  },
+                ].map((node, idx) => {
                       const Icon = node.icon;
                       const colorClass =
                         node.color === 'warning'
@@ -864,8 +800,6 @@ export default function DashboardPage() {
               </section>
             </>
           )}
-        </main>
-      </div>
-    </div>
+    </AppLayout>
   );
 }
