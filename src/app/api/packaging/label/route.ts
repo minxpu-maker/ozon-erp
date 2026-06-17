@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     const shop = shopList[0];
     
     // 验证店铺API配置
-    if (!shop.api_key || !shop.client_id) {
+    if (!shop.apiKey || !shop.clientId) {
       return NextResponse.json(
         { success: false, error: '店铺API未配置' },
         { status: 400 }
@@ -47,8 +47,8 @@ export async function POST(request: NextRequest) {
 
     // 创建Ozon API客户端
     const ozonClient = new OzonApiClient({ 
-      clientId: shop.client_id, 
-      apiKey: shop.api_key 
+      clientId: shop.clientId, 
+      apiKey: shop.apiKey 
     });
 
     // 获取面单

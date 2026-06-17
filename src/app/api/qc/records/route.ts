@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, schema } from '@/storage/database/client';
+import { db } from '@/storage/database/client';
+import { qcRecords, orders } from '@/storage/database/shared/schema';
 import { eq, and, gte, lte, sql, desc } from 'drizzle-orm';
 
-const { qcRecords, purchaseRecords, ozonOrders, purchaseDemands, shops } = schema;
-
+/**
+ * GET /api/qc/records - 获取验货记录列表
+ */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -52,7 +54,6 @@ export async function GET(request: NextRequest) {
     // 查询验货记录
     const records = await db
       .select({
-        // qc_records 字段
         id: qcRecords.id,
         purchaseId: qcRecords.purchaseId,
         expressNo: qcRecords.expressNo,
@@ -66,36 +67,8 @@ export async function GET(request: NextRequest) {
         operator: qcRecords.operator,
         qcTime: qcRecords.qcTime,
         createdAt: qcRecords.createdAt,
-        // purchase_records 字段
-        purchaseStatus: purchaseRecords.status,
-        supplierName: purchaseRecords.supplierName,
-        supplierSource: purchaseRecords.supplierSource,
-        purchasePrice: purchaseRecords.purchasePrice,
-        purchaseQty: purchaseRecords.purchaseQty,
-        domesticTrackingNo: purchaseRecords.domesticTrackingNo,
-        // ozon_orders 字段
-        ozonOrderIdValue: ozonOrders.ozonOrderId,
-        ozonPostingNumber: ozonOrders.ozonPostingNumber,
-        customerName: ozonOrders.customerName,
-        orderAmount: ozonOrders.orderAmount,
-        // purchase_demands 字段
-        sku: purchaseDemands.sku,
-        productName: purchaseDemands.productName,
-        productImage: purchaseDemands.productImage,
       })
       .from(qcRecords)
-      .leftJoin(
-        purchaseRecords,
-        eq(purchaseRecords.id, qcRecords.purchaseId)
-      )
-      .leftJoin(
-        purchaseDemands,
-        eq(purchaseDemands.id, purchaseRecords.demandId)
-      )
-      .leftJoin(
-        ozonOrders,
-        eq(ozonOrders.id, purchaseDemands.orderId)
-      )
       .where(and(...conditions.filter(Boolean)))
       .orderBy(desc(qcRecords.qcTime))
       .limit(limit)
@@ -123,15 +96,18 @@ export async function GET(request: NextRequest) {
   }
 }
 
+/**
+ * POST /api/qc/records - 创建验货记录
+ */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { purchaseId, expressNo, qcResult, quantityExpected, quantityActual, exceptionType, remark, operator } = body;
+    const { expressNo, qcResult, quantityExpected, quantityActual, exceptionType, remark, operator } = body;
 
     // 必填校验
-    if (!purchaseId || !expressNo || !qcResult) {
+    if (!expressNo || !qcResult) {
       return NextResponse.json(
-        { success: false, error: '缺少必填字段：purchaseId, expressNo, qcResult' },
+        { success: false, error: '缺少必填字段：expressNo, qcResult' },
         { status: 400 }
       );
     }
@@ -144,40 +120,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 查询关联的采购记录和订单信息
-    const purchaseRecord = await db
-      .select({
-        id: purchaseRecords.id,
-        demandId: purchaseRecords.demandId,
-        status: purchaseRecords.status,
-      })
-      .from(purchaseRecords)
-      .where(eq(purchaseRecords.id, purchaseId))
-      .limit(1);
-
-    if (!purchaseRecord || purchaseRecord.length === 0) {
-      return NextResponse.json(
-        { success: false, error: '采购记录不存在' },
-        { status: 404 }
-      );
-    }
-
-    // 查询关联的订单ID
-    const demand = await db
-      .select({ orderId: purchaseDemands.orderId })
-      .from(purchaseDemands)
-      .where(eq(purchaseDemands.id, purchaseRecord[0].demandId))
-      .limit(1);
-
-    const ozonOrderId = demand?.[0]?.orderId || null;
-
     // 插入验货记录
     const [newRecord] = await db
       .insert(qcRecords)
       .values({
-        purchaseId,
         expressNo,
-        ozonOrderId,
         qcResult,
         quantityExpected,
         quantityActual,
@@ -187,28 +134,6 @@ export async function POST(request: NextRequest) {
         qcTime: new Date(),
       })
       .returning();
-
-    // 根据验货结果更新采购记录状态
-    if (qcResult === 'pass') {
-      await db
-        .update(purchaseRecords)
-        .set({
-          status: 'verified',
-          verifiedAt: new Date(),
-          updatedAt: new Date(),
-        })
-        .where(eq(purchaseRecords.id, purchaseId));
-    } else {
-      // fail 或 partial 都标记为异常
-      await db
-        .update(purchaseRecords)
-        .set({
-          status: 'exception',
-          exceptionType: exceptionType || qcResult,
-          updatedAt: new Date(),
-        })
-        .where(eq(purchaseRecords.id, purchaseId));
-    }
 
     return NextResponse.json({
       success: true,

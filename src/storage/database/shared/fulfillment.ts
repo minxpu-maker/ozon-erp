@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import { pgTable, text, varchar, timestamp, integer, numeric, jsonb, index, serial, uniqueIndex, boolean, decimal } from "drizzle-orm/pg-core";
+import { orders } from "./schema";
 
 // ============================================================================
 // 履约模块 (Fulfillment Module)
@@ -102,9 +103,9 @@ export const purchaseRecords = pgTable('purchase_records', {
  */
 export const qcRecords = pgTable('qc_records', {
   id: serial('id').primaryKey(),
-  purchaseId: integer('purchase_id').notNull().references(() => purchaseRecords.id, { onDelete: 'cascade' }),
+  purchaseId: integer('purchase_id'), // 可选，关联 purchase_records
   expressNo: varchar('express_no', { length: 100 }).notNull(),
-  ozonOrderId: integer('ozon_order_id').references(() => ozonOrders.id),
+  ozonOrderId: varchar('ozon_order_id', { length: 64 }), // 改为 varchar 关联 orders
   qcResult: varchar('qc_result', { length: 20 }).notNull(), // pass/fail/partial
   checkItems: jsonb('check_items'),
   quantityExpected: integer('quantity_expected'),
@@ -115,8 +116,8 @@ export const qcRecords = pgTable('qc_records', {
   qcTime: timestamp('qc_time', { withTimezone: true }).defaultNow(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => [
-  index('idx_qc_records_purchase').on(table.purchaseId),
   index('idx_qc_records_express').on(table.expressNo),
+  index('idx_qc_records_order').on(table.ozonOrderId),
   index('idx_qc_records_result').on(table.qcResult),
   index('idx_qc_records_qc_time').on(table.qcTime),
 ]);
@@ -126,28 +127,28 @@ export const qcRecords = pgTable('qc_records', {
  * 打包发货的详细信息
  */
 export const shipmentRecords = pgTable('shipment_records', {
-  id: serial('id').primaryKey(),
-  orderId: integer('order_id').notNull().references(() => ozonOrders.id, { onDelete: 'cascade' }),
-  shopId: varchar('shop_id', { length: 36 }).notNull(), // 外键关联 shops.id (varchar)
-  packageCount: integer('package_count').default(1),
-  packages: jsonb('packages').$type<Array<{ weight: number; dimensions: string; trackingNo: string }>>(),
-  totalWeight: numeric('total_weight', { precision: 8, scale: 3 }), // kg
-  packingMaterial: varchar('packing_material', { length: 50 }),
-  packingCost: numeric('packing_cost', { precision: 10, scale: 2 }).default('0'),
-  ozonTrackingNumber: varchar('ozon_tracking_number', { length: 100 }),
-  shippingMethod: varchar('shipping_method', { length: 50 }),
-  internationalShippingCost: numeric('international_shipping_cost', { precision: 10, scale: 2 }).default('0'),
-  operator: varchar('operator', { length: 50 }),
-  shipTime: timestamp('ship_time', { withTimezone: true }),
-  status: varchar('status', { length: 20 }).default('packed'), // packed/labeled/shipped
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  id: varchar('id', { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  orderId: varchar('order_id', { length: 36 }).notNull().references(() => orders.id),
+  shopId: varchar('shop_id', { length: 36 }),
+  expressCompany: varchar('express_company', { length: 100 }),
+  expressNo: varchar('express_no', { length: 100 }),
+  packageWeight: numeric('package_weight', { precision: 10, scale: 2 }),
+  packageLength: numeric('package_length', { precision: 10, scale: 2 }),
+  packageWidth: numeric('package_width', { precision: 10, scale: 2 }),
+  packageHeight: numeric('package_height', { precision: 10, scale: 2 }),
+  shippingFee: numeric('shipping_fee', { precision: 12, scale: 2 }),
+  actualShippingFee: numeric('actual_shipping_fee', { precision: 12, scale: 2 }),
+  freightReconciled: boolean('freight_reconciled').default(false),
+  reconciledAt: timestamp('reconciled_at', { withTimezone: true }),
+  shippedAt: timestamp('shipped_at', { withTimezone: true }),
+  trackingNumber: varchar('tracking_number', { length: 100 }),
+  labelUrl: text('label_url'),
+  notes: text('notes'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }),
 }, (table) => [
-  index('idx_shipment_records_order').on(table.orderId),
-  index('idx_shipment_records_shop').on(table.shopId),
-  index('idx_shipment_records_status').on(table.status),
-  index('idx_shipment_records_ship_time').on(table.shipTime),
-  index('idx_shipment_records_tracking').on(table.ozonTrackingNumber),
+  index('idx_shipment_order_id').on(table.orderId),
+  index('idx_shipment_express_no').on(table.expressNo),
 ]);
 
 /**
@@ -155,41 +156,29 @@ export const shipmentRecords = pgTable('shipment_records', {
  * 订单的完整财务核算数据
  */
 export const orderFinance = pgTable('order_finance', {
-  id: serial('id').primaryKey(),
-  orderId: integer('order_id').notNull().references(() => ozonOrders.id, { onDelete: 'cascade' }),
-  shopId: varchar('shop_id', { length: 36 }).notNull(), // 外键关联 shops.id (varchar)
-  ozonSettlementAmount: numeric('ozon_settlement_amount', { precision: 10, scale: 2 }), // Ozon结算金额RUB
-  exchangeRate: numeric('exchange_rate', { precision: 10, scale: 6 }), // 下单时汇率
-  settlementAmountCny: numeric('settlement_amount_cny', { precision: 10, scale: 2 }), // 售价折人民币
-  purchaseCost: numeric('purchase_cost', { precision: 10, scale: 2 }).default('0'),
-  domesticShippingCost: numeric('domestic_shipping_cost', { precision: 10, scale: 2 }).default('0'), // 国内运费
-  ozonCommission: numeric('ozon_commission', { precision: 10, scale: 2 }).default('0'),
-  ozonCommissionRate: numeric('ozon_commission_rate', { precision: 5, scale: 4 }),
-  ozonPaymentFee: numeric('ozon_payment_fee', { precision: 10, scale: 2 }).default('0'),
-  internationalShippingCost: numeric('international_shipping_cost', { precision: 10, scale: 2 }).default('0'),
-  packagingCost: numeric('packaging_cost', { precision: 10, scale: 2 }).default('0'),
-  actualWeight: numeric('actual_weight', { precision: 8, scale: 3 }), // 实际称重kg
-  weightSource: varchar('weight_source', { length: 20 }).default('manual'), // scale/manual
-  estimatedShippingCost: numeric('estimated_shipping_cost', { precision: 10, scale: 2 }).default('0'), // 预估国际运费
-  logisticsBillAmount: numeric('logistics_bill_amount', { precision: 10, scale: 2 }).default('0'), // 物流账单实际扣费
-  freightVariance: numeric('freight_variance', { precision: 10, scale: 2 }).default('0'), // 运费差异
-  freightReconciled: integer('freight_reconciled').default(0), // 0未核对/1已核对
+  id: varchar('id', { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  orderId: varchar('order_id', { length: 36 }).notNull().references(() => orders.id),
+  shopId: varchar('shop_id', { length: 36 }),
+  ozonSettlementAmount: numeric('ozon_settlement_amount', { precision: 12, scale: 2 }),
+  purchaseAmount: numeric('purchase_amount', { precision: 12, scale: 2 }),
+  domesticShippingFee: numeric('domestic_shipping_fee', { precision: 12, scale: 2 }),
+  internationalShippingFee: numeric('international_shipping_fee', { precision: 12, scale: 2 }),
+  otherCost: numeric('other_cost', { precision: 12, scale: 2 }).default('0'),
+  totalCost: numeric('total_cost', { precision: 12, scale: 2 }),
+  profit: numeric('profit', { precision: 12, scale: 2 }),
+  profitRate: numeric('profit_rate', { precision: 8, scale: 4 }),
+  currency: varchar('currency', { length: 10 }).default('RUB'),
+  actualShippingFee: numeric('actual_shipping_fee', { precision: 12, scale: 2 }),
+  freightReconciled: boolean('freight_reconciled').default(false),
   reconciledAt: timestamp('reconciled_at', { withTimezone: true }),
-  grossProfit: numeric('gross_profit', { precision: 10, scale: 2 }),
-  netProfit: numeric('net_profit', { precision: 10, scale: 2 }),
-  netMargin: numeric('net_margin', { precision: 5, scale: 2 }),
-  sharedCostAllocated: numeric('shared_cost_allocated', { precision: 10, scale: 2 }).default('0'),
-  settlementExchangeRate: numeric('settlement_exchange_rate', { precision: 10, scale: 6 }),
-  exchangeGainLoss: numeric('exchange_gain_loss', { precision: 10, scale: 2 }).default('0'),
-  status: varchar('status', { length: 20 }).default('estimated'), // estimated/settled
   settledAt: timestamp('settled_at', { withTimezone: true }),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  isSettled: boolean('is_settled').default(false),
+  supplementNotes: text('supplement_notes'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }),
 }, (table) => [
-  index('idx_order_finance_order').on(table.orderId),
-  index('idx_order_finance_shop_created').on(table.shopId, table.createdAt),
-  index('idx_order_finance_status').on(table.status),
-  index('idx_order_finance_settled_at').on(table.settledAt),
+  index('idx_finance_order_id').on(table.orderId),
+  index('idx_finance_is_settled').on(table.isSettled),
 ]);
 
 // ============================================================================

@@ -33,8 +33,8 @@ export async function POST(
     // 更新最后同步时间
     await db.update(shops)
       .set({
-        last_sync_at: new Date(),
-        updated_at: new Date(),
+        lastSyncAt: new Date(),
+        updatedAt: new Date(),
       })
       .where(eq(shops.id, id));
 

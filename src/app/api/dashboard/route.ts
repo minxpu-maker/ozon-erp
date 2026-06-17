@@ -10,7 +10,7 @@ export async function GET() {
     const shopList = shopCountResult.map((s) => ({
       id: String(s.id),
       name: s.name,
-      lastSyncAt: s.last_sync_at?.toISOString() || null,
+      lastSyncAt: s.lastSyncAt?.toISOString() || null,
     }));
 
     // 获取今日开始时间
@@ -27,10 +27,10 @@ export async function GET() {
 
     // 计算今日销售额
     const todayOrders = orderList.filter((o) => {
-      const orderDate = new Date(o.created_at);
+      const orderDate = new Date(o.createdAt);
       return orderDate >= today;
     });
-    const todaySales = todayOrders.reduce((sum, o) => sum + Number(o.total_price || 0), 0);
+    const todaySales = todayOrders.reduce((sum, o) => sum + Number(o.totalPrice || 0), 0);
 
     // 获取采购任务统计
     const purchaseTaskList = await db.select().from(purchaseTasks);
@@ -43,16 +43,16 @@ export async function GET() {
     const pendingPackaging = orderList.filter((o) => o.status === 'awaiting_packaging').length;
 
     // 获取最近订单（最近10条）
-    const recentOrdersResult = await db.select().from(orders).orderBy(orders.created_at).limit(10);
+    const recentOrdersResult = await db.select().from(orders).orderBy(orders.createdAt).limit(10);
     const recentOrders = recentOrdersResult.map((o) => ({
       id: String(o.id),
-      ozonOrderId: o.ozon_order_id || '',
-      postingNumber: o.ozon_posting_number || '',
-      shopName: shopList.find((s) => s.id === String(o.shop_id))?.name || '未知店铺',
+      ozonOrderId: o.ozonOrderId || '',
+      postingNumber: o.ozonPostingNumber || '',
+      shopName: shopList.find((s) => s.id === String(o.shopId))?.name || '未知店铺',
       status: o.status || 'unknown',
-      buyerName: o.buyer_name,
-      totalPrice: String(o.total_price || 0),
-      createdAt: o.created_at.toISOString(),
+      buyerName: o.buyerName,
+      totalPrice: String(o.totalPrice || 0),
+      createdAt: o.createdAt.toISOString(),
     }));
 
     return NextResponse.json({

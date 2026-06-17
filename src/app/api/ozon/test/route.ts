@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     
     if (!targetShopId) {
       const primaryShop = await db.query.shops.findFirst({
-        where: eq(shops.is_primary, true),
+        where: eq(shops.isPrimary, true),
         columns: { id: true, name: true },
       });
       

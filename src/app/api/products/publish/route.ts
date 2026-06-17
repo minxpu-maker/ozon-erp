@@ -53,10 +53,10 @@ export async function POST(request: NextRequest) {
     const [shop] = await db
       .select({
         id: shops.id,
-        clientId: shops.client_id,
-        apiKey: shops.api_key,
-        ozonClientId: shops.ozon_client_id,
-        ozonApiKey: shops.ozon_api_key,
+        clientId: shops.clientId,
+        apiKey: shops.apiKey,
+        ozonClientId: shops.ozonClientId,
+        ozonApiKey: shops.ozonApiKey,
       })
       .from(shops)
       .where(eq(shops.id, item.shopId || ''))

@@ -31,8 +31,8 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
 
     // 创建Ozon API客户端并测试连接
     const client = new OzonApiClient({
-      clientId: shop.client_id,
-      apiKey: shop.api_key,
+      clientId: shop.clientId,
+      apiKey: shop.apiKey,
     });
 
     // 测试获取订单列表（只取1条）
@@ -84,7 +84,7 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
       message: 'API连接测试成功',
       data: {
         shop_name: shop.name,
-        client_id: shop.client_id,
+        client_id: shop.clientId,
         test_time: new Date().toISOString(),
       },
     });

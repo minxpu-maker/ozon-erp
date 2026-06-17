@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
 
     // 验证订单存在
     const order = await db
-      .select({ id: orders.id, status: orders.status, is_inspected: orders.is_inspected })
+      .select({ id: orders.id, status: orders.status, isInspected: orders.isInspected })
       .from(orders)
       .where(eq(orders.id, orderId))
       .limit(1);
@@ -58,13 +58,12 @@ export async function POST(request: NextRequest) {
       defectiveQty: quantityExpected && quantityActual ? Math.max(0, quantityExpected - quantityActual) : 0
     };
 
-    // 插入验货记录（使用 orders.id 作为关联）
+    // 插入验货记录
     const [newRecord] = await db
       .insert(qcRecords)
       .values({
-        purchaseId: null,  // 后续可关联 purchase_records
         expressNo,
-        ozonOrderId: null, // orders 表是 varchar id，不兼容
+        ozonOrderId: null,
         qcResult,
         checkItems,
         quantityExpected,
@@ -80,9 +79,9 @@ export async function POST(request: NextRequest) {
     await db
       .update(orders)
       .set({
-        is_inspected: true,
-        inspected_at: new Date(),
-        updated_at: new Date(),
+        isInspected: true,
+        inspectedAt: new Date(),
+        updatedAt: new Date(),
       })
       .where(eq(orders.id, orderId));
 

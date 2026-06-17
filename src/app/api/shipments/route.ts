@@ -1,141 +1,58 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/storage/database/client';
-import { ozonOrders, purchaseRecords, purchaseDemands, shipmentRecords, shops } from '@/storage/database/shared/schema';
-import { eq, and, isNull, asc } from 'drizzle-orm';
+import { orders, shops, shipmentRecords, qcRecords } from '@/storage/database/shared/schema';
+import { eq, and, desc } from 'drizzle-orm';
 
 export async function GET(request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams;
-    const offset = parseInt(searchParams.get('offset') || '0');
-    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100);
-    const shopId = searchParams.get('shopId');
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get('status'); // pending / shipped
+    const limit = Math.min(Number(searchParams.get('limit')) || 20, 100);
+    const offset = Number(searchParams.get('offset')) || 0;
 
-    // 查询待发货队列：
-    // 条件：purchase_records.status='verified' 且无对应有效的 shipment_records（status != 'shipped'）
-    
-    // 构建查询条件
-    const baseConditions = [
-      eq(purchaseRecords.status, 'verified'),
-      isNull(shipmentRecords.id),
-    ];
-    
-    if (shopId) {
-      baseConditions.push(eq(ozonOrders.shopId, shopId));
-    }
-
-    const queueItems = await db
+    // 查询待发货订单（已验货通过但未发货）
+    const result = await db
       .select({
-        // ozon_orders 信息
-        orderId: ozonOrders.id,
-        ozonOrderId: ozonOrders.ozonOrderId,
-        ozonPostingNumber: ozonOrders.ozonPostingNumber,
-        erpStatus: ozonOrders.erpStatus,
-        customerName: ozonOrders.customerName,
-        deliveryAddress: ozonOrders.deliveryAddress,
-        orderAmount: ozonOrders.orderAmount,
-        shipmentDeadline: ozonOrders.shipmentDeadline,
-        orderTime: ozonOrders.orderTime,
-        itemsJson: ozonOrders.itemsJson,
-        // purchase_records 信息
-        purchaseRecordId: purchaseRecords.id,
-        demandId: purchaseRecords.demandId,
-        purchaseStatus: purchaseRecords.status,
-        totalPurchaseCost: purchaseRecords.totalPurchaseCost,
-        domesticTrackingNo: purchaseRecords.domesticTrackingNo,
-        // purchase_demands 信息
-        sku: purchaseDemands.sku,
-        productName: purchaseDemands.productName,
-        productImage: purchaseDemands.productImage,
-        quantity: purchaseDemands.quantity,
-        // shipment_records 信息 (如存在，取最新的非shipped记录)
-        shipmentId: shipmentRecords.id,
-        shipmentStatus: shipmentRecords.status,
-        totalWeight: shipmentRecords.totalWeight,
-        ozonTrackingNumber: shipmentRecords.ozonTrackingNumber,
-        shipTime: shipmentRecords.shipTime,
-        // shop 信息
-        shopId: shops.id,
-        shopName: shops.name,
+        order: orders,
+        shop: shops,
+        qc: qcRecords,
+        shipment: shipmentRecords,
       })
-      .from(ozonOrders)
-      .innerJoin(purchaseDemands, eq(ozonOrders.id, purchaseDemands.orderId))
-      .innerJoin(purchaseRecords, eq(purchaseDemands.id, purchaseRecords.demandId))
-      .innerJoin(shops, eq(ozonOrders.shopId, shops.id))
-      .leftJoin(
-        shipmentRecords,
+      .from(orders)
+      .leftJoin(shops, eq(orders.shopId, shops.id))
+      .leftJoin(qcRecords, eq(orders.ozonOrderId, qcRecords.ozonOrderId))
+      .leftJoin(shipmentRecords, eq(orders.id, shipmentRecords.orderId))
+      .where(
         and(
-          eq(ozonOrders.id, shipmentRecords.orderId),
-          eq(shipmentRecords.status, 'shipped')
+          eq(orders.erpStatus, 'awaiting_deliver'),
+          eq(qcRecords.qcResult, 'pass')
         )
       )
-      .where(and(...baseConditions))
-      .orderBy(asc(ozonOrders.shipmentDeadline))
+      .orderBy(desc(orders.createdAt))
       .limit(limit)
       .offset(offset);
 
-    // 统计总数
-    const totalResult = await db
-      .select({ count: ozonOrders.id })
-      .from(ozonOrders)
-      .innerJoin(purchaseDemands, eq(ozonOrders.id, purchaseDemands.orderId))
-      .innerJoin(purchaseRecords, eq(purchaseDemands.id, purchaseRecords.demandId))
-      .leftJoin(
-        shipmentRecords,
-        and(
-          eq(ozonOrders.id, shipmentRecords.orderId),
-          eq(shipmentRecords.status, 'shipped')
-        )
-      )
-      .where(and(...baseConditions));
+    const items = result.map((item) => ({
+      orderId: item.order.id,
+      ozonOrderId: item.order.ozonOrderId,
+      ozonPostingNumber: item.order.ozonPostingNumber,
+      customerName: item.order.recipientName,
+      deliveryAddress: item.order.recipientAddress,
+      orderAmount: item.order.totalPrice,
+      sku: '',
+      productName: '',
+      quantity: 1,
+      shipmentId: item.shipment?.id || null,
+      totalWeight: item.shipment?.packageWeight || null,
+      ozonTrackingNumber: item.shipment?.trackingNumber || null,
+      shipTime: item.shipment?.shippedAt || null,
+      shopId: item.shop?.id || null,
+      shopName: item.shop?.name || '',
+    }));
 
-    const total = totalResult.length;
-
-    // 计算当前步骤状态
-    const result = queueItems.map((item) => {
-      let step: 'pending_weight' | 'weighted' | 'printed' = 'pending_weight';
-      if (item.totalWeight !== null) {
-        step = 'weighted';
-      }
-      if (item.ozonTrackingNumber !== null) {
-        step = 'printed';
-      }
-
-      return {
-        orderId: item.orderId,
-        ozonOrderId: item.ozonOrderId,
-        ozonPostingNumber: item.ozonPostingNumber,
-        customerName: item.customerName,
-        deliveryAddress: item.deliveryAddress,
-        orderAmount: item.orderAmount,
-        shipmentDeadline: item.shipmentDeadline,
-        sku: item.sku,
-        productName: item.productName,
-        productImage: item.productImage,
-        quantity: item.quantity,
-        domesticTrackingNo: item.domesticTrackingNo,
-        purchaseCost: item.totalPurchaseCost,
-        shopId: item.shopId,
-        shopName: item.shopName,
-        currentStep: step,
-        shipmentId: item.shipmentId,
-        totalWeight: item.totalWeight,
-        ozonTrackingNumber: item.ozonTrackingNumber,
-        shipTime: item.shipTime,
-      };
-    });
-
-    return NextResponse.json({
-      success: true,
-      data: result,
-      total,
-      offset,
-      limit,
-    });
+    return NextResponse.json({ success: true, data: items, total: items.length });
   } catch (error) {
-    console.error('[Shipments] GET queue error:', error);
-    return NextResponse.json(
-      { success: false, error: '获取发货队列失败' },
-      { status: 500 }
-    );
+    console.error('[Shipments] GET error:', error);
+    return NextResponse.json({ success: false, error: '获取发货队列失败' }, { status: 500 });
   }
 }

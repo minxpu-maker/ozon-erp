@@ -402,11 +402,11 @@ export async function syncAllShops(): Promise<BatchSyncResult> {
     .select({
       id: shops.id,
       name: shops.name,
-      clientId: shops.client_id,
-      apiKey: shops.api_key,
+      clientId: shops.clientId,
+      apiKey: shops.apiKey,
     })
     .from(shops)
-    .where(eq(shops.is_active, true));
+    .where(eq(shops.isActive, true));
 
   if (activeShops.length === 0) {
     console.log('[OrderSync] 没有找到活跃店铺');

@@ -163,13 +163,13 @@ async function getOzonCredentials(shopId: string): Promise<{ clientId: string; a
       where: eq(shops.id, shopId)
     });
     
-    if (!shop || !shop.ozon_client_id || !shop.ozon_api_key) {
+    if (!shop || !shop.ozonClientId || !shop.ozonApiKey) {
       return null;
     }
     
     return {
-      clientId: shop.ozon_client_id,
-      apiKey: shop.ozon_api_key
+      clientId: shop.ozonClientId,
+      apiKey: shop.ozonApiKey
     };
   } catch (error) {
     console.error('获取Ozon凭证失败:', error);

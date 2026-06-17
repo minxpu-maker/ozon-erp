@@ -36,8 +36,8 @@ export async function POST(
     }
 
     // 检查是否有API密钥 - 优先使用主字段 client_id/api_key
-    const apiKey = shop.api_key || shop.ozon_api_key;
-    const clientId = shop.client_id || shop.ozon_client_id;
+    const apiKey = shop.apiKey || shop.ozonApiKey;
+    const clientId = shop.clientId || shop.ozonClientId;
 
     if (!apiKey) {
       return NextResponse.json({

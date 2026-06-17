@@ -54,8 +54,8 @@ async function getShopCredentials(shopId: string): Promise<ShopCredentials> {
     where: eq(shops.id, shopId),
     columns: {
       id: true,
-      client_id: true,
-      api_key: true,
+      clientId: true,
+      apiKey: true,
     },
   });
 
@@ -63,13 +63,13 @@ async function getShopCredentials(shopId: string): Promise<ShopCredentials> {
     throw new Error(`Shop not found: ${shopId}`);
   }
 
-  if (!shop.client_id || !shop.api_key) {
+  if (!shop.clientId || !shop.apiKey) {
     throw new Error(`Ozon credentials not configured for shop: ${shopId}`);
   }
 
   return {
-    clientId: shop.client_id,
-    apiKey: shop.api_key,
+    clientId: shop.clientId,
+    apiKey: shop.apiKey,
     shopId,
   };
 }
@@ -86,8 +86,8 @@ async function updateRateLimitInDb(
     await db
       .update(shops)
       .set({
-        api_rate_limit_remaining: remaining,
-        api_rate_limit_reset_at: resetAt,
+        apiRateLimitRemaining: remaining,
+        apiRateLimitResetAt: resetAt,
       })
       .where(eq(shops.id, shopId));
   } catch (error) {

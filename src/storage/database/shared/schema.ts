@@ -17,31 +17,34 @@ export const shops = pgTable(
   {
     id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
     name: varchar("name", { length: 128 }).notNull(),
-    client_id: varchar("client_id", { length: 64 }).notNull(),
-    api_key: varchar("api_key", { length: 128 }).notNull(),
+    clientId: varchar("client_id", { length: 64 }).notNull(),
+    apiKey: varchar("api_key", { length: 128 }).notNull(),
     // Ozon API 凭证（兼容字段）
-    ozon_client_id: varchar("ozon_client_id", { length: 64 }),
-    ozon_api_key: varchar("ozon_api_key", { length: 128 }),
+    ozonClientId: varchar("ozon_client_id", { length: 64 }),
+    ozonApiKey: varchar("ozon_api_key", { length: 128 }),
     // 平台标识
     platform: varchar("platform", { length: 20 }).default('ozon'), // ozon/wb
-    is_primary: boolean("is_primary").default(false).notNull(),
-    is_active: boolean("is_active").default(true).notNull(),
-    last_sync_at: timestamp("last_sync_at", { withTimezone: true }),
+    isPrimary: boolean("is_primary").default(false).notNull(),
+    isActive: boolean("is_active").default(true).notNull(),
+    lastSyncAt: timestamp("last_sync_at", { withTimezone: true }),
     // AI选品模块新增字段
-    seller_type: varchar("seller_type", { length: 20 }).default('cn_crossborder'), // cn_crossborder / ru_local
-    current_stage: varchar("current_stage", { length: 20 }).default('new'), // new / growing / mature
-    selection_mode: varchar("selection_mode", { length: 20 }).default('follow'), // follow / refine
-    price_range_min: integer("price_range_min").default(200),
-    price_range_max: integer("price_range_max").default(1500),
-    api_rate_limit_remaining: integer("api_rate_limit_remaining"), // 剩余API调用次数
-    api_rate_limit_reset_at: timestamp("api_rate_limit_reset_at", { withTimezone: true }), // 频率限制重置时间
-    default_logistics_template_id: integer("default_logistics_template_id"), // 店铺默认物流模板ID
-    created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updated_at: timestamp("updated_at", { withTimezone: true }),
+    sellerType: varchar("seller_type", { length: 20 }).default('cn_crossborder'), // cn_crossborder / ru_local
+    currentStage: varchar("current_stage", { length: 20 }).default('new'), // new / growing / mature
+    selectionMode: varchar("selection_mode", { length: 20 }).default('follow'), // follow / refine
+    priceRangeMin: integer("price_range_min").default(200),
+    priceRangeMax: integer("price_range_max").default(1500),
+    apiRateLimitRemaining: integer("api_rate_limit_remaining"), // 剩余API调用次数
+    apiRateLimitResetAt: timestamp("api_rate_limit_reset_at", { withTimezone: true }), // 频率限制重置时间
+    defaultLogisticsTemplateId: integer("default_logistics_template_id"), // 店铺默认物流模板ID
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }),
+    
+    // 同步配置（B01-3新增）
+    syncEnabled: boolean("sync_enabled").default(true),
   },
   (table) => [
-    index("shops_client_id_idx").on(table.client_id),
-    index("shops_is_active_idx").on(table.is_active),
+    index("shops_client_id_idx").on(table.clientId),
+    index("shops_is_active_idx").on(table.isActive),
   ]
 );
 
@@ -51,73 +54,74 @@ export const orders = pgTable(
   {
     id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
     // Ozon订单信息
-    ozon_order_id: varchar("ozon_order_id", { length: 64 }).notNull().unique(),
-    ozon_posting_number: varchar("ozon_posting_number", { length: 64 }).notNull(),
-    shop_id: varchar("shop_id", { length: 36 }).notNull().references(() => shops.id),
+    ozonOrderId: varchar("ozon_order_id", { length: 64 }).notNull().unique(),
+    ozonPostingNumber: varchar("ozon_posting_number", { length: 64 }).notNull(),
+    shopId: varchar("shop_id", { length: 36 }).notNull().references(() => shops.id),
     
     // 订单状态
     status: varchar("status", { length: 32 }).notNull().default("awaiting_packaging"),
-    // awaiting_packaging: 已付款待打包
-    // awaiting_delivering: 待发货
-    // delivering: 配送中
-    // delivered: 已送达
-    // cancelled: 已取消
     
     // 买家信息
-    buyer_name: varchar("buyer_name", { length: 128 }),
-    buyer_phone: varchar("buyer_phone", { length: 32 }),
+    buyerName: varchar("buyer_name", { length: 128 }),
+    buyerPhone: varchar("buyer_phone", { length: 32 }),
     
     // 收货地址
-    recipient_name: varchar("recipient_name", { length: 128 }),
-    recipient_phone: varchar("recipient_phone", { length: 32 }),
-    recipient_city: varchar("recipient_city", { length: 64 }),
-    recipient_address: text("recipient_address"),
+    recipientName: varchar("recipient_name", { length: 128 }),
+    recipientPhone: varchar("recipient_phone", { length: 32 }),
+    recipientCity: varchar("recipient_city", { length: 64 }),
+    recipientAddress: text("recipient_address"),
     
     // 金额信息
-    total_price: numeric("total_price", { precision: 12, scale: 2 }).notNull().default("0"),
-    products_price: numeric("products_price", { precision: 12, scale: 2 }).notNull().default("0"),
-    delivery_price: numeric("delivery_price", { precision: 12, scale: 2 }).notNull().default("0"),
+    totalPrice: numeric("total_price", { precision: 12, scale: 2 }).notNull().default("0"),
+    productsPrice: numeric("products_price", { precision: 12, scale: 2 }).notNull().default("0"),
+    deliveryPrice: numeric("delivery_price", { precision: 12, scale: 2 }).notNull().default("0"),
     
     // 物流信息
-    tracking_number: varchar("tracking_number", { length: 64 }),
-    shipped_at: timestamp("shipped_at", { withTimezone: true }),
-    delivered_at: timestamp("delivered_at", { withTimezone: true }),
+    trackingNumber: varchar("tracking_number", { length: 64 }),
+    shippedAt: timestamp("shipped_at", { withTimezone: true }),
+    deliveredAt: timestamp("delivered_at", { withTimezone: true }),
     
     // 采购绑定信息
-    is_purchase_bound: boolean("is_purchase_bound").default(false).notNull(),
-    purchase_bound_at: timestamp("purchase_bound_at", { withTimezone: true }),
+    isPurchaseBound: boolean("is_purchase_bound").default(false).notNull(),
+    purchaseBoundAt: timestamp("purchase_bound_at", { withTimezone: true }),
     
     // 验货信息
-    is_inspected: boolean("is_inspected").default(false).notNull(),
-    inspected_at: timestamp("inspected_at", { withTimezone: true }),
+    isInspected: boolean("is_inspected").default(false).notNull(),
+    inspectedAt: timestamp("inspected_at", { withTimezone: true }),
     
     // 打包发货信息
-    is_packed: boolean("is_packed").default(false).notNull(),
-    packed_at: timestamp("packed_at", { withTimezone: true }),
-    package_weight: numeric("package_weight", { precision: 8, scale: 3 }),
+    isPacked: boolean("is_packed").default(false).notNull(),
+    packedAt: timestamp("packed_at", { withTimezone: true }),
+    packageWeight: numeric("package_weight", { precision: 8, scale: 3 }),
     
     // 利润核算
-    is_settled: boolean("is_settled").default(false).notNull(),
-    settled_at: timestamp("settled_at", { withTimezone: true }),
+    isSettled: boolean("is_settled").default(false).notNull(),
+    settledAt: timestamp("settled_at", { withTimezone: true }),
     
     // 采购价格（人民币）
-    purchase_price: numeric("purchase_price", { precision: 12, scale: 2 }).default("0"),
+    purchasePrice: numeric("purchase_price", { precision: 12, scale: 2 }).default("0"),
     
     // Ozon原始数据
-    ozon_raw_data: jsonb("ozon_raw_data"),
+    ozonRawData: jsonb("ozon_raw_data"),
     
     // 时间戳
-    ozon_created_at: timestamp("ozon_created_at", { withTimezone: true }),
-    ozon_updated_at: timestamp("ozon_updated_at", { withTimezone: true }),
-    created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updated_at: timestamp("updated_at", { withTimezone: true }),
+    ozonCreatedAt: timestamp("ozon_created_at", { withTimezone: true }),
+    ozonUpdatedAt: timestamp("ozon_updated_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }),
+    
+    // ERP状态（B01-2新增）
+    erpStatus: varchar("erp_status", { length: 20 }).default('pending'),
+    currency: varchar("currency", { length: 10 }).default('RUB'),
+    shipmentDeadline: timestamp("shipment_deadline", { withTimezone: true }),
+    lastSyncedAt: timestamp("last_synced_at", { withTimezone: true }),
   },
   (table) => [
-    index("orders_ozon_order_id_idx").on(table.ozon_order_id),
-    index("orders_shop_id_idx").on(table.shop_id),
+    index("orders_ozon_order_id_idx").on(table.ozonOrderId),
+    index("orders_shop_id_idx").on(table.shopId),
     index("orders_status_idx").on(table.status),
-    index("orders_created_at_idx").on(table.created_at),
-    index("orders_status_created_idx").on(table.status, table.created_at),
+    index("orders_created_at_idx").on(table.createdAt),
+    index("orders_status_created_idx").on(table.status, table.createdAt),
   ]
 );
 
@@ -1188,6 +1192,10 @@ export const policyChangeEvents = pgTable('policy_change_events', {
   index('idx_policy_change_severity').on(table.severity),
   index('idx_policy_change_domain').on(table.domain),
 ]);
+
+// ============================================================================
+// 五、类型导出
+// ============================================================================
 
 /**
  * 同步调度配置表

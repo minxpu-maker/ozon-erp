@@ -33,7 +33,7 @@ export async function syncShopOrders(shopId: string): Promise<SyncResult> {
 
   const shop = shopList[0];
 
-  if (!shop.is_active) {
+  if (!shop.isActive) {
     return {
       shopId: shop.id,
       shopName: shop.name,
@@ -43,8 +43,8 @@ export async function syncShopOrders(shopId: string): Promise<SyncResult> {
   }
 
   const client = new OzonApiClient({
-    clientId: shop.client_id,
-    apiKey: shop.api_key,
+    clientId: shop.clientId,
+    apiKey: shop.apiKey,
   });
   const startedAt = new Date();
 
@@ -73,27 +73,27 @@ export async function syncShopOrders(shopId: string): Promise<SyncResult> {
         const existing = await db
           .select()
           .from(orders)
-          .where(eq(orders.ozon_posting_number, posting.posting_number))
+          .where(eq(orders.ozonPostingNumber, posting.posting_number))
           .limit(1);
 
         const orderRecord = {
-          ozon_order_id: orderData.order_id?.toString() || '',
-          ozon_posting_number: posting.posting_number,
-          shop_id: shop.id,
+          ozonOrderId: orderData.order_id?.toString() || '',
+          ozonPostingNumber: posting.posting_number,
+          shopId: shop.id,
           status: 'awaiting_packaging',
-          buyer_name: orderData.customer?.name || null,
-          buyer_phone: orderData.customer?.phone || null,
-          recipient_name: orderData.address?.recipient || null,
-          recipient_phone: orderData.address?.phone || null,
-          recipient_city: orderData.address?.city || null,
-          recipient_address: orderData.address?.address_line || null,
-          total_price: '0',
-          products_price: '0',
-          delivery_price: '0',
-          ozon_raw_data: orderData,
-          ozon_created_at: orderData.created_at ? new Date(orderData.created_at) : null,
-          ozon_updated_at: orderData.in_process_at ? new Date(orderData.in_process_at) : null,
-          updated_at: new Date(),
+          buyerName: orderData.customer?.name || null,
+          buyerPhone: orderData.customer?.phone || null,
+          recipientName: orderData.address?.recipient || null,
+          recipientPhone: orderData.address?.phone || null,
+          recipientCity: orderData.address?.city || null,
+          recipientAddress: orderData.address?.address_line || null,
+          totalPrice: '0',
+          productsPrice: '0',
+          deliveryPrice: '0',
+          ozonRawData: orderData,
+          ozonCreatedAt: orderData.created_at ? new Date(orderData.created_at) : null,
+          ozonUpdatedAt: orderData.in_process_at ? new Date(orderData.in_process_at) : null,
+          updatedAt: new Date(),
         };
 
         let orderId: string;
@@ -110,7 +110,7 @@ export async function syncShopOrders(shopId: string): Promise<SyncResult> {
             .insert(orders)
             .values({
               ...orderRecord,
-              created_at: new Date(),
+              createdAt: new Date(),
             })
             .returning({ id: orders.id });
           orderId = newOrder.id;
@@ -137,7 +137,7 @@ export async function syncShopOrders(shopId: string): Promise<SyncResult> {
             ozon_offer_id: product.offer_id,
             ozon_product_id: product.item_id ? Number(product.item_id) : null,
             is_inspected: false,
-            updated_at: new Date(),
+            updatedAt: new Date(),
           };
 
           if (existingItem.length > 0) {
@@ -148,7 +148,7 @@ export async function syncShopOrders(shopId: string): Promise<SyncResult> {
           } else {
             await db.insert(orderItems).values({
               ...itemRecord,
-              created_at: new Date(),
+              createdAt: new Date(),
             });
           }
         }
@@ -160,12 +160,12 @@ export async function syncShopOrders(shopId: string): Promise<SyncResult> {
     // 更新店铺最后同步时间
     await db
       .update(shops)
-      .set({ last_sync_at: new Date(), updated_at: new Date() })
+      .set({ lastSyncAt: new Date(), updatedAt: new Date() })
       .where(eq(shops.id, shop.id));
 
     // 记录同步日志
     await db.insert(orderSyncLogs).values({
-      shop_id: shop.id,
+      shopId: shop.id,
       sync_type: 'auto',
       status: 'success',
       orders_fetched: postings.length,
@@ -173,7 +173,7 @@ export async function syncShopOrders(shopId: string): Promise<SyncResult> {
       orders_updated: updated,
       started_at: startedAt,
       finished_at: new Date(),
-      created_at: new Date(),
+      createdAt: new Date(),
     });
 
     return {
@@ -189,13 +189,13 @@ export async function syncShopOrders(shopId: string): Promise<SyncResult> {
 
     // 记录失败日志
     await db.insert(orderSyncLogs).values({
-      shop_id: shop.id,
+      shopId: shop.id,
       sync_type: 'auto',
       status: 'failed',
       error_message: errorMessage,
       started_at: startedAt,
       finished_at: new Date(),
-      created_at: new Date(),
+      createdAt: new Date(),
     });
 
     return {
@@ -212,7 +212,7 @@ export async function syncAllOrders(): Promise<SyncResult[]> {
   const shopList = await db
     .select()
     .from(shops)
-    .where(eq(shops.is_active, true));
+    .where(eq(shops.isActive, true));
 
   const results: SyncResult[] = [];
 

@@ -76,8 +76,8 @@ export async function GET(request: NextRequest) {
 
     // 附加商品信息
     const tasksWithProduct = tasks.map(item => {
-      const product = item.order?.ozon_raw_data 
-        ? extractProductInfo(item.order.ozon_raw_data, item.task.sku_code)
+      const product = item.order?.ozonRawData 
+        ? extractProductInfo(item.order.ozonRawData, item.task.sku_code)
         : null;
       
       // 从ozon_products表获取图片
@@ -136,8 +136,8 @@ export async function POST(request: NextRequest) {
       if (updatedTask.order_id) {
         await db.update(schema.orders)
           .set({
-            is_purchase_bound: true,
-            purchase_bound_at: new Date(),
+            isPurchaseBound: true,
+            purchaseBoundAt: new Date(),
           })
           .where(eq(schema.orders.id, updatedTask.order_id));
       }

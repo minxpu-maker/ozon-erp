@@ -40,25 +40,25 @@ export async function GET(request: NextRequest) {
     const includeInactive = searchParams.get('includeInactive') === 'true';
 
     // 构建查询条件 - 使用snake_case字段
-    const queryCondition = includeInactive ? undefined : eq(shops.is_active, true);
+    const queryCondition = includeInactive ? undefined : eq(shops.isActive, true);
 
     // 查询店铺列表
     const shopList = await db
       .select()
       .from(shops)
       .where(queryCondition)
-      .orderBy(desc(shops.created_at));
+      .orderBy(desc(shops.createdAt));
 
     // 格式化返回数据，隐藏API密钥 - 使用主字段 client_id/api_key 或兼容字段 ozon_client_id/ozon_api_key
     const result: ShopListItem[] = shopList.map(shop => ({
       id: shop.id,
       shopName: shop.name || '',
       platform: shop.platform || 'ozon',
-      isActive: shop.is_active ?? true,
-      ozonClientId: shop.client_id || shop.ozon_client_id || null,
-      hasApiKey: !!(shop.api_key || shop.ozon_api_key),
-      createdAt: shop.created_at,
-      updatedAt: shop.updated_at,
+      isActive: shop.isActive ?? true,
+      ozonClientId: shop.clientId || shop.ozonClientId || null,
+      hasApiKey: !!(shop.apiKey || shop.ozonApiKey),
+      createdAt: shop.createdAt,
+      updatedAt: shop.updatedAt,
     }));
 
     return NextResponse.json({
@@ -126,13 +126,13 @@ export async function POST(request: NextRequest) {
     const now = new Date();
     const newShop = {
       name: body.shopName.trim(),
-      client_id: body.ozonClientId.trim(),
-      api_key: encryptedApiKey,
+      clientId: body.ozonClientId.trim(),
+      apiKey: encryptedApiKey,
       platform: body.platform || 'ozon',
-      is_active: true,
-      is_primary: false,
-      created_at: now,
-      updated_at: now,
+      isActive: true,
+      isPrimary: false,
+      createdAt: now,
+      updatedAt: now,
     };
 
     const result = await db.insert(shops).values(newShop).returning();
@@ -153,11 +153,11 @@ export async function POST(request: NextRequest) {
         id: created.id,
         shopName: created.name,
         platform: created.platform,
-        isActive: created.is_active,
-        ozonClientId: created.client_id,
+        isActive: created.isActive,
+        ozonClientId: created.clientId,
         hasApiKey: true,
-        createdAt: created.created_at,
-        updatedAt: created.updated_at,
+        createdAt: created.createdAt,
+        updatedAt: created.updatedAt,
       },
       message: '店铺创建成功',
     }, { status: 201 });

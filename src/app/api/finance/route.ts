@@ -46,7 +46,7 @@ interface OrderFinancialData {
 
 // 从订单raw_data中提取财务明细
 function extractFinancialData(order: any, rubToCny: number = 0.08): OrderFinancialData | null {
-  const financialData = order.ozon_raw_data?.financial_data;
+  const financialData = order.ozonRawData?.financial_data;
   
   const products: FinancialDetail[] = [];
   let totalCommission = 0;
@@ -56,7 +56,7 @@ function extractFinancialData(order: any, rubToCny: number = 0.08): OrderFinanci
 
   // 从products数组提取每个商品的财务数据
   const rawProducts = financialData?.products || [];
-  const orderProducts = order.ozon_raw_data?.products || [];
+  const orderProducts = order.ozonRawData?.products || [];
 
   for (const fp of rawProducts) {
     const productInfo = orderProducts.find((p: any) => p.product_id === fp.product_id || p.sku === fp.product_id);
@@ -84,8 +84,8 @@ function extractFinancialData(order: any, rubToCny: number = 0.08): OrderFinanci
   }
 
   // 如果没有financial_data，使用total_price作为收入
-  if (totalRevenue === 0 && order.total_price) {
-    totalRevenue = parseFloat(order.total_price);
+  if (totalRevenue === 0 && order.totalPrice) {
+    totalRevenue = parseFloat(order.totalPrice);
   }
 
   // 提取应计费用
@@ -98,12 +98,12 @@ function extractFinancialData(order: any, rubToCny: number = 0.08): OrderFinanci
     currency: string;
   }> = [];
 
-  const syncAccruals = order.ozon_raw_data?._accruals;
+  const syncAccruals = order.ozonRawData?._accruals;
   if (syncAccruals) {
     acquiringFee = syncAccruals.acquiringFee || 0;
     otherFees = syncAccruals.otherFees || 0;
   } else {
-    const accruals = order.ozon_raw_data?.accruals || [];
+    const accruals = order.ozonRawData?.accruals || [];
     for (const acc of accruals) {
       const amount = Math.abs(parseFloat(acc.amount || '0'));
       if (acc.type === 'acquiring' || acc.typeName?.includes('收单')) {
@@ -121,7 +121,7 @@ function extractFinancialData(order: any, rubToCny: number = 0.08): OrderFinanci
   }
 
   // 计算采购价和利润
-  const purchasePrice = order.purchase_price || 0;
+  const purchasePrice = order.purchasePrice || 0;
   const revenueCNY = totalRevenue * rubToCny; // 转换为人民币
   const commissionCNY = totalCommission * rubToCny;
   const acquiringFeeCNY = acquiringFee * rubToCny;
@@ -133,9 +133,9 @@ function extractFinancialData(order: any, rubToCny: number = 0.08): OrderFinanci
   const profitRate = revenueCNY > 0 ? (estimatedProfit / revenueCNY) * 100 : 0;
 
   return {
-    ozonOrderId: order.ozon_order_id,
-    postingNumber: order.ozon_posting_number,
-    buyerName: order.buyer_name,
+    ozonOrderId: order.ozonOrderId,
+    postingNumber: order.ozonPostingNumber,
+    buyerName: order.buyerName,
     status: order.status,
     totalRevenue,
     totalCommission,
@@ -189,7 +189,7 @@ function calculateDateSummaries(orders: any[], rubToCny: number) {
   };
 
   for (const order of orders) {
-    const orderDate = new Date(order.ozon_created_at || order.created_at);
+    const orderDate = new Date(order.ozon_created_at || order.createdAt);
     const fd = extractFinancialData(order, rubToCny);
     if (!fd) continue;
 
@@ -254,24 +254,24 @@ export async function GET(request: NextRequest) {
 
     // 获取未结算的订单
     const orders = await db.select().from(schema.orders)
-      .where(eq(schema.orders.is_settled, false))
-      .orderBy(desc(schema.orders.created_at));
+      .where(eq(schema.orders.isSettled, false))
+      .orderBy(desc(schema.orders.createdAt));
 
     // 提取财务明细
     const pendingOrdersWithFinancials = await Promise.all(
       orders.map(async (order) => {
         const financialData = extractFinancialData(order, rubToCny);
         
-        if (order.ozon_posting_number && (withAccruals || !financialData?.acquiringFee)) {
+        if (order.ozonPostingNumber && (withAccruals || !financialData?.acquiringFee)) {
           try {
-            const accruals = await fetchOrderAccruals(order.ozon_posting_number);
+            const accruals = await fetchOrderAccruals(order.ozonPostingNumber);
             if (financialData) {
               financialData.acquiringFee = accruals.acquiringFee;
               financialData.otherFees = accruals.otherFees;
               financialData.accrualsDetails = accruals.details;
             }
           } catch (e) {
-            console.error('[Finance API] Failed to get accruals for order:', order.ozon_posting_number, e);
+            console.error('[Finance API] Failed to get accruals for order:', order.ozonPostingNumber, e);
           }
         }
         
@@ -287,7 +287,7 @@ export async function GET(request: NextRequest) {
       .orderBy(desc(schema.financeRecords.settled_at));
 
     // 获取所有订单（用于日期汇总）
-    const allOrders = await db.select().from(schema.orders).orderBy(desc(schema.orders.created_at));
+    const allOrders = await db.select().from(schema.orders).orderBy(desc(schema.orders.createdAt));
     const dateSummaries = calculateDateSummaries(allOrders, rubToCny);
 
     // 计算统计信息
@@ -346,9 +346,9 @@ export async function POST(request: NextRequest) {
     const financialData = extractFinancialData(order, rubToCny);
     
     let acquiringFee = 0;
-    if (order.ozon_posting_number) {
+    if (order.ozonPostingNumber) {
       try {
-        const accruals = await fetchOrderAccruals(order.ozon_posting_number);
+        const accruals = await fetchOrderAccruals(order.ozonPostingNumber);
         acquiringFee = accruals.acquiringFee;
         if (financialData) {
           financialData.acquiringFee = accruals.acquiringFee;
@@ -361,10 +361,10 @@ export async function POST(request: NextRequest) {
     }
 
     // 使用订单中的采购价
-    const purchaseCost = parseFloat(order.purchase_price || '0');
+    const purchaseCost = parseFloat(order.purchasePrice || '0');
     const shippingFee = 0;
 
-    const revenue = (financialData?.totalRevenue || parseFloat(order.total_price || '0')) * rubToCny;
+    const revenue = (financialData?.totalRevenue || parseFloat(order.totalPrice || '0')) * rubToCny;
     const commission = (financialData?.totalCommission || 0) * rubToCny;
     const acquiringFeeCNY = acquiringFee * rubToCny;
     
@@ -388,7 +388,7 @@ export async function POST(request: NextRequest) {
 
     await db
       .update(schema.orders)
-      .set({ is_settled: true, settled_at: new Date() })
+      .set({ isSettled: true, settledAt: new Date() })
       .where(eq(schema.orders.id, orderId));
 
     return NextResponse.json({

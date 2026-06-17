@@ -203,8 +203,8 @@ export async function POST(request: NextRequest) {
       for (const shop of allShops) {
         try {
           const client = createOzonClient({
-            clientId: shop.client_id,
-            apiKey: shop.api_key,
+            clientId: shop.clientId,
+            apiKey: shop.apiKey,
           });
           
           console.log(`[同步商品图片] 店铺: ${shop.name}, offer_ids: ${offerIds.join(', ')}`);

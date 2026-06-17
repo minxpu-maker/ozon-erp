@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
 
     // 更新订单绑定状态
     await db.update(schema.orders)
-      .set({ is_purchase_bound: true })
+      .set({ isPurchaseBound: true })
       .where(eq(schema.orders.id, orderId));
 
     return NextResponse.json({ 
@@ -58,13 +58,13 @@ export async function GET(request: NextRequest) {
 
     // 获取未绑定采购的订单
     let orders = await db.select().from(schema.orders)
-      .where(eq(schema.orders.is_purchase_bound, false));
+      .where(eq(schema.orders.isPurchaseBound, false));
 
     // 搜索过滤
     if (search) {
       orders = orders.filter(o => 
-        o.ozon_order_id.includes(search) || 
-        o.ozon_posting_number.includes(search)
+        o.ozonOrderId.includes(search) || 
+        o.ozonPostingNumber.includes(search)
       );
     }
 

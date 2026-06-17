@@ -10,7 +10,7 @@ export async function GET() {
     const shopList = await db
       .select()
       .from(shops)
-      .where(eq(shops.is_active, true));
+      .where(eq(shops.isActive, true));
 
     // 获取每个店铺的订单统计
     const shopStats = await Promise.all(
@@ -19,7 +19,7 @@ export async function GET() {
         const orderList = await db
           .select({ id: orders.id })
           .from(orders)
-          .where(eq(orders.shop_id, shop.id));
+          .where(eq(orders.shopId, shop.id));
         
         // 该店铺最近一次同步日志
         const lastSync = await db
@@ -32,9 +32,9 @@ export async function GET() {
         return {
           shopId: shop.id,
           shopName: shop.name,
-          isPrimary: shop.is_primary,
-          isActive: shop.is_active,
-          lastSyncAt: shop.last_sync_at,
+          isPrimary: shop.isPrimary,
+          isActive: shop.isActive,
+          lastSyncAt: shop.lastSyncAt,
           orderCount: orderList.length,
           lastSyncStatus: lastSync[0]?.status || null,
           lastSyncTime: lastSync[0]?.started_at || null,

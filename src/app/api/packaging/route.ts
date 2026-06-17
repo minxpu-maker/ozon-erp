@@ -8,8 +8,8 @@ export async function GET(request: NextRequest) {
   try {
     // 获取已验货但未打包的订单
     const orders = await db.select().from(schema.orders)
-      .where(eq(schema.orders.is_inspected, true))
-      .orderBy(desc(schema.orders.created_at));
+      .where(eq(schema.orders.isInspected, true))
+      .orderBy(desc(schema.orders.createdAt));
 
     return NextResponse.json({ success: true, data: orders });
   } catch (error) {
@@ -35,8 +35,8 @@ export async function POST(request: NextRequest) {
     // 更新订单打包状态
     await db.update(schema.orders)
       .set({ 
-        is_packed: true,
-        shipped_at: new Date(),
+        isPacked: true,
+        shippedAt: new Date(),
       })
       .where(eq(schema.orders.id, orderId));
 

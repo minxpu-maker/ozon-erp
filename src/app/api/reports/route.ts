@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     // 获取订单统计
     const orderStats = await db.select({
       total: sql<number>`COUNT(*)`,
-      totalAmount: sql<string>`COALESCE(SUM(CAST(${schema.orders.total_price} AS DECIMAL)), 0)`,
+      totalAmount: sql<string>`COALESCE(SUM(CAST(${schema.orders.totalPrice} AS DECIMAL)), 0)`,
     }).from(schema.orders);
 
     // 获取采购统计
@@ -45,12 +45,12 @@ export async function GET(request: NextRequest) {
 
     // 获取最近7天订单趋势
     const orderTrend = await db.select({
-      date: sql<string>`DATE(${schema.orders.created_at})`,
+      date: sql<string>`DATE(${schema.orders.createdAt})`,
       count: sql<number>`COUNT(*)`,
     }).from(schema.orders)
-      .where(sql`${schema.orders.created_at} >= NOW() - INTERVAL '7 days'`)
-      .groupBy(sql`DATE(${schema.orders.created_at})`)
-      .orderBy(desc(sql`DATE(${schema.orders.created_at})`));
+      .where(sql`${schema.orders.createdAt} >= NOW() - INTERVAL '7 days'`)
+      .groupBy(sql`DATE(${schema.orders.createdAt})`)
+      .orderBy(desc(sql`DATE(${schema.orders.createdAt})`));
 
     const reportData = {
       orderStats: orderStats[0] || { total: 0, totalAmount: '0' },

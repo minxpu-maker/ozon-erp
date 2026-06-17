@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/storage/database/client';
-import { ozonOrders, purchaseRecords, purchaseDemands, shipmentRecords, shops, orderFinance } from '@/storage/database/shared/schema';
+import { orders, shipmentRecords, shops } from '@/storage/database/shared/schema';
 import { eq } from 'drizzle-orm';
 import { ozonRequest } from '@/lib/ozon-client';
 
@@ -8,7 +8,7 @@ import { ozonRequest } from '@/lib/ozon-client';
 const MAX_RETRIES = 3;
 
 interface ConfirmRequest {
-  shipmentId?: number;
+  shipmentId?: string;
 }
 
 export async function POST(
@@ -18,20 +18,12 @@ export async function POST(
   try {
     const { orderId } = await params;
     const body: ConfirmRequest = await request.json();
-    const orderIdNum = parseInt(orderId);
-
-    if (isNaN(orderIdNum)) {
-      return NextResponse.json(
-        { success: false, error: '无效的订单ID' },
-        { status: 400 }
-      );
-    }
 
     // 【业务验证1】验证订单存在
     const orderResult = await db
       .select()
-      .from(ozonOrders)
-      .where(eq(ozonOrders.id, orderIdNum))
+      .from(orders)
+      .where(eq(orders.id, orderId))
       .limit(1);
 
     if (orderResult.length === 0) {
@@ -43,26 +35,10 @@ export async function POST(
 
     const order = orderResult[0];
 
-    // 【业务验证2】验证采购记录状态必须是 'verified'
-    const purchaseRecordResult = await db
-      .select()
-      .from(ozonOrders)
-      .innerJoin(purchaseDemands, eq(ozonOrders.id, purchaseDemands.orderId))
-      .innerJoin(purchaseRecords, eq(purchaseDemands.id, purchaseRecords.demandId))
-      .where(eq(ozonOrders.id, orderIdNum))
-      .limit(1);
-
-    if (purchaseRecordResult.length === 0) {
+    // 【业务验证2】验证订单必须已验货通过才能发货
+    if (!order.isInspected) {
       return NextResponse.json(
-        { success: false, error: '未找到采购记录' },
-        { status: 404 }
-      );
-    }
-
-    const purchaseRecord = purchaseRecordResult[0].purchase_records;
-    if (purchaseRecord.status !== 'verified') {
-      return NextResponse.json(
-        { success: false, error: `订单当前状态为 '${purchaseRecord.status}'，必须验货通过后才能发货` },
+        { success: false, error: '订单未验货通过，不能发货' },
         { status: 400 }
       );
     }
@@ -70,7 +46,7 @@ export async function POST(
     // 【业务验证3】检查 shipment_records 是否存在
     const shipmentQuery = body.shipmentId
       ? db.select().from(shipmentRecords).where(eq(shipmentRecords.id, body.shipmentId)).limit(1)
-      : db.select().from(shipmentRecords).where(eq(shipmentRecords.orderId, orderIdNum)).limit(1);
+      : db.select().from(shipmentRecords).where(eq(shipmentRecords.orderId, orderId)).limit(1);
 
     const shipmentResult = await shipmentQuery;
 
@@ -84,14 +60,14 @@ export async function POST(
     const shipment = shipmentResult[0];
 
     // 【业务验证4】检查状态：必须先获取面单才能发货
-    if (shipment.status === 'shipped') {
+    if (shipment.trackingNumber) {
       return NextResponse.json(
         { success: false, error: '订单已发货' },
         { status: 400 }
       );
     }
 
-    if (shipment.status !== 'labeled') {
+    if (!shipment.labelUrl) {
       return NextResponse.json(
         { success: false, error: '必须先获取面单才能确认发货' },
         { status: 400 }
@@ -99,22 +75,25 @@ export async function POST(
     }
 
     // 获取店铺信息
-    const shopResult = await db
-      .select()
-      .from(shops)
-      .where(eq(shops.id, shipment.shopId))
-      .limit(1);
+    let clientId = '';
+    let apiKey = '';
+    
+    if (shipment.shopId) {
+      const shopResult = await db
+        .select()
+        .from(shops)
+        .where(eq(shops.id, shipment.shopId))
+        .limit(1);
 
-    if (shopResult.length === 0) {
-      return NextResponse.json(
-        { success: false, error: '未找到店铺配置' },
-        { status: 404 }
-      );
+      if (shopResult.length > 0) {
+        const shop = shopResult[0];
+        // 兼容不同的字段名
+        clientId = (shop as { client_id?: string; ozonClientId?: string }).client_id 
+          || (shop as { ozonClientId?: string }).ozonClientId || '';
+        apiKey = (shop as { api_key?: string; ozonApiKey?: string }).api_key 
+          || (shop as { ozonApiKey?: string }).ozonApiKey || '';
+      }
     }
-
-    const shop = shopResult[0];
-    const clientId = shop.client_id || '';
-    const apiKey = shop.api_key || '';
 
     if (!clientId || !apiKey) {
       return NextResponse.json(
@@ -169,46 +148,34 @@ export async function POST(
 
     // 【事务保证】Ozon API 成功后才更新状态
     await db.transaction(async (tx) => {
-      // 更新 shipment 状态为 'shipped'
+      // 更新 shipment 记录发货时间
       await tx
         .update(shipmentRecords)
         .set({
-          status: 'shipped',
-          shipTime: new Date(),
+          shippedAt: new Date(),
           updatedAt: new Date(),
         })
         .where(eq(shipmentRecords.id, shipment.id));
 
-      // 更新 order_finance 状态为 'pending'（预留财务核算触发点）
-      const financeResult = await tx
-        .select()
-        .from(orderFinance)
-        .where(eq(orderFinance.orderId, orderIdNum))
-        .limit(1);
-
-      if (financeResult.length > 0) {
-        await tx
-          .update(orderFinance)
-          .set({
-            status: 'pending', // 待核算
-            updatedAt: new Date(),
-          })
-          .where(eq(orderFinance.id, financeResult[0].id));
-      }
-
-      // 【预留】触发财务核算（当前阶段预留，未来集成）
-      // TODO: calculateFinance(orderIdNum);
+      // 更新订单状态为已发货
+      await tx
+        .update(orders)
+        .set({
+          erpStatus: 'shipped',
+          shippedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(orders.id, orderId));
     });
 
     return NextResponse.json({
       success: true,
       data: {
-        orderId: orderIdNum,
+        orderId: orderId,
         postingNumber: order.ozonPostingNumber,
         shipmentId: shipment.id,
         shippedAt: new Date().toISOString(),
         retries: retryCount,
-        financeTriggered: true,
       },
       message: '发货确认成功',
     });

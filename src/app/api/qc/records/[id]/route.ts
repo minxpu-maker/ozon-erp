@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, schema } from '@/storage/database/client';
+import { db } from '@/storage/database/client';
+import { qcRecords, orders } from '@/storage/database/shared/schema';
 import { eq } from 'drizzle-orm';
 
-const { qcRecords, purchaseRecords, purchaseDemands } = schema;
-
+/**
+ * GET /api/qc/records/[id] - 获取验货记录详情
+ */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -47,33 +49,21 @@ export async function GET(
       );
     }
 
-    // 查询关联的采购记录
-    const purchaseRecord = await db
-      .select({
-        id: purchaseRecords.id,
-        demandId: purchaseRecords.demandId,
-        status: purchaseRecords.status,
-        supplierName: purchaseRecords.supplierName,
-        supplierSource: purchaseRecords.supplierSource,
-        purchasePrice: purchaseRecords.purchasePrice,
-        purchaseQty: purchaseRecords.purchaseQty,
-        domesticTrackingNo: purchaseRecords.domesticTrackingNo,
-      })
-      .from(purchaseRecords)
-      .where(eq(purchaseRecords.id, record[0].purchaseId))
-      .limit(1);
-
     // 查询关联的订单信息
     let orderInfo = null;
-    if (purchaseRecord.length > 0 && purchaseRecord[0].demandId) {
-      const demand = await db
-        .select({ orderId: purchaseDemands.orderId })
-        .from(purchaseDemands)
-        .where(eq(purchaseDemands.id, purchaseRecord[0].demandId))
+    if (record[0].ozonOrderId) {
+      const order = await db
+        .select({
+          id: orders.id,
+          ozon_order_id: orders.ozonOrderId,
+          status: orders.status,
+        })
+        .from(orders)
+        .where(eq(orders.ozonOrderId, record[0].ozonOrderId))
         .limit(1);
-
-      if (demand.length > 0) {
-        orderInfo = { orderId: demand[0].orderId };
+      
+      if (order.length > 0) {
+        orderInfo = order[0];
       }
     }
 
@@ -81,7 +71,6 @@ export async function GET(
       success: true,
       data: {
         ...record[0],
-        purchaseRecord: purchaseRecord[0] || null,
         orderInfo,
       },
     });
@@ -94,6 +83,9 @@ export async function GET(
   }
 }
 
+/**
+ * PATCH /api/qc/records/[id] - 更新验货记录
+ */
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -132,7 +124,7 @@ export async function PATCH(
     const existingRecord = await db
       .select({
         id: qcRecords.id,
-        purchaseId: qcRecords.purchaseId,
+        ozonOrderId: qcRecords.ozonOrderId,
         qcResult: qcRecords.qcResult,
       })
       .from(qcRecords)
@@ -160,28 +152,15 @@ export async function PATCH(
       .where(eq(qcRecords.id, recordId))
       .returning();
 
-    // 如果qcResult变更，同步更新采购记录状态
-    if (qcResult !== undefined && qcResult !== existingRecord[0].qcResult) {
-      if (qcResult === 'pass') {
-        await db
-          .update(purchaseRecords)
-          .set({
-            status: 'verified',
-            verifiedAt: new Date(),
-            updatedAt: new Date(),
-          })
-          .where(eq(purchaseRecords.id, existingRecord[0].purchaseId));
-      } else {
-        // fail 或 partial
-        await db
-          .update(purchaseRecords)
-          .set({
-            status: 'exception',
-            exceptionType: exceptionType || qcResult,
-            updatedAt: new Date(),
-          })
-          .where(eq(purchaseRecords.id, existingRecord[0].purchaseId));
-      }
+    // 如果qcResult变更，同步更新订单验货状态
+    if (qcResult !== undefined && qcResult !== existingRecord[0].qcResult && existingRecord[0].ozonOrderId) {
+      await db
+        .update(orders)
+        .set({
+          isInspected: qcResult === 'pass',
+          inspectedAt: qcResult === 'pass' ? new Date() : null,
+        })
+        .where(eq(orders.ozonOrderId, existingRecord[0].ozonOrderId));
     }
 
     return NextResponse.json({

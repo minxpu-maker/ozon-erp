@@ -50,12 +50,12 @@ export async function GET(
         id: shop.id,
         shopName: shop.name,
         platform: shop.platform,
-        isActive: shop.is_active,
-        ozonClientId: shop.client_id || shop.ozon_client_id,
-        hasApiKey: !!(shop.api_key || shop.ozon_api_key),
-        isPrimary: shop.is_primary,
-        createdAt: shop.created_at,
-        updatedAt: shop.updated_at,
+        isActive: shop.isActive,
+        ozonClientId: shop.clientId || shop.ozonClientId,
+        hasApiKey: !!(shop.apiKey || shop.ozonApiKey),
+        isPrimary: shop.isPrimary,
+        createdAt: shop.createdAt,
+        updatedAt: shop.updatedAt,
       },
     });
   } catch (error) {
@@ -95,7 +95,7 @@ export async function PUT(
 
     // 构建更新数据 - 使用主字段 client_id/api_key
     const updateData: Record<string, unknown> = {
-      updated_at: new Date(),
+      updatedAt: new Date(),
     };
 
     // 需要重新测试连接的标记
@@ -131,7 +131,7 @@ export async function PUT(
           { status: 400 }
         );
       }
-      updateData.client_id = body.ozonClientId.trim();
+      updateData.clientId = body.ozonClientId.trim();
       connectionTestNeeded = true;
     }
 
@@ -143,7 +143,7 @@ export async function PUT(
         );
       }
       // 重新加密API密钥 - 使用主字段 api_key
-      updateData.api_key = encrypt(body.ozonApiKey.trim());
+      updateData.apiKey = encrypt(body.ozonApiKey.trim());
       connectionTestNeeded = true;
     }
 
@@ -171,11 +171,11 @@ export async function PUT(
         id: updatedShop.id,
         shopName: updatedShop.name,
         platform: updatedShop.platform,
-        isActive: updatedShop.is_active,
-        ozonClientId: updatedShop.client_id,
-        hasApiKey: !!updatedShop.api_key,
-        createdAt: updatedShop.created_at,
-        updatedAt: updatedShop.updated_at,
+        isActive: updatedShop.isActive,
+        ozonClientId: updatedShop.clientId,
+        hasApiKey: !!updatedShop.apiKey,
+        createdAt: updatedShop.createdAt,
+        updatedAt: updatedShop.updatedAt,
       },
       connectionTestNeeded, // 标记是否需要重新测试连接
       message: '店铺更新成功',
@@ -218,8 +218,8 @@ export async function DELETE(
     await db
       .update(shops)
       .set({
-        is_active: false,
-        updated_at: new Date(),
+        isActive: false,
+        updatedAt: new Date(),
       })
       .where(eq(shops.id, id));
 

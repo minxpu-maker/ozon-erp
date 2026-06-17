@@ -59,8 +59,8 @@ export async function GET(request: NextRequest) {
       }
 
       // 提取商品信息
-      const product = order?.ozon_raw_data 
-        ? extractProductInfo(order.ozon_raw_data, task.sku_code)
+      const product = order?.ozonRawData 
+        ? extractProductInfo(order.ozonRawData, task.sku_code)
         : null;
 
       return NextResponse.json({ 
@@ -114,8 +114,8 @@ export async function GET(request: NextRequest) {
 
     // 附加商品信息
     const tasksWithProduct = tasks.map(item => {
-      const product = item.order?.ozon_raw_data 
-        ? extractProductInfo(item.order.ozon_raw_data, item.task.sku_code)
+      const product = item.order?.ozonRawData 
+        ? extractProductInfo(item.order.ozonRawData, item.task.sku_code)
         : null;
       
       // 从ozon_products表获取图片
@@ -162,7 +162,7 @@ export async function POST(request: NextRequest) {
 
     // 更新订单验货状态
     await db.update(schema.orders)
-      .set({ is_inspected: true })
+      .set({ isInspected: true })
       .where(eq(schema.orders.id, task.order_id));
 
     // 更新采购任务状态
