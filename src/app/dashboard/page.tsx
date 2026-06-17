@@ -105,6 +105,32 @@ interface NewArrival {
   category: string;
 }
 
+// 紧急待办数据类型
+interface UrgentOrder {
+  id: string;
+  productName: string;
+  deadline: string;
+  type: 'purchase' | 'inspection' | 'packaging';
+}
+
+// 发货倒计时数据类型
+interface CountdownOrder {
+  id: string;
+  productName: string;
+  shipmentDeadline: string;
+}
+
+// 导入 recharts
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from 'recharts';
+
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: '仪表盘', active: true },
   { href: '/purchase', icon: Package, label: '采购管理' },
@@ -137,12 +163,18 @@ export default function DashboardPage() {
   const [categoryRanking, setCategoryRanking] = useState<CategoryRanking[]>([]);
   const [searchTrending, setSearchTrending] = useState<SearchTrending[]>([]);
   const [newArrivals, setNewArrivals] = useState<NewArrival[]>([]);
+  const [urgentOrders, setUrgentOrders] = useState<UrgentOrder[]>([]);
+  const [countdownOrders, setCountdownOrders] = useState<CountdownOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [marketLoading, setMarketLoading] = useState(true);
 
   useEffect(() => {
     fetchDashboardStats();
     fetchMarketData();
+    fetchUrgentAndCountdown();
+    // 每30秒刷新紧急数据
+    const interval = setInterval(fetchUrgentAndCountdown, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const fetchDashboardStats = async () => {
@@ -156,6 +188,57 @@ export default function DashboardPage() {
       console.error('获取仪表盘数据失败:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUrgentAndCountdown = async () => {
+    try {
+      // 获取紧急待采购订单（24小时内截止）
+      const purchaseRes = await fetch('/api/purchase-demands?status=pending');
+      const purchaseData = await purchaseRes.json();
+      
+      // 获取待发货订单
+      const shipmentRes = await fetch('/api/shipments');
+      const shipmentData = await shipmentRes.json();
+
+      if (purchaseData.success && Array.isArray(purchaseData.data)) {
+        const now = Date.now();
+        const urgent: UrgentOrder[] = purchaseData.data
+          .filter((item: Record<string, unknown>) => {
+            const deadline = new Date(item.shipmentDeadline as string).getTime();
+            return deadline - now < 24 * 60 * 60 * 1000; // 24小时内
+          })
+          .slice(0, 5)
+          .map((item: Record<string, unknown>) => ({
+            id: item.id as string,
+            productName: (item.productName || item.product_title || '未知商品') as string,
+            deadline: item.shipmentDeadline as string,
+            type: 'purchase' as const,
+          }));
+        setUrgentOrders(urgent);
+      }
+
+      if (shipmentData.success && Array.isArray(shipmentData.data)) {
+        const now = Date.now();
+        const urgent: CountdownOrder[] = shipmentData.data
+          .filter((item: Record<string, unknown>) => {
+            const deadline = item.shipment_deadline 
+              ? new Date(item.shipment_deadline as string).getTime()
+              : item.shipmentDeadline
+                ? new Date(item.shipmentDeadline as string).getTime()
+                : 0;
+            return deadline > now && deadline - now < 48 * 60 * 60 * 1000; // 48小时内
+          })
+          .slice(0, 5)
+          .map((item: Record<string, unknown>) => ({
+            id: item.id as string,
+            productName: (item.productName || item.product_title || '未知商品') as string,
+            shipmentDeadline: (item.shipment_deadline || item.shipmentDeadline) as string,
+          }));
+        setCountdownOrders(urgent);
+      }
+    } catch (error) {
+      console.error('获取紧急数据失败:', error);
     }
   };
 
@@ -492,6 +575,133 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </div>
+
+              {/* 订单处理漏斗 */}
+              <section className="mb-8">
+                <h2 className="text-base font-semibold text-[#152033] mb-4">订单处理漏斗</h2>
+                <div className="bg-white rounded-xl shadow-sm p-5 border border-[#E6EAF2]">
+                  <ResponsiveContainer width="100%" height={200}>
+                    <BarChart
+                      data={[
+                        { stage: '已同步', count: stats?.totalOrders || 0, fill: '#3b82f6' },
+                        { stage: '待采购', count: stats?.pendingPurchaseTasks || 0, fill: '#f59e0b' },
+                        { stage: '待验货', count: stats?.pendingInspection || 0, fill: '#60a5fa' },
+                        { stage: '待发货', count: stats?.pendingPackaging || 0, fill: '#93c5fd' },
+                        { stage: '已完成', count: stats?.completed || 0, fill: '#10b981' },
+                      ]}
+                      layout="vertical"
+                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <XAxis type="number" tick={{ fontSize: 12, fill: '#637089' }} />
+                      <YAxis type="category" dataKey="stage" tick={{ fontSize: 12, fill: '#637089' }} width={60} />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: '#fff', 
+                          border: '1px solid #E6EAF2', 
+                          borderRadius: '8px',
+                          fontSize: '12px'
+                        }}
+                      />
+                      <Bar dataKey="count" radius={[0, 4, 4, 0]}>
+                        {[
+                          { stage: '已同步', count: stats?.totalOrders || 0, fill: '#3b82f6' },
+                          { stage: '待采购', count: stats?.pendingPurchaseTasks || 0, fill: '#f59e0b' },
+                          { stage: '待验货', count: stats?.pendingInspection || 0, fill: '#60a5fa' },
+                          { stage: '待发货', count: stats?.pendingPackaging || 0, fill: '#93c5fd' },
+                          { stage: '已完成', count: stats?.completed || 0, fill: '#10b981' },
+                        ].map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.fill} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </section>
+
+              {/* 紧急待办 + 发货倒计时 */}
+              <section className="mb-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* 紧急待办列表 */}
+                  <div>
+                    <h2 className="text-base font-semibold text-[#152033] mb-4">紧急待办</h2>
+                    <div className="bg-white rounded-xl shadow-sm p-5 border border-[#E6EAF2]">
+                      {urgentOrders.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-8 text-[#637089]">
+                          <CheckCircle className="w-8 h-8 mb-2 text-green-500" />
+                          <span className="text-sm">暂无紧急待办</span>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {urgentOrders.map((order) => (
+                            <div
+                              key={order.id}
+                              className="flex items-center justify-between p-3 rounded-lg bg-red-50 border border-red-100"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-600 text-sm font-bold">
+                                  🔴
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-[#152033] truncate max-w-[200px]">
+                                    {order.productName}
+                                  </p>
+                                  <p className="text-xs text-red-500">
+                                    截止 {new Date(order.deadline).toLocaleDateString('zh-CN')}
+                                  </p>
+                                </div>
+                              </div>
+                              <Link
+                                href={order.type === 'purchase' ? '/quick-entry' : order.type === 'inspection' ? '/logistics' : '/packaging'}
+                                className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
+                              >
+                                去处理
+                              </Link>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 发货倒计时预警 */}
+                  <div>
+                    <h2 className="text-base font-semibold text-[#152033] mb-4">发货倒计时</h2>
+                    <div className="bg-white rounded-xl shadow-sm p-5 border border-[#E6EAF2]">
+                      {countdownOrders.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-8 text-[#637089]">
+                          <Clock className="w-8 h-8 mb-2 text-green-500" />
+                          <span className="text-sm">暂无超时预警</span>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {countdownOrders.map((order) => {
+                            const hours = Math.max(0, (new Date(order.shipmentDeadline).getTime() - Date.now()) / 3600000);
+                            const colorClass = hours < 12 ? 'bg-red-50 border-red-100' : hours < 24 ? 'bg-yellow-50 border-yellow-100' : 'bg-green-50 border-green-100';
+                            const textColorClass = hours < 12 ? 'text-red-600' : hours < 24 ? 'text-yellow-600' : 'text-green-600';
+                            const badgeClass = hours < 12 ? 'bg-red-100 text-red-600' : hours < 24 ? 'bg-yellow-100 text-yellow-600' : 'bg-green-100 text-green-600';
+                            return (
+                              <div
+                                key={order.id}
+                                className={`flex items-center justify-between p-3 rounded-lg border ${colorClass}`}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <Clock className={`w-5 h-5 ${textColorClass}`} />
+                                  <p className="text-sm font-medium text-[#152033] truncate max-w-[200px]">
+                                    {order.productName}
+                                  </p>
+                                </div>
+                                <span className={`px-2 py-1 rounded text-xs font-medium ${badgeClass}`}>
+                                  {hours < 1 ? `${Math.round(hours * 60)}分钟` : `${hours.toFixed(1)}小时`}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </section>
 
               {/* 市场数据概览 */}
               {!marketLoading && (marketOverview || categoryRanking.length > 0 || searchTrending.length > 0 || newArrivals.length > 0) && (
