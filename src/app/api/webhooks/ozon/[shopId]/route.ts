@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/storage/database/client';
 import { webhookLogs } from '@/db/schema/fulfillment';
-import { shops, orders, orderItems } from '@/storage/database/shared/schema';
+import { shops, orders, orderItems, purchaseTasks } from '@/storage/database/shared/schema';
 import { eq } from 'drizzle-orm';
 
 // Ozon 允许的IP段（实际生产中应从环境变量读取）
@@ -138,6 +138,132 @@ async function handleNewPosting(
     .where(eq(webhookLogs.id, logId));
 }
 
+/**
+ * Ozon状态 → ERP状态映射
+ */
+function mapOzonStatusToErp(ozonStatus: string): string {
+  const map: Record<string, string> = {
+    'pending': 'pending',
+    'awaiting_packaging': 'pending',
+    'not_accepted': 'pending',
+    'acceptance_in_progress': 'awaiting_deliver',
+    'accepted': 'awaiting_deliver',
+    'awaiting_deliver': 'awaiting_deliver',
+    'delivering': 'delivering',
+    'delivered': 'delivered',
+    'cancelled': 'cancelled',
+    'cancelled_seller': 'cancelled',
+    'cancelled_buyer': 'cancelled',
+  };
+  return map[ozonStatus] || ozonStatus;
+}
+
+/**
+ * 处理TYPE_STATE_CHANGED：订单状态变更
+ */
+async function handleStateChanged(body: any, shopId: string, logId: string): Promise<void> {
+  const postingNumber = body.posting_number || '';
+  const newStatus = body.status || '';
+  if (!postingNumber) {
+    await db.update(webhookLogs)
+      .set({ processed: true, errorMessage: 'No posting_number in payload' })
+      .where(eq(webhookLogs.id, logId));
+    return;
+  }
+  // 查找对应订单
+  const existing = await db.select({ id: orders.id })
+    .from(orders)
+    .where(eq(orders.ozonPostingNumber, postingNumber))
+    .limit(1);
+  if (existing.length === 0) {
+    // 订单不存在，可能Webhook比同步更快到达，记录异常
+    await db.update(webhookLogs)
+      .set({ processed: true, errorMessage: `Order not found: ${postingNumber}` })
+      .where(eq(webhookLogs.id, logId));
+    return;
+  }
+  const orderId = existing[0].id;
+  const erpStatus = mapOzonStatusToErp(newStatus);
+  // 更新订单状态
+  const updateData: any = {
+    status: newStatus,
+    erpStatus: erpStatus,
+    ozonUpdatedAt: new Date(),
+    lastSyncedAt: new Date(),
+    updatedAt: new Date(),
+  };
+  // 状态为delivered时补充delivered_at
+  if (newStatus === 'delivered') {
+    updateData.deliveredAt = new Date();
+  }
+  await db.update(orders)
+    .set(updateData)
+    .where(eq(orders.id, orderId));
+  // 标记日志已处理
+  await db.update(webhookLogs)
+    .set({ processed: true, orderId: orderId })
+    .where(eq(webhookLogs.id, logId));
+}
+
+/**
+ * 处理TYPE_POSTING_CANCELLED：订单取消
+ */
+async function handlePostingCancelled(body: any, shopId: string, logId: string): Promise<void> {
+  const postingNumber = body.posting_number || '';
+  if (!postingNumber) {
+    await db.update(webhookLogs)
+      .set({ processed: true, errorMessage: 'No posting_number in payload' })
+      .where(eq(webhookLogs.id, logId));
+    return;
+  }
+  // 查找对应订单
+  const existing = await db.select({ id: orders.id })
+    .from(orders)
+    .where(eq(orders.ozonPostingNumber, postingNumber))
+    .limit(1);
+  if (existing.length === 0) {
+    await db.update(webhookLogs)
+      .set({ processed: true, errorMessage: `Order not found: ${postingNumber}` })
+      .where(eq(webhookLogs.id, logId));
+    return;
+  }
+  const orderId = existing[0].id;
+  // 提取取消原因信息
+  const cancelReason = body.cancellation?.cancel_reason || null;
+  // 更新订单状态为取消
+  await db.update(orders)
+    .set({
+      status: 'cancelled',
+      erpStatus: 'cancelled',
+      ozonUpdatedAt: new Date(),
+      lastSyncedAt: new Date(),
+      updatedAt: new Date(),
+    })
+    .where(eq(orders.id, orderId));
+  // 如果有关联的采购任务，也标记取消
+  const relatedTasks = await db.select({ id: purchaseTasks.id })
+    .from(purchaseTasks)
+    .where(eq(purchaseTasks.order_id, orderId));
+  if (relatedTasks.length > 0) {
+    for (const task of relatedTasks) {
+      await db.update(purchaseTasks)
+        .set({
+          status: 'cancelled',
+          updated_at: new Date(),
+        })
+        .where(eq(purchaseTasks.id, task.id));
+    }
+  }
+  // 标记日志已处理
+  await db.update(webhookLogs)
+    .set({
+      processed: true,
+      orderId: orderId,
+      errorMessage: cancelReason ? `Cancelled: ${cancelReason}` : null,
+    })
+    .where(eq(webhookLogs.id, logId));
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ shopId: string }> }
@@ -211,7 +337,12 @@ export async function POST(
         case 'TYPE_NEW_POSTING':
           await handleNewPosting(body, shopId, logId);
           break;
-        // B04-4: TYPE_STATE_CHANGED, TYPE_POSTING_CANCELLED
+        case 'TYPE_STATE_CHANGED':
+          await handleStateChanged(body, shopId, logId);
+          break;
+        case 'TYPE_POSTING_CANCELLED':
+          await handlePostingCancelled(body, shopId, logId);
+          break;
         // B04-5: 其他事件类型
         default:
           await db.update(webhookLogs)
