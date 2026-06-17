@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import useSWR from 'swr';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -30,6 +31,9 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useShopStore } from '@/stores/shop-store';
+import { TopBar } from './TopBar';
+
+interface Shop { id: string; name: string; platform: string | null; }
 
 interface NavItem {
   label: string;
@@ -127,6 +131,8 @@ export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { currentShopId } = useShopStore();
+  const { data: shops } = useSWR<Shop[]>('/api/shops');
+  const currentShop = shops?.find(s => s.id === currentShopId);
   const [collapsed, setCollapsed] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Record<number, boolean>>(() => {
     const initial: Record<number, boolean> = {};
