@@ -241,3 +241,25 @@ export async function testConnection(clientId: string, apiKey: string): Promise<
     error: response.error || '连接失败',
   };
 }
+
+/**
+ * 快捷请求方法：使用 clientId 和 apiKey 直接发起请求
+ * 适用于不需要复用客户端的场景
+ */
+export async function ozonRequest(
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE',
+  path: string,
+  body?: unknown,
+  apiKey?: string,
+  clientId?: string
+): Promise<OzonResponse> {
+  const key = apiKey || process.env.OZON_API_KEY;
+  const id = clientId || process.env.OZON_CLIENT_ID;
+
+  if (!key || !id) {
+    return { ok: false, error: '缺少API凭证' };
+  }
+
+  const client = new OzonClient({ clientId: id, apiKey: key });
+  return client.request(method, path, body);
+}
