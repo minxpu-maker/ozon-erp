@@ -32,7 +32,7 @@ interface Shop {
 
 interface PurchaseDemand {
   id: string;
-  shipment_deadline: string;
+  shipmentDeadline: string | null;
 }
 
 // 店铺切换器
@@ -90,9 +90,9 @@ function UrgentBell() {
     { refreshInterval: 30000 }
   );
 
-  const urgentCount = demands?.data?.filter((d: { shipment_deadline?: string }) => {
-    if (!d.shipment_deadline) return false;
-    const deadline = new Date(d.shipment_deadline);
+  const urgentCount = demands?.data?.filter((d: { shipmentDeadline?: string | null }) => {
+    if (!d.shipmentDeadline) return false;
+    const deadline = new Date(d.shipmentDeadline);
     const now = new Date();
     const hoursUntil = (deadline.getTime() - now.getTime()) / (1000 * 60 * 60);
     return hoursUntil <= 24 && hoursUntil >= 0;
