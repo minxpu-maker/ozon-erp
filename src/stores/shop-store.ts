@@ -2,8 +2,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 interface ShopState {
-  currentShopId: number | null;
-  setShopId: (id: number | null) => void;
+  currentShopId: string | null;
+  setShopId: (id: string | null) => void;
   clearShopId: () => void;
 }
 

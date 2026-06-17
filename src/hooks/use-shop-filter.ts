@@ -13,7 +13,7 @@ export function useShopFilter() {
    * 获取店铺筛选参数对象
    * @returns shopId参数对象，如果没有选择店铺则返回空对象
    */
-  const getShopParam = (): { shopId?: number } => {
+  const getShopParam = (): { shopId?: string } => {
     return currentShopId ? { shopId: currentShopId } : {};
   };
 

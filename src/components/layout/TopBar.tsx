@@ -25,18 +25,18 @@ import {
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 interface Shop {
-  id: number;
+  id: string;
   name: string;
   is_primary: boolean;
 }
 
 interface PurchaseDemand {
-  id: number;
+  id: string;
   shipment_deadline: string;
 }
 
 interface ShipmentItem {
-  id: number;
+  id: string;
 }
 
 // 店铺切换器
