@@ -70,10 +70,11 @@ function OrdersListPageInner() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [mounted, setMounted] = useState(false);
-  const [now, setNow] = useState(() => Date.now());
+  const [now, setNow] = useState<number | null>(null);
 
   useEffect(() => {
     setMounted(true);
+    setNow(Date.now());
     const interval = setInterval(() => {
       setNow(Date.now());
     }, 60000); // 每分钟更新一次
@@ -111,7 +112,7 @@ function OrdersListPageInner() {
     pending: orders.filter((o) => ['pending', 'purchased'].includes(o.erpStatus)).length,
     shipping: orders.filter((o) => ['verified', 'packed'].includes(o.erpStatus)).length,
     overdue: orders.filter((o) => {
-      if (!o.shipmentDeadline) return false;
+      if (!o.shipmentDeadline || now === null) return false;
       return new Date(o.shipmentDeadline).getTime() < now;
     }).length,
   };
@@ -305,9 +306,10 @@ function OrdersListPageInner() {
                 </thead>
                 <tbody className="divide-y divide-[#E6EAF2]">
                   {orders.map((order) => {
-                    const hours = order.shipmentDeadline
-                      ? (new Date(order.shipmentDeadline).getTime() - now) / 3600000
-                      : null;
+                    const hours =
+                      order.shipmentDeadline && now !== null
+                        ? (new Date(order.shipmentDeadline).getTime() - now) / 3600000
+                        : null;
                     const isOverdue = hours !== null && hours < 0;
                     const isUrgent = hours !== null && hours > 0 && hours < 12;
                     const colorConfig = statusColors[order.erpStatus] || statusColors.pending;
