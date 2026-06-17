@@ -202,18 +202,18 @@ export default function Sidebar() {
   return (
     <aside
       className={cn(
-        'h-full bg-white border-r border-slate-200 flex flex-col transition-all duration-300 shrink-0',
+        'h-full bg-slate-900 text-white flex flex-col transition-all duration-300 shrink-0',
         collapsed ? 'w-16' : 'w-60'
       )}
     >
-      {/* Logo区域 - 蓝底白字 */}
-      <div className="h-14 flex items-center px-4 border-b border-slate-200 shrink-0 bg-blue-600">
+      {/* Logo区域 */}
+      <div className="h-14 flex items-center px-4 border-b border-slate-800 shrink-0">
         <Link href="/dashboard" className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center shrink-0">
-            <Store className="w-4 h-4 text-blue-600" />
+          <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center shrink-0">
+            <Store className="w-4 h-4 text-white" />
           </div>
           {!collapsed && (
-            <span className="font-semibold text-sm text-white">Ozon ERP</span>
+            <span className="font-semibold text-sm">Ozon ERP</span>
           )}
         </Link>
       </div>
@@ -233,13 +233,13 @@ export default function Sidebar() {
                 className={cn(
                   'w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors',
                   isActive
-                    ? 'bg-blue-50 text-blue-700 font-medium'
-                    : 'text-slate-600 hover:bg-blue-50 hover:text-blue-700',
+                    ? 'bg-blue-500/20 text-blue-400'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-white',
                   collapsed && 'justify-center'
                 )}
                 title={collapsed ? group.label : undefined}
               >
-                <Icon className="w-4 h-4 shrink-0 text-blue-500" />
+                <Icon className="w-4 h-4 shrink-0" />
                 {!collapsed && (
                   <>
                     <span className="flex-1 text-left">{group.label}</span>
@@ -263,13 +263,13 @@ export default function Sidebar() {
                       return (
                         <div
                           key={itemIdx}
-                          className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-slate-400 cursor-not-allowed"
+                          className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-slate-500 cursor-not-allowed"
                           title={item.badge}
                         >
                           {ItemIcon && <ItemIcon className="w-4 h-4 shrink-0" />}
                           <span className="flex-1">{item.label}</span>
                           {item.badge && (
-                            <span className="text-[10px] px-1.5 py-0.5 bg-slate-100 rounded text-slate-500">
+                            <span className="text-[10px] px-1.5 py-0.5 bg-slate-700 rounded text-slate-400">
                               {item.badge}
                             </span>
                           )}
@@ -288,13 +288,13 @@ export default function Sidebar() {
                           'flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors',
                           isItemActive
                             ? 'bg-blue-500 text-white'
-                            : 'text-slate-600 hover:bg-blue-50 hover:text-blue-700'
+                            : 'text-slate-400 hover:bg-slate-800 hover:text-white'
                         )}
                       >
                         {ItemIcon && <ItemIcon className="w-4 h-4 shrink-0" />}
                         <span className="flex-1">{item.label}</span>
                         {item.badge && (
-                          <span className="text-[10px] px-1.5 py-0.5 bg-slate-100 rounded text-slate-500">
+                          <span className="text-[10px] px-1.5 py-0.5 bg-slate-700 rounded text-slate-400">
                             {item.badge}
                           </span>
                         )}
@@ -309,12 +309,12 @@ export default function Sidebar() {
       </nav>
 
       {/* 店铺信息 + 折叠按钮 */}
-      <div className="p-2 border-t border-slate-200 shrink-0">
+      <div className="p-2 border-t border-slate-800 shrink-0">
         {/* 店铺指示器 */}
         {!collapsed && currentShopId && (
-          <div className="px-3 py-2 mb-2 text-xs text-slate-600 bg-slate-50 rounded-lg border border-slate-200">
+          <div className="px-3 py-2 mb-2 text-xs text-slate-400 bg-slate-800 rounded-lg">
             <div className="flex items-center gap-2">
-              <Store className="w-3 h-3 text-blue-500" />
+              <Store className="w-3 h-3" />
               <span>店铺: {currentShopName || `ID ${currentShopId}`}</span>
             </div>
           </div>
@@ -323,7 +323,7 @@ export default function Sidebar() {
         {/* 折叠按钮 */}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-500 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
         >
           {collapsed ? (
             <PanelLeft className="w-4 h-4" />
@@ -337,13 +337,13 @@ export default function Sidebar() {
 
         {/* 快捷键提示 */}
         {!collapsed && (
-          <div className="mt-2 px-3 text-[10px] text-slate-400">
+          <div className="mt-2 px-3 text-[10px] text-slate-500">
             <div className="flex items-center gap-2 mb-1">
-              <kbd className="px-1 py-0.5 bg-slate-100 rounded text-slate-600 border border-slate-200">1-5</kbd>
+              <kbd className="px-1 py-0.5 bg-slate-800 rounded text-slate-400">1-5</kbd>
               <span>切换分组</span>
             </div>
             <div className="flex items-center gap-2">
-              <kbd className="px-1 py-0.5 bg-slate-100 rounded text-slate-600 border border-slate-200">/</kbd>
+              <kbd className="px-1 py-0.5 bg-slate-800 rounded text-slate-400">/</kbd>
               <span>全局搜索</span>
             </div>
           </div>

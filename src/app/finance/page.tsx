@@ -1,11 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Calculator, RefreshCw, TrendingUp, TrendingDown, DollarSign, ChevronDown, ChevronUp, Receipt, Percent, Banknote, Tag, X, Check, Calendar, CalendarDays, CalendarRange, CalendarClock } from 'lucide-react';
-
-// 导航项已移除，使用 Sidebar.tsx 中的统一导航
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { getNavItems } from '@/lib/nav-config';
+import { Calculator, RefreshCw, TrendingUp, TrendingDown, DollarSign, ChevronDown, ChevronUp, Receipt, Percent, Banknote, Tag, X, Check, Calendar, CalendarDays, CalendarRange, CalendarClock, Box, ShoppingCart } from 'lucide-react';
 
 export default function FinancePage() {
+  const pathname = usePathname();
+  const navItems = getNavItems(pathname);
   const [pendingOrders, setPendingOrders] = useState<any[]>([]);
   const [settledRecords, setSettledRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -116,14 +119,39 @@ export default function FinancePage() {
   };
 
   return (
-    <div className="p-6">
-      {/* 页面标题 */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[#152033]">财务核算</h1>
-        <p className="text-sm text-[#637089] mt-1">售后期结束后计算真实净利润 = Ozon结算金额 - 平台佣金 - 收单费 - 采购成本 - 运费</p>
-      </div>
+    <div className="min-h-screen bg-[#F6F8FB]">
+      <header className="bg-white sticky top-0 z-40 h-14 flex items-center justify-between px-6 border-b border-[#E6EAF2]">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-[#2F6BFF] rounded-lg flex items-center justify-center"><Calculator className="w-4 h-4 text-white" /></div>
+          <span className="font-semibold text-base text-[#152033]">Ozon ERP</span>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="text-xs text-[#637089]">汇率: 1 RUB = {exchangeRate.toFixed(4)} CNY</div>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-[#2F6BFF]/10 rounded-full flex items-center justify-center text-[#2F6BFF] font-medium text-sm">管</div>
+            <span className="text-sm font-medium text-[#152033]">管理员</span>
+          </div>
+        </div>
+      </header>
 
-      {/* 日期汇总卡片 */}
+      <div className="flex" style={{ height: 'calc(100vh - 3.5rem)' }}>
+        <aside className="w-56 shrink-0 bg-white border-r border-[#E6EAF2] overflow-y-auto">
+          <div className="p-3 space-y-0.5">
+            {navItems.map((item, idx) => {
+              if (item.type === 'divider') return <div key={idx} className="pt-3 pb-1"><span className="px-3 text-xs font-medium text-[#637089]/60 uppercase tracking-wider">{item.label}</span></div>;
+              const Icon = item.icon!;
+              return <Link key={item.href!} href={item.href!} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition-colors ${item.active ? 'bg-[#2F6BFF]/10 text-[#2F6BFF]' : 'text-[#637089] hover:bg-[#EEF1F6] hover:text-[#152033]'}`}><Icon className="w-4 h-4" />{item.label}</Link>;
+            })}
+          </div>
+        </aside>
+
+        <main className="flex-1 min-w-0 overflow-y-auto bg-[#F6F8FB] p-6">
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-[#152033]">财务核算</h1>
+            <p className="text-sm text-[#637089] mt-1">售后期结束后计算真实净利润 = Ozon结算金额 - 平台佣金 - 收单费 - 采购成本 - 运费</p>
+          </div>
+
+          {/* 日期汇总卡片 */}
           {dateSummaries?.daily && dateSummaries?.weekly && dateSummaries?.monthly && dateSummaries?.yearly && (
             <div className="grid grid-cols-4 gap-4 mb-6">
               <div className="bg-white rounded-lg shadow-sm p-4 border border-[#E6EAF2]">
@@ -452,6 +480,8 @@ export default function FinancePage() {
                 </tbody>
               </table>}
           </div>
-        </div>
-      );
-    }
+        </main>
+      </div>
+    </div>
+  );
+}

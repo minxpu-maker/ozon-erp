@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { getNavItems } from '@/lib/nav-config';
 import { Users, RefreshCw, Plus, Phone, Mail, Box } from 'lucide-react';
-
-// 导航项已移除，使用 Sidebar.tsx 中的统一导航
 
 export default function SuppliersPage() {
   const pathname = usePathname();

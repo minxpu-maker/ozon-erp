@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   RefreshCw, 
   Download, 
@@ -16,14 +18,43 @@ import {
   ShoppingCart,
   CheckCircle,
   Package,
-  Check,
-  AlertCircle,
   MapPin,
   FileText,
   Truck,
+  Warehouse,
+  Check,
+  AlertCircle,
+  LayoutDashboard,
+  ClipboardList,
+  Calculator,
+  PackageSearch,
+  Database,
+  Users,
+  BarChart3,
+  UserCircle,
+  Shield,
+  Settings
 } from 'lucide-react';
 
-// 导航项已移除，使用 Sidebar.tsx 中的统一导航
+const navItems = [
+  { href: '/dashboard', icon: LayoutDashboard, label: '仪表盘' },
+  { href: '/purchase', icon: Package, label: '采购管理', active: true },
+  { href: '/quick-entry', icon: ClipboardList, label: '快捷录单' },
+  { href: '/logistics', icon: Truck, label: '入库验货' },
+  { href: '/packaging', icon: Package, label: '打包发货' },
+  { href: '/finance', icon: Calculator, label: '利润核算' },
+  { type: 'divider', label: '库存管理' },
+  { href: '/inventory', icon: PackageSearch, label: '库存管理' },
+  { href: '/wms', icon: Warehouse, label: '仓库管理' },
+  { type: 'divider', label: '数据中心' },
+  { href: '/sku-management', icon: Database, label: 'SKU管理' },
+  { href: '/suppliers', icon: Users, label: '供应商管理' },
+  { href: '/reports', icon: BarChart3, label: '数据报表' },
+  { type: 'divider', label: '系统' },
+  { href: '/accounts', icon: UserCircle, label: '账号管理' },
+  { href: '/roles', icon: Shield, label: '角色权限' },
+  { href: '/settings', icon: Settings, label: '系统设置' },
+];
 
 interface Order {
   id: string;
@@ -196,12 +227,66 @@ export default function PurchasePage() {
   });
 
   return (
-    <div className="p-6">
-      {/* 页面标题 */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[#1F2937]">采购管理</h1>
-        <p className="text-sm text-[#637089] mt-1">管理待采购订单，同步Ozon平台订单数据</p>
-      </div>
+    <div className="min-h-screen bg-[#F6F8FB] flex">
+      {/* 左侧导航栏 */}
+      <aside className="w-56 bg-white border-r border-[#E6EAF2] flex flex-col fixed left-0 top-0 bottom-0 z-20">
+        {/* Logo */}
+        <div className="h-14 flex items-center px-5 border-b border-[#E6EAF2]">
+          <Link href="/dashboard" className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-[#2F6BFF] flex items-center justify-center">
+              <Package className="w-4 h-4 text-white" />
+            </div>
+            <span className="text-sm font-semibold text-[#152033]">Ozon ERP</span>
+          </Link>
+        </div>
+        
+        {/* 导航菜单 */}
+        <nav className="flex-1 py-3 overflow-y-auto">
+          {navItems.map((item, index) => {
+            if (item.type === 'divider') {
+              return (
+                <div key={`divider-${index}`} className="px-5 py-2">
+                  <div className="text-[10px] font-medium text-[#637089] uppercase tracking-wider">
+                    {item.label}
+                  </div>
+                </div>
+              );
+            }
+            const Icon = item.icon!;
+            return (
+              <Link
+                key={item.href!}
+                href={item.href!}
+                className={`flex items-center gap-2.5 px-5 py-2 text-sm transition-colors ${
+                  item.active
+                    ? 'text-[#2F6BFF] bg-[#2F6BFF]/5 font-medium'
+                    : 'text-[#637089] hover:text-[#152033] hover:bg-[#F6F8FB]'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+      </aside>
+
+      {/* 主内容区 */}
+      <div className="flex-1 ml-56 flex flex-col">
+        {/* 顶部导航栏 */}
+        <header className="h-14 bg-white border-b border-[#E6EAF2] flex items-center justify-between px-6 sticky top-0 z-10">
+          <div className="flex items-center gap-4">
+            <h1 className="text-lg font-semibold text-[#152033]">采购管理</h1>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/settings">系统设置</Link>
+            </Button>
+          </div>
+        </header>
+
+        {/* 页面内容 */}
+        <main className="flex-1 p-6 overflow-auto">
 
       {/* 统计卡片 - 紧凑布局 */}
       <div className="px-6 py-3">
@@ -631,6 +716,8 @@ export default function PurchasePage() {
           )}
         </DialogContent>
       </Dialog>
+      </main>
+      </div>
     </div>
   );
 }

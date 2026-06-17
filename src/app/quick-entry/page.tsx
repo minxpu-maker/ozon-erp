@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { getNavItems } from '@/lib/nav-config';
 import {
   ClipboardList, RefreshCw, Clock, Link2, ShoppingBag, AlertTriangle, ChevronRight, CheckCircle, XCircle, Box, Database,
 } from 'lucide-react';
-
-// 导航项已移除，使用 Sidebar.tsx 中的统一导航
 
 interface QuickEntryTask {
   id: string;
@@ -17,6 +18,8 @@ interface QuickEntryTask {
 }
 
 export default function QuickEntryPage() {
+  const pathname = usePathname();
+  const navItems = getNavItems(pathname);
   const [tasks, setTasks] = useState<QuickEntryTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [entryType, setEntryType] = useState<'paste' | 'ocr' | 'excel'>('paste');
@@ -51,8 +54,42 @@ export default function QuickEntryPage() {
   };
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
+    <div className="min-h-screen bg-[#F6F8FB]">
+      <header className="bg-white sticky top-0 z-40 h-14 flex items-center justify-between px-6 border-b border-[#E6EAF2]">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-[#2F6BFF] rounded-lg flex items-center justify-center">
+            <ClipboardList className="w-4 h-4 text-white" />
+          </div>
+          <span className="font-semibold text-base text-[#152033]">Ozon ERP</span>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-[#2F6BFF]/10 rounded-full flex items-center justify-center text-[#2F6BFF] font-medium text-sm">管</div>
+            <span className="text-sm font-medium text-[#152033]">管理员</span>
+          </div>
+        </div>
+      </header>
+
+      <div className="flex" style={{ height: 'calc(100vh - 3.5rem)' }}>
+        <aside className="w-56 shrink-0 bg-white border-r border-[#E6EAF2] overflow-y-auto">
+          <div className="p-3 space-y-0.5">
+            {navItems.map((item, idx) => {
+              if (item.type === 'divider') {
+                return <div key={idx} className="pt-3 pb-1"><span className="px-3 text-xs font-medium text-[#637089]/60 uppercase tracking-wider">{item.label}</span></div>;
+              }
+              const Icon = item.icon!;
+              return (
+                <Link key={item.href!} href={item.href!}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition-colors ${item.active ? 'bg-[#2F6BFF]/10 text-[#2F6BFF]' : 'text-[#637089] hover:bg-[#EEF1F6] hover:text-[#152033]'}`}>
+                  <Icon className="w-4 h-4" />{item.label}
+                </Link>
+              );
+            })}
+          </div>
+        </aside>
+
+        <main className="flex-1 min-w-0 overflow-y-auto bg-[#F6F8FB] p-6">
+          <div className="mb-6">
             <h1 className="text-2xl font-bold text-[#152033]">快捷录单</h1>
             <p className="text-sm text-[#637089] mt-1">三种录入方式：单号粘贴 / 截图OCR / Excel批量导入</p>
           </div>
