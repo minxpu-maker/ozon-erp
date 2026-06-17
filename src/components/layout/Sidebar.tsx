@@ -67,38 +67,24 @@ export function Sidebar() {
       ],
     },
     {
-      label: '选品工具',
-      icon: Search,
-      items: [
-        { name: 'AI 选品', href: '/selection' },
-        { name: '关键词挖掘', href: '/keywords/mining' },
-        { name: '关键词反查', href: '/keywords/reverse' },
-        { name: '搜索趋势', href: '/keywords/trend' },
-        { name: '关键词库', href: '/keywords/library' },
-        { name: '数据监控', href: '/monitor/overview' },
-        { name: '采集箱', href: '/collection-box' },
-      ],
-      defaultExpanded: false,
-    },
-    {
       label: '订单管理',
-      icon: ShoppingCart,
+      icon: ClipboardList,
       items: [
+        { name: '采购管理', href: '/orders' },
         { name: '订单列表', href: '/orders/list' },
       ],
     },
     {
       label: '采购中心',
-      icon: Package,
+      icon: ShoppingCart,
       items: [
         { name: '快捷录单', href: '/quick-entry' },
-        { name: '采购工作台', href: '/purchase' },
         { name: '供应商管理', href: '/suppliers' },
       ],
     },
     {
       label: '仓储发货',
-      icon: Truck,
+      icon: Package,
       items: [
         { name: '入库验货', href: '/logistics' },
         { name: '打包发货', href: '/packaging' },
@@ -115,36 +101,71 @@ export function Sidebar() {
       ],
     },
     {
-      label: 'AI智能',
-      icon: Bot,
+      label: '选品中心',
+      icon: Target,
       items: [
-        { name: '修图上架', href: '/image-listing' },
-        { name: 'AI工具', href: '/ai-tools', locked: true },
+        { name: '选品列表', href: '/selection' },
+        { name: '商品卡管理', href: '/selection/cards' },
+        { name: '趋势分析', href: '/selection/trends' },
+        { name: '选品规则', href: '/selection/rules' },
+        { name: '选品复盘', href: '/selection/retrospective' },
       ],
-      defaultExpanded: false,
+    },
+    {
+      label: '关键词工具',
+      icon: Search,
+      items: [
+        { name: '关键词库', href: '/keywords/library' },
+        { name: '关键词挖掘', href: '/keywords/mining' },
+        { name: '反查关键词', href: '/keywords/reverse' },
+        { name: '趋势分析', href: '/keywords/trend' },
+      ],
+    },
+    {
+      label: '监控中心',
+      icon: Activity,
+      items: [
+        { name: '监控概览', href: '/monitor/overview' },
+        { name: '商品监控', href: '/monitor/products' },
+        { name: '关键词监控', href: '/monitor/keywords' },
+        { name: '店铺监控', href: '/monitor/shops' },
+      ],
+    },
+    {
+      label: '图文生成',
+      icon: Image,
+      items: [
+        { name: '工作台', href: '/image-listing/workbench' },
+        { name: '模板管理', href: '/image-listing/templates' },
+        { name: '上架列表', href: '/image-listing/listing' },
+        { name: '生成流水线', href: '/image-listing/pipeline' },
+      ],
     },
     {
       label: '数据中心',
-      icon: BarChart3,
+      icon: Database,
       items: [
+        { name: '数据概览', href: '/data' },
         { name: 'SKU管理', href: '/sku-management' },
         { name: '数据报表', href: '/reports' },
-        { name: '数据源健康度', href: '/data-center/source-health' },
+        { name: '采集箱', href: '/collection-box' },
         { name: '数据源管理', href: '/data-center/source-management' },
+        { name: '数据源健康度', href: '/data-center/source-health' },
         { name: '知识库通知', href: '/data-center/notifications' },
       ],
-      defaultExpanded: false,
     },
     {
       label: '系统设置',
       icon: Settings,
       items: [
         { name: '店铺管理', href: '/settings/shops' },
+        { name: '店铺配置', href: '/settings/shop-config' },
         { name: '硬件设备', href: '/settings/devices' },
+        { name: '系统设置', href: '/settings' },
+        { name: '插件设置', href: '/settings/extension-settings' },
         { name: '账号管理', href: '/accounts' },
         { name: '角色权限', href: '/roles' },
       ],
-      defaultExpanded: false,
     },
   ];
 
