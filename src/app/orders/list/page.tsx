@@ -4,6 +4,8 @@ import { useState, useEffect, useMemo } from 'react';
 import useSWR from 'swr';
 import Link from 'next/link';
 import Image from 'next/image';
+import { AppLayout } from '@/components/layout/AppLayout';
+
 import {
   Search,
   Filter,
@@ -61,7 +63,7 @@ interface Shop {
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
-export default function OrdersListPage() {
+function OrdersListPageInner() {
   const [shopId, setShopId] = useState('all');
   const [status, setStatus] = useState('all');
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
@@ -418,4 +420,8 @@ export default function OrdersListPage() {
       </div>
     </div>
   );
+}
+
+export default function OrdersListPage() {
+  return <AppLayout><OrdersListPageInner /></AppLayout>;
 }
