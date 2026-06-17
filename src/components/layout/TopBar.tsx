@@ -26,8 +26,8 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 interface Shop {
   id: string;
-  name: string;
-  is_primary: boolean;
+  shopName: string;
+  platform: string;
 }
 
 interface PurchaseDemand {
@@ -49,7 +49,7 @@ function ShopSwitcher() {
   const { currentShopId, setShopId, clearShopId } = useShopStore();
 
   const currentShop = shops?.data?.find((s: Shop) => s.id === currentShopId);
-  const displayName = currentShop?.name || '全部门店';
+  const displayName = currentShop?.shopName || '全部门店';
 
   return (
     <DropdownMenu>
@@ -75,12 +75,7 @@ function ShopSwitcher() {
             onClick={() => setShopId(shop.id)}
             className={currentShopId === shop.id ? 'bg-accent font-medium' : ''}
           >
-            {shop.name}
-            {shop.is_primary && (
-              <Badge variant="secondary" className="ml-2 text-xs">
-                主
-              </Badge>
-            )}
+            {shop.shopName}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

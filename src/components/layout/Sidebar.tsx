@@ -33,7 +33,12 @@ import { cn } from '@/lib/utils';
 import { useShopStore } from '@/stores/shop-store';
 import { TopBar } from './TopBar';
 
-interface Shop { id: string; name: string; platform: string | null; }
+// API 返回的店铺类型
+interface Shop {
+  id: string;
+  shopName: string;
+  platform: string | null;
+}
 
 interface NavItem {
   label: string;
@@ -131,8 +136,10 @@ export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { currentShopId } = useShopStore();
-  const { data: shops } = useSWR<Shop[]>('/api/shops');
-  const currentShop = shops?.find(s => s.id === currentShopId);
+  // API 返回格式是 { success, data: [...], total }，需要访问 .data
+  const { data: shopsResponse } = useSWR<{ data: Shop[] }>('/api/shops');
+  const shops = shopsResponse?.data || [];
+  const currentShop = shops.find(s => s.id === currentShopId);
   const [collapsed, setCollapsed] = useState(false);
   // 初始状态使用默认值，避免 hydration 不匹配
   const [expandedGroups, setExpandedGroups] = useState<Record<number, boolean>>(() => {
