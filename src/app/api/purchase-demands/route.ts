@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/storage/database/client';
 import { purchaseDemands, ozonOrders } from '@/storage/database/shared/schema';
-import { eq, and, desc, asc, inArray } from "drizzle-orm";
+import { eq, and, desc, asc, inArray, sql } from "drizzle-orm";
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,14 +16,14 @@ export async function GET(request: NextRequest) {
       // 聚合视图：按SKU分组
       const results = await db
         .select({
+          id: purchaseDemands.id,
           sku: purchaseDemands.sku,
           productName: purchaseDemands.productName,
           productImage: purchaseDemands.productImage,
           totalQty: purchaseDemands.quantity,
-          demandCount: purchaseDemands.id,
-          earliestDeadline: purchaseDemands.createdAt,
           priority: purchaseDemands.priority,
           orderId: purchaseDemands.orderId,
+          earliestDeadline: ozonOrders.shipmentDeadline,
         })
         .from(purchaseDemands)
         .leftJoin(ozonOrders, eq(ozonOrders.id, purchaseDemands.orderId))
@@ -36,46 +36,64 @@ export async function GET(request: NextRequest) {
         productImage: string | null;
         totalQty: number;
         demandCount: number;
-        earliestDeadline: Date | null;
+        earliestDeadline: string | null;
         priorities: { high: number; normal: number; low: number };
-        demands: Array<{ id: number; orderId: number; quantity: number; priority: string; deadline: Date | null }>;
+        demands: Array<{ id: number; orderId: number; quantity: number; priority: string; deadline: string | null }>;
       }>();
 
       for (const row of results) {
-        if (!skuMap.has(row.sku)) {
-          skuMap.set(row.sku, {
-            sku: row.sku,
+        const sku = String(row.sku || '');
+        const existing = skuMap.get(sku);
+        const priority = String(row.priority || 'normal');
+        const deadlineStr = row.earliestDeadline 
+          ? String(row.earliestDeadline) 
+          : null;
+
+        if (!existing) {
+          // 新SKU，创建聚合数据
+          skuMap.set(sku, {
+            sku: sku,
             productName: row.productName,
             productImage: row.productImage,
-            totalQty: 0,
-            demandCount: 0,
-            earliestDeadline: row.earliestDeadline,
-            priorities: { high: 0, normal: 0, low: 0 },
-            demands: [],
+            totalQty: Number(row.totalQty) || 0,
+            demandCount: 1,
+            earliestDeadline: deadlineStr,
+            priorities: { 
+              high: priority === 'high' ? 1 : 0, 
+              normal: priority === 'normal' ? 1 : 0, 
+              low: priority === 'low' ? 1 : 0 
+            },
+            demands: [{
+              id: Number(row.id),
+              orderId: Number(row.orderId),
+              quantity: Number(row.totalQty) || 0,
+              priority: priority,
+              deadline: deadlineStr,
+            }],
+          });
+        } else {
+          // 已有SKU，累加数据
+          existing.totalQty += Number(row.totalQty) || 0;
+          existing.demandCount += 1;
+          
+          // 统计优先级
+          if (priority === 'high') existing.priorities.high++;
+          else if (priority === 'normal') existing.priorities.normal++;
+          else existing.priorities.low++;
+          
+          // 更新最早截止时间
+          if (deadlineStr && (!existing.earliestDeadline || deadlineStr < existing.earliestDeadline)) {
+            existing.earliestDeadline = deadlineStr;
+          }
+          
+          existing.demands.push({
+            id: Number(row.id),
+            orderId: Number(row.orderId),
+            quantity: Number(row.totalQty) || 0,
+            priority: priority,
+            deadline: deadlineStr,
           });
         }
-        const agg = skuMap.get(row.sku)!;
-        agg.totalQty += Number(row.totalQty) || 0;
-        agg.demandCount += 1;
-        
-        // 统计优先级
-        const priority = row.priority || 'normal';
-        if (priority === 'high') agg.priorities.high++;
-        else if (priority === 'normal') agg.priorities.normal++;
-        else agg.priorities.low++;
-        
-        // 更新最早截止时间
-        if (row.earliestDeadline && (!agg.earliestDeadline || row.earliestDeadline < agg.earliestDeadline)) {
-          agg.earliestDeadline = row.earliestDeadline;
-        }
-        
-        agg.demands.push({
-          id: Number(row.demandCount),
-          orderId: Number(row.orderId),
-          quantity: Number(row.totalQty) || 0,
-          priority: priority,
-          deadline: row.earliestDeadline,
-        });
       }
 
       // 转换为数组并排序
@@ -99,8 +117,8 @@ export async function GET(request: NextRequest) {
             return aHighestPriority - bHighestPriority;
           }
           // 然后按最早截止时间排序
-          const aTime = a.earliestDeadline?.getTime() || Infinity;
-          const bTime = b.earliestDeadline?.getTime() || Infinity;
+          const aTime = a.earliestDeadline ? new Date(a.earliestDeadline).getTime() : Infinity;
+          const bTime = b.earliestDeadline ? new Date(b.earliestDeadline).getTime() : Infinity;
           return aTime - bTime;
         });
 
@@ -134,7 +152,12 @@ export async function GET(request: NextRequest) {
         .from(purchaseDemands)
         .leftJoin(ozonOrders, eq(ozonOrders.id, purchaseDemands.orderId))
         .where(status !== 'all' ? eq(purchaseDemands.status, status) : undefined)
-        .orderBy(purchaseDemands.priority, purchaseDemands.createdAt)
+        .orderBy(
+          // high优先，然后normal，然后low
+          sql`CASE ${purchaseDemands.priority} WHEN 'high' THEN 0 WHEN 'normal' THEN 1 ELSE 2 END`,
+          ozonOrders.shipmentDeadline,
+          purchaseDemands.createdAt
+        )
         .limit(limit)
         .offset(offset);
 
