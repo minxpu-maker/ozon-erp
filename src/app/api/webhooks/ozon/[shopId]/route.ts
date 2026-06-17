@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/storage/database/client';
 import { webhookLogs } from '@/db/schema/fulfillment';
 import { shops, orders, orderItems, purchaseTasks } from '@/storage/database/shared/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and, inArray } from 'drizzle-orm';
 
 // Ozon 允许的IP段（实际生产中应从环境变量读取）
 const ALLOWED_IPS = [
@@ -264,6 +264,145 @@ async function handlePostingCancelled(body: any, shopId: string, logId: string):
     .where(eq(webhookLogs.id, logId));
 }
 
+/**
+ * 处理TYPE_PING：连通性检查
+ * Ozon定期发送，验证端点是否在线
+ */
+async function handlePing(body: any, shopId: string, logId: string): Promise<void> {
+  await db.update(webhookLogs)
+    .set({ processed: true })
+    .where(eq(webhookLogs.id, logId));
+}
+
+/**
+ * 处理TYPE_CUTOFF_DATE_CHANGED：发运截止日期变更
+ */
+async function handleCutoffDateChanged(body: any, shopId: string, logId: string): Promise<void> {
+  const postingNumber = body.posting_number || '';
+  const newCutoffDate = body.cutoff_date || body.shipment_date || null;
+
+  if (!postingNumber) {
+    await db.update(webhookLogs)
+      .set({ processed: true, errorMessage: 'No posting_number in payload' })
+      .where(eq(webhookLogs.id, logId));
+    return;
+  }
+
+  const existing = await db.select({ id: orders.id })
+    .from(orders)
+    .where(eq(orders.ozonPostingNumber, postingNumber))
+    .limit(1);
+
+  if (existing.length > 0) {
+    await db.update(orders)
+      .set({
+        shipmentDeadline: newCutoffDate ? new Date(newCutoffDate) : null,
+        ozonUpdatedAt: new Date(),
+        lastSyncedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(orders.id, existing[0].id));
+
+    await db.update(webhookLogs)
+      .set({ processed: true, orderId: existing[0].id })
+      .where(eq(webhookLogs.id, logId));
+  } else {
+    await db.update(webhookLogs)
+      .set({ processed: true, errorMessage: `Order not found: ${postingNumber}` })
+      .where(eq(webhookLogs.id, logId));
+  }
+}
+
+/**
+ * 处理TYPE_DELIVERY_DATE_CHANGED：配送日期变更
+ */
+async function handleDeliveryDateChanged(body: any, shopId: string, logId: string): Promise<void> {
+  const postingNumber = body.posting_number || '';
+  const newDeliveryDate = body.delivery_date || body.delivering_date || null;
+
+  if (!postingNumber) {
+    await db.update(webhookLogs)
+      .set({ processed: true, errorMessage: 'No posting_number in payload' })
+      .where(eq(webhookLogs.id, logId));
+    return;
+  }
+
+  const existing = await db.select({ id: orders.id })
+    .from(orders)
+    .where(eq(orders.ozonPostingNumber, postingNumber))
+    .limit(1);
+
+  if (existing.length > 0) {
+    // orders表无deliveringDate字段，配送日期保存到ozonRawData中
+    await db.update(orders)
+      .set({
+        ozonUpdatedAt: new Date(),
+        lastSyncedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(orders.id, existing[0].id));
+
+    await db.update(webhookLogs)
+      .set({
+        processed: true,
+        orderId: existing[0].id,
+        errorMessage: newDeliveryDate ? `delivery_date: ${newDeliveryDate}` : null,
+      })
+      .where(eq(webhookLogs.id, logId));
+  } else {
+    await db.update(webhookLogs)
+      .set({ processed: true, errorMessage: `Order not found: ${postingNumber}` })
+      .where(eq(webhookLogs.id, logId));
+  }
+}
+
+/**
+ * 处理聊天类通知：TYPE_NEW_MESSAGE / TYPE_UPDATE_MESSAGE / TYPE_MESSAGE_READ / TYPE_CHAT_CLOSED
+ * 方案A：只记录到webhook_logs，不单独解析，前端从raw_payload提取展示
+ */
+async function handleChatMessage(body: any, shopId: string, logId: string, messageType: string): Promise<void> {
+  const postingNumber = body.posting_number || '';
+
+  // 尝试关联订单
+  let orderId: string | null = null;
+  if (postingNumber) {
+    const existing = await db.select({ id: orders.id })
+      .from(orders)
+      .where(eq(orders.ozonPostingNumber, postingNumber))
+      .limit(1);
+    if (existing.length > 0) {
+      orderId = existing[0].id;
+    }
+  }
+
+  // 聊天消息默认未读（TYPE_MESSAGE_READ除外，它标记已读）
+  const isRead = messageType === 'TYPE_MESSAGE_READ';
+
+  await db.update(webhookLogs)
+    .set({
+      processed: true,
+      orderId: orderId,
+      isRead: isRead,
+    })
+    .where(eq(webhookLogs.id, logId));
+
+  // 如果是TYPE_MESSAGE_READ，同时把该订单之前的聊天消息也标记已读
+  if (messageType === 'TYPE_MESSAGE_READ' && orderId) {
+    await db.update(webhookLogs)
+      .set({ isRead: true })
+      .where(
+        and(
+          eq(webhookLogs.orderId, orderId),
+          eq(webhookLogs.isRead, false),
+          inArray(webhookLogs.eventType, [
+            'TYPE_NEW_MESSAGE',
+            'TYPE_UPDATE_MESSAGE',
+          ])
+        )
+      );
+  }
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ shopId: string }> }
@@ -342,6 +481,21 @@ export async function POST(
           break;
         case 'TYPE_POSTING_CANCELLED':
           await handlePostingCancelled(body, shopId, logId);
+          break;
+        case 'TYPE_CUTOFF_DATE_CHANGED':
+          await handleCutoffDateChanged(body, shopId, logId);
+          break;
+        case 'TYPE_DELIVERY_DATE_CHANGED':
+          await handleDeliveryDateChanged(body, shopId, logId);
+          break;
+        case 'TYPE_PING':
+          await handlePing(body, shopId, logId);
+          break;
+        case 'TYPE_NEW_MESSAGE':
+        case 'TYPE_UPDATE_MESSAGE':
+        case 'TYPE_MESSAGE_READ':
+        case 'TYPE_CHAT_CLOSED':
+          await handleChatMessage(body, shopId, logId, messageType);
           break;
         // B04-5: 其他事件类型
         default:
