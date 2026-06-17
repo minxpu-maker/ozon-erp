@@ -1,6 +1,10 @@
 import { sql, relations } from "drizzle-orm";
 import { pgTable, text, varchar, timestamp, boolean, integer, numeric, jsonb, index, serial, uuid, bigint, decimal, date, uniqueIndex } from "drizzle-orm/pg-core";
 
+// 重新导出履约模块的表
+export { ozonOrders, purchaseDemands, purchaseRecords, qcRecords, shipmentRecords, orderFinance } from "./fulfillment";
+export type { OzonOrder, InsertOzonOrder, PurchaseDemand, InsertPurchaseDemand, PurchaseRecord, InsertPurchaseRecord, QcRecord, InsertQcRecord, ShipmentRecord, InsertShipmentRecord, OrderFinance, InsertOrderFinance } from "./fulfillment";
+
 // 系统健康检查表（必须保留）
 export const healthCheck = pgTable("health_check", {
   id: serial().notNull(),
