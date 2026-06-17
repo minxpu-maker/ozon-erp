@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -996,69 +995,63 @@ function SelectionPageInner() {
   const columns = tabConfig.columns;
 
   return (
-    <AppLayout title="选品">
-      <div className="min-h-screen bg-[#F5F7FA]">
-        {/* 面包屑 */}
-        <div className="px-6 py-4">
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-[#637089]">选品</span>
-            <ChevronRight className="w-4 h-4 text-[#D1D5DB]" />
-            <span className="text-[#1F2937] font-medium">
-              {TABS.find((t) => t.id === activeTab)?.label}
-            </span>
+    <div className="min-h-screen bg-[#F5F7FA]">
+      {/* 页面标题 */}
+      <div className="px-6 pt-4 pb-2">
+        <h1 className="text-xl font-semibold text-gray-900">AI 选品</h1>
+        <p className="text-sm text-gray-500 mt-0.5">智能选品推荐与分析</p>
+      </div>
+
+      {/* Tab栏 */}
+      <TabBar activeTab={activeTab} onTabChange={handleTabChange} />
+
+      <div className="p-6 space-y-4">
+        {/* 平台切换 */}
+        <PlatformSwitch value={platform} onChange={setPlatform} />
+
+        {/* 推荐模式 */}
+        <SelectionModeSelector value={selectionMode} onChange={handleSelectionModeChange} tabId={activeTab} />
+
+        {/* 筛选区 */}
+        <FilterSection
+          filters={filters}
+          onChange={setFilters}
+          onReset={handleResetFilters}
+          onSearch={handleSearch}
+        />
+
+        {/* 操作栏 */}
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-[#637089]">
+            结果 <span className="font-medium text-[#1F2937]">{filteredData.length}</span> 条
+            {selectedIds.size > 0 && (
+              <span className="ml-2 text-[#1677FF]">已选 {selectedIds.size} 件</span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {tabConfig.batchActions.map((action) => (
+              <Button
+                key={action.id}
+                size="sm"
+                variant={action.variant || 'outline'}
+                disabled={selectedIds.size === 0 && action.id !== 'export'}
+                onClick={() => handleBatchAction(action.id)}
+                className={action.variant !== 'outline' ? 'bg-[#1677FF] hover:bg-[#1668E0]' : ''}
+              >
+                {action.icon}
+                {action.label}
+              </Button>
+            ))}
+            <Button size="sm" variant="outline">
+              <Filter className="w-4 h-4 mr-1" />
+              列设置
+            </Button>
           </div>
         </div>
 
-        {/* Tab栏 */}
-        <TabBar activeTab={activeTab} onTabChange={handleTabChange} />
-
-        <div className="p-6 space-y-4">
-          {/* 平台切换 */}
-          <PlatformSwitch value={platform} onChange={setPlatform} />
-
-          {/* 推荐模式 */}
-          <SelectionModeSelector value={selectionMode} onChange={handleSelectionModeChange} tabId={activeTab} />
-
-          {/* 筛选区 */}
-          <FilterSection
-            filters={filters}
-            onChange={setFilters}
-            onReset={handleResetFilters}
-            onSearch={handleSearch}
-          />
-
-          {/* 操作栏 */}
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-[#637089]">
-              结果 <span className="font-medium text-[#1F2937]">{filteredData.length}</span> 条
-              {selectedIds.size > 0 && (
-                <span className="ml-2 text-[#1677FF]">已选 {selectedIds.size} 件</span>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              {tabConfig.batchActions.map((action) => (
-                <Button
-                  key={action.id}
-                  size="sm"
-                  variant={action.variant || 'outline'}
-                  disabled={selectedIds.size === 0 && action.id !== 'export'}
-                  onClick={() => handleBatchAction(action.id)}
-                  className={action.variant !== 'outline' ? 'bg-[#1677FF] hover:bg-[#1668E0]' : ''}
-                >
-                  {action.icon}
-                  {action.label}
-                </Button>
-              ))}
-              <Button size="sm" variant="outline">
-                <Filter className="w-4 h-4 mr-1" />
-                列设置
-              </Button>
-            </div>
-          </div>
-
-          {/* 数据表格 */}
-          <Card>
-            <Table>
+        {/* 数据表格 */}
+        <Card>
+          <Table>
               <TableHeader>
                 <TableRow className="bg-[#F9FAFB]">
                   <TableHead className="w-10">
@@ -1206,7 +1199,6 @@ function SelectionPageInner() {
           </div>
         </div>
       </div>
-    </AppLayout>
   );
 }
 

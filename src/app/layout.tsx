@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { Inspector } from 'react-dev-inspector';
-import MainLayout from '@/components/layout/MainLayout';
+import { TopBar } from '@/components/layout/TopBar';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -68,7 +68,8 @@ export default function RootLayout({
     <html lang="zh-CN" suppressHydrationWarning>
       <body className="antialiased" suppressHydrationWarning>
         {isDev && <Inspector />}
-        <MainLayout>{children}</MainLayout>
+        <TopBar />
+        {children}
       </body>
     </html>
   );

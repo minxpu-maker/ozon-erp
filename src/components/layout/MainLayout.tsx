@@ -1,7 +1,7 @@
 'use client';
 
 import { TopBar } from './TopBar';
-import Sidebar from './Sidebar';
+import { Sidebar } from './Sidebar';
 
 export default function MainLayout({
   children,
