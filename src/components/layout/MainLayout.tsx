@@ -1,7 +1,5 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
-import { useShopStore } from '@/stores/shop-store';
 import { TopBar } from './TopBar';
 import Sidebar from './Sidebar';
 

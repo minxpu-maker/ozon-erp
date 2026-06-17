@@ -35,13 +35,9 @@ interface PurchaseDemand {
   shipment_deadline: string;
 }
 
-interface ShipmentItem {
-  id: string;
-}
-
 // 店铺切换器
 function ShopSwitcher() {
-  const { data: shops, isLoading } = useSWR<{ data: Shop[] }>(
+  const { data: shops } = useSWR<{ data: Shop[] }>(
     '/api/shops',
     fetcher,
     { refreshInterval: 0 }
@@ -202,22 +198,23 @@ function GlobalScanInput() {
 function TodoCapsules() {
   const router = useRouter();
 
-  // 待采购数
-  const { data: pendingPurchases } = useSWR<{ total: number }>(
+  // 待采购数 - API返回 { success, data: [...], total? }
+  const { data: pendingPurchases } = useSWR<{ data: Array<unknown>; total?: number }>(
     '/api/purchase-demands?status=pending',
     fetcher,
     { refreshInterval: 30000 }
   );
 
-  // 待发货数
-  const { data: pendingShipments } = useSWR<{ total: number }>(
+  // 待发货数 - API返回 { success, data: [...], total }
+  const { data: pendingShipments } = useSWR<{ data: Array<unknown>; total: number }>(
     '/api/shipments',
     fetcher,
     { refreshInterval: 30000 }
   );
 
-  const purchaseCount = pendingPurchases?.total || 0;
-  const shipmentCount = pendingShipments?.total || 0;
+  // 优先使用total，没有则用data长度
+  const purchaseCount = pendingPurchases?.total ?? pendingPurchases?.data?.length ?? 0;
+  const shipmentCount = pendingShipments?.total ?? pendingShipments?.data?.length ?? 0;
 
   return (
     <div className="flex items-center gap-2">

@@ -7,7 +7,6 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   ShoppingCart,
-  FileText,
   Package,
   Truck,
   DollarSign,
@@ -17,7 +16,6 @@ import {
   Database,
   Warehouse,
   Tags,
-  CreditCard,
   Boxes,
   ChevronDown,
   ChevronRight,
@@ -25,13 +23,11 @@ import {
   PanelLeft,
   Store,
   Scale,
-  Bell,
   Hexagon,
   Scan,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useShopStore } from '@/stores/shop-store';
-import { TopBar } from './TopBar';
 
 // API 返回的店铺类型
 interface Shop {
@@ -139,7 +135,8 @@ export default function Sidebar() {
   // API 返回格式是 { success, data: [...], total }，需要访问 .data
   const { data: shopsResponse } = useSWR<{ data: Shop[] }>('/api/shops');
   const shops = shopsResponse?.data || [];
-  const currentShop = shops.find(s => s.id === currentShopId);
+  // 获取当前店铺名称用于显示
+  const currentShopName = shops.find(s => s.id === currentShopId)?.shopName;
   const [collapsed, setCollapsed] = useState(false);
   // 初始状态使用默认值，避免 hydration 不匹配
   const [expandedGroups, setExpandedGroups] = useState<Record<number, boolean>>(() => {
@@ -318,7 +315,7 @@ export default function Sidebar() {
           <div className="px-3 py-2 mb-2 text-xs text-slate-400 bg-slate-800 rounded-lg">
             <div className="flex items-center gap-2">
               <Store className="w-3 h-3" />
-              <span>店铺筛选: ID {currentShopId}</span>
+              <span>店铺: {currentShopName || `ID ${currentShopId}`}</span>
             </div>
           </div>
         )}
