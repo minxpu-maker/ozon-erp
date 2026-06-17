@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/storage/database/client';
-import { purchaseDemands, ozonOrders } from '@/storage/database/shared/schema';
+import { purchaseDemands, ozonOrders } from '@/storage/database/shared/fulfillment';
 import { eq, and, desc, asc, inArray, sql } from "drizzle-orm";
 
 export async function GET(request: NextRequest) {

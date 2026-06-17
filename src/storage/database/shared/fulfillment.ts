@@ -1,6 +1,5 @@
 import { sql } from "drizzle-orm";
 import { pgTable, text, varchar, timestamp, integer, numeric, jsonb, index, serial, uniqueIndex, boolean, decimal } from "drizzle-orm/pg-core";
-import { orders } from "./schema";
 
 // ============================================================================
 // 履约模块 (Fulfillment Module)
@@ -42,7 +41,7 @@ export const ozonOrders = pgTable('ozon_orders', {
  */
 export const purchaseDemands = pgTable('purchase_demands', {
   id: serial('id').primaryKey(),
-  orderId: integer('order_id').notNull().references(() => ozonOrders.id, { onDelete: 'cascade' }),
+  orderId: integer('order_id').notNull(),
   sku: varchar('sku', { length: 100 }).notNull(),
   productName: varchar('product_name', { length: 200 }),
   productImage: varchar('product_image', { length: 500 }),
@@ -128,7 +127,7 @@ export const qcRecords = pgTable('qc_records', {
  */
 export const shipmentRecords = pgTable('shipment_records', {
   id: varchar('id', { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
-  orderId: varchar('order_id', { length: 36 }).notNull().references(() => orders.id),
+  orderId: varchar('order_id', { length: 36 }).notNull(),
   shopId: varchar('shop_id', { length: 36 }),
   expressCompany: varchar('express_company', { length: 100 }),
   expressNo: varchar('express_no', { length: 100 }),
@@ -157,7 +156,7 @@ export const shipmentRecords = pgTable('shipment_records', {
  */
 export const orderFinance = pgTable('order_finance', {
   id: varchar('id', { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
-  orderId: varchar('order_id', { length: 36 }).notNull().references(() => orders.id),
+  orderId: varchar('order_id', { length: 36 }).notNull(),
   shopId: varchar('shop_id', { length: 36 }),
   ozonSettlementAmount: numeric('ozon_settlement_amount', { precision: 12, scale: 2 }),
   purchaseAmount: numeric('purchase_amount', { precision: 12, scale: 2 }),

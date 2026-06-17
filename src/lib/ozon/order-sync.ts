@@ -148,7 +148,7 @@ export async function syncShopOrders(shopId: string): Promise<SyncResult> {
           } else {
             await db.insert(orderItems).values({
               ...itemRecord,
-              createdAt: new Date(),
+              created_at: new Date(),
             });
           }
         }
@@ -165,7 +165,7 @@ export async function syncShopOrders(shopId: string): Promise<SyncResult> {
 
     // 记录同步日志
     await db.insert(orderSyncLogs).values({
-      shopId: shop.id,
+      shop_id: shop.id,
       sync_type: 'auto',
       status: 'success',
       orders_fetched: postings.length,
@@ -173,7 +173,7 @@ export async function syncShopOrders(shopId: string): Promise<SyncResult> {
       orders_updated: updated,
       started_at: startedAt,
       finished_at: new Date(),
-      createdAt: new Date(),
+      created_at: new Date(),
     });
 
     return {
@@ -189,13 +189,13 @@ export async function syncShopOrders(shopId: string): Promise<SyncResult> {
 
     // 记录失败日志
     await db.insert(orderSyncLogs).values({
-      shopId: shop.id,
+      shop_id: shop.id,
       sync_type: 'auto',
       status: 'failed',
       error_message: errorMessage,
       started_at: startedAt,
       finished_at: new Date(),
-      createdAt: new Date(),
+      created_at: new Date(),
     });
 
     return {

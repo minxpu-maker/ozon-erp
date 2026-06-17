@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, schema } from '@/storage/database/client';
+import { db } from '@/storage/database/client';
+import { purchaseRecords, ozonOrders, purchaseDemands } from '@/storage/database/shared/fulfillment';
+import { shops } from '@/storage/database/shared/schema';
 import { eq, and } from 'drizzle-orm';
-
-const { purchaseRecords, ozonOrders, purchaseDemands, shops } = schema;
 
 export async function GET(request: NextRequest) {
   try {

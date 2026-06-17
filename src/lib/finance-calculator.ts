@@ -4,7 +4,8 @@
  */
 import { eq } from 'drizzle-orm';
 import { db } from '@/storage/database/client';
-import { orders, shipmentRecords, orderFinance } from '@/storage/database/shared/schema';
+import { shipmentRecords, orderFinance } from '@/storage/database/shared/fulfillment';
+import { orders } from '@/storage/database/shared/schema';
 
 let exchangeRateCache: { rate: number; timestamp: number } | null = null;
 const CACHE_DURATION = 60 * 60 * 1000;

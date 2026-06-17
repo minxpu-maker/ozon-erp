@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/storage/database/client';
-import { orders, orderFinance } from '@/storage/database/shared/schema';
+import { orderFinance } from '@/storage/database/shared/fulfillment';
+import { orders } from '@/storage/database/shared/schema';
 import { eq } from 'drizzle-orm';
 
 interface SupplementRequest {
