@@ -26,6 +26,7 @@ import {
   Database,
   Bell,
 } from 'lucide-react';
+import { TopBar } from './TopBar';
 
 interface NavItem {
   name: string;
@@ -214,6 +215,9 @@ export function AppLayout({ children, title, subtitle, actions }: AppLayoutProps
 
       {/* 右侧主内容区 */}
       <main className="flex-1 flex flex-col min-w-0">
+        {/* TopBar */}
+        <TopBar />
+
         {/* 顶部统计栏（如果有标题） */}
         {(title || actions) && (
           <header className="h-[48px] bg-white border-b border-[#E6EAF2] flex items-center justify-between px-6">
