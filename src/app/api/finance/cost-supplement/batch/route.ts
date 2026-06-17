@@ -31,12 +31,16 @@ export async function POST(request: NextRequest) {
     // 1. 提取所有订单ID并验证
     const orderIds = items.map(item => item.orderId);
     
-    // 批量查询订单是否存在
+    // 批量查询订单是否存在，并获取shopId
     const existingFinances = await db
-      .select({ orderId: orderFinance.orderId })
+      .select({ 
+        orderId: orderFinance.orderId,
+        shopId: orderFinance.shopId 
+      })
       .from(orderFinance)
       .where(inArray(orderFinance.orderId, orderIds));
     
+    const shopIdMap = new Map(existingFinances.map(f => [f.orderId, f.shopId]));
     const existingOrderIds = new Set(existingFinances.map(f => f.orderId));
     const validItems = items.filter(item => existingOrderIds.has(item.orderId));
     const missingOrders = items.filter(item => !existingOrderIds.has(item.orderId)).map(i => i.orderId);
@@ -114,10 +118,8 @@ export async function POST(request: NextRequest) {
               .where(eq(purchaseRecords.id, existingPurchase.id))
           );
         } else {
-          // 需要创建新记录（假设有默认的shopId）
-          const shopId = existingFinances.find(f => f.orderId === item.orderId)?.orderId 
-            ? 'default' // TODO: 需要从订单获取实际shopId
-            : 'default';
+          // 需要创建新记录 - 从已查询的订单获取shopId
+          const shopId = shopIdMap.get(item.orderId) || 'default';
           
           createPurchaseData.push({
             demandId,
