@@ -57,7 +57,8 @@ const navigationGroups: NavGroup[] = [
     label: '采购管理',
     icon: ShoppingCart,
     items: [
-      { name: '快捷录单', href: '/quick-entry', icon: FileText },
+      { name: '订单列表', href: '/orders/list', icon: FileText },
+      { name: '快捷录单', href: '/quick-entry', icon: Package },
       { name: '货源池', href: '/purchase/suppliers', icon: ShoppingCart, disabled: true, badge: '即将上线' },
       { name: '供应商管理', href: '/suppliers', icon: Building2 },
     ],
