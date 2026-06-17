@@ -352,7 +352,7 @@ export default function DashboardPage() {
                           ? 'text-green-600'
                           : 'text-[#2F6BFF]';
                       return (
-                        <div key={node.href} className="flex items-center gap-2">
+                        <div key={node.label} className="flex items-center gap-2">
                           <Link
                             href={node.href}
                             className={`flex flex-col items-center p-4 rounded-lg ${colorClass} transition-colors cursor-pointer group min-w-[120px]`}
