@@ -11,17 +11,17 @@ interface LabelRequest {
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ orderId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { orderId } = await params;
+    const { id } = await params;
     const body: LabelRequest = await request.json();
 
     // 【业务验证1】验证订单存在
     const orderResult = await db
       .select()
       .from(orders)
-      .where(eq(orders.id, orderId))
+      .where(eq(orders.id, id))
       .limit(1);
 
     if (orderResult.length === 0) {
@@ -44,7 +44,7 @@ export async function POST(
     // 【业务验证3】检查 shipment_records 是否存在
     const shipmentQuery = body.shipmentId
       ? db.select().from(shipmentRecords).where(eq(shipmentRecords.id, body.shipmentId)).limit(1)
-      : db.select().from(shipmentRecords).where(eq(shipmentRecords.orderId, orderId)).limit(1);
+      : db.select().from(shipmentRecords).where(eq(shipmentRecords.orderId, id)).limit(1);
 
     const shipmentResult = await shipmentQuery;
 
@@ -136,7 +136,7 @@ export async function POST(
       success: true,
       data: {
         shipmentId: shipment.id,
-        orderId: orderId,
+        orderId: id,
         postingNumber: order.ozonPostingNumber,
         labelBase64: base64Pdf,
         message: '面单获取成功，请在浏览器中打印',

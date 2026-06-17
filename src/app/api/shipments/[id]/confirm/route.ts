@@ -14,17 +14,17 @@ interface ConfirmRequest {
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ orderId: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { orderId } = await params;
+    const { id } = await params;
     const body: ConfirmRequest = await request.json();
 
     // 【业务验证1】验证订单存在
     const orderResult = await db
       .select()
       .from(orders)
-      .where(eq(orders.id, orderId))
+      .where(eq(orders.id, id))
       .limit(1);
 
     if (orderResult.length === 0) {
@@ -47,7 +47,7 @@ export async function POST(
     // 【业务验证3】检查 shipment_records 是否存在
     const shipmentQuery = body.shipmentId
       ? db.select().from(shipmentRecords).where(eq(shipmentRecords.id, body.shipmentId)).limit(1)
-      : db.select().from(shipmentRecords).where(eq(shipmentRecords.orderId, orderId)).limit(1);
+      : db.select().from(shipmentRecords).where(eq(shipmentRecords.orderId, id)).limit(1);
 
     const shipmentResult = await shipmentQuery;
 
@@ -166,13 +166,13 @@ export async function POST(
           shippedAt: new Date(),
           updatedAt: new Date(),
         })
-        .where(eq(orders.id, orderId));
+        .where(eq(orders.id, id));
     });
 
     return NextResponse.json({
       success: true,
       data: {
-        orderId: orderId,
+        orderId: id,
         postingNumber: order.ozonPostingNumber,
         shipmentId: shipment.id,
         shippedAt: new Date().toISOString(),
