@@ -103,7 +103,7 @@ function UrgentBell() {
       variant="ghost"
       size="icon"
       className="relative"
-      onClick={() => router.push('/purchase/workspace?filter=urgent')}
+      onClick={() => router.push('/quick-entry?filter=urgent')}
       title="超时提醒"
     >
       <Bell className="h-5 w-5" />
@@ -154,15 +154,15 @@ function GlobalScanInput() {
     const searchValue = value.trim();
 
     // 根据当前页面路由分发
-    if (pathname.startsWith('/purchase')) {
+    if (pathname.startsWith('/quick-entry') || pathname.startsWith('/suppliers')) {
       // 采购页面：搜索供应商/商品
-      router.push(`/purchase/workspace?search=${encodeURIComponent(searchValue)}`);
-    } else if (pathname.startsWith('/warehouse/inspection')) {
+      router.push(`/quick-entry?search=${encodeURIComponent(searchValue)}`);
+    } else if (pathname.startsWith('/logistics')) {
       // 验货页面：跳转到验货页面并传递单号参数
-      router.push(`/warehouse/inspection?expressNo=${encodeURIComponent(searchValue)}`);
-    } else if (pathname.startsWith('/warehouse/shipping')) {
+      router.push(`/logistics?expressNo=${encodeURIComponent(searchValue)}`);
+    } else if (pathname.startsWith('/packaging')) {
       // 发货页面：搜索订单
-      router.push(`/warehouse/shipping?search=${encodeURIComponent(searchValue)}`);
+      router.push(`/packaging?search=${encodeURIComponent(searchValue)}`);
     } else if (pathname.startsWith('/orders')) {
       // 订单页面：搜索订单
       router.push(`/orders/list?search=${encodeURIComponent(searchValue)}`);
@@ -222,7 +222,7 @@ function TodoCapsules() {
         variant="outline"
         size="sm"
         className="h-8 gap-2 text-red-600 border-red-200 hover:bg-red-50"
-        onClick={() => router.push('/purchase/workspace')}
+        onClick={() => router.push('/quick-entry')}
       >
         <Package className="h-3.5 w-3.5" />
         待采购
@@ -236,7 +236,7 @@ function TodoCapsules() {
         variant="outline"
         size="sm"
         className="h-8 gap-2 text-orange-600 border-orange-200 hover:bg-orange-50"
-        onClick={() => router.push('/warehouse/shipping')}
+        onClick={() => router.push('/packaging')}
       >
         <Truck className="h-3.5 w-3.5" />
         待发货
@@ -253,7 +253,7 @@ function TodoCapsules() {
 // TopBar主组件
 export function TopBar() {
   return (
-    <div className="sticky top-0 z-50 h-12 bg-background border-b border-border">
+    <div className="sticky top-0 z-50 h-12 bg-white border-b border-gray-200">
       <div className="flex items-center h-full px-4 gap-4">
         {/* 左侧：店铺切换器 */}
         <ShopSwitcher />
