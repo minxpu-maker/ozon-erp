@@ -39,6 +39,9 @@ export const shops = pgTable(
     
     // 同步配置（B01-3新增）
     syncEnabled: boolean("sync_enabled").default(true),
+    // Webhook配置（B04-1新增）
+    webhookUrl: text('webhook_url'),
+    webhookEnabled: boolean('webhook_enabled').default(false),
   },
   (table) => [
     index("shops_client_id_idx").on(table.clientId),
