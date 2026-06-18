@@ -86,7 +86,8 @@ interface OrderRecord {
   buyerName: string | null;
   recipientName: string | null;
   recipientCity: string | null;
-  totalPrice: number | null;
+  totalPrice: number | string | null;
+  orderAmount: number | string | null;
   isPurchaseBound: boolean | null;
   isInspected: boolean | null;
   isPacked: boolean | null;
@@ -150,9 +151,9 @@ export default function OrdersListPage() {
     return new Date(deadline).getTime() < now;
   };
 
-  const formatPrice = (price: number | null) => {
+  const formatPrice = (price: number | string | null | undefined) => {
     if (price == null) return '—';
-    return `¥${(price).toFixed(2)}`;
+    return `¥${Number(price).toFixed(2)}`;
   };
 
   const formatDate = (dateStr: string | null) => {
