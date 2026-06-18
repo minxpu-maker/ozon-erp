@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import useSWR from 'swr';
+import { AppLayout } from '@/components/layout/AppLayout';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -124,39 +125,38 @@ export default function ShopsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F6F8FB]">
-      <div className="max-w-5xl mx-auto px-6 py-8">
-        {/* 标题栏 */}
+    <AppLayout title="店铺管理" subtitle="管理Ozon店铺API密钥，支持多店铺统一管理">
+      <div className="bg-white rounded-xl border border-[#E6EAF2] p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-[#152033]">店铺管理</h1>
-            <p className="text-sm text-[#637089] mt-1">管理Ozon店铺API密钥，支持多店铺统一管理</p>
+            <h2 className="text-base font-semibold text-[#152033]">店铺列表</h2>
+            <p className="text-xs text-[#637089] mt-0.5">已绑定 {shops.length} 个店铺</p>
           </div>
           <Button className="bg-[#2F6BFF] hover:bg-[#2F6BFF]/90" onClick={openAdd}>
             + 新增店铺
           </Button>
         </div>
 
-        {/* 店铺列表 */}
-        <div className="space-y-4">
+        <div className="space-y-3">
           {shops.map(shop => (
-            <div key={shop.id} className="bg-white rounded-xl border border-[#E6EAF2] p-5 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-[#2F6BFF] rounded-xl flex items-center justify-center text-white font-bold text-lg">
+            <div key={shop.id} className="bg-[#F6F8FB] rounded-lg border border-[#E6EAF2] p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-[#2F6BFF] rounded-lg flex items-center justify-center text-white font-bold text-sm">
                   OZ
                 </div>
                 <div>
-                  <p className="font-semibold text-[#152033]">{shop.shopName}</p>
-                  <p className="text-sm text-[#637089] mt-0.5">
+                  <p className="font-medium text-[#152033] text-sm">{shop.shopName}</p>
+                  <p className="text-xs text-[#637089]">
                     Ozon · Client-Id: {shop.ozonClientId}
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
+                  className="text-xs h-7"
                   onClick={() => handleTestConnection(shop.id)}
                   disabled={testingId === shop.id}
                 >
@@ -165,6 +165,7 @@ export default function ShopsPage() {
                 <Button
                   variant="outline"
                   size="sm"
+                  className="text-xs h-7"
                   onClick={() => handleToggleActive(shop)}
                 >
                   {shop.isActive ? '停用' : '启用'}
@@ -172,11 +173,12 @@ export default function ShopsPage() {
                 <Button
                   variant="outline"
                   size="sm"
+                  className="text-xs h-7"
                   onClick={() => openEdit(shop)}
                 >
                   编辑
                 </Button>
-                <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                   shop.isActive
                     ? 'bg-[#16A37B]/10 text-[#16A37B]'
                     : 'bg-gray-100 text-gray-400'
@@ -188,16 +190,16 @@ export default function ShopsPage() {
           ))}
 
           {shops.length === 0 && (
-            <div className="bg-white rounded-xl border border-[#E6EAF2] p-12 text-center">
-              <p className="text-4xl mb-3">🏪</p>
-              <p className="text-[#637089]">暂无店铺</p>
-              <p className="text-sm text-gray-300 mt-1">点击上方「+ 新增店铺」添加第一个Ozon店铺</p>
+            <div className="bg-[#F6F8FB] rounded-lg border border-dashed border-[#E6EAF2] p-8 text-center">
+              <p className="text-3xl mb-2">🏪</p>
+              <p className="text-sm text-[#637089]">暂无店铺</p>
+              <p className="text-xs text-gray-300 mt-1">点击「+ 新增店铺」添加第一个Ozon店铺</p>
             </div>
           )}
         </div>
 
         {shops.length > 0 && (
-          <p className="text-xs text-[#637089] mt-4">
+          <p className="text-xs text-[#637089] mt-3">
             最后同步: {shops[0]?.lastSyncedAt ? new Date(shops[0].lastSyncedAt).toLocaleString('zh-CN') : '—'}
           </p>
         )}
@@ -235,7 +237,7 @@ export default function ShopsPage() {
 
             <div>
               <label className="text-sm font-medium text-[#152033] mb-1.5 block">
-                Api-Key {editShop ? '（留空则不修改）' : ''} {editShop ? '' : <span className="text-red-500">*</span>}
+                Api-Key {editShop ? '（留空则不修改）' : ''} {!editShop && <span className="text-red-500">*</span>}
               </label>
               <Input
                 type="password"
@@ -263,6 +265,6 @@ export default function ShopsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </AppLayout>
   );
 }
