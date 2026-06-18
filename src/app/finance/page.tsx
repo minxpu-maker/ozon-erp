@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from 'react';
 
-import { AppLayout } from '@/components/layout/AppLayout';import { Calculator, RefreshCw, TrendingUp, TrendingDown, DollarSign, ChevronDown, ChevronUp, Receipt, Percent, Banknote, Tag, X, Check, Calendar, CalendarDays, CalendarRange, CalendarClock, Box, ShoppingCart } from 'lucide-react';
+import { AppLayout } from '@/components/layout/AppLayout';
+import { Calculator, RefreshCw, TrendingUp, TrendingDown, DollarSign, ChevronDown, ChevronUp, Receipt, Percent, Banknote, Tag, X, Check, Calendar, CalendarDays, CalendarRange, CalendarClock, Box, ShoppingCart, AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 export default function FinancePage() {
   const [pendingOrders, setPendingOrders] = useState<any[]>([]);
@@ -46,10 +49,12 @@ export default function FinancePage() {
     finally { setLoading(false); }
   };
 
-  // 格式化人民币金额
-  const formatCNY = (rub: string | number) => {
-    const rubNum = typeof rub === 'string' ? parseFloat(rub) : rub;
-    return (rubNum * exchangeRate).toFixed(2);
+  // 格式化人民币金额（直接格式化，不做汇率转换）
+  const formatCNY = (value: number | string | null | undefined): string => {
+    if (value === null || value === undefined) return '¥0.00';
+    const num = typeof value === 'string' ? parseFloat(value) : value;
+    if (isNaN(num)) return '¥0.00';
+    return `¥${num.toFixed(2)}`;
   };
 
   // 执行结算
@@ -87,6 +92,19 @@ export default function FinancePage() {
     totalPurchasePrice: apiStats?.totalPurchasePrice || pendingOrders.reduce((sum, o) => sum + (parseFloat(String(o.financialData?.purchasePrice)) || 0), 0).toFixed(2),
     totalEstimatedProfit: apiStats?.totalEstimatedProfit || pendingOrders.reduce((sum, o) => sum + (o.financialData?.estimatedProfit || 0), 0).toFixed(2),
   };
+
+  // 零成本订单计数
+  const zeroCostCount = pendingOrders.filter(
+    (o: any) => !o.financialData?.purchasePrice || parseFloat(o.financialData.purchasePrice) === 0
+  ).length;
+
+  // 补录状态
+  const [showSupplementDialog, setShowSupplementDialog] = useState(false);
+  const [supplementOrderId, setSupplementOrderId] = useState('');
+  const [supplementPrice, setSupplementPrice] = useState('');
+  const [supplementFreight, setSupplementFreight] = useState('');
+  const [supplementSource, setSupplementSource] = useState('1688');
+  const [supplementSupplier, setSupplementSupplier] = useState('');
 
   // 状态颜色
   const getStatusColor = (status: string) => {
@@ -286,6 +304,16 @@ return (
      </div>
               </div>
 
+              {/* 零成本警告横幅 */}
+              {zeroCostCount > 0 && (
+                <div className="mb-4 flex items-center gap-3 px-4 py-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <AlertTriangle className="w-5 h-5 text-yellow-500 flex-shrink-0" />
+                  <span className="text-sm text-yellow-700">
+                    ⚠️ {zeroCostCount}笔订单采购成本为¥0，利润率失真，请点击「补录」修正
+                  </span>
+                </div>
+              )}
+
               {/* 待核算订单 */}
               <div className="bg-white rounded-lg shadow-sm p-4 border border-[#E6EAF2] mb-6">
      <h3 className="text-base font-semibold text-[#152033] mb-4">待核算订单（售后期结束后可结算）</h3>
@@ -315,13 +343,25 @@ return (
                    <div className={`text-sm font-medium ${(parseFloat(String(fd?.estimatedProfit)) || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>¥{(parseFloat(String(fd?.estimatedProfit)) || 0).toFixed(2)}</div>
                    <div className={`text-sm font-medium ${(parseFloat(String(fd?.profitRate)) || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>{(parseFloat(String(fd?.profitRate)) || 0).toFixed(1)}%</div>
                    <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
-                     <button 
-                       onClick={() => handleSettle(order.id)}
-                       disabled={settlingOrderId === order.id}
-                       className="text-xs bg-[#2F6BFF] text-white px-3 py-1 rounded hover:bg-[#2F6BFF]/90 disabled:opacity-50"
-                     >
-                       {settlingOrderId === order.id ? '核算中...' : '核算'}
-                     </button>
+                     {!order.financialData?.purchasePrice || parseFloat(order.financialData.purchasePrice) === 0 ? (
+                       <button
+                         onClick={() => {
+                           setSupplementOrderId(order.id);
+                           setShowSupplementDialog(true);
+                         }}
+                         className="text-xs bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 flex items-center gap-1"
+                       >
+                         <AlertTriangle className="w-3 h-3" /> 补录
+                       </button>
+                     ) : (
+                       <button
+                         onClick={() => handleSettle(order.id)}
+                         disabled={settlingOrderId === order.id}
+                         className="text-xs bg-[#2F6BFF] text-white px-3 py-1 rounded hover:bg-[#2F6BFF]/90 disabled:opacity-50"
+                       >
+                         {settlingOrderId === order.id ? '核算中...' : '核算'}
+                       </button>
+                     )}
                    </div>
                  </div>
                </div>
@@ -451,6 +491,87 @@ return (
          </tbody>
        </table>}
               </div>
+
+      {/* 补录采购成本Dialog */}
+      <Dialog open={showSupplementDialog} onOpenChange={setShowSupplementDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>补录采购成本</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">采购价 (¥)</label>
+              <input
+                type="number"
+                step="0.01"
+                value={supplementPrice}
+                onChange={(e) => setSupplementPrice(e.target.value)}
+                placeholder="请输入采购价"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">快递费 (¥)</label>
+              <input
+                type="number"
+                step="0.01"
+                value={supplementFreight}
+                onChange={(e) => setSupplementFreight(e.target.value)}
+                placeholder="选填"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">采购平台</label>
+              <select
+                value={supplementSource}
+                onChange={(e) => setSupplementSource(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              >
+                <option value="1688">1688</option>
+                <option value="pinduoduo">拼多多</option>
+                <option value="manual">手动录入</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">供应商名称</label>
+              <input
+                type="text"
+                value={supplementSupplier}
+                onChange={(e) => setSupplementSupplier(e.target.value)}
+                placeholder="选填"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 mt-6">
+            <Button variant="outline" onClick={() => setShowSupplementDialog(false)}>取消</Button>
+            <Button
+              disabled={!supplementPrice}
+              onClick={async () => {
+                await fetch('/api/finance/cost-supplement', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    orderId: supplementOrderId,
+                    purchasePrice: parseFloat(supplementPrice),
+                    shippingFee: parseFloat(supplementFreight || '0'),
+                    supplierSource: supplementSource,
+                    supplierName: supplementSupplier,
+                  }),
+                });
+                setShowSupplementDialog(false);
+                setSupplementPrice('');
+                setSupplementFreight('');
+                setSupplementSupplier('');
+                window.location.reload();
+              }}
+            >
+              确认补录
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
     </AppLayout>
   );
