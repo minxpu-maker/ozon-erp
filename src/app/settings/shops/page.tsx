@@ -88,8 +88,47 @@ export default function ShopsPage() {
     }
   };
 
-  // 通过 Chrome 插件桥接（浏览器网络，可访问外网）
-  const testViaExtension = async (shopId: string, ozonClientId: string, ozonApiKey: string): Promise<{ connected: boolean; error?: string }> => {
+  // 方式一：前端直调 Ozon API（浏览器网络，可访问外网）
+  const testDirectly = async (shopId: string): Promise<{ connected: boolean; error?: string }> => {
+    try {
+      // 1. 从服务端获取解密后的凭证
+      const credRes = await fetch(`/api/shops/${shopId}/credentials`);
+      const credData = await credRes.json();
+      if (!credData.success) return { connected: false, error: credData.error || '获取凭证失败' };
+      const { ozonClientId, ozonApiKey } = credData.data;
+
+      // 2. 浏览器直调 Ozon API（Ozon 支持 CORS）
+      const ozonRes = await fetch('https://api-seller.ozon.ru/v1/info', {
+        method: 'GET',
+        headers: {
+          'Client-Id': ozonClientId,
+          'Api-Key': ozonApiKey,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (ozonRes.ok) return { connected: true };
+      const errData = await ozonRes.json().catch(() => ({}));
+      const msg = errData?.message || errData?.code || errData?.error || `HTTP ${ozonRes.status}`;
+      return { connected: false, error: String(msg) };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('net::')) {
+        return { connected: false, error: '浏览器直连失败（可能被CORS拦截），请安装Chrome插件' };
+      }
+      return { connected: false, error: msg };
+    }
+  };
+
+  // 方式二：服务端 API（沙箱服务器无法访问外网，仅作兜底）
+  const testViaServer = async (shopId: string): Promise<{ connected: boolean; error?: string }> => {
+    const res = await fetch(`/api/shops/${shopId}/test-connection`, { method: 'POST' });
+    const data = await res.json();
+    return data;
+  };
+
+  // 通过 Chrome 插件桥接（备用）
+  const testViaExtension = async (_shopId: string, _ozonClientId: string, _ozonApiKey: string): Promise<{ connected: boolean; error?: string }> => {
     const win = window as unknown as Record<string, unknown>;
     const relay = win.__ozonExtensionRelay as { ozonApiCall: (p: {
       shopId: string; ozonClientId: string; ozonApiKey: string;
@@ -97,50 +136,53 @@ export default function ShopsPage() {
     }) => Promise<{ connected: boolean; error?: string; data?: unknown }> } | undefined;
     if (!relay) return { connected: false, error: '插件未安装' };
     return relay.ozonApiCall({
-      shopId,
-      ozonClientId,
-      ozonApiKey,
-      method: 'POST',
-      path: '/v1/product/list',
-      body: { limit: 1 },
+      shopId: _shopId, ozonClientId: _ozonClientId, ozonApiKey: _ozonApiKey,
+      method: 'POST', path: '/v1/product/list', body: { limit: 1 },
     });
-  };
-
-  // 通过服务端 API 测试
-  const testViaServer = async (shopId: string): Promise<{ connected: boolean; error?: string }> => {
-    const res = await fetch(`/api/shops/${shopId}/test-connection`, { method: 'POST' });
-    const data = await res.json();
-    return data;
   };
 
   const handleTestConnection = async (shopId: string) => {
     setTestingId(shopId);
     try {
-      // 1. 优先尝试 Chrome 插件桥接（浏览器网络，可访问外网）
-      const extAvailable = (window as unknown as Record<string, unknown>).__ozonExtensionRelay !== undefined;
-      if (extAvailable) {
-        const credRes = await fetch(`/api/shops/${shopId}/credentials`);
-        const credData = await credRes.json();
-        const cred = credData?.data;
-        if (cred?.ozonClientId && cred?.ozonApiKey) {
-          const extResult = await testViaExtension(shopId, cred.ozonClientId, cred.ozonApiKey);
-          if (extResult.connected) {
-            alert('✅ 连接正常，API密钥验证通过（通过浏览器插件）');
-            setTestingId(null);
-            return;
-          } else if (extResult.error) {
-            alert('❌ 连接失败：' + extResult.error);
-            setTestingId(null);
-            return;
-          }
-        }
+      // 1. 优先：前端直调 Ozon API（浏览器网络访问外网，无沙箱限制）
+      const directResult = await testDirectly(shopId);
+      if (directResult.connected) {
+        alert('✅ 连接正常，API密钥验证通过（浏览器直连）');
+        setTestingId(null);
+        return;
       }
-      // 2. 降级到服务端 API
-      const result = await testViaServer(shopId);
-      if (result.connected) {
+      if (directResult.error && !directResult.error.includes('CORS')) {
+        alert('❌ 连接失败：' + directResult.error);
+        setTestingId(null);
+        return;
+      }
+
+      // 2. 降级：服务端 API
+      const serverResult = await testViaServer(shopId);
+      if (serverResult.connected) {
         alert('✅ 连接正常，API密钥验证通过');
+        setTestingId(null);
+        return;
+      }
+      if (serverResult.error) {
+        alert('❌ 连接失败：' + serverResult.error);
+        setTestingId(null);
+        return;
+      }
+
+      // 3. 备用：Chrome 插件
+      const credRes = await fetch(`/api/shops/${shopId}/credentials`);
+      const credData = await credRes.json();
+      const cred = credData?.data;
+      if (cred?.ozonClientId && cred?.ozonApiKey) {
+        const extResult = await testViaExtension(shopId, cred.ozonClientId, cred.ozonApiKey);
+        if (extResult.connected) {
+          alert('✅ 连接正常，API密钥验证通过（通过浏览器插件）');
+        } else {
+          alert('❌ 连接失败：' + (extResult.error || '未知错误'));
+        }
       } else {
-        alert('❌ 连接失败：' + (result.error || '请检查API密钥'));
+        alert('❌ 直连和插件均失败，服务端也无法连接（沙箱网络限制）');
       }
     } catch {
       alert('测试请求失败');
