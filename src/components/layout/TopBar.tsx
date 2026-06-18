@@ -103,7 +103,7 @@ function UrgentBell() {
       variant="ghost"
       size="icon"
       className="relative"
-      onClick={() => router.push('/quick-entry?filter=urgent')}
+      onClick={() => router.push('/purchase?filter=urgent')}
       title="超时提醒"
       suppressHydrationWarning
     >
@@ -155,9 +155,9 @@ function GlobalScanInput() {
     const searchValue = value.trim();
 
     // 根据当前页面路由分发
-    if (pathname.startsWith('/quick-entry') || pathname.startsWith('/suppliers')) {
+    if (pathname.startsWith('/purchase') || pathname.startsWith('/suppliers')) {
       // 采购页面：搜索供应商/商品
-      router.push(`/quick-entry?search=${encodeURIComponent(searchValue)}`);
+      router.push(`/purchase?search=${encodeURIComponent(searchValue)}`);
     } else if (pathname.startsWith('/logistics')) {
       // 验货页面：跳转到验货页面并传递单号参数
       router.push(`/logistics?expressNo=${encodeURIComponent(searchValue)}`);
@@ -223,7 +223,7 @@ function TodoCapsules() {
         variant="outline"
         size="sm"
         className="h-8 gap-2 text-red-600 border-red-200 hover:bg-red-50"
-        onClick={() => router.push('/quick-entry')}
+        onClick={() => router.push('/purchase')}
         suppressHydrationWarning
       >
         <Package className="h-3.5 w-3.5" />

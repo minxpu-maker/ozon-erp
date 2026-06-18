@@ -39,7 +39,6 @@ import {
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: '仪表盘' },
   { href: '/purchase', icon: Package, label: '采购管理', active: true },
-  { href: '/quick-entry', icon: ClipboardList, label: '快捷录单' },
   { href: '/logistics', icon: Truck, label: '入库验货' },
   { href: '/packaging', icon: Package, label: '打包发货' },
   { href: '/finance', icon: Calculator, label: '利润核算' },

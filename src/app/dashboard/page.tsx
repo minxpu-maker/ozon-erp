@@ -297,14 +297,14 @@ export default function DashboardPage() {
                     color: 'primary',
                   },
                   {
-                    href: '/quick-entry',
+                    href: '/purchase',
                     icon: ShoppingBag,
                     label: '待采购任务',
                     count: stats?.pendingPurchaseTasks || 0,
                     color: 'warning',
                   },
                   {
-                    href: '/quick-entry',
+                    href: '/purchase',
                     icon: Link2,
                     label: '待绑定采购',
                     count: stats?.purchasedTasks || 0,
@@ -570,7 +570,7 @@ export default function DashboardPage() {
                                 </div>
                               </div>
                               <Link
-                                href={order.type === 'purchase' ? '/quick-entry' : order.type === 'inspection' ? '/logistics' : '/packaging'}
+                                href={order.type === 'purchase' ? '/purchase' : order.type === 'inspection' ? '/logistics' : '/packaging'}
                                 className="px-3 py-1.5 rounded-lg text-xs font-medium bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
                               >
                                 去处理

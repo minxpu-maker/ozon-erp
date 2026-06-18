@@ -78,7 +78,6 @@ export function Sidebar() {
       label: '采购中心',
       icon: ShoppingCart,
       items: [
-        { name: '快捷录单', href: '/quick-entry' },
         { name: '供应商管理', href: '/suppliers' },
       ],
     },

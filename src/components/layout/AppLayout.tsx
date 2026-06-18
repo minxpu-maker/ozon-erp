@@ -58,7 +58,6 @@ const navigationGroups: NavGroup[] = [
     icon: ShoppingCart,
     items: [
       { name: '订单列表', href: '/orders/list', icon: FileText },
-      { name: '快捷录单', href: '/quick-entry', icon: Package },
       { name: '采购任务', href: '/purchase', icon: ShoppingCart },
       { name: '货源池', href: '/purchase/suppliers', icon: ShoppingCart, disabled: true, badge: '即将上线' },
       { name: '供应商管理', href: '/suppliers', icon: Building2 },
