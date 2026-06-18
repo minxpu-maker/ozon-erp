@@ -162,13 +162,13 @@ export default function PurchasePage() {
   };
 
   // SKU聚合视图数据
-  const skuGroups = orders.reduce((acc, order) => {
-    const key = order.products[0]?.sku || order.postingNumber || String(Math.random());
+  const skuGroups: Record<string, { sku: string; name: string; image?: string; count: number; orders: any[] }> = (orders as any[]).reduce((acc, order) => {
+    const key = order.products?.[0]?.sku || order.postingNumber || order.ozonPostingNumber || String(Math.random());
     if (!acc[key]) {
       acc[key] = {
         sku: key,
-        name: order.products[0]?.name,
-        image: order.products[0]?.image,
+        name: order.products?.[0]?.name,
+        image: order.products?.[0]?.image,
         count: 0,
         orders: [],
       };
@@ -176,7 +176,7 @@ export default function PurchasePage() {
     acc[key].count++;
     acc[key].orders.push(order);
     return acc;
-  }, {} as Record<string, { sku: string; name: string; image?: string; count: number; orders: Order[] }>);
+  }, {});
 
   // 获取汇率
   useEffect(() => {
@@ -194,14 +194,10 @@ export default function PurchasePage() {
   const fetchOrders = useCallback(async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams();
-      if (statusFilter && statusFilter !== 'all') {
-        params.set('status', statusFilter);
-      }
-      const res = await fetch(`/api/orders?${params}`);
+      const res = await fetch(`/api/orders?status=pending_purchase`);
       const data = await res.json();
       if (data.success) {
-        setOrders(data.data.orders || []);
+        setOrders(data.data.orders || data.orders || data.data || []);
       }
     } catch (error) {
       console.error('获取订单失败:', error);
@@ -316,11 +312,35 @@ export default function PurchasePage() {
   };
 
   // 筛选订单
-  const filteredOrders = orders.filter(order => {
+  const filteredOrders = (orders as any[]).filter(order => {
     if (!searchQuery) return true;
-    return order.ozonOrderId.includes(searchQuery) || 
-           order.postingNumber.includes(searchQuery);
+    return (order.ozonOrderId || '').includes(searchQuery) ||
+           (order.postingNumber || '').includes(searchQuery);
   });
+
+  // 格式化人民币
+  const formatCNY = (value: number | string | null | undefined): string => {
+    if (value === null || value === undefined) return '¥0.00';
+    const num = typeof value === 'string' ? parseFloat(value) : value;
+    if (isNaN(num)) return '¥0.00';
+    return `¥${num.toFixed(2)}`;
+  };
+
+  // 倒计时格式化
+  const formatCountdown = (hoursLeft: number): string => {
+    if (hoursLeft < 0) return '已超时';
+    if (hoursLeft < 1) return `${Math.round(hoursLeft * 60)}m`;
+    if (hoursLeft < 24) return `${Math.round(hoursLeft)}h`;
+    return `${Math.floor(hoursLeft / 24)}d`;
+  };
+
+  // 统计
+  const pendingCount = orders.length;
+  const todayDoneCount = orders.filter(o => o.purchaseStatus === 'purchased' || o.purchaseStatus === 'delivered').length;
+  const overdueCount = (orders as any[]).filter(o => {
+    if (!o.shippingDeadline) return false;
+    return new Date(o.shippingDeadline) < new Date();
+  }).length;
 
   
 return (
@@ -334,39 +354,41 @@ return (
 
           {/* 统计卡片 */}
           <div className="px-4 py-3 border-b border-gray-200">
-            <div className="flex items-center gap-6 text-sm">
-              <div className="flex items-center gap-2">
-                <Clock className="w-6 h-6 text-orange-500" />
+            <div className="grid grid-cols-3 gap-3">
+              {/* 待采购 */}
+              <div className="bg-white rounded-lg border border-gray-200 p-3 flex items-center gap-3">
+                <div className="w-9 h-9 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <span className="text-orange-600 text-base">📦</span>
+                </div>
                 <div>
-                  <div className="text-xs text-gray-500">待采购</div>
-                  <div className="text-base font-semibold text-gray-900">{stats.awaiting}</div>
+                  <p className="text-xs text-gray-500">待采购</p>
+                  <p className="text-xl font-bold text-gray-800">{pendingCount}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <ShoppingCart className="w-6 h-6 text-blue-500" />
+              {/* 今日已办 */}
+              <div className="bg-white rounded-lg border border-gray-200 p-3 flex items-center gap-3">
+                <div className="w-9 h-9 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <span className="text-blue-600 text-base">✅</span>
+                </div>
                 <div>
-                  <div className="text-xs text-gray-500">已采购</div>
-                  <div className="text-base font-semibold text-gray-900">{stats.purchased}</div>
+                  <p className="text-xs text-gray-500">今日已办</p>
+                  <p className="text-xl font-bold text-gray-800">{todayDoneCount}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-6 h-6 text-green-500" />
-                <div>
-                  <div className="text-xs text-gray-500">已送达</div>
-                  <div className="text-base font-semibold text-gray-900">{stats.delivered}</div>
+              {/* 超时预警 */}
+              <div className="bg-white rounded-lg border border-gray-200 p-3 flex items-center gap-3">
+                <div className="w-9 h-9 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <span className="text-red-600 text-base">⚠️</span>
                 </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Package className="w-6 h-6 text-gray-400" />
                 <div>
-                  <div className="text-xs text-gray-500">订单总数</div>
-                  <div className="text-base font-semibold text-gray-900">{stats.total}</div>
+                  <p className="text-xs text-gray-500">超时预警</p>
+                  <p className="text-xl font-bold text-red-600">{overdueCount}</p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* 操作栏：搜索 + 筛选 + 视图切换 */}
+          {/* 操作栏：视图切换 + 批量录入 */}
           <div className="px-4 py-3 border-b border-gray-200 flex items-center gap-3">
             <div className="relative flex-1 max-w-xs">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -378,210 +400,172 @@ return (
                 className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
               />
             </div>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-            >
-              <option value="all">全部</option>
-              <option value="awaiting">待采购</option>
-              <option value="purchased">已采购</option>
-              <option value="delivered">已送达</option>
-            </select>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={syncOrders}
-              disabled={syncing}
-              className="gap-1.5"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} />
-              {syncing ? '同步中...' : '同步Ozon'}
-            </Button>
 
             {/* 视图切换 */}
-            <div className="ml-auto flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+            <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
               <button
                 onClick={() => setViewMode('list')}
-                className={`px-3 py-1 text-xs rounded-md transition-colors ${
-                  viewMode === 'list' ? 'bg-white text-blue-600 shadow-sm font-medium' : 'text-gray-500 hover:text-gray-700'
+                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                  viewMode === 'list' ? 'bg-white shadow text-gray-800' : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
-                列表视图
+                列表
               </button>
               <button
                 onClick={() => setViewMode('sku')}
-                className={`px-3 py-1 text-xs rounded-md transition-colors ${
-                  viewMode === 'sku' ? 'bg-white text-blue-600 shadow-sm font-medium' : 'text-gray-500 hover:text-gray-700'
+                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                  viewMode === 'sku' ? 'bg-white shadow text-gray-800' : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
                 SKU聚合
               </button>
+            </div>
+
+            <div className="flex items-center gap-2 ml-auto">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={syncOrders}
+                disabled={syncing}
+                className="gap-1.5"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} />
+                同步Ozon
+              </Button>
+              <Button
+                size="sm"
+                className="bg-blue-600 hover:bg-blue-700"
+                onClick={() => setShowBatchDialog(true)}
+              >
+                批量录入
+              </Button>
             </div>
           </div>
 
           {/* 订单视图 */}
           <div className="flex-1 overflow-auto">
             {viewMode === 'list' ? (
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-[#F6F8FB] text-left text-xs text-[#637089]">
-                    <th className="w-12 px-4 py-3"></th>
-                    <th className="px-4 py-3 font-medium">订单号</th>
-                    <th className="px-4 py-3 font-medium">发货单号</th>
-                    <th className="px-4 py-3 font-medium">商品</th>
-                    <th className="px-4 py-3 font-medium">SKU</th>
-                    <th className="px-4 py-3 font-medium">数量</th>
-                    <th className="px-4 py-3 font-medium">单价(CNY)</th>
-                    <th className="px-4 py-3 font-medium">状态</th>
-                    <th className="px-4 py-3 font-medium">紧迫度</th>
-                    <th className="px-4 py-3 font-medium">操作</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {orders.length === 0 ? (
-                    <tr>
-                      <td colSpan={10} className="text-center py-12 text-[#637089]">
-                        暂无待采购订单
-                      </td>
-                    </tr>
-                  ) : (
-                    orders
-                      .filter(order => {
-                        if (searchQuery) {
-                          return (order.ozonOrderId || '').includes(searchQuery) ||
-                            (order.postingNumber || '').includes(searchQuery);
-                        }
-                        return true;
-                      })
-                      .map((order) => {
-                        const hours = order.ozonCreatedAt
-                          ? Math.max(0, (new Date(order.ozonCreatedAt).getTime() - Date.now()) / 3600000)
-                          : Infinity;
-                        const deadlineColor = hours < 24 ? 'text-red-500' : hours < 72 ? 'text-yellow-500' : 'text-gray-400';
-                        const deadlineText = hours === Infinity ? '-' : hours < 24
-                          ? `仅剩${Math.floor(hours)}h`
-                          : hours < 72
-                          ? `${Math.floor(hours)}h`
-                          : `${Math.floor(hours / 24)}天`;
-                        const statusColor = order.purchaseStatus === 'awaiting' ? 'bg-orange-100 text-orange-700'
-                          : order.purchaseStatus === 'purchased' ? 'bg-blue-100 text-blue-700'
-                          : 'bg-green-100 text-green-700';
-                        const statusLabel = order.purchaseStatus === 'awaiting' ? '待采购'
-                          : order.purchaseStatus === 'purchased' ? '已采购'
-                          : '已送达';
-                        return (
-                          <tr
-                            key={order.id}
-                            className={`border-b border-[#E6EAF2] hover:bg-blue-50/50 cursor-pointer transition-colors ${getBorderColor(order)} ${selectedOrder?.id === order.id ? 'bg-blue-50 ring-2 ring-blue-200' : ''}`}
-                            onClick={() => setSelectedOrder(order)}
-                          >
-                            <td className="px-4 py-3">
-                              <input
-                                type="checkbox"
-                                checked={selectedOrder?.id === order.id}
-                                onChange={() => {}}
-                                className="rounded border-[#E6EAF2]"
-                              />
-                            </td>
-                            <td className="px-4 py-3 text-sm text-[#152033]">{order.ozonOrderId || '-'}</td>
-                            <td className="px-4 py-3 text-sm text-[#152033]">{order.postingNumber}</td>
-                            <td className="px-4 py-3">
-                              <div className="flex items-center gap-2">
-                                {order.products[0]?.image && (
-                                  <img
-                                    src={order.products[0]?.image}
-                                    alt={order.products[0]?.name}
-                                    className="w-10 h-10 object-cover rounded"
-                                  />
-                                )}
-                                <span className="text-sm text-[#152033] line-clamp-1">{order.products[0]?.name}</span>
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 text-sm text-[#152033]">{order.products[0]?.sku || '-'}</td>
-                            <td className="px-4 py-3 text-sm text-[#152033]">{order.products[0]?.quantity}</td>
-                            <td className="px-4 py-3 text-sm font-medium text-[#152033]">
-                              ¥{(Number(order.totalPrice) * rubToCny).toFixed(2)}
-                            </td>
-                            <td className="px-4 py-3">
-                              <span className={`text-xs px-2 py-0.5 rounded ${statusColor}`}>{statusLabel}</span>
-                            </td>
-                            <td className={`px-4 py-3 text-xs font-medium ${deadlineColor}`}>
-                              {deadlineText}
-                            </td>
-                            <td className="px-4 py-3">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={(e) => { e.stopPropagation(); setDetailOrder(order); }}
-                              >
-                                查看
-                              </Button>
-                            </td>
-                          </tr>
-                        );
-                      })
-                  )}
-                </tbody>
-              </table>
-            ) : (
-              <div className="flex-1 overflow-auto p-4">
-                {Object.keys(skuGroups).length === 0 ? (
-                  <div className="text-center py-12 text-[#637089]">暂无数据</div>
-                ) : (
-                  <div className="space-y-3">
-                    {Object.entries(skuGroups).map(([key, group]) => (
-                      <div
-                        key={key}
-                        className="bg-white rounded-lg border border-gray-200 p-4 hover:border-blue-300 cursor-pointer transition-colors"
-                        onClick={() => {
-                          const first = group.orders[0];
-                          if (first) setSelectedOrder(first);
-                        }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            {group.image && (
-                              <img src={group.image} className="w-12 h-12 rounded object-cover" />
-                            )}
-                            <div>
-                              <div className="font-medium text-sm text-[#152033]">{group.name}</div>
-                              <div className="text-xs text-[#637089]">SKU: {key}</div>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-4">
-                            <div className="text-center">
-                              <div className="text-lg font-bold text-[#152033]">{group.count}</div>
-                              <div className="text-xs text-[#637089]">订单数</div>
-                            </div>
-                            <div className="text-center">
-                              <div className="text-lg font-bold text-blue-600">
-                                {group.orders.reduce((sum, o) => sum + (Number(o.totalPrice) * rubToCny), 0).toFixed(2)}¥
-                              </div>
-                              <div className="text-xs text-[#637089]">预估总额</div>
-                            </div>
+              /* 列表模式 */
+              <div className="p-3 space-y-2">
+                {filteredOrders.length === 0 ? (
+                  <div className="text-center py-12">
+                    <p className="text-gray-400 text-4xl mb-2">📋</p>
+                    <p className="text-gray-400">暂无待采购订单</p>
+                    <p className="text-xs text-gray-300 mt-1">Ozon新订单将自动同步到此处</p>
+                  </div>
+                ) : (filteredOrders as any[]).map((order) => {
+                  const deadline = (order as any).shippingDeadline ? new Date((order as any).shippingDeadline) : null;
+                  const hoursLeft = deadline ? (deadline.getTime() - Date.now()) / 3600000 : null;
+                  const urgency = hoursLeft !== null
+                    ? hoursLeft < 12 ? 'urgent' : hoursLeft < 24 ? 'warning' : 'normal'
+                    : 'normal';
+                  return (
+                    <div key={order.id}
+                      className={`p-3 rounded-lg border-2 cursor-pointer transition-all hover:shadow-md ${
+                        selectedOrder?.id === order.id
+                          ? 'border-blue-500 bg-blue-50'
+                          : urgency === 'urgent'
+                            ? 'border-red-200 bg-red-50/50 hover:border-red-300'
+                            : urgency === 'warning'
+                              ? 'border-orange-200 bg-orange-50/50 hover:border-orange-300'
+                              : 'border-gray-200 bg-white hover:border-gray-300'
+                      }`}
+                      onClick={() => setSelectedOrder(order)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          {/* 紧迫度badge */}
+                          {urgency !== 'normal' && (
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                              urgency === 'urgent' ? 'bg-red-500 text-white' : 'bg-orange-500 text-white'
+                            }`}>
+                              {hoursLeft !== null ? formatCountdown(hoursLeft) : '紧急'}
+                            </span>
+                          )}
+                          <div>
+                            <p className="font-medium text-sm text-gray-800">{order.postingNumber || order.ozonOrderId}</p>
+                            <p className="text-xs text-gray-500">{order.products[0]?.name || order.products[0]?.sku || '-'} × {order.products[0]?.quantity || 1}</p>
                           </div>
                         </div>
-                        <div className="mt-2 border-t border-gray-100 pt-2 space-y-1">
-                          {group.orders.map((order) => (
-                            <div
-                              key={order.id}
-                              className={`text-xs px-2 py-1 rounded hover:bg-blue-50 cursor-pointer ${getBorderColor(order)} bg-gray-50`}
-                              onClick={(e) => { e.stopPropagation(); setDetailOrder(order); }}
-                            >
-                              <span className="text-gray-500">{order.postingNumber}</span>
-                              <span className="mx-2 text-gray-300">·</span>
-                              <span className="text-gray-700">¥{(Number(order.totalPrice) * rubToCny).toFixed(2)}</span>
-                              {order.purchasePrice && (
-                                <span className="ml-2 text-green-600">已采购</span>
-                              )}
-                            </div>
-                          ))}
+                        <div className="text-right">
+                          <p className="font-medium text-sm text-gray-800">{formatCNY(Number(order.totalPrice) * rubToCny)}</p>
+                          {urgency === 'normal' && hoursLeft !== null && (
+                            <p className="text-xs text-gray-400">{formatCountdown(hoursLeft)}</p>
+                          )}
                         </div>
                       </div>
-                    ))}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              /* SKU聚合模式 */
+              <div className="p-3 space-y-3">
+                {Object.keys(skuGroups).length === 0 ? (
+                  <div className="text-center py-12">
+                    <p className="text-gray-400 text-4xl mb-2">📋</p>
+                    <p className="text-gray-400">暂无待采购订单</p>
                   </div>
-                )}
+                ) : Object.entries(skuGroups).map(([key, group]: [string, any]) => {
+                  const minDeadline = Math.min(...(group.orders as any[]).map((i: any) =>
+                    i.shippingDeadline ? new Date(i.shippingDeadline).getTime() : Infinity
+                  ));
+                  const hoursLeft = minDeadline === Infinity ? null : (minDeadline - Date.now()) / 3600000;
+                  const urgency = hoursLeft !== null
+                    ? hoursLeft < 12 ? 'urgent' : hoursLeft < 24 ? 'warning' : 'normal'
+                    : 'normal';
+                  return (
+                    <div key={key} className={`p-4 rounded-lg border-2 transition-all ${
+                      urgency === 'urgent' ? 'border-red-200 bg-red-50/50'
+                        : urgency === 'warning' ? 'border-orange-200 bg-orange-50/50'
+                        : 'border-gray-200 bg-white'
+                    }`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-3">
+                          {group.image && (
+                            <img src={group.image} className="w-10 h-10 rounded object-cover" />
+                          )}
+                          <div>
+                            <p className="font-medium text-sm text-gray-800">{group.name || key}</p>
+                            <p className="text-xs text-gray-400">{key} · {group.count}单待采购</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          {urgency !== 'normal' && hoursLeft !== null && (
+                            <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                              urgency === 'urgent' ? 'bg-red-500 text-white' : 'bg-orange-500 text-white'
+                            }`}>
+                              {formatCountdown(hoursLeft)}
+                            </span>
+                          )}
+                          <Button size="sm" className="bg-blue-600 hover:bg-blue-700"
+                            onClick={() => setShowBatchDialog(true)}>
+                            一键全采购 →
+                          </Button>
+                        </div>
+                      </div>
+                      {/* 子订单列表 */}
+                      <div className="space-y-1 mt-2">
+                        {(group.orders as any[]).map((item: any) => {
+                          const itemDeadline = (item as any).shippingDeadline ? new Date((item as any).shippingDeadline) : null;
+                          const itemHours = itemDeadline ? (itemDeadline.getTime() - Date.now()) / 3600000 : null;
+                          return (
+                            <div key={item.id}
+                              className="flex items-center justify-between text-xs py-1 px-2 bg-white/50 rounded hover:bg-white cursor-pointer"
+                              onClick={() => setSelectedOrder(item)}>
+                              <span className="text-gray-600">{item.postingNumber || item.ozonOrderId} × {item.products[0]?.quantity || 1}</span>
+                              <span className={`font-medium ${
+                                itemHours !== null && itemHours < 12 ? 'text-red-600' : itemHours !== null && itemHours < 24 ? 'text-orange-600' : 'text-gray-400'
+                              }`}>
+                                {itemHours !== null ? formatCountdown(itemHours) : '-'}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
