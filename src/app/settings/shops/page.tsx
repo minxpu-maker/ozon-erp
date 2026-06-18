@@ -20,7 +20,8 @@ interface Shop {
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
 export default function ShopsPage() {
-  const { data: shops = [], mutate } = useSWR<Shop[]>('/api/shops', fetcher);
+  const { data, mutate } = useSWR<{ success: boolean; data: Shop[]; total: number }>('/api/shops', fetcher);
+  const shops = data?.data ?? [];
 
   const [showDialog, setShowDialog] = useState(false);
   const [editShop, setEditShop] = useState<Shop | null>(null);
@@ -89,14 +90,14 @@ export default function ShopsPage() {
     try {
       const res = await fetch(`/api/shops/${shopId}/test-connection`, { method: 'POST' });
       if (res.status === 404) {
-        toast.error('连接测试功能开发中：后端API尚未部署');
+        toast.error('⚠️ 连接测试功能开发中：后端API尚未部署');
         return;
       }
-      const data = await res.json();
-      if (data.success) {
-        toast.success('连接正常：API密钥验证通过');
+      const result = await res.json();
+      if (result.success) {
+        toast.success('✅ 连接正常：API密钥验证通过');
       } else {
-        toast.error('连接失败：' + (data.error || '请检查API密钥'));
+        toast.error('❌ 连接失败：' + (result.error || '请检查API密钥'));
       }
     } catch {
       toast.error('测试请求失败');
@@ -122,19 +123,14 @@ export default function ShopsPage() {
 
   return (
     <div className="p-6 max-w-3xl mx-auto">
-      {/* 标题栏 */}
       <div className="mb-6">
         <h1 className="text-xl font-bold text-[#152033]">店铺管理</h1>
         <p className="text-sm text-[#637089] mt-1">管理Ozon店铺API密钥，支持多店铺统一管理</p>
       </div>
-
       <div className="mb-4 flex justify-end">
-        <Button onClick={openAdd} className="bg-[#2F6BFF] hover:bg-[#2F6BFF]/90">
-          + 新增店铺
-        </Button>
+        <Button onClick={openAdd}>+ 新增店铺</Button>
       </div>
 
-      {/* 店铺列表 */}
       {shops.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20">
           <div className="text-5xl mb-4">🏪</div>
@@ -143,35 +139,32 @@ export default function ShopsPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {(shops as Shop[]).map((shop) => (
+          {shops.map((shop) => (
             <div
               key={shop.id}
               className="bg-white rounded-lg border border-[#E6EAF2] p-4 hover:shadow-md transition-shadow"
             >
-              {/* 店铺Logo + 名称 */}
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-[#2F6BFF] rounded-lg flex items-center justify-center text-white font-bold text-sm">
-                    {shop.shopName.slice(0, 2).toUpperCase()}
+                  <div className="w-10 h-10 rounded-lg bg-[#2F6BFF] text-white flex items-center justify-center font-bold text-sm">
+                    OZ
                   </div>
                   <div>
                     <p className="font-semibold text-[#152033] text-sm">{shop.shopName}</p>
-                    <p className="text-xs text-[#637089]">
-                      Ozon · Client-Id: {shop.clientId}
-                    </p>
+                    <p className="text-xs text-[#637089]">Ozon · Client-Id: {shop.clientId}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 flex-wrap justify-end">
+                <div className="flex items-center gap-1.5 flex-wrap justify-end">
                   <button
                     onClick={() => handleTestConnection(shop.id)}
                     disabled={testingId === shop.id}
-                    className="text-xs px-2.5 py-1 border border-[#E6EAF2] rounded-md text-[#637089] hover:text-[#2F6BFF] hover:border-[#2F6BFF] transition-colors disabled:opacity-50"
+                    className="text-xs px-2 py-0.5 border border-[#E6EAF2] rounded text-[#637089] hover:text-[#2F6BFF] hover:border-[#2F6BFF] transition-colors disabled:opacity-50"
                   >
-                    {testingId === shop.id ? '测试中...' : '测试连接'}
+                    {testingId === shop.id ? '测试中...' : '测试'}
                   </button>
                   <button
                     onClick={() => handleToggleActive(shop)}
-                    className={`text-xs px-2.5 py-1 rounded-md font-medium transition-colors ${
+                    className={`text-xs px-2 py-0.5 rounded font-medium transition-colors ${
                       shop.isActive
                         ? 'bg-orange-50 text-orange-600 border border-orange-200 hover:bg-orange-100'
                         : 'bg-green-50 text-green-600 border border-green-200 hover:bg-green-100'
@@ -186,28 +179,23 @@ export default function ShopsPage() {
                     编辑
                   </button>
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                    shop.isActive
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-gray-100 text-gray-500'
+                    shop.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
                   }`}>
                     {shop.isActive ? '活跃' : '停用'}
                   </span>
                 </div>
               </div>
-
-              {/* 最后同步 */}
               <p className="text-xs text-[#637089]">
-                最后同步: {shop.lastSyncedAt ?? '—'}
+                最后同步: {shop.lastSyncedAt ? shop.lastSyncedAt.slice(0, 16).replace('T', ' ') : '—'}
               </p>
             </div>
           ))}
         </div>
       )}
 
-      {/* 新增/编辑店铺Dialog */}
       <Dialog open={showDialog} onOpenChange={(open) => {
-        setShowDialog(open);
         if (!open) setEditShop(null);
+        setShowDialog(open);
       }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -236,7 +224,7 @@ export default function ShopsPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-[#152033] mb-1.5">
-                Api-Key {editShop ? '（留空则不修改）' : ''}<span className="text-red-500">{editShop ? '' : '*'}</span>
+                Api-Key{editShop && '（留空则不修改）'}<span className="text-red-500">{editShop ? '' : '*'}</span>
               </label>
               <Input
                 type="password"
