@@ -235,14 +235,17 @@ export async function ozonRequest(
 
 /**
  * 快捷方法：测试连接
- * 使用最简单的接口验证API凭证是否有效
+ * 使用 v3 API 验证 API 凭证是否有效
  */
 export async function testConnection(clientId: string, apiKey: string): Promise<{
   connected: boolean;
   error?: string;
 }> {
   const client = new OzonClient({ clientId, apiKey });
-  const response = await client.get<{ result: unknown }>('/v2/product/list?limit=1');
+  const response = await client.post<{ result: unknown }>('/v3/product/list', {
+    filter: { category_id: 0 },
+    limit: 1,
+  });
 
   if (response.ok) {
     return { connected: true };
