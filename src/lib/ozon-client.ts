@@ -97,6 +97,24 @@ export class OzonClient {
 
       // 非2xx状态码，提取错误信息
       if (!response.ok) {
+        // data 为 null（响应非 JSON）时，优先用 HTTP 状态码描述
+        if (data === null) {
+          const httpMessages: Record<number, string> = {
+            400: '请求参数错误',
+            401: '认证失败，Client-Id 或 Api-Key 无效',
+            403: '无访问权限，请检查 API 权限',
+            404: 'API端点不存在或网络不通（沙箱环境可能无法访问外网）',
+            429: '请求频率超限，请稍后重试',
+            500: 'Ozon 服务器内部错误',
+            502: '网关错误，请稍后重试',
+            503: '服务不可用，请稍后重试',
+          };
+          return {
+            ok: false,
+            status,
+            error: httpMessages[status] || `HTTP ${status}（网络不通或API不可达）`,
+          };
+        }
         const errMsg = this.extractError(data);
         return {
           ok: false,

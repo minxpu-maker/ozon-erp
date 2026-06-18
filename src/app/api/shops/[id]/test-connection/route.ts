@@ -67,6 +67,7 @@ export async function POST(
 
     // 测试连接
     const result = await testConnection(clientId, decryptedKey);
+    console.log('[Test Connection] result:', JSON.stringify(result));
 
     if (result.connected) {
       return NextResponse.json({
