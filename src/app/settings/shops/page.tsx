@@ -28,6 +28,7 @@ export default function ShopsPage() {
   const [formClientId, setFormClientId] = useState('');
   const [formApiKey, setFormApiKey] = useState('');
   const [saving, setSaving] = useState(false);
+  const [testingId, setTestingId] = useState<number | null>(null);
 
   const openAdd = () => {
     setEditShop(null);
@@ -83,6 +84,42 @@ export default function ShopsPage() {
     }
   };
 
+  const handleTestConnection = async (shopId: number) => {
+    setTestingId(shopId);
+    try {
+      const res = await fetch(`/api/shops/${shopId}/test-connection`, { method: 'POST' });
+      if (res.status === 404) {
+        toast.error('⚠️ 连接测试功能开发中：后端API尚未部署');
+        return;
+      }
+      const data = await res.json();
+      if (data.success) {
+        toast.success('✅ 连接正常：API密钥验证通过');
+      } else {
+        toast.error('❌ 连接失败：' + (data.error || '请检查API密钥'));
+      }
+    } catch {
+      toast.error('测试请求失败');
+    } finally {
+      setTestingId(null);
+    }
+  };
+
+  const handleToggleActive = async (shop: Shop) => {
+    const next = !shop.isActive;
+    try {
+      await fetch(`/api/shops/${shop.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isActive: next }),
+      });
+      mutate();
+      toast.success(`店铺已${next ? '启用' : '停用'}`);
+    } catch {
+      toast.error(`${next ? '启用' : '停用'}失败`);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#F6F8FB]">
       {/* 顶部操作栏 */}
@@ -124,13 +161,38 @@ export default function ShopsPage() {
                       <p className="text-xs text-[#637089]">Ozon · Client-Id: {shop.clientId}</p>
                     </div>
                   </div>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                    shop.isActive
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-gray-100 text-gray-500'
-                  }`}>
-                    {shop.isActive ? '活跃' : '停用'}
-                  </span>
+                  <div className="flex items-center gap-2 flex-wrap justify-end">
+                    <button
+                      onClick={() => handleTestConnection(shop.id)}
+                      disabled={testingId === shop.id}
+                      className="text-xs px-2.5 py-1 border border-[#E6EAF2] rounded-md text-[#637089] hover:text-[#2F6BFF] hover:border-[#2F6BFF] transition-colors disabled:opacity-50"
+                    >
+                      {testingId === shop.id ? '测试中...' : '测试连接'}
+                    </button>
+                    <button
+                      onClick={() => handleToggleActive(shop)}
+                      className={`text-xs px-2.5 py-1 rounded-md font-medium transition-colors ${
+                        shop.isActive
+                          ? 'bg-orange-50 text-orange-600 border border-orange-200 hover:bg-orange-100'
+                          : 'bg-green-50 text-green-600 border border-green-200 hover:bg-green-100'
+                      }`}
+                    >
+                      {shop.isActive ? '停用' : '启用'}
+                    </button>
+                    <button
+                      onClick={() => openEdit(shop)}
+                      className="text-xs text-[#2F6BFF] hover:text-[#2F6BFF]/80 font-medium"
+                    >
+                      编辑
+                    </button>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                      shop.isActive
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-gray-100 text-gray-500'
+                    }`}>
+                      {shop.isActive ? '活跃' : '停用'}
+                    </span>
+                  </div>
                 </div>
 
                 {/* 卡片底部 */}
