@@ -44,6 +44,18 @@ export default function PackagingPage() {
     setSelectedOrders(newSelected);
   };
 
+  // 每笔订单的流水线状态：orderId → currentStep
+  type OrderStep = { step: number; weight: string };
+  const [orderSteps, setOrderSteps] = useState<Record<string, OrderStep>>({});
+
+  const getStep = (orderId: string): OrderStep => orderSteps[orderId] || { step: 1, weight: '' };
+  const setStep = (orderId: string, step: number, weight?: string) => {
+    setOrderSteps(prev => ({
+      ...prev,
+      [orderId]: { step, weight: weight ?? prev[orderId]?.weight ?? '' },
+    }));
+  };
+
   // 打印面单
   const handlePrintLabel = async (orderIds?: string[]) => {
     const targetOrders = orderIds 
@@ -222,15 +234,91 @@ return (
                <td className="px-4 py-3 text-sm text-[#152033]">¥{(parseFloat(item.total_price || 0) * 0.08).toFixed(2)}</td>
                <td className="px-4 py-3">
                  <div className="flex items-center gap-2">
-                   <button 
-                     onClick={() => handleSinglePrint(item)}
-                     disabled={printing}
-                     className="flex items-center gap-1 px-3 py-1.5 bg-[#2F6BFF] text-white rounded text-xs hover:bg-[#2F6BFF]/90 disabled:opacity-50">
-                     <Printer className="w-3 h-3" />打印
-                   </button>
-                   <button className="flex items-center gap-1 px-3 py-1.5 bg-green-500 text-white rounded text-xs hover:bg-green-600">
-                     <CheckCircle className="w-3 h-3" />确认发货
-                   </button>
+                   {(() => {
+                      const step = getStep(item.id);
+                      return (
+                        <>
+                          {/* 三步进度条 */}
+                          <div className="flex items-center gap-1 mb-2">
+                            <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${step.step === 1 ? 'bg-blue-100 text-blue-700' : step.step > 1 ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
+                              <span className={`w-4 h-4 flex items-center justify-center rounded-full text-[10px] ${step.step > 1 ? 'bg-green-500 text-white' : step.step === 1 ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-500'}`}>{step.step > 1 ? '✓' : '1'}</span>
+                              称重
+                            </div>
+                            <div className="text-gray-300">→</div>
+                            <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${step.step === 2 ? 'bg-blue-100 text-blue-700' : step.step > 2 ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
+                              <span className={`w-4 h-4 flex items-center justify-center rounded-full text-[10px] ${step.step > 2 ? 'bg-green-500 text-white' : step.step === 2 ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-500'}`}>{step.step > 2 ? '✓' : '2'}</span>
+                              打印面单
+                            </div>
+                            <div className="text-gray-300">→</div>
+                            <div className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${step.step === 3 ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-400'}`}>
+                              <span className={`w-4 h-4 flex items-center justify-center rounded-full text-[10px] ${step.step === 3 ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-500'}`}>3</span>
+                              确认发货
+                            </div>
+                          </div>
+                          {/* 分步操作面板 */}
+                          {step.step === 1 && (
+                            <div className="flex items-center gap-2 mb-1">
+                              <input
+                                type="number"
+                                step="0.01"
+                                placeholder="kg"
+                                value={step.weight}
+                                onChange={(e) => setStep(item.id, 1, e.target.value)}
+                                className="w-20 px-2 py-1 text-xs border border-[#E6EAF2] rounded focus:outline-none focus:ring-2 focus:ring-[#2F6BFF]/30"
+                              />
+                              <button
+                                onClick={() => setStep(item.id, 2)}
+                                disabled={!step.weight}
+                                className="px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 disabled:opacity-50"
+                              >
+                                锁定重量
+                              </button>
+                            </div>
+                          )}
+                          {step.step === 2 && (
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-xs text-green-600 font-medium">已称: {step.weight}kg</span>
+                              <button
+                                onClick={() => { handleSinglePrint(item); setStep(item.id, 3); }}
+                                className="px-3 py-1 bg-[#2F6BFF] text-white rounded text-xs hover:bg-[#2F6BFF]/90"
+                              >
+                                打印面单
+                              </button>
+                              <button
+                                onClick={() => setStep(item.id, 3)}
+                                className="px-3 py-1 bg-gray-100 text-gray-600 rounded text-xs hover:bg-gray-200"
+                              >
+                                跳过 →
+                              </button>
+                            </div>
+                          )}
+                          {step.step === 3 && (
+                            <div className="space-y-2">
+                              <div className="text-xs text-yellow-600 bg-yellow-50 px-2 py-1 rounded">
+                                ⚠️ 确认发货将回传Ozon，此操作不可撤回
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={async () => {
+                                    const res = await fetch(`/api/shipments/${item.id}/confirm`, { method: 'POST' });
+                                    if (res.ok) { window.location.reload(); }
+                                  }}
+                                  className="px-3 py-1 bg-green-500 text-white rounded text-xs hover:bg-green-600"
+                                >
+                                  确认发货
+                                </button>
+                                <button
+                                  onClick={() => setStep(item.id, 1)}
+                                  className="px-3 py-1 bg-gray-100 text-gray-600 rounded text-xs hover:bg-gray-200"
+                                >
+                                  返回称重
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
                  </div>
                </td>
              </tr>
