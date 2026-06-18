@@ -78,7 +78,7 @@
       <span class="font-semibold text-base">Ozon ERP</span>
     </div>
     <div class="flex items-center gap-4">
-      <button class="flex items-center gap-2 text-sm text-on-surface-variant hover:text-on-surface transition-colors">
+      <button data-element="inventory-icon-btn01" class="flex items-center gap-2 text-sm text-on-surface-variant hover:text-on-surface transition-colors">
         <i data-lucide="bell" class="w-4 h-4"></i>
         <span class="bg-error text-white text-xs px-1.5 py-0.5 rounded-full font-medium">3</span>
       </button>
@@ -225,41 +225,41 @@
       <div class="bg-surface rounded-lg shadow-card">
         <!-- Tab导航 -->
         <div class="flex border-b border-outline/50">
-          <button id="tab-inventory" class="px-5 py-3 text-sm font-medium text-primary border-b-2 border-primary bg-primary/5">库存查询</button>
-          <button id="tab-inbound" class="px-5 py-3 text-sm font-medium text-on-surface-variant hover:text-on-surface hover:bg-surface-container/50 transition-colors">入库记录</button>
-          <button id="tab-outbound" class="px-5 py-3 text-sm font-medium text-on-surface-variant hover:text-on-surface hover:bg-surface-container/50 transition-colors">出库记录</button>
-          <button id="tab-warning" class="px-5 py-3 text-sm font-medium text-on-surface-variant hover:text-on-surface hover:bg-surface-container/50 transition-colors">库存预警</button>
+          <button data-element=""tab-inventoryid="" class="px-5 py-3 text-sm font-medium text-primary border-b-2 border-primary bg-primary/5" >>库存查询</button>
+          <button data-element=""tab-inboundid="" class="px-5 py-3 text-sm font-medium text-on-surface-variant hover:text-on-surface hover:bg-surface-container/50 transition-colors" >>入库记录</button>
+          <button data-element=""tab-outboundid="" class="px-5 py-3 text-sm font-medium text-on-surface-variant hover:text-on-surface hover:bg-surface-container/50 transition-colors" >>出库记录</button>
+          <button data-element=""tab-warningid="" class="px-5 py-3 text-sm font-medium text-on-surface-variant hover:text-on-surface hover:bg-surface-container/50 transition-colors" >>库存预警</button>
         </div>
 
         <!-- Tab内容区 -->
         <div class="p-5">
           <!-- 库存查询Tab -->
-          <div id="panel-inventory" class="tab-panel">
+          <div id="panel-inventory" class="tab-panel" >
             <!-- 筛选栏 -->
             <div class="flex flex-wrap items-center gap-3 mb-5">
               <div class="relative flex-1 min-w-[200px] max-w-[300px]">
                 <i data-lucide="search" class="w-4 h-4 text-on-surface-variant absolute left-3 top-1/2 -translate-y-1/2"></i>
-                <input id="search-sku" type="text" placeholder="搜索SKU编码/商品名称" class="w-full bg-surface-container border-none rounded-md pl-9 pr-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/>
+                <input id="search-sku" type="text" placeholder="搜索SKU编码/商品名称" class="w-full bg-surface-container border-none rounded-md pl-9 pr-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/ >
               </div>
-              <select id="filter-category" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
+              <select id="filter-category" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" >
                 <option value="">全部品类</option>
                 <option value="electronics">数码电子</option>
                 <option value="clothing">服饰鞋包</option>
                 <option value="home">家居用品</option>
                 <option value="beauty">美妆个护</option>
               </select>
-              <select id="filter-status" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
+              <select id="filter-status" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" >
                 <option value="">全部状态</option>
                 <option value="sufficient">充足</option>
                 <option value="low">偏低</option>
                 <option value="out">缺货</option>
               </select>
-              <select id="filter-hot" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
+              <select id="filter-hot" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" >
                 <option value="">是否热销</option>
                 <option value="yes">热销商品</option>
                 <option value="no">非热销</option>
               </select>
-              <button id="btn-reset-filter" class="text-sm text-on-surface-variant hover:text-on-surface transition-colors">重置</button>
+              <button data-element=""btn-reset-filterid="" class="text-sm text-on-surface-variant hover:text-on-surface transition-colors" >>重置</button>
             </div>
 
             <!-- 库存列表表格 -->
@@ -298,8 +298,8 @@
                     <div class="col-span-1 text-sm font-medium text-on-surface text-center">186</div>
                     <div class="col-span-1 text-sm text-primary text-center font-medium">+50</div>
                     <div class="col-span-1 flex gap-2 justify-center">
-                      <button id="btn-stock-in-1" class="text-primary text-xs font-medium hover:underline">入库</button>
-                      <button id="btn-adjust-1" class="text-on-surface-variant text-xs font-medium hover:text-on-surface">调整</button>
+                      <button data-element=""btn-stock-in-1id="" class="text-primary text-xs font-medium hover:underline" >>入库</button>
+                      <button data-element=""btn-adjust-1id="" class="text-on-surface-variant text-xs font-medium hover:text-on-surface" >>调整</button>
                     </div>
                   </div>
                   <!-- 列表项2 - 热销偏低 -->
@@ -318,8 +318,8 @@
                     <div class="col-span-1 text-sm font-medium text-on-surface text-center">245</div>
                     <div class="col-span-1 text-sm text-primary text-center font-medium">+100</div>
                     <div class="col-span-1 flex gap-2 justify-center">
-                      <button id="btn-stock-in-2" class="text-primary text-xs font-medium hover:underline">入库</button>
-                      <button id="btn-adjust-2" class="text-on-surface-variant text-xs font-medium hover:text-on-surface">调整</button>
+                      <button data-element=""btn-stock-in-2id="" class="text-primary text-xs font-medium hover:underline" >>入库</button>
+                      <button data-element=""btn-adjust-2id="" class="text-on-surface-variant text-xs font-medium hover:text-on-surface" >>调整</button>
                     </div>
                   </div>
                   <!-- 列表项3 - 缺货 -->
@@ -338,8 +338,8 @@
                     <div class="col-span-1 text-sm font-medium text-on-surface text-center">312</div>
                     <div class="col-span-1 text-sm text-primary text-center font-medium">+200</div>
                     <div class="col-span-1 flex gap-2 justify-center">
-                      <button id="btn-stock-in-3" class="text-primary text-xs font-medium hover:underline">入库</button>
-                      <button id="btn-adjust-3" class="text-on-surface-variant text-xs font-medium hover:text-on-surface">调整</button>
+                      <button data-element=""btn-stock-in-3id="" class="text-primary text-xs font-medium hover:underline" >>入库</button>
+                      <button data-element=""btn-adjust-3id="" class="text-on-surface-variant text-xs font-medium hover:text-on-surface" >>调整</button>
                     </div>
                   </div>
                   <!-- 列表项4 - 非热销充足 -->
@@ -358,8 +358,8 @@
                     <div class="col-span-1 text-sm text-on-surface-variant text-center">28</div>
                     <div class="col-span-1 text-sm text-on-surface-variant text-center">-</div>
                     <div class="col-span-1 flex gap-2 justify-center">
-                      <button id="btn-stock-in-4" class="text-primary text-xs font-medium hover:underline">入库</button>
-                      <button id="btn-adjust-4" class="text-on-surface-variant text-xs font-medium hover:text-on-surface">调整</button>
+                      <button data-element=""btn-stock-in-4id="" class="text-primary text-xs font-medium hover:underline" >>入库</button>
+                      <button data-element=""btn-adjust-4id="" class="text-on-surface-variant text-xs font-medium hover:text-on-surface" >>调整</button>
                     </div>
                   </div>
                   <!-- 列表项5 - 非热销偏低 -->
@@ -378,8 +378,8 @@
                     <div class="col-span-1 text-sm text-on-surface-variant text-center">18</div>
                     <div class="col-span-1 text-sm text-on-surface-variant text-center">-</div>
                     <div class="col-span-1 flex gap-2 justify-center">
-                      <button id="btn-stock-in-5" class="text-primary text-xs font-medium hover:underline">入库</button>
-                      <button id="btn-adjust-5" class="text-on-surface-variant text-xs font-medium hover:text-on-surface">调整</button>
+                      <button data-element=""btn-stock-in-5id="" class="text-primary text-xs font-medium hover:underline" >>入库</button>
+                      <button data-element=""btn-adjust-5id="" class="text-on-surface-variant text-xs font-medium hover:text-on-surface" >>调整</button>
                     </div>
                   </div>
                 </div>
@@ -390,31 +390,31 @@
             <div class="flex items-center justify-between mt-4 pt-4 border-t border-outline/30">
               <span class="text-sm text-on-surface-variant">共 1,286 条记录</span>
               <div class="flex items-center gap-1">
-                <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">上一页</button>
-                <button class="px-3 py-1.5 text-sm text-primary bg-primary/10 rounded-md">1</button>
-                <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">2</button>
-                <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">3</button>
+                <button data-element="inventory-btn02" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">上一页</button>
+                <button data-element="inventory-btn03" class="px-3 py-1.5 text-sm text-primary bg-primary/10 rounded-md">1</button>
+                <button data-element="inventory-icon-btn04" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">2</button>
+                <button data-element="inventory-icon-btn05" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">3</button>
                 <span class="px-2 text-on-surface-variant">...</span>
-                <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">129</button>
-                <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">下一页</button>
+                <button data-element="inventory-icon-btn06" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">129</button>
+                <button data-element="inventory-icon-btn07" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">下一页</button>
               </div>
             </div>
           </div>
 
           <!-- 入库记录Tab -->
-          <div id="panel-inbound" class="tab-panel hidden">
+          <div id="panel-inbound" class="tab-panel hidden" >
             <!-- 筛选栏 -->
             <div class="flex flex-wrap items-center gap-3 mb-5">
-              <input type="date" id="filter-inbound-start" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/>
+              <input type="date" id="filter-inbound-start" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/  type="date">
               <span class="text-on-surface-variant">至</span>
-              <input type="date" id="filter-inbound-end" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/>
-              <select id="filter-inbound-type" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
+              <input type="date" id="filter-inbound-end" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/  type="date">
+              <select id="filter-inbound-type" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" >
                 <option value="">全部类型</option>
                 <option value="purchase">采购入库</option>
                 <option value="manual">手动入库</option>
                 <option value="return">退货入库</option>
               </select>
-              <button id="btn-export-inbound" class="ml-auto bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all inline-flex items-center gap-2">
+              <button data-element=""btn-export-inboundid="" class="ml-auto bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all inline-flex items-center gap-2" >>
                 <i data-lucide="download" class="w-4 h-4"></i>导出
               </button>
             </div>
@@ -504,31 +504,31 @@
             <div class="flex items-center justify-between mt-4 pt-4 border-t border-outline/30">
               <span class="text-sm text-on-surface-variant">共 856 条记录</span>
               <div class="flex items-center gap-1">
-                <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">上一页</button>
-                <button class="px-3 py-1.5 text-sm text-primary bg-primary/10 rounded-md">1</button>
-                <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">2</button>
-                <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">3</button>
+                <button data-element="inventory-icon-btn08" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">上一页</button>
+                <button data-element="inventory-btn09" class="px-3 py-1.5 text-sm text-primary bg-primary/10 rounded-md">1</button>
+                <button data-element="inventory-icon-btn10" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">2</button>
+                <button data-element="inventory-icon-btn11" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">3</button>
                 <span class="px-2 text-on-surface-variant">...</span>
-                <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">86</button>
-                <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">下一页</button>
+                <button data-element="inventory-icon-btn12" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">86</button>
+                <button data-element="inventory-icon-btn13" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">下一页</button>
               </div>
             </div>
           </div>
 
           <!-- 出库记录Tab -->
-          <div id="panel-outbound" class="tab-panel hidden">
+          <div id="panel-outbound" class="tab-panel hidden" >
             <!-- 筛选栏 -->
             <div class="flex flex-wrap items-center gap-3 mb-5">
-              <input type="date" id="filter-outbound-start" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/>
+              <input type="date" id="filter-outbound-start" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/  type="date">
               <span class="text-on-surface-variant">至</span>
-              <input type="date" id="filter-outbound-end" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/>
-              <select id="filter-outbound-type" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
+              <input type="date" id="filter-outbound-end" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/  type="date">
+              <select id="filter-outbound-type" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" >
                 <option value="">全部类型</option>
                 <option value="order">订单出库</option>
                 <option value="manual">手动出库</option>
                 <option value="loss">盘亏出库</option>
               </select>
-              <button id="btn-export-outbound" class="ml-auto bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all inline-flex items-center gap-2">
+              <button data-element=""btn-export-outboundid="" class="ml-auto bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all inline-flex items-center gap-2" >>
                 <i data-lucide="download" class="w-4 h-4"></i>导出
               </button>
             </div>
@@ -618,24 +618,24 @@
             <div class="flex items-center justify-between mt-4 pt-4 border-t border-outline/30">
               <span class="text-sm text-on-surface-variant">共 1,245 条记录</span>
               <div class="flex items-center gap-1">
-                <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">上一页</button>
-                <button class="px-3 py-1.5 text-sm text-primary bg-primary/10 rounded-md">1</button>
-                <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">2</button>
-                <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">3</button>
+                <button data-element="inventory-icon-btn14" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">上一页</button>
+                <button data-element="inventory-btn15" class="px-3 py-1.5 text-sm text-primary bg-primary/10 rounded-md">1</button>
+                <button data-element="inventory-icon-btn16" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">2</button>
+                <button data-element="inventory-icon-btn17" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">3</button>
                 <span class="px-2 text-on-surface-variant">...</span>
-                <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">125</button>
-                <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">下一页</button>
+                <button data-element="inventory-icon-btn18" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">125</button>
+                <button data-element="inventory-icon-btn19" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">下一页</button>
               </div>
             </div>
           </div>
 
           <!-- 库存预警Tab -->
-          <div id="panel-warning" class="tab-panel hidden">
+          <div id="panel-warning" class="tab-panel hidden" >
             <!-- 预警规则设置 -->
             <div class="mb-6">
               <div class="flex items-center justify-between mb-3">
                 <h3 class="text-base font-semibold text-on-surface">预警规则</h3>
-                <button id="btn-add-rule" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-2">
+                <button data-element=""btn-add-ruleid="" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-2" >>
                   <i data-lucide="plus" class="w-3.5 h-3.5"></i>新增规则
                 </button>
               </div>
@@ -680,7 +680,7 @@
             <div class="mb-4">
               <div class="flex items-center justify-between mb-3">
                 <h3 class="text-base font-semibold text-on-surface">当前预警 <span class="text-error font-normal">(23条)</span></h3>
-                <button id="btn-generate-purchase" class="bg-error text-white px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-2">
+                <button data-element=""btn-generate-purchaseid="" class="bg-error text-white px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-2" >>
                   <i data-lucide="package-plus" class="w-4 h-4"></i>一键生成采购任务
                 </button>
               </div>
@@ -711,8 +711,8 @@
                       <div class="col-span-1 text-sm text-on-surface-variant text-center">80</div>
                       <div class="col-span-1 text-sm text-on-surface-variant">2024-01-15 08:00</div>
                       <div class="col-span-1 flex gap-2 justify-center">
-                        <button class="text-primary text-xs font-medium hover:underline">补货</button>
-                        <button class="text-on-surface-variant text-xs font-medium hover:text-on-surface">忽略</button>
+                        <button data-element="inventory-icon-btn20" class="text-primary text-xs font-medium hover:underline">补货</button>
+                        <button data-element="inventory-icon-btn21" class="text-on-surface-variant text-xs font-medium hover:text-on-surface">忽略</button>
                       </div>
                     </div>
                     <!-- 预警项2 - 紧急 -->
@@ -725,8 +725,8 @@
                       <div class="col-span-1 text-sm text-on-surface-variant text-center">50</div>
                       <div class="col-span-1 text-sm text-on-surface-variant">2024-01-15 08:00</div>
                       <div class="col-span-1 flex gap-2 justify-center">
-                        <button class="text-primary text-xs font-medium hover:underline">补货</button>
-                        <button class="text-on-surface-variant text-xs font-medium hover:text-on-surface">忽略</button>
+                        <button data-element="inventory-icon-btn22" class="text-primary text-xs font-medium hover:underline">补货</button>
+                        <button data-element="inventory-icon-btn23" class="text-on-surface-variant text-xs font-medium hover:text-on-surface">忽略</button>
                       </div>
                     </div>
                     <!-- 预警项3 - 普通 -->
@@ -739,8 +739,8 @@
                       <div class="col-span-1 text-sm text-on-surface-variant text-center">150</div>
                       <div class="col-span-1 text-sm text-on-surface-variant">2024-01-15 08:00</div>
                       <div class="col-span-1 flex gap-2 justify-center">
-                        <button class="text-primary text-xs font-medium hover:underline">补货</button>
-                        <button class="text-on-surface-variant text-xs font-medium hover:text-on-surface">忽略</button>
+                        <button data-element="inventory-icon-btn24" class="text-primary text-xs font-medium hover:underline">补货</button>
+                        <button data-element="inventory-icon-btn25" class="text-on-surface-variant text-xs font-medium hover:text-on-surface">忽略</button>
                       </div>
                     </div>
                     <!-- 预警项4 - 普通 -->
@@ -753,8 +753,8 @@
                       <div class="col-span-1 text-sm text-on-surface-variant text-center">50</div>
                       <div class="col-span-1 text-sm text-on-surface-variant">2024-01-14 08:00</div>
                       <div class="col-span-1 flex gap-2 justify-center">
-                        <button class="text-primary text-xs font-medium hover:underline">补货</button>
-                        <button class="text-on-surface-variant text-xs font-medium hover:text-on-surface">忽略</button>
+                        <button data-element="inventory-icon-btn26" class="text-primary text-xs font-medium hover:underline">补货</button>
+                        <button data-element="inventory-icon-btn27" class="text-on-surface-variant text-xs font-medium hover:text-on-surface">忽略</button>
                       </div>
                     </div>
                     <!-- 预警项5 - 积压 -->
@@ -767,8 +767,8 @@
                       <div class="col-span-1 text-sm text-on-surface-variant text-center">-</div>
                       <div class="col-span-1 text-sm text-on-surface-variant">2024-01-10 08:00</div>
                       <div class="col-span-1 flex gap-2 justify-center">
-                        <button class="text-on-surface-variant text-xs font-medium hover:text-on-surface">查看</button>
-                        <button class="text-on-surface-variant text-xs font-medium hover:text-on-surface">忽略</button>
+                        <button data-element="inventory-icon-btn28" class="text-on-surface-variant text-xs font-medium hover:text-on-surface">查看</button>
+                        <button data-element="inventory-icon-btn29" class="text-on-surface-variant text-xs font-medium hover:text-on-surface">忽略</button>
                       </div>
                     </div>
                   </div>
@@ -792,12 +792,12 @@
   <!-- @nav:end 导航组件 -->
 
   <!-- 手动入库弹窗 -->
-  <div id="modal-stock-in" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
+  <div id="modal-stock-in" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden" >
     <div class="bg-surface rounded-xl shadow-dialog max-w-md w-full max-h-[90vh] overflow-y-auto">
       <div class="p-5 border-b border-outline/50">
         <div class="flex items-center justify-between">
           <h3 class="text-lg font-semibold text-on-surface">手动入库</h3>
-          <button id="btn-close-stock-in" class="text-on-surface-variant hover:text-on-surface transition-colors">
+          <button data-element=""btn-close-stock-inid="" class="text-on-surface-variant hover:text-on-surface transition-colors" >>
             <i data-lucide="x" class="w-5 h-5"></i>
           </button>
         </div>
@@ -834,19 +834,19 @@
         </div>
       </div>
       <div class="p-5 border-t border-outline/50 flex gap-3 justify-end">
-        <button id="btn-cancel-stock-in" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all">取消</button>
-        <button id="btn-confirm-stock-in" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">确认入库</button>
+        <button data-element=""btn-cancel-stock-inid="" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all" >>取消</button>
+        <button data-element=""btn-confirm-stock-inid="" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all" >>确认入库</button>
       </div>
     </div>
   </div>
 
   <!-- 调整安全库存弹窗 -->
-  <div id="modal-adjust" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
+  <div id="modal-adjust" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden" >
     <div class="bg-surface rounded-xl shadow-dialog max-w-md w-full max-h-[90vh] overflow-y-auto">
       <div class="p-5 border-b border-outline/50">
         <div class="flex items-center justify-between">
           <h3 class="text-lg font-semibold text-on-surface">调整安全库存</h3>
-          <button id="btn-close-adjust" class="text-on-surface-variant hover:text-on-surface transition-colors">
+          <button data-element=""btn-close-adjustid="" class="text-on-surface-variant hover:text-on-surface transition-colors" >>
             <i data-lucide="x" class="w-5 h-5"></i>
           </button>
         </div>
@@ -874,8 +874,8 @@
         </div>
       </div>
       <div class="p-5 border-t border-outline/50 flex gap-3 justify-end">
-        <button id="btn-cancel-adjust" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all">取消</button>
-        <button id="btn-confirm-adjust" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">确认调整</button>
+        <button data-element=""btn-cancel-adjustid="" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all" >>取消</button>
+        <button data-element=""btn-confirm-adjustid="" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all" >>确认调整</button>
       </div>
     </div>
   </div>

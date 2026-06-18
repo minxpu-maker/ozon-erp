@@ -1,0 +1,4246 @@
+{
+  "accounts": {
+    "file": "accounts.html",
+    "elements": [
+      {
+        "id": "btn-edit-current-permission",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "input-search",
+        "tag": "input",
+        "type": "input",
+        "text": ""
+      },
+      {
+        "id": "select-role",
+        "tag": "select",
+        "type": "select",
+        "text": "全部角色"
+      },
+      {
+        "id": "select-status",
+        "tag": "select",
+        "type": "select",
+        "text": "全部状态"
+      },
+      {
+        "id": "btn-reset-filter",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-add-account",
+        "tag": "button",
+        "type": "button",
+        "text": "新增账号"
+      },
+      {
+        "id": "batch-actions",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "checkbox-select-all",
+        "tag": "input",
+        "type": "input",
+        "text": "已选择"
+      },
+      {
+        "id": "selected-count",
+        "tag": "span",
+        "type": "unknown",
+        "text": "个账号"
+      },
+      {
+        "id": "btn-batch-enable",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-batch-disable",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-batch-role",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "checkbox-header",
+        "tag": "input",
+        "type": "input",
+        "text": ""
+      },
+      {
+        "id": "account-list",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "modal-add-account",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "btn-close-add-modal",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "input-account-name",
+        "tag": "input",
+        "type": "input",
+        "text": ""
+      },
+      {
+        "id": "input-phone",
+        "tag": "input",
+        "type": "input",
+        "text": ""
+      },
+      {
+        "id": "select-add-role",
+        "tag": "select",
+        "type": "select",
+        "text": "请选择角色"
+      },
+      {
+        "id": "permission-preview",
+        "tag": "div",
+        "type": "container",
+        "text": "权限预览"
+      },
+      {
+        "id": "permission-list",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "input-password",
+        "tag": "input",
+        "type": "input",
+        "text": "随机生成"
+      },
+      {
+        "id": "btn-generate-password",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-cancel-add",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-confirm-add",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "modal-edit-permission",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "btn-close-edit-modal",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "select-edit-role",
+        "tag": "select",
+        "type": "select",
+        "text": "管理员"
+      },
+      {
+        "id": "btn-cancel-edit",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-confirm-edit",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "modal-batch-role",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "btn-close-batch-role-modal",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "batch-selected-count",
+        "tag": "span",
+        "type": "unknown",
+        "text": "个账号，请选择要分配的角色："
+      },
+      {
+        "id": "select-batch-role",
+        "tag": "select",
+        "type": "select",
+        "text": "请选择角色"
+      },
+      {
+        "id": "btn-cancel-batch-role",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-confirm-batch-role",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "modal-delete-confirm",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "btn-cancel-delete",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-confirm-delete",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "accounts-nav-dashboard",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "accounts-nav-orders",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "accounts-nav-purchase",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "accounts-nav-quick-entry",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "accounts-nav-logistics",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "accounts-nav-packaging",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "accounts-nav-finance",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "accounts-nav-inventory",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "accounts-nav-wms",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "accounts-nav-sku-management",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "accounts-nav-suppliers",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      }
+    ]
+  },
+  "dashboard": {
+    "file": "dashboard.html",
+    "elements": [
+      {
+        "id": "flow-sync",
+        "tag": "a",
+        "type": "link",
+        "text": ""
+      },
+      {
+        "id": "flow-purchase",
+        "tag": "a",
+        "type": "link",
+        "text": ""
+      },
+      {
+        "id": "flow-bind",
+        "tag": "a",
+        "type": "link",
+        "text": ""
+      },
+      {
+        "id": "flow-inspect",
+        "tag": "a",
+        "type": "link",
+        "text": ""
+      },
+      {
+        "id": "flow-pack",
+        "tag": "a",
+        "type": "link",
+        "text": ""
+      },
+      {
+        "id": "flow-calc",
+        "tag": "a",
+        "type": "link",
+        "text": ""
+      },
+      {
+        "id": "btn-sync-ozon",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-quick-entry",
+        "tag": "a",
+        "type": "link",
+        "text": ""
+      },
+      {
+        "id": "btn-scan-inspect",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-print-label",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "chart-orders",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "chart-purchase",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "chart-profit",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "chart-orders-content",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "chart-purchase-content",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "chart-profit-content",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "todo-purchase",
+        "tag": "a",
+        "type": "link",
+        "text": ""
+      },
+      {
+        "id": "todo-bind",
+        "tag": "a",
+        "type": "link",
+        "text": ""
+      },
+      {
+        "id": "todo-inspect-error",
+        "tag": "a",
+        "type": "link",
+        "text": ""
+      },
+      {
+        "id": "todo-calc",
+        "tag": "a",
+        "type": "link",
+        "text": ""
+      },
+      {
+        "id": "hardware-scanner",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "hardware-scale",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "hardware-printer",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "hardware-alert",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "dashboard-nav-dashboard",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "dashboard-nav-orders",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "dashboard-nav-purchase",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "dashboard-nav-quick-entry",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "dashboard-nav-logistics",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "dashboard-nav-packaging",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "dashboard-nav-finance",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "dashboard-nav-inventory",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "dashboard-nav-wms",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "dashboard-nav-sku-management",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "dashboard-nav-suppliers",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "dashboard-nav-reports",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "dashboard-nav-accounts",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "dashboard-nav-roles",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "dashboard-nav-settings",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "dashboard-nav-orders-2",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "dashboard-nav-purchase-2",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "dashboard-nav-quick-entry-2",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "dashboard-nav-packaging-2",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "dashboard-nav-packaging-3",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "dashboard-nav-finance-2",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "dashboard-nav-quick-entry-3",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "dashboard-nav-purchase-3",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "dashboard-nav-quick-entry-4",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "dashboard-nav-packaging-4",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "dashboard-nav-finance-3",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      }
+    ]
+  },
+  "finance": {
+    "file": "finance.html",
+    "elements": [
+      {
+        "id": "tab-pending",
+        "tag": "button",
+        "type": "button",
+        "text": "23"
+      },
+      {
+        "id": "tab-processing",
+        "tag": "button",
+        "type": "button",
+        "text": "5"
+      },
+      {
+        "id": "tab-completed",
+        "tag": "button",
+        "type": "button",
+        "text": "128"
+      },
+      {
+        "id": "tab-after-sale",
+        "tag": "button",
+        "type": "button",
+        "text": "42"
+      },
+      {
+        "id": "tab-inventory-cost",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "content-pending",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "btn-batch-calculate",
+        "tag": "button",
+        "type": "button",
+        "text": "批量核算"
+      },
+      {
+        "id": "content-processing",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "content-completed",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "btn-export-excel",
+        "tag": "button",
+        "type": "button",
+        "text": "导出Excel"
+      },
+      {
+        "id": "btn-export-pdf",
+        "tag": "button",
+        "type": "button",
+        "text": "导出PDF"
+      },
+      {
+        "id": "content-after-sale",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "content-inventory-cost",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "btn-export-inventory",
+        "tag": "button",
+        "type": "button",
+        "text": "导出库存成本报表"
+      },
+      {
+        "id": "modal-calculate",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "btn-close-modal",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-cancel-modal",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-confirm-modal",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "finance-nav-dashboard",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "finance-nav-orders",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "finance-nav-purchase",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "finance-nav-quick-entry",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "finance-nav-logistics",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "finance-nav-packaging",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "finance-nav-finance",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "finance-nav-inventory",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "finance-nav-wms",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "finance-nav-sku-management",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "finance-nav-suppliers",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "finance-nav-reports",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "finance-nav-accounts",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "finance-nav-roles",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "finance-nav-settings",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      }
+    ]
+  },
+  "inventory": {
+    "file": "inventory.html",
+    "elements": [
+      {
+        "id": "tab-inventory",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "tab-inbound",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "tab-outbound",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "tab-warning",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "panel-inventory",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "search-sku",
+        "tag": "input",
+        "type": "input",
+        "text": ""
+      },
+      {
+        "id": "filter-category",
+        "tag": "select",
+        "type": "select",
+        "text": "全部品类"
+      },
+      {
+        "id": "filter-status",
+        "tag": "select",
+        "type": "select",
+        "text": "全部状态"
+      },
+      {
+        "id": "filter-hot",
+        "tag": "select",
+        "type": "select",
+        "text": "是否热销"
+      },
+      {
+        "id": "btn-reset-filter",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-stock-in-1",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-adjust-1",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-stock-in-2",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-adjust-2",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-stock-in-3",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-adjust-3",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-stock-in-4",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-adjust-4",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-stock-in-5",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-adjust-5",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "panel-inbound",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "filter-inbound-start",
+        "tag": "input",
+        "type": "input",
+        "text": "至"
+      },
+      {
+        "id": "filter-inbound-end",
+        "tag": "input",
+        "type": "input",
+        "text": ""
+      },
+      {
+        "id": "filter-inbound-type",
+        "tag": "select",
+        "type": "select",
+        "text": "全部类型"
+      },
+      {
+        "id": "btn-export-inbound",
+        "tag": "button",
+        "type": "button",
+        "text": "导出"
+      },
+      {
+        "id": "panel-outbound",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "filter-outbound-start",
+        "tag": "input",
+        "type": "input",
+        "text": "至"
+      },
+      {
+        "id": "filter-outbound-end",
+        "tag": "input",
+        "type": "input",
+        "text": ""
+      },
+      {
+        "id": "filter-outbound-type",
+        "tag": "select",
+        "type": "select",
+        "text": "全部类型"
+      },
+      {
+        "id": "btn-export-outbound",
+        "tag": "button",
+        "type": "button",
+        "text": "导出"
+      },
+      {
+        "id": "panel-warning",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "btn-add-rule",
+        "tag": "button",
+        "type": "button",
+        "text": "新增规则"
+      },
+      {
+        "id": "btn-generate-purchase",
+        "tag": "button",
+        "type": "button",
+        "text": "一键生成采购任务"
+      },
+      {
+        "id": "modal-stock-in",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "btn-close-stock-in",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-cancel-stock-in",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-confirm-stock-in",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "modal-adjust",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "btn-close-adjust",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-cancel-adjust",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-confirm-adjust",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "inventory-nav-dashboard",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "inventory-nav-orders",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "inventory-nav-purchase",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "inventory-nav-quick-entry",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "inventory-nav-logistics",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "inventory-nav-packaging",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "inventory-nav-finance",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "inventory-nav-sku-management",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "inventory-nav-suppliers",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      }
+    ]
+  },
+  "login": {
+    "file": "login.html",
+    "elements": [
+      {
+        "id": "login-card01",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "login-card02",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "login-card03",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "login-card04",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "login-card05",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "login-card06",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "login-card07",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "login-card08",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "login-card09",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "login-card10",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "login-card11",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "login-form",
+        "tag": "form",
+        "type": "unknown",
+        "text": ""
+      },
+      {
+        "id": "login-card12",
+        "tag": "div",
+        "type": "card",
+        "text": "+86"
+      },
+      {
+        "id": "phone-input",
+        "tag": "input",
+        "type": "input",
+        "text": ""
+      },
+      {
+        "id": "phone-clear-btn",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "phone-error",
+        "tag": "p",
+        "type": "unknown",
+        "text": ""
+      },
+      {
+        "id": "code-input",
+        "tag": "input",
+        "type": "input",
+        "text": ""
+      },
+      {
+        "id": "get-code-btn",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "login-btn",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "nav-#",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "nav-#-2",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      }
+    ]
+  },
+  "logistics": {
+    "file": "logistics.html",
+    "elements": [
+      {
+        "id": "hardware-status-bar",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "scanner-status-dot",
+        "tag": "span",
+        "type": "unknown",
+        "text": ""
+      },
+      {
+        "id": "scanner-status-text",
+        "tag": "span",
+        "type": "unknown",
+        "text": ""
+      },
+      {
+        "id": "scale-status-dot",
+        "tag": "span",
+        "type": "unknown",
+        "text": ""
+      },
+      {
+        "id": "scale-status-text",
+        "tag": "span",
+        "type": "unknown",
+        "text": ""
+      },
+      {
+        "id": "scanner-port",
+        "tag": "span",
+        "type": "unknown",
+        "text": ""
+      },
+      {
+        "id": "btn-test-scanner",
+        "tag": "button",
+        "type": "button",
+        "text": "测试扫描"
+      },
+      {
+        "id": "scan-area",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "scan-input",
+        "tag": "input",
+        "type": "input",
+        "text": ""
+      },
+      {
+        "id": "btn-scan",
+        "tag": "button",
+        "type": "button",
+        "text": "扫描"
+      },
+      {
+        "id": "btn-clear-history",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "scan-history",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "tab-pending",
+        "tag": "button",
+        "type": "button",
+        "text": "12"
+      },
+      {
+        "id": "tab-tickets",
+        "tag": "button",
+        "type": "button",
+        "text": "3"
+      },
+      {
+        "id": "tab-completed",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "panel-pending",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "panel-tickets",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "panel-completed",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "modal-inspect",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "btn-close-modal",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "item-check-1",
+        "tag": "input",
+        "type": "input",
+        "text": ""
+      },
+      {
+        "id": "item-check-2",
+        "tag": "input",
+        "type": "input",
+        "text": ""
+      },
+      {
+        "id": "btn-all-pass",
+        "tag": "button",
+        "type": "button",
+        "text": "全部合格"
+      },
+      {
+        "id": "btn-all-abnormal",
+        "tag": "button",
+        "type": "button",
+        "text": "全部异常"
+      },
+      {
+        "id": "btn-result-pass",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-result-abnormal",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "abnormal-section",
+        "tag": "div",
+        "type": "container",
+        "text": "异常情况"
+      },
+      {
+        "id": "abnormal-desc",
+        "tag": "textarea",
+        "type": "unknown",
+        "text": ""
+      },
+      {
+        "id": "photo-upload-area",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "btn-cancel-inspect",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-confirm-inspect",
+        "tag": "button",
+        "type": "button",
+        "text": "确认验货"
+      },
+      {
+        "id": "logistics-nav-dashboard",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "logistics-nav-orders",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "logistics-nav-purchase",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "logistics-nav-quick-entry",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "logistics-nav-logistics",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "logistics-nav-packaging",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "logistics-nav-finance",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "logistics-nav-inventory",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "logistics-nav-wms",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "logistics-nav-sku-management",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "logistics-nav-suppliers",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "logistics-nav-reports",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "logistics-nav-accounts",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "logistics-nav-roles",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "logistics-nav-settings",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      }
+    ]
+  },
+  "orders": {
+    "file": "orders.html",
+    "elements": [
+      {
+        "id": "search-order-no",
+        "tag": "input",
+        "type": "input",
+        "text": ""
+      },
+      {
+        "id": "date-start",
+        "tag": "input",
+        "type": "input",
+        "text": "至"
+      },
+      {
+        "id": "date-end",
+        "tag": "input",
+        "type": "input",
+        "text": ""
+      },
+      {
+        "id": "filter-status",
+        "tag": "select",
+        "type": "select",
+        "text": "全部状态"
+      },
+      {
+        "id": "filter-platform",
+        "tag": "select",
+        "type": "select",
+        "text": "全部平台"
+      },
+      {
+        "id": "btn-sync",
+        "tag": "button",
+        "type": "button",
+        "text": "同步订单"
+      },
+      {
+        "id": "checkbox-all",
+        "tag": "input",
+        "type": "input",
+        "text": "全选"
+      },
+      {
+        "id": "selected-count",
+        "tag": "span",
+        "type": "unknown",
+        "text": "0"
+      },
+      {
+        "id": "btn-batch-ship",
+        "tag": "button",
+        "type": "button",
+        "text": "批量标记发货"
+      },
+      {
+        "id": "btn-batch-export",
+        "tag": "button",
+        "type": "button",
+        "text": "批量导出"
+      },
+      {
+        "id": "btn-batch-purchase",
+        "tag": "button",
+        "type": "button",
+        "text": "批量创建采购"
+      },
+      {
+        "id": "order-table-body",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "order-drawer",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "drawer-overlay",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "btn-close-drawer",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "orders-nav-dashboard",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "orders-nav-orders",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "orders-nav-purchase",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "orders-nav-quick-entry",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "orders-nav-logistics",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "orders-nav-packaging",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "orders-nav-finance",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "orders-nav-inventory",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "orders-nav-wms",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "orders-nav-sku-management",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "orders-nav-suppliers",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "orders-nav-reports",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "orders-nav-accounts",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "orders-nav-roles",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "orders-nav-settings",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      }
+    ]
+  },
+  "packaging": {
+    "file": "packaging.html",
+    "elements": [
+      {
+        "id": "btn-refresh-scale",
+        "tag": "button",
+        "type": "button",
+        "text": "刷新设备"
+      },
+      {
+        "id": "scale-status",
+        "tag": "span",
+        "type": "unknown",
+        "text": "已连接"
+      },
+      {
+        "id": "printer-status",
+        "tag": "span",
+        "type": "unknown",
+        "text": "已连接"
+      },
+      {
+        "id": "btn-refresh-weight",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-zero-scale",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "scale-weight",
+        "tag": "span",
+        "type": "unknown",
+        "text": ""
+      },
+      {
+        "id": "tab-pending",
+        "tag": "button",
+        "type": "button",
+        "text": "12"
+      },
+      {
+        "id": "tab-shipped",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "pending-list",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "shipped-list",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "no-selection-hint",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "packing-panel",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "btn-close-panel",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "panel-order-id",
+        "tag": "p",
+        "type": "unknown",
+        "text": ""
+      },
+      {
+        "id": "panel-buyer-name",
+        "tag": "p",
+        "type": "unknown",
+        "text": ""
+      },
+      {
+        "id": "panel-address",
+        "tag": "p",
+        "type": "unknown",
+        "text": ""
+      },
+      {
+        "id": "btn-get-label",
+        "tag": "button",
+        "type": "button",
+        "text": "获取电子面单"
+      },
+      {
+        "id": "label-preview",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "print-settings",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "print-copies",
+        "tag": "input",
+        "type": "input",
+        "text": ""
+      },
+      {
+        "id": "btn-print-label",
+        "tag": "button",
+        "type": "button",
+        "text": "打印面单"
+      },
+      {
+        "id": "print-success",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "panel-weight",
+        "tag": "span",
+        "type": "unknown",
+        "text": ""
+      },
+      {
+        "id": "manual-weight",
+        "tag": "input",
+        "type": "input",
+        "text": "kg"
+      },
+      {
+        "id": "btn-confirm-weight",
+        "tag": "button",
+        "type": "button",
+        "text": "确认重量"
+      },
+      {
+        "id": "weight-confirmed",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "tracking-number",
+        "tag": "p",
+        "type": "unknown",
+        "text": ""
+      },
+      {
+        "id": "btn-copy-tracking",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-confirm-ship",
+        "tag": "button",
+        "type": "button",
+        "text": "确认发货"
+      },
+      {
+        "id": "ship-success",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "packaging-nav-dashboard",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "packaging-nav-orders",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "packaging-nav-purchase",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "packaging-nav-quick-entry",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "packaging-nav-logistics",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "packaging-nav-packaging",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "packaging-nav-finance",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "packaging-nav-inventory",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "packaging-nav-wms",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "packaging-nav-sku-management",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "packaging-nav-suppliers",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "packaging-nav-reports",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "packaging-nav-accounts",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "packaging-nav-roles",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "packaging-nav-settings",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      }
+    ]
+  },
+  "purchase": {
+    "file": "purchase.html",
+    "elements": [
+      {
+        "id": "tab-pending",
+        "tag": "button",
+        "type": "button",
+        "text": "待采购任务"
+      },
+      {
+        "id": "tab-binding",
+        "tag": "button",
+        "type": "button",
+        "text": "采购绑定"
+      },
+      {
+        "id": "tab-bound",
+        "tag": "button",
+        "type": "button",
+        "text": "已绑定列表"
+      },
+      {
+        "id": "content-pending",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "btn-go-order-1",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-mark-ordered-1",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-go-order-2",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-mark-ordered-2",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-bind-tracking-3",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-go-order-4",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-mark-ordered-4",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-bind-tracking-5",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "content-binding",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "single-bind-form",
+        "tag": "form",
+        "type": "unknown",
+        "text": ""
+      },
+      {
+        "id": "input-ozon-order",
+        "tag": "input",
+        "type": "input",
+        "text": ""
+      },
+      {
+        "id": "input-tracking-no",
+        "tag": "input",
+        "type": "input",
+        "text": ""
+      },
+      {
+        "id": "select-platform",
+        "tag": "select",
+        "type": "select",
+        "text": "请选择"
+      },
+      {
+        "id": "input-amount",
+        "tag": "input",
+        "type": "input",
+        "text": ""
+      },
+      {
+        "id": "btn-single-bind",
+        "tag": "button",
+        "type": "button",
+        "text": "确认绑定"
+      },
+      {
+        "id": "validation-result",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "validation-success",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "validation-error",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "validation-error-msg",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "btn-batch-bind",
+        "tag": "a",
+        "type": "link",
+        "text": "跳转到快捷录单"
+      },
+      {
+        "id": "content-bound",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "modal-bind-tracking",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "btn-close-modal",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "modal-ozon-order",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "modal-bind-form",
+        "tag": "form",
+        "type": "unknown",
+        "text": ""
+      },
+      {
+        "id": "modal-tracking-no",
+        "tag": "input",
+        "type": "input",
+        "text": ""
+      },
+      {
+        "id": "modal-courier",
+        "tag": "select",
+        "type": "select",
+        "text": "请选择"
+      },
+      {
+        "id": "modal-platform",
+        "tag": "select",
+        "type": "select",
+        "text": "请选择"
+      },
+      {
+        "id": "modal-amount",
+        "tag": "input",
+        "type": "input",
+        "text": ""
+      },
+      {
+        "id": "modal-supplier",
+        "tag": "input",
+        "type": "input",
+        "text": ""
+      },
+      {
+        "id": "modal-validation",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "modal-validation-success",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "modal-validation-error",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "modal-validation-error-msg",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "btn-cancel-modal",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-confirm-bind",
+        "tag": "button",
+        "type": "button",
+        "text": "确认绑定"
+      },
+      {
+        "id": "purchase-nav-dashboard",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "purchase-nav-orders",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "purchase-nav-purchase",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "purchase-nav-quick-entry",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "purchase-nav-logistics",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "purchase-nav-packaging",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "purchase-nav-finance",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "purchase-nav-inventory",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "purchase-nav-wms",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "purchase-nav-sku-management",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      }
+    ]
+  },
+  "quick-entry": {
+    "file": "quick-entry.html",
+    "elements": [
+      {
+        "id": "tab-paste",
+        "tag": "button",
+        "type": "button",
+        "text": "单号粘贴录入"
+      },
+      {
+        "id": "tab-ocr",
+        "tag": "button",
+        "type": "button",
+        "text": "截图OCR识别"
+      },
+      {
+        "id": "tab-excel",
+        "tag": "button",
+        "type": "button",
+        "text": "Excel批量导入"
+      },
+      {
+        "id": "panel-paste",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "paste-input",
+        "tag": "textarea",
+        "type": "unknown",
+        "text": ""
+      },
+      {
+        "id": "btn-parse-paste",
+        "tag": "button",
+        "type": "button",
+        "text": "智能解析"
+      },
+      {
+        "id": "panel-ocr",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "ocr-upload",
+        "tag": "input",
+        "type": "input",
+        "text": ""
+      },
+      {
+        "id": "btn-upload-ocr",
+        "tag": "button",
+        "type": "button",
+        "text": "选择图片"
+      },
+      {
+        "id": "panel-excel",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "btn-download-template",
+        "tag": "button",
+        "type": "button",
+        "text": "下载模板"
+      },
+      {
+        "id": "excel-upload",
+        "tag": "input",
+        "type": "input",
+        "text": ""
+      },
+      {
+        "id": "btn-upload-excel",
+        "tag": "button",
+        "type": "button",
+        "text": "选择文件"
+      },
+      {
+        "id": "validation-result",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "validation-summary",
+        "tag": "span",
+        "type": "unknown",
+        "text": ""
+      },
+      {
+        "id": "check-format-icon",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "check-format-text",
+        "tag": "p",
+        "type": "unknown",
+        "text": ""
+      },
+      {
+        "id": "check-order-icon",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "check-order-text",
+        "tag": "p",
+        "type": "unknown",
+        "text": ""
+      },
+      {
+        "id": "check-sku-icon",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "check-sku-text",
+        "tag": "p",
+        "type": "unknown",
+        "text": ""
+      },
+      {
+        "id": "check-duplicate-icon",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "check-duplicate-text",
+        "tag": "p",
+        "type": "unknown",
+        "text": ""
+      },
+      {
+        "id": "validation-errors",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "data-table-body",
+        "tag": "tbody",
+        "type": "unknown",
+        "text": ""
+      },
+      {
+        "id": "row-1",
+        "tag": "tr",
+        "type": "unknown",
+        "text": "123456789"
+      },
+      {
+        "id": "btn-delete-1",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "row-2",
+        "tag": "tr",
+        "type": "unknown",
+        "text": "123456790"
+      },
+      {
+        "id": "btn-delete-2",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "row-3",
+        "tag": "tr",
+        "type": "unknown",
+        "text": "123456791"
+      },
+      {
+        "id": "btn-delete-3",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "row-4",
+        "tag": "tr",
+        "type": "unknown",
+        "text": "123456792"
+      },
+      {
+        "id": "btn-delete-4",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "row-5",
+        "tag": "tr",
+        "type": "unknown",
+        "text": "123456799"
+      },
+      {
+        "id": "btn-delete-5",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "check-all",
+        "tag": "input",
+        "type": "input",
+        "text": "仅绑定校验通过的数据"
+      },
+      {
+        "id": "btn-bind",
+        "tag": "button",
+        "type": "button",
+        "text": "确认绑定"
+      },
+      {
+        "id": "quickentry-nav-dashboard",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "quickentry-nav-orders",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "quickentry-nav-purchase",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "quickentry-nav-quick-entry",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "quickentry-nav-logistics",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "quickentry-nav-packaging",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "quickentry-nav-finance",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "quickentry-nav-inventory",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "quickentry-nav-wms",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "quickentry-nav-sku-management",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "quickentry-nav-suppliers",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "quickentry-nav-reports",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "quickentry-nav-accounts",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      }
+    ]
+  },
+  "reports": {
+    "file": "reports.html",
+    "elements": [
+      {
+        "id": "time-today",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "time-yesterday",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "time-week",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "time-last-week",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "time-month",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "time-last-month",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "time-custom",
+        "tag": "button",
+        "type": "button",
+        "text": "自定义"
+      },
+      {
+        "id": "btn-export",
+        "tag": "button",
+        "type": "button",
+        "text": "导出报表"
+      },
+      {
+        "id": "export-dropdown",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "export-excel",
+        "tag": "button",
+        "type": "button",
+        "text": "导出 Excel"
+      },
+      {
+        "id": "export-pdf",
+        "tag": "button",
+        "type": "button",
+        "text": "导出 PDF"
+      },
+      {
+        "id": "tab-business",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "tab-purchase",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "tab-efficiency",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "panel-business",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "panel-purchase",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "panel-efficiency",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "nav-dashboard",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "nav-orders",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "nav-purchase",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "nav-quick-entry",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "nav-logistics",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "nav-packaging",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "nav-finance",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "nav-inventory",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "nav-wms",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "nav-sku-management",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "nav-suppliers",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "nav-reports",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "nav-accounts",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "nav-roles",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "nav-settings",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      }
+    ]
+  },
+  "roles": {
+    "file": "roles.html",
+    "elements": [
+      {
+        "id": "role-admin",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "role-purchaser",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "role-packer",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "role-finance",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "btn-add-role",
+        "tag": "button",
+        "type": "button",
+        "text": "新增角色"
+      },
+      {
+        "id": "role-operator",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "role-service",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "role-warehouse",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "btn-save-permission",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "detail-icon",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "detail-name",
+        "tag": "h4",
+        "type": "unknown",
+        "text": ""
+      },
+      {
+        "id": "detail-desc",
+        "tag": "p",
+        "type": "unknown",
+        "text": ""
+      },
+      {
+        "id": "detail-level",
+        "tag": "select",
+        "type": "select",
+        "text": "5级 - 超级管理员"
+      },
+      {
+        "id": "detail-scope",
+        "tag": "select",
+        "type": "select",
+        "text": "全部数据"
+      },
+      {
+        "id": "modal-role",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "modal-title",
+        "tag": "h3",
+        "type": "unknown",
+        "text": ""
+      },
+      {
+        "id": "btn-close-modal",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "input-role-name",
+        "tag": "input",
+        "type": "input",
+        "text": ""
+      },
+      {
+        "id": "input-role-desc",
+        "tag": "textarea",
+        "type": "unknown",
+        "text": ""
+      },
+      {
+        "id": "input-role-level",
+        "tag": "select",
+        "type": "select",
+        "text": "5级 - 超级管理员（全部权限）"
+      },
+      {
+        "id": "input-role-scope",
+        "tag": "select",
+        "type": "select",
+        "text": "全部数据"
+      },
+      {
+        "id": "tab-menu",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "tab-operation",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "panel-menu",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "panel-operation",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "btn-cancel-modal",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-confirm-modal",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "modal-delete",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "btn-cancel-delete",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-confirm-delete",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "roles-nav-dashboard",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "roles-nav-orders",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "roles-nav-purchase",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "roles-nav-quick-entry",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "roles-nav-logistics",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "roles-nav-packaging",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "roles-nav-finance",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "roles-nav-inventory",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "roles-nav-wms",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "roles-nav-sku-management",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "roles-nav-suppliers",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "roles-nav-reports",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "roles-nav-settings",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "roles-nav-accounts",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "roles-nav-roles",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      }
+    ]
+  },
+  "settings": {
+    "file": "settings.html",
+    "elements": [
+      {
+        "id": "nav-platform",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "nav-system",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "nav-notification",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "nav-printer",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "nav-log",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "section-platform",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "ozon-add-shop-btn",
+        "tag": "button",
+        "type": "button",
+        "text": "添加店铺"
+      },
+      {
+        "id": "ozon-shops-list",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "add-shop-modal",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "add-shop-modal-overlay",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "add-shop-modal-close",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "set-as-main",
+        "tag": "input",
+        "type": "input",
+        "text": "设为主店铺"
+      },
+      {
+        "id": "add-shop-cancel",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "add-shop-confirm",
+        "tag": "button",
+        "type": "button",
+        "text": "添加店铺"
+      },
+      {
+        "id": "1688-reauth-btn",
+        "tag": "button",
+        "type": "button",
+        "text": "重新授权"
+      },
+      {
+        "id": "pdd-auth-btn",
+        "tag": "button",
+        "type": "button",
+        "text": "立即授权"
+      },
+      {
+        "id": "section-system",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "auto-purchase-toggle",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "auto-sku-toggle",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "system-save-btn",
+        "tag": "button",
+        "type": "button",
+        "text": "保存设置"
+      },
+      {
+        "id": "section-notification",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "order-notify-toggle",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "stock-notify-toggle",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "logistics-notify-toggle",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "notification-save-btn",
+        "tag": "button",
+        "type": "button",
+        "text": "保存设置"
+      },
+      {
+        "id": "section-printer",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "printer-test-btn",
+        "tag": "button",
+        "type": "button",
+        "text": "测试打印"
+      },
+      {
+        "id": "printer-save-btn",
+        "tag": "button",
+        "type": "button",
+        "text": "保存配置"
+      },
+      {
+        "id": "section-log",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "settings-nav-dashboard",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "settings-nav-orders",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "settings-nav-purchase",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "settings-nav-quick-entry",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "settings-nav-logistics",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "settings-nav-packaging",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "settings-nav-finance",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "settings-nav-inventory",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "settings-nav-wms",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "settings-nav-sku-management",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "settings-nav-suppliers",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "settings-nav-reports",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "settings-nav-accounts",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "settings-nav-roles",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "settings-nav-settings",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      }
+    ]
+  },
+  "sku-management": {
+    "file": "sku-management.html",
+    "elements": [
+      {
+        "id": "tab-sku",
+        "tag": "button",
+        "type": "button",
+        "text": "SKU主数据"
+      },
+      {
+        "id": "tab-mapping",
+        "tag": "button",
+        "type": "button",
+        "text": "货源映射"
+      },
+      {
+        "id": "panel-sku",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "sku-search",
+        "tag": "input",
+        "type": "input",
+        "text": ""
+      },
+      {
+        "id": "category-filter",
+        "tag": "select",
+        "type": "select",
+        "text": "全部品类"
+      },
+      {
+        "id": "sku-status-filter",
+        "tag": "select",
+        "type": "select",
+        "text": "全部状态"
+      },
+      {
+        "id": "btn-batch-import",
+        "tag": "button",
+        "type": "button",
+        "text": "批量导入"
+      },
+      {
+        "id": "btn-add-sku",
+        "tag": "button",
+        "type": "button",
+        "text": "新增SKU"
+      },
+      {
+        "id": "sku-table-body",
+        "tag": "tbody",
+        "type": "unknown",
+        "text": ""
+      },
+      {
+        "id": "panel-mapping",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "mapping-search",
+        "tag": "input",
+        "type": "input",
+        "text": ""
+      },
+      {
+        "id": "platform-filter",
+        "tag": "select",
+        "type": "select",
+        "text": "全部平台"
+      },
+      {
+        "id": "mapping-status-filter",
+        "tag": "select",
+        "type": "select",
+        "text": "全部状态"
+      },
+      {
+        "id": "btn-batch-disable",
+        "tag": "button",
+        "type": "button",
+        "text": "批量禁用"
+      },
+      {
+        "id": "btn-batch-price",
+        "tag": "button",
+        "type": "button",
+        "text": "批量改价"
+      },
+      {
+        "id": "btn-smart-match-modal",
+        "tag": "button",
+        "type": "button",
+        "text": "智能匹配"
+      },
+      {
+        "id": "btn-add-mapping",
+        "tag": "button",
+        "type": "button",
+        "text": "新增映射"
+      },
+      {
+        "id": "select-all-mapping",
+        "tag": "input",
+        "type": "input",
+        "text": ""
+      },
+      {
+        "id": "mapping-table-body",
+        "tag": "tbody",
+        "type": "unknown",
+        "text": ""
+      },
+      {
+        "id": "modal-sku-detail",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "close-sku-modal",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "cancel-sku-btn",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "save-sku-btn",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "modal-add-mapping",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "close-mapping-modal",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "cancel-mapping-btn",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "save-mapping-btn",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "modal-smart-match",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "close-match-modal",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "match-sku-input",
+        "tag": "input",
+        "type": "input",
+        "text": ""
+      },
+      {
+        "id": "btn-start-match",
+        "tag": "button",
+        "type": "button",
+        "text": "匹配"
+      },
+      {
+        "id": "match-results",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "close-match-btn",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "modal-batch-price",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "close-price-modal",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "cancel-price-btn",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "confirm-price-btn",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "skumanagement-nav-dashboard",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "skumanagement-nav-orders",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "skumanagement-nav-purchase",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "skumanagement-nav-quick-entry",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "skumanagement-nav-logistics",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "skumanagement-nav-packaging",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "skumanagement-nav-finance",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "skumanagement-nav-inventory",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "skumanagement-nav-wms",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "skumanagement-nav-sku-management",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "skumanagement-nav-suppliers",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "skumanagement-nav-reports",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "skumanagement-nav-accounts",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      }
+    ]
+  },
+  "suppliers": {
+    "file": "suppliers.html",
+    "elements": [
+      {
+        "id": "btn-add-supplier",
+        "tag": "button",
+        "type": "button",
+        "text": "新增供应商"
+      },
+      {
+        "id": "search-name",
+        "tag": "input",
+        "type": "input",
+        "text": ""
+      },
+      {
+        "id": "filter-platform",
+        "tag": "select",
+        "type": "select",
+        "text": "全部平台"
+      },
+      {
+        "id": "filter-status",
+        "tag": "select",
+        "type": "select",
+        "text": "全部状态"
+      },
+      {
+        "id": "filter-rating",
+        "tag": "select",
+        "type": "select",
+        "text": "全部评分"
+      },
+      {
+        "id": "btn-search",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-reset",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "select-all",
+        "tag": "input",
+        "type": "input",
+        "text": "全选"
+      },
+      {
+        "id": "selected-count",
+        "tag": "span",
+        "type": "unknown",
+        "text": "项"
+      },
+      {
+        "id": "btn-batch-status",
+        "tag": "button",
+        "type": "button",
+        "text": "批量设置状态"
+      },
+      {
+        "id": "btn-export",
+        "tag": "button",
+        "type": "button",
+        "text": "导出数据"
+      },
+      {
+        "id": "supplier-list",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "btn-toggle-blacklist",
+        "tag": "button",
+        "type": "button",
+        "text": "展开查看"
+      },
+      {
+        "id": "blacklist-content",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "drawer-detail",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "btn-close-drawer",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "modal-add",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "btn-close-modal",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-cancel-modal",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-submit-modal",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "modal-edit",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "btn-close-edit-modal",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-cancel-edit-modal",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-submit-edit-modal",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "modal-confirm",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "confirm-title",
+        "tag": "h3",
+        "type": "unknown",
+        "text": ""
+      },
+      {
+        "id": "confirm-message",
+        "tag": "p",
+        "type": "unknown",
+        "text": ""
+      },
+      {
+        "id": "btn-cancel-confirm",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-submit-confirm",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "modal-batch-status",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "batch-status-select",
+        "tag": "select",
+        "type": "select",
+        "text": "合作中"
+      },
+      {
+        "id": "btn-cancel-batch",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-submit-batch",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "suppliers-nav-dashboard",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "suppliers-nav-orders",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "suppliers-nav-purchase",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "suppliers-nav-quick-entry",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "suppliers-nav-logistics",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "suppliers-nav-packaging",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "suppliers-nav-finance",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "suppliers-nav-inventory",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "suppliers-nav-wms",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "suppliers-nav-sku-management",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "suppliers-nav-suppliers",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "suppliers-nav-reports",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "suppliers-nav-accounts",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "suppliers-nav-roles",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "suppliers-nav-settings",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      }
+    ]
+  },
+  "wms": {
+    "file": "wms.html",
+    "elements": [
+      {
+        "id": "btn-pda-scan",
+        "tag": "button",
+        "type": "button",
+        "text": "PDA扫码"
+      },
+      {
+        "id": "btn-move-record",
+        "tag": "button",
+        "type": "button",
+        "text": "移库记录"
+      },
+      {
+        "id": "select-warehouse-view",
+        "tag": "select",
+        "type": "select",
+        "text": "主仓库 A"
+      },
+      {
+        "id": "tab-warehouse",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "tab-location",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "tab-inventory-check",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "tab-location-recommend",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "panel-warehouse",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "btn-add-warehouse",
+        "tag": "button",
+        "type": "button",
+        "text": "新增仓库"
+      },
+      {
+        "id": "warehouse-list",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "panel-location",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "select-location-warehouse",
+        "tag": "select",
+        "type": "select",
+        "text": "主仓库 A"
+      },
+      {
+        "id": "btn-batch-location",
+        "tag": "button",
+        "type": "button",
+        "text": "批量生成库位"
+      },
+      {
+        "id": "location-list",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "panel-inventory-check",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "btn-new-check-task",
+        "tag": "button",
+        "type": "button",
+        "text": "新建盘点任务"
+      },
+      {
+        "id": "check-task-list",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "panel-location-recommend",
+        "tag": "div",
+        "type": "card",
+        "text": ""
+      },
+      {
+        "id": "input-inbound-sku",
+        "tag": "input",
+        "type": "input",
+        "text": "推荐库位"
+      },
+      {
+        "id": "btn-recommend-inbound",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "recommend-inbound-result",
+        "tag": "div",
+        "type": "container",
+        "text": "推荐库位（按优先级排序）："
+      },
+      {
+        "id": "input-outbound-skus",
+        "tag": "textarea",
+        "type": "unknown",
+        "text": ""
+      },
+      {
+        "id": "btn-optimize-route",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "optimize-route-result",
+        "tag": "div",
+        "type": "container",
+        "text": "推荐拣货路径："
+      },
+      {
+        "id": "btn-apply-hot-suggest",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "modal-add-warehouse",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "btn-close-add-warehouse",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-cancel-add-warehouse",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-confirm-add-warehouse",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "modal-new-check-task",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "btn-close-new-check",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-cancel-new-check",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-confirm-new-check",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "modal-batch-location",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "btn-close-batch-location",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-cancel-batch-location",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-confirm-batch-location",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "modal-move-record",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "btn-close-move-record",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-close-move-record-footer",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "modal-pda-scan",
+        "tag": "div",
+        "type": "container",
+        "text": ""
+      },
+      {
+        "id": "btn-close-pda-scan",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-scan-location",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-scan-sku",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-cancel-pda-scan",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "btn-confirm-pda-scan",
+        "tag": "button",
+        "type": "button",
+        "text": ""
+      },
+      {
+        "id": "wms-nav-dashboard",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "wms-nav-orders",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "wms-nav-purchase",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      },
+      {
+        "id": "wms-nav-quick-entry",
+        "tag": "a",
+        "type": "element",
+        "text": ""
+      }
+    ]
+  }
+}

@@ -78,7 +78,7 @@
       <span class="font-semibold text-base">Ozon ERP</span>
     </div>
     <div class="flex items-center gap-4">
-      <button class="flex items-center gap-2 text-sm text-on-surface-variant hover:text-on-surface transition-colors">
+      <button data-element="purchase-icon-btn01" class="flex items-center gap-2 text-sm text-on-surface-variant hover:text-on-surface transition-colors">
         <i data-lucide="bell" class="w-4 h-4"></i>
         <span class="bg-error text-white text-xs px-1.5 py-0.5 rounded-full font-medium">3</span>
       </button>
@@ -284,21 +284,21 @@
       <div class="bg-surface rounded-lg shadow-card">
         <!-- Tab头部 -->
         <div class="flex items-center border-b border-outline/50">
-          <button id="tab-pending" class="px-5 py-3.5 text-sm font-medium text-primary border-b-2 border-primary bg-primary/5" data-tab="pending">
+          <button data-element=""tab-pendingid="" class="px-5 py-3.5 text-sm font-medium text-primary border-b-2 border-primary bg-primary/5" data-tab="pending" >>
             <i data-lucide="clock" class="w-4 h-4 inline-block mr-1.5 -mt-0.5"></i>待采购任务
             <span class="ml-1.5 bg-primary/20 text-primary px-1.5 py-0.5 rounded text-xs">23</span>
           </button>
-          <button id="tab-binding" class="px-5 py-3.5 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors" data-tab="binding">
+          <button data-element=""tab-bindingid="" class="px-5 py-3.5 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors" data-tab="binding" >>
             <i data-lucide="link-2" class="w-4 h-4 inline-block mr-1.5 -mt-0.5"></i>采购绑定
           </button>
-          <button id="tab-bound" class="px-5 py-3.5 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors" data-tab="bound">
+          <button data-element=""tab-boundid="" class="px-5 py-3.5 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors" data-tab="bound" >>
             <i data-lucide="check-circle" class="w-4 h-4 inline-block mr-1.5 -mt-0.5"></i>已绑定列表
             <span class="ml-1.5 bg-surface-container text-on-surface-variant px-1.5 py-0.5 rounded text-xs">156</span>
           </button>
         </div>
 
         <!-- Tab内容区：待采购任务 -->
-        <div id="content-pending" class="tab-content">
+        <div id="content-pending" class="tab-content" >
           <!-- 搜索筛选栏 -->
           <div class="p-4 border-b border-outline/50">
             <div class="flex items-center gap-3">
@@ -311,7 +311,7 @@
                 <option>待采购</option>
                 <option>已下单待绑定</option>
               </select>
-              <button class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all inline-flex items-center gap-2">
+              <button data-element="purchase-btn02" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all inline-flex items-center gap-2">
                 <i data-lucide="filter" class="w-4 h-4"></i>筛选
               </button>
             </div>
@@ -349,8 +349,8 @@
                   <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning">待采购</span>
                   <span class="text-sm text-on-surface-variant">2024-01-15 09:30</span>
                   <div class="flex items-center gap-2">
-                    <button id="btn-go-order-1" class="text-primary text-sm font-medium hover:underline">去下单</button>
-                    <button id="btn-mark-ordered-1" class="text-success text-sm font-medium hover:underline">标记已下单</button>
+                    <button data-element=""btn-go-order-1id="" class="text-primary text-sm font-medium hover:underline" >>去下单</button>
+                    <button data-element=""btn-mark-ordered-1id="" class="text-success text-sm font-medium hover:underline" >>标记已下单</button>
                   </div>
                 </div>
                 <!-- 列表项-2 -->
@@ -370,8 +370,8 @@
                   <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning">待采购</span>
                   <span class="text-sm text-on-surface-variant">2024-01-15 10:15</span>
                   <div class="flex items-center gap-2">
-                    <button id="btn-go-order-2" class="text-primary text-sm font-medium hover:underline">去下单</button>
-                    <button id="btn-mark-ordered-2" class="text-success text-sm font-medium hover:underline">标记已下单</button>
+                    <button data-element=""btn-go-order-2id="" class="text-primary text-sm font-medium hover:underline" >>去下单</button>
+                    <button data-element=""btn-mark-ordered-2id="" class="text-success text-sm font-medium hover:underline" >>标记已下单</button>
                   </div>
                 </div>
                 <!-- 列表项-3 -->
@@ -391,7 +391,7 @@
                   <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-primary/15 text-primary">已下单待绑定</span>
                   <span class="text-sm text-on-surface-variant">2024-01-15 11:20</span>
                   <div class="flex items-center gap-2">
-                    <button id="btn-bind-tracking-3" class="bg-primary text-on-primary px-3 py-1.5 rounded text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">绑定快递单号</button>
+                    <button data-element=""btn-bind-tracking-3id="" class="bg-primary text-on-primary px-3 py-1.5 rounded text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all" >>绑定快递单号</button>
                   </div>
                 </div>
                 <!-- 列表项-4 -->
@@ -411,8 +411,8 @@
                   <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning">待采购</span>
                   <span class="text-sm text-on-surface-variant">2024-01-14 16:45</span>
                   <div class="flex items-center gap-2">
-                    <button id="btn-go-order-4" class="text-primary text-sm font-medium hover:underline">去下单</button>
-                    <button id="btn-mark-ordered-4" class="text-success text-sm font-medium hover:underline">标记已下单</button>
+                    <button data-element=""btn-go-order-4id="" class="text-primary text-sm font-medium hover:underline" >>去下单</button>
+                    <button data-element=""btn-mark-ordered-4id="" class="text-success text-sm font-medium hover:underline" >>标记已下单</button>
                   </div>
                 </div>
                 <!-- 列表项-5 -->
@@ -432,7 +432,7 @@
                   <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-primary/15 text-primary">已下单待绑定</span>
                   <span class="text-sm text-on-surface-variant">2024-01-14 14:30</span>
                   <div class="flex items-center gap-2">
-                    <button id="btn-bind-tracking-5" class="bg-primary text-on-primary px-3 py-1.5 rounded text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">绑定快递单号</button>
+                    <button data-element=""btn-bind-tracking-5id="" class="bg-primary text-on-primary px-3 py-1.5 rounded text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all" >>绑定快递单号</button>
                   </div>
                 </div>
               </div>
@@ -443,17 +443,17 @@
           <div class="flex items-center justify-between px-5 py-4 border-t border-outline/50">
             <span class="text-sm text-on-surface-variant">共 23 条记录</span>
             <div class="flex items-center gap-1">
-              <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded transition-colors">上一页</button>
-              <button class="px-3 py-1.5 text-sm bg-primary text-on-primary rounded">1</button>
-              <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded transition-colors">2</button>
-              <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded transition-colors">3</button>
-              <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded transition-colors">下一页</button>
+              <button data-element="purchase-icon-btn03" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded transition-colors">上一页</button>
+              <button data-element="purchase-icon-btn04" class="px-3 py-1.5 text-sm bg-primary text-on-primary rounded">1</button>
+              <button data-element="purchase-icon-btn05" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded transition-colors">2</button>
+              <button data-element="purchase-icon-btn06" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded transition-colors">3</button>
+              <button data-element="purchase-icon-btn07" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded transition-colors">下一页</button>
             </div>
           </div>
         </div>
 
         <!-- Tab内容区：采购绑定 -->
-        <div id="content-binding" class="tab-content hidden">
+        <div id="content-binding" class="tab-content hidden" >
           <div class="p-6">
             <!-- 绑定说明 -->
             <div class="bg-primary-container/30 rounded-lg p-4 mb-6">
@@ -478,19 +478,19 @@
                 </div>
                 <p class="text-sm text-on-surface-variant mb-4">输入Ozon订单号和国内快递单号，逐一完成绑定。</p>
                 
-                <form id="single-bind-form" class="space-y-4">
+                <form id="single-bind-form" class="space-y-4" >
                   <div>
                     <label class="block text-sm font-medium text-on-surface mb-1.5">Ozon订单号 *</label>
-                    <input type="text" id="input-ozon-order" placeholder="如：OZ-20240115-001" class="w-full bg-surface border-none rounded-md px-3 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" />
+                    <input type="text" id="input-ozon-order" placeholder="如：OZ-20240115-001" class="w-full bg-surface border-none rounded-md px-3 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" /  type="text">
                   </div>
                   <div>
                     <label class="block text-sm font-medium text-on-surface mb-1.5">国内快递单号 *</label>
-                    <input type="text" id="input-tracking-no" placeholder="请输入快递单号" class="w-full bg-surface border-none rounded-md px-3 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" />
+                    <input type="text" id="input-tracking-no" placeholder="请输入快递单号" class="w-full bg-surface border-none rounded-md px-3 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" /  type="text">
                   </div>
                   <div class="grid grid-cols-2 gap-4">
                     <div>
                       <label class="block text-sm font-medium text-on-surface mb-1.5">采购平台 *</label>
-                      <select id="select-platform" class="w-full bg-surface border-none rounded-md px-3 py-2.5 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30">
+                      <select id="select-platform" class="w-full bg-surface border-none rounded-md px-3 py-2.5 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30" >
                         <option value="">请选择</option>
                         <option value="1688">1688</option>
                         <option value="pdd">拼多多</option>
@@ -499,18 +499,18 @@
                     </div>
                     <div>
                       <label class="block text-sm font-medium text-on-surface mb-1.5">采购金额 *</label>
-                      <input type="text" id="input-amount" placeholder="¥ 0.00" class="w-full bg-surface border-none rounded-md px-3 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" />
+                      <input type="text" id="input-amount" placeholder="¥ 0.00" class="w-full bg-surface border-none rounded-md px-3 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" /  type="text">
                     </div>
                   </div>
-                  <button type="button" id="btn-single-bind" class="w-full bg-primary text-on-primary py-2.5 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">
+                  <button data-element=" type="button""btn-single-bindid=" type="button"" class="w-full bg-primary text-on-primary py-2.5 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all"  type="button">>
                     <i data-lucide="check" class="w-4 h-4 inline-block mr-1.5 -mt-0.5"></i>确认绑定
                   </button>
                 </form>
 
                 <!-- 校验结果显示区 -->
-                <div id="validation-result" class="mt-4 hidden">
+                <div id="validation-result" class="mt-4 hidden" >
                   <!-- 成功状态 -->
-                  <div id="validation-success" class="hidden bg-success/10 rounded-lg p-3">
+                  <div id="validation-success" class="hidden bg-success/10 rounded-lg p-3" >
                     <div class="flex items-center gap-2 text-success">
                       <i data-lucide="check-circle" class="w-5 h-5"></i>
                       <span class="text-sm font-medium">校验通过</span>
@@ -518,12 +518,12 @@
                     <div class="text-xs text-success/80 mt-1 ml-7">快递单号格式正确，SKU信息匹配</div>
                   </div>
                   <!-- 失败状态 -->
-                  <div id="validation-error" class="hidden bg-error/10 rounded-lg p-3">
+                  <div id="validation-error" class="hidden bg-error/10 rounded-lg p-3" >
                     <div class="flex items-center gap-2 text-error">
                       <i data-lucide="x-circle" class="w-5 h-5"></i>
                       <span class="text-sm font-medium">校验失败</span>
                     </div>
-                    <div id="validation-error-msg" class="text-xs text-error/80 mt-1 ml-7">快递单号格式不正确</div>
+                    <div id="validation-error-msg" class="text-xs text-error/80 mt-1 ml-7" >快递单号格式不正确</div>
                   </div>
                 </div>
               </div>
@@ -560,7 +560,7 @@
                   </ul>
                 </div>
 
-                <a href="quick-entry.html" id="btn-batch-bind" class="block w-full bg-success text-white py-2.5 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all text-center" data-element="purchase-nav-quick-entry-2">
+                <a data-element=" href="quick-entry.html""btn-batch-bindid=" href="quick-entry.html"" class="block w-full bg-success text-white py-2.5 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all text-center" data-element="purchase-nav-quick-entry-2"  href="quick-entry.html">>
                   <i data-lucide="arrow-right" class="w-4 h-4 inline-block mr-1.5 -mt-0.5"></i>跳转到快捷录单
                 </a>
               </div>
@@ -607,7 +607,7 @@
         </div>
 
         <!-- Tab内容区：已绑定列表 -->
-        <div id="content-bound" class="tab-content hidden">
+        <div id="content-bound" class="tab-content hidden" >
           <!-- 搜索筛选栏 -->
           <div class="p-4 border-b border-outline/50">
             <div class="flex items-center gap-3">
@@ -659,7 +659,7 @@
                   <span class="text-sm text-on-surface-variant">2024-01-15 14:30</span>
                   <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning">待入库</span>
                   <div class="flex items-center gap-2">
-                    <button class="text-primary text-sm font-medium hover:underline">详情</button>
+                    <button data-element="purchase-icon-btn08" class="text-primary text-sm font-medium hover:underline">详情</button>
                   </div>
                 </div>
                 <!-- 列表项-2 -->
@@ -675,7 +675,7 @@
                   <span class="text-sm text-on-surface-variant">2024-01-14 16:20</span>
                   <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">已入库</span>
                   <div class="flex items-center gap-2">
-                    <button class="text-primary text-sm font-medium hover:underline">详情</button>
+                    <button data-element="purchase-icon-btn09" class="text-primary text-sm font-medium hover:underline">详情</button>
                   </div>
                 </div>
                 <!-- 列表项-3 -->
@@ -691,8 +691,8 @@
                   <span class="text-sm text-on-surface-variant">2024-01-14 11:45</span>
                   <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-error/15 text-error">异常</span>
                   <div class="flex items-center gap-2">
-                    <button class="text-primary text-sm font-medium hover:underline">详情</button>
-                    <button class="text-error text-sm font-medium hover:underline">处理</button>
+                    <button data-element="purchase-icon-btn10" class="text-primary text-sm font-medium hover:underline">详情</button>
+                    <button data-element="purchase-icon-btn11" class="text-error text-sm font-medium hover:underline">处理</button>
                   </div>
                 </div>
                 <!-- 列表项-4 -->
@@ -708,7 +708,7 @@
                   <span class="text-sm text-on-surface-variant">2024-01-13 15:30</span>
                   <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">已入库</span>
                   <div class="flex items-center gap-2">
-                    <button class="text-primary text-sm font-medium hover:underline">详情</button>
+                    <button data-element="purchase-icon-btn12" class="text-primary text-sm font-medium hover:underline">详情</button>
                   </div>
                 </div>
                 <!-- 列表项-5 -->
@@ -724,7 +724,7 @@
                   <span class="text-sm text-on-surface-variant">2024-01-13 10:15</span>
                   <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning">待入库</span>
                   <div class="flex items-center gap-2">
-                    <button class="text-primary text-sm font-medium hover:underline">详情</button>
+                    <button data-element="purchase-icon-btn13" class="text-primary text-sm font-medium hover:underline">详情</button>
                   </div>
                 </div>
               </div>
@@ -735,25 +735,25 @@
           <div class="flex items-center justify-between px-5 py-4 border-t border-outline/50">
             <span class="text-sm text-on-surface-variant">共 156 条记录</span>
             <div class="flex items-center gap-1">
-              <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded transition-colors">上一页</button>
-              <button class="px-3 py-1.5 text-sm bg-primary text-on-primary rounded">1</button>
-              <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded transition-colors">2</button>
-              <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded transition-colors">3</button>
-              <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded transition-colors">...</button>
-              <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded transition-colors">16</button>
-              <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded transition-colors">下一页</button>
+              <button data-element="purchase-btn14" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded transition-colors">上一页</button>
+              <button data-element="purchase-icon-btn15" class="px-3 py-1.5 text-sm bg-primary text-on-primary rounded">1</button>
+              <button data-element="purchase-icon-btn16" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded transition-colors">2</button>
+              <button data-element="purchase-icon-btn17" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded transition-colors">3</button>
+              <button data-element="purchase-icon-btn18" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded transition-colors">...</button>
+              <button data-element="purchase-icon-btn19" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded transition-colors">16</button>
+              <button data-element="purchase-icon-btn20" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded transition-colors">下一页</button>
             </div>
           </div>
         </div>
       </div>
 
       <!-- 绑定快递单号弹窗 -->
-      <div id="modal-bind-tracking" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
+      <div id="modal-bind-tracking" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden" >
         <div class="bg-surface rounded-xl shadow-dialog max-w-md w-full max-h-[90vh] overflow-y-auto">
           <div class="p-5 border-b border-outline/50">
             <div class="flex items-center justify-between">
               <h3 class="text-base font-semibold text-on-surface">绑定快递单号</h3>
-              <button id="btn-close-modal" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container transition-colors">
+              <button data-element=""btn-close-modalid="" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container transition-colors" >>
                 <i data-lucide="x" class="w-5 h-5 text-on-surface-variant"></i>
               </button>
             </div>
@@ -761,16 +761,16 @@
           <div class="p-5">
             <div class="bg-primary-container/20 rounded-lg p-3 mb-4">
               <div class="text-xs text-on-surface-variant mb-1">Ozon订单号</div>
-              <div class="text-sm font-medium text-primary" id="modal-ozon-order">#OZ-20240115-003</div>
+              <div class="text-sm font-medium text-primary" id="modal-ozon-order"  class="text-sm font-medium text-primary">#OZ-20240115-003</div>
             </div>
-            <form id="modal-bind-form" class="space-y-4">
+            <form id="modal-bind-form" class="space-y-4" >
               <div>
                 <label class="block text-sm font-medium text-on-surface mb-1.5">国内快递单号 *</label>
-                <input type="text" id="modal-tracking-no" placeholder="请输入快递单号" class="w-full bg-surface-container border-none rounded-md px-3 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" />
+                <input type="text" id="modal-tracking-no" placeholder="请输入快递单号" class="w-full bg-surface-container border-none rounded-md px-3 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" /  type="text">
               </div>
               <div>
                 <label class="block text-sm font-medium text-on-surface mb-1.5">快递公司 *</label>
-                <select id="modal-courier" class="w-full bg-surface-container border-none rounded-md px-3 py-2.5 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30">
+                <select id="modal-courier" class="w-full bg-surface-container border-none rounded-md px-3 py-2.5 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30" >
                   <option value="">请选择</option>
                   <option value="sf">顺丰速运</option>
                   <option value="yt">圆通速递</option>
@@ -781,7 +781,7 @@
               </div>
               <div>
                 <label class="block text-sm font-medium text-on-surface mb-1.5">采购平台 *</label>
-                <select id="modal-platform" class="w-full bg-surface-container border-none rounded-md px-3 py-2.5 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30">
+                <select id="modal-platform" class="w-full bg-surface-container border-none rounded-md px-3 py-2.5 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30" >
                   <option value="">请选择</option>
                   <option value="1688">1688</option>
                   <option value="pdd">拼多多</option>
@@ -790,34 +790,34 @@
               </div>
               <div>
                 <label class="block text-sm font-medium text-on-surface mb-1.5">采购金额 *</label>
-                <input type="text" id="modal-amount" placeholder="¥ 0.00" class="w-full bg-surface-container border-none rounded-md px-3 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" />
+                <input type="text" id="modal-amount" placeholder="¥ 0.00" class="w-full bg-surface-container border-none rounded-md px-3 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" /  type="text">
               </div>
               <div>
                 <label class="block text-sm font-medium text-on-surface mb-1.5">供应商（选填）</label>
-                <input type="text" id="modal-supplier" placeholder="供应商名称" class="w-full bg-surface-container border-none rounded-md px-3 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" />
+                <input type="text" id="modal-supplier" placeholder="供应商名称" class="w-full bg-surface-container border-none rounded-md px-3 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" /  type="text">
               </div>
               
               <!-- 校验结果 -->
-              <div id="modal-validation" class="hidden">
-                <div id="modal-validation-success" class="hidden bg-success/10 rounded-lg p-3">
+              <div id="modal-validation" class="hidden" >
+                <div id="modal-validation-success" class="hidden bg-success/10 rounded-lg p-3" >
                   <div class="flex items-center gap-2 text-success">
                     <i data-lucide="check-circle" class="w-5 h-5"></i>
                     <span class="text-sm font-medium">校验通过</span>
                   </div>
                 </div>
-                <div id="modal-validation-error" class="hidden bg-error/10 rounded-lg p-3">
+                <div id="modal-validation-error" class="hidden bg-error/10 rounded-lg p-3" >
                   <div class="flex items-center gap-2 text-error">
                     <i data-lucide="x-circle" class="w-5 h-5"></i>
                     <span class="text-sm font-medium">校验失败</span>
                   </div>
-                  <div id="modal-validation-error-msg" class="text-xs text-error/80 mt-1 ml-7">快递单号格式不正确</div>
+                  <div id="modal-validation-error-msg" class="text-xs text-error/80 mt-1 ml-7" >快递单号格式不正确</div>
                 </div>
               </div>
             </form>
           </div>
           <div class="p-5 border-t border-outline/50 flex justify-end gap-3">
-            <button id="btn-cancel-modal" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all">取消</button>
-            <button id="btn-confirm-bind" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">
+            <button data-element=""btn-cancel-modalid="" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all" >>取消</button>
+            <button data-element=""btn-confirm-bindid="" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all" >>
               <i data-lucide="check" class="w-4 h-4 inline-block mr-1.5 -mt-0.5"></i>确认绑定
             </button>
           </div>

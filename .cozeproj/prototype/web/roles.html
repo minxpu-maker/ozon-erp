@@ -78,7 +78,7 @@
       <span class="font-semibold text-base">Ozon ERP</span>
     </div>
     <div class="flex items-center gap-4">
-      <button class="flex items-center gap-2 text-sm text-on-surface-variant hover:text-on-surface transition-colors">
+      <button data-element="roles-icon-btn01" class="flex items-center gap-2 text-sm text-on-surface-variant hover:text-on-surface transition-colors">
         <i data-lucide="bell" class="w-4 h-4"></i>
         <span class="bg-error text-white text-xs px-1.5 py-0.5 rounded-full font-medium">3</span>
       </button>
@@ -189,7 +189,7 @@
             <h3 class="text-base font-semibold text-on-surface mb-3">系统预设角色</h3>
             <div class="space-y-3">
               <!-- 预设角色卡片-管理员 -->
-              <div id="role-admin" class="role-card bg-surface rounded-lg shadow-card p-4 cursor-pointer hover:shadow-float transition-all border-2 border-transparent hover:border-primary/20" data-role="admin">
+              <div id="role-admin" class="role-card bg-surface rounded-lg shadow-card p-4 cursor-pointer hover:shadow-float transition-all border-2 border-transparent hover:border-primary/20" data-role="admin" >
                 <div class="flex items-start justify-between">
                   <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -218,7 +218,7 @@
               </div>
 
               <!-- 预设角色卡片-采购员 -->
-              <div id="role-purchaser" class="role-card bg-surface rounded-lg shadow-card p-4 cursor-pointer hover:shadow-float transition-all border-2 border-transparent hover:border-primary/20" data-role="purchaser">
+              <div id="role-purchaser" class="role-card bg-surface rounded-lg shadow-card p-4 cursor-pointer hover:shadow-float transition-all border-2 border-transparent hover:border-primary/20" data-role="purchaser" >
                 <div class="flex items-start justify-between">
                   <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
@@ -247,7 +247,7 @@
               </div>
 
               <!-- 预设角色卡片-打包员 -->
-              <div id="role-packer" class="role-card bg-surface rounded-lg shadow-card p-4 cursor-pointer hover:shadow-float transition-all border-2 border-transparent hover:border-primary/20" data-role="packer">
+              <div id="role-packer" class="role-card bg-surface rounded-lg shadow-card p-4 cursor-pointer hover:shadow-float transition-all border-2 border-transparent hover:border-primary/20" data-role="packer" >
                 <div class="flex items-start justify-between">
                   <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center">
@@ -276,7 +276,7 @@
               </div>
 
               <!-- 预设角色卡片-财务 -->
-              <div id="role-finance" class="role-card bg-surface rounded-lg shadow-card p-4 cursor-pointer hover:shadow-float transition-all border-2 border-transparent hover:border-primary/20" data-role="finance">
+              <div id="role-finance" class="role-card bg-surface rounded-lg shadow-card p-4 cursor-pointer hover:shadow-float transition-all border-2 border-transparent hover:border-primary/20" data-role="finance" >
                 <div class="flex items-start justify-between">
                   <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center">
@@ -310,13 +310,13 @@
           <div>
             <div class="flex items-center justify-between mb-3">
               <h3 class="text-base font-semibold text-on-surface">自定义角色</h3>
-              <button id="btn-add-role" class="inline-flex items-center gap-1.5 bg-primary text-on-primary px-3 py-1.5 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">
+              <button data-element=""btn-add-roleid="" class="inline-flex items-center gap-1.5 bg-primary text-on-primary px-3 py-1.5 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all" >>
                 <i data-lucide="plus" class="w-3.5 h-3.5"></i>新增角色
               </button>
             </div>
             <div class="space-y-3">
               <!-- 自定义角色卡片-运营专员 -->
-              <div id="role-operator" class="role-card bg-surface rounded-lg shadow-card p-4 cursor-pointer hover:shadow-float transition-all border-2 border-transparent hover:border-primary/20" data-role="operator">
+              <div id="role-operator" class="role-card bg-surface rounded-lg shadow-card p-4 cursor-pointer hover:shadow-float transition-all border-2 border-transparent hover:border-primary/20" data-role="operator" >
                 <div class="flex items-start justify-between">
                   <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center">
@@ -331,10 +331,10 @@
                     </div>
                   </div>
                   <div class="flex items-center gap-2">
-                    <button class="btn-edit-role p-1.5 rounded-md hover:bg-surface-container transition-colors" title="编辑" data-role="operator">
+                    <button data-element="roles-icon-btn02" class="btn-edit-role p-1.5 rounded-md hover:bg-surface-container transition-colors" title="编辑" data-role="operator">
                       <i data-lucide="pencil" class="w-3.5 h-3.5 text-on-surface-variant"></i>
                     </button>
-                    <button class="btn-delete-role p-1.5 rounded-md hover:bg-error/10 transition-colors" title="删除" data-role="operator">
+                    <button data-element="roles-icon-btn03" class="btn-delete-role p-1.5 rounded-md hover:bg-error/10 transition-colors" title="删除" data-role="operator">
                       <i data-lucide="trash-2" class="w-3.5 h-3.5 text-error"></i>
                     </button>
                   </div>
@@ -352,7 +352,7 @@
               </div>
 
               <!-- 自定义角色卡片-客服 -->
-              <div id="role-service" class="role-card bg-surface rounded-lg shadow-card p-4 cursor-pointer hover:shadow-float transition-all border-2 border-transparent hover:border-primary/20" data-role="service">
+              <div id="role-service" class="role-card bg-surface rounded-lg shadow-card p-4 cursor-pointer hover:shadow-float transition-all border-2 border-transparent hover:border-primary/20" data-role="service" >
                 <div class="flex items-start justify-between">
                   <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center">
@@ -367,10 +367,10 @@
                     </div>
                   </div>
                   <div class="flex items-center gap-2">
-                    <button class="btn-edit-role p-1.5 rounded-md hover:bg-surface-container transition-colors" title="编辑" data-role="service">
+                    <button data-element="roles-icon-btn04" class="btn-edit-role p-1.5 rounded-md hover:bg-surface-container transition-colors" title="编辑" data-role="service">
                       <i data-lucide="pencil" class="w-3.5 h-3.5 text-on-surface-variant"></i>
                     </button>
-                    <button class="btn-delete-role p-1.5 rounded-md hover:bg-error/10 transition-colors" title="删除" data-role="service">
+                    <button data-element="roles-icon-btn05" class="btn-delete-role p-1.5 rounded-md hover:bg-error/10 transition-colors" title="删除" data-role="service">
                       <i data-lucide="trash-2" class="w-3.5 h-3.5 text-error"></i>
                     </button>
                   </div>
@@ -388,7 +388,7 @@
               </div>
 
               <!-- 自定义角色卡片-仓库主管 -->
-              <div id="role-warehouse" class="role-card bg-surface rounded-lg shadow-card p-4 cursor-pointer hover:shadow-float transition-all border-2 border-transparent hover:border-primary/20" data-role="warehouse">
+              <div id="role-warehouse" class="role-card bg-surface rounded-lg shadow-card p-4 cursor-pointer hover:shadow-float transition-all border-2 border-transparent hover:border-primary/20" data-role="warehouse" >
                 <div class="flex items-start justify-between">
                   <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center">
@@ -403,10 +403,10 @@
                     </div>
                   </div>
                   <div class="flex items-center gap-2">
-                    <button class="btn-edit-role p-1.5 rounded-md hover:bg-surface-container transition-colors" title="编辑" data-role="service">
+                    <button data-element="roles-icon-btn06" class="btn-edit-role p-1.5 rounded-md hover:bg-surface-container transition-colors" title="编辑" data-role="service">
                       <i data-lucide="pencil" class="w-3.5 h-3.5 text-on-surface-variant"></i>
                     </button>
-                    <button class="btn-delete-role p-1.5 rounded-md hover:bg-error/10 transition-colors" title="删除" data-role="service">
+                    <button data-element="roles-icon-btn07" class="btn-delete-role p-1.5 rounded-md hover:bg-error/10 transition-colors" title="删除" data-role="service">
                       <i data-lucide="trash-2" class="w-3.5 h-3.5 text-error"></i>
                     </button>
                   </div>
@@ -430,7 +430,7 @@
         <div class="bg-surface rounded-lg shadow-card p-5 h-fit sticky top-20">
           <div class="flex items-center justify-between mb-4">
             <h3 class="text-base font-semibold text-on-surface">权限配置详情</h3>
-            <button id="btn-save-permission" class="bg-primary text-on-primary px-4 py-1.5 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">
+            <button data-element=""btn-save-permissionid="" class="bg-primary text-on-primary px-4 py-1.5 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all" >>
               保存配置
             </button>
           </div>
@@ -438,18 +438,18 @@
           <!-- 角色基础信息 -->
           <div class="bg-surface-container rounded-lg p-4 mb-4">
             <div class="flex items-center gap-3 mb-3">
-              <div id="detail-icon" class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+              <div id="detail-icon" class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center" >
                 <i data-lucide="crown" class="w-6 h-6 text-primary"></i>
               </div>
               <div>
-                <h4 id="detail-name" class="text-sm font-semibold text-on-surface">管理员</h4>
-                <p id="detail-desc" class="text-xs text-on-surface-variant">拥有系统全部权限，可管理所有功能模块</p>
+                <h4 id="detail-name" class="text-sm font-semibold text-on-surface" >管理员</h4>
+                <p id="detail-desc" class="text-xs text-on-surface-variant" >拥有系统全部权限，可管理所有功能模块</p>
               </div>
             </div>
             <div class="flex items-center gap-3">
               <div class="flex-1">
                 <label class="text-xs text-on-surface-variant mb-1 block">权限等级</label>
-                <select id="detail-level" class="w-full bg-surface border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
+                <select id="detail-level" class="w-full bg-surface border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" >
                   <option value="5">5级 - 超级管理员</option>
                   <option value="4">4级 - 管理员</option>
                   <option value="3">3级 - 业务经理</option>
@@ -459,7 +459,7 @@
               </div>
               <div class="flex-1">
                 <label class="text-xs text-on-surface-variant mb-1 block">数据权限范围</label>
-                <select id="detail-scope" class="w-full bg-surface border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
+                <select id="detail-scope" class="w-full bg-surface border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" >
                   <option value="all">全部数据</option>
                   <option value="self">仅自己创建</option>
                   <option value="shop">所属店铺数据</option>
@@ -692,12 +692,12 @@
   <!-- @nav:end 导航组件 -->
 
   <!-- 新增/编辑角色弹窗 -->
-  <div id="modal-role" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
+  <div id="modal-role" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden" >
     <div class="bg-surface rounded-xl shadow-dialog max-w-lg w-full max-h-[90vh] overflow-y-auto">
       <div class="p-5 border-b border-outline-variant/20">
         <div class="flex items-center justify-between">
-          <h3 id="modal-title" class="text-lg font-semibold text-on-surface">新增角色</h3>
-          <button id="btn-close-modal" class="p-1.5 rounded-md hover:bg-surface-container transition-colors">
+          <h3 id="modal-title" class="text-lg font-semibold text-on-surface" >新增角色</h3>
+          <button data-element=""btn-close-modalid="" class="p-1.5 rounded-md hover:bg-surface-container transition-colors" >>
             <i data-lucide="x" class="w-5 h-5 text-on-surface-variant"></i>
           </button>
         </div>
@@ -706,17 +706,17 @@
         <!-- 角色名称 -->
         <div>
           <label class="block text-sm font-medium text-on-surface mb-1.5">角色名称 <span class="text-error">*</span></label>
-          <input id="input-role-name" type="text" placeholder="请输入角色名称" class="w-full bg-surface-container border-none rounded-md px-3 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
+          <input id="input-role-name" type="text" placeholder="请输入角色名称" class="w-full bg-surface-container border-none rounded-md px-3 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" >
         </div>
         <!-- 角色描述 -->
         <div>
           <label class="block text-sm font-medium text-on-surface mb-1.5">角色描述</label>
-          <textarea id="input-role-desc" rows="2" placeholder="请输入角色描述" class="w-full bg-surface-container border-none rounded-md px-3 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors resize-none"></textarea>
+          <textarea id="input-role-desc" rows="2" placeholder="请输入角色描述" class="w-full bg-surface-container border-none rounded-md px-3 py-2.5 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors resize-none" ></textarea>
         </div>
         <!-- 权限等级 -->
         <div>
           <label class="block text-sm font-medium text-on-surface mb-1.5">权限等级</label>
-          <select id="input-role-level" class="w-full bg-surface-container border-none rounded-md px-3 py-2.5 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
+          <select id="input-role-level" class="w-full bg-surface-container border-none rounded-md px-3 py-2.5 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" >
             <option value="5">5级 - 超级管理员（全部权限）</option>
             <option value="4">4级 - 管理员（除系统设置外全部权限）</option>
             <option value="3" selected>3级 - 业务经理（业务操作+数据查看）</option>
@@ -727,7 +727,7 @@
         <!-- 数据权限范围 -->
         <div>
           <label class="block text-sm font-medium text-on-surface mb-1.5">数据权限范围</label>
-          <select id="input-role-scope" class="w-full bg-surface-container border-none rounded-md px-3 py-2.5 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
+          <select id="input-role-scope" class="w-full bg-surface-container border-none rounded-md px-3 py-2.5 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" >
             <option value="all">全部数据</option>
             <option value="self">仅自己创建</option>
             <option value="shop">所属店铺数据</option>
@@ -738,11 +738,11 @@
         <div>
           <label class="block text-sm font-medium text-on-surface mb-2">权限配置</label>
           <div class="flex border-b border-outline-variant/30 mb-3">
-            <button id="tab-menu" class="px-4 py-2 text-sm font-medium text-primary border-b-2 border-primary">菜单权限</button>
-            <button id="tab-operation" class="px-4 py-2 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors">操作权限</button>
+            <button data-element=""tab-menuid="" class="px-4 py-2 text-sm font-medium text-primary border-b-2 border-primary" >>菜单权限</button>
+            <button data-element=""tab-operationid="" class="px-4 py-2 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors" >>操作权限</button>
           </div>
           <!-- 菜单权限 -->
-          <div id="panel-menu" class="bg-surface-container rounded-lg p-3 max-h-48 overflow-y-auto">
+          <div id="panel-menu" class="bg-surface-container rounded-lg p-3 max-h-48 overflow-y-auto" >
             <div class="space-y-1.5">
               <label class="flex items-center gap-2 py-1 px-2 rounded hover:bg-surface-container-high cursor-pointer">
                 <input type="checkbox" class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30">
@@ -795,7 +795,7 @@
             </div>
           </div>
           <!-- 操作权限 -->
-          <div id="panel-operation" class="bg-surface-container rounded-lg p-3 max-h-48 overflow-y-auto hidden">
+          <div id="panel-operation" class="bg-surface-container rounded-lg p-3 max-h-48 overflow-y-auto hidden" >
             <div class="space-y-2">
               <div>
                 <div class="text-xs font-medium text-on-surface-variant mb-1.5">订单模块</div>
@@ -878,14 +878,14 @@
         </div>
       </div>
       <div class="p-5 border-t border-outline-variant/20 flex justify-end gap-3">
-        <button id="btn-cancel-modal" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all">取消</button>
-        <button id="btn-confirm-modal" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">确认</button>
+        <button data-element=""btn-cancel-modalid="" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all" >>取消</button>
+        <button data-element=""btn-confirm-modalid="" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all" >>确认</button>
       </div>
     </div>
   </div>
 
   <!-- 删除确认弹窗 -->
-  <div id="modal-delete" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
+  <div id="modal-delete" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden" >
     <div class="bg-surface rounded-xl shadow-dialog max-w-sm w-full p-5">
       <div class="flex items-center gap-3 mb-4">
         <div class="w-10 h-10 rounded-full bg-error/10 flex items-center justify-center">
@@ -897,8 +897,8 @@
         </div>
       </div>
       <div class="flex justify-end gap-3">
-        <button id="btn-cancel-delete" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all">取消</button>
-        <button id="btn-confirm-delete" class="bg-error text-white px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">确认删除</button>
+        <button data-element=""btn-cancel-deleteid="" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all" >>取消</button>
+        <button data-element=""btn-confirm-deleteid="" class="bg-error text-white px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all" >>确认删除</button>
       </div>
     </div>
   </div>

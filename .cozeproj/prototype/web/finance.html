@@ -78,7 +78,7 @@
       <span class="font-semibold text-base">Ozon ERP</span>
     </div>
     <div class="flex items-center gap-4">
-      <button class="flex items-center gap-2 text-sm text-on-surface-variant hover:text-on-surface transition-colors">
+      <button data-element="finance-icon-btn01" class="flex items-center gap-2 text-sm text-on-surface-variant hover:text-on-surface transition-colors">
         <i data-lucide="bell" class="w-4 h-4"></i>
         <span class="bg-error text-white text-xs px-1.5 py-0.5 rounded-full font-medium">3</span>
       </button>
@@ -288,26 +288,26 @@
       <div class="bg-surface rounded-lg shadow-card">
         <!-- Tab导航 -->
         <div class="flex items-center border-b border-outline/50 px-4">
-          <button id="tab-pending" class="tab-btn px-4 py-3 text-sm font-medium text-primary border-b-2 border-primary" data-tab="pending">
+          <button data-element=""tab-pendingid="" class="tab-btn px-4 py-3 text-sm font-medium text-primary border-b-2 border-primary" data-tab="pending" >>
             待核算订单<span class="ml-1.5 bg-primary/15 text-primary text-xs px-1.5 py-0.5 rounded-full">23</span>
           </button>
-          <button id="tab-processing" class="tab-btn px-4 py-3 text-sm font-medium text-on-surface-variant border-b-2 border-transparent hover:text-on-surface transition-colors" data-tab="processing">
+          <button data-element=""tab-processingid="" class="tab-btn px-4 py-3 text-sm font-medium text-on-surface-variant border-b-2 border-transparent hover:text-on-surface transition-colors" data-tab="processing" >>
             核算中订单<span class="ml-1.5 bg-surface-container text-on-surface-variant text-xs px-1.5 py-0.5 rounded-full">5</span>
           </button>
-          <button id="tab-completed" class="tab-btn px-4 py-3 text-sm font-medium text-on-surface-variant border-b-2 border-transparent hover:text-on-surface transition-colors" data-tab="completed">
+          <button data-element=""tab-completedid="" class="tab-btn px-4 py-3 text-sm font-medium text-on-surface-variant border-b-2 border-transparent hover:text-on-surface transition-colors" data-tab="completed" >>
             已核算订单<span class="ml-1.5 bg-surface-container text-on-surface-variant text-xs px-1.5 py-0.5 rounded-full">128</span>
           </button>
-          <button id="tab-after-sale" class="tab-btn px-4 py-3 text-sm font-medium text-on-surface-variant border-b-2 border-transparent hover:text-on-surface transition-colors" data-tab="after-sale">
+          <button data-element=""tab-after-saleid="" class="tab-btn px-4 py-3 text-sm font-medium text-on-surface-variant border-b-2 border-transparent hover:text-on-surface transition-colors" data-tab="after-sale" >>
             售后期中订单<span class="ml-1.5 bg-surface-container text-on-surface-variant text-xs px-1.5 py-0.5 rounded-full">42</span>
           </button>
-          <button id="tab-inventory-cost" class="tab-btn px-4 py-3 text-sm font-medium text-on-surface-variant border-b-2 border-transparent hover:text-on-surface transition-colors" data-tab="inventory-cost">
+          <button data-element=""tab-inventory-costid="" class="tab-btn px-4 py-3 text-sm font-medium text-on-surface-variant border-b-2 border-transparent hover:text-on-surface transition-colors" data-tab="inventory-cost" >>
             库存成本统计
           </button>
         </div>
 
         <!-- Tab内容区域 -->
         <!-- 待核算订单Tab -->
-        <div id="content-pending" class="tab-content">
+        <div id="content-pending" class="tab-content" >
           <!-- 筛选栏 -->
           <div class="flex items-center justify-between px-4 py-3 border-b border-outline/30">
             <div class="flex items-center gap-3">
@@ -323,7 +323,7 @@
                 <option>直发商品</option>
               </select>
             </div>
-            <button id="btn-batch-calculate" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-2">
+            <button data-element=""btn-batch-calculateid="" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-2" >>
               <i data-lucide="calculator" class="w-3.5 h-3.5"></i>批量核算
             </button>
           </div>
@@ -353,7 +353,7 @@
               </div>
               <div class="col-span-2 flex items-center gap-2">
                 <button class="btn-calculate text-primary text-sm font-medium hover:underline" data-id="1">核算</button>
-                <button class="text-on-surface-variant text-sm hover:text-on-surface transition-colors">详情</button>
+                <button data-element="finance-icon-btn02" class="text-on-surface-variant text-sm hover:text-on-surface transition-colors">详情</button>
               </div>
             </div>
             <!-- 列表-待核算订单2 -->
@@ -379,7 +379,7 @@
               </div>
               <div class="col-span-2 flex items-center gap-2">
                 <button class="btn-calculate text-primary text-sm font-medium hover:underline" data-id="2">核算</button>
-                <button class="text-on-surface-variant text-sm hover:text-on-surface transition-colors">详情</button>
+                <button data-element="finance-icon-btn03" class="text-on-surface-variant text-sm hover:text-on-surface transition-colors">详情</button>
               </div>
             </div>
             <!-- 列表-待核算订单3 -->
@@ -405,7 +405,7 @@
               </div>
               <div class="col-span-2 flex items-center gap-2">
                 <button class="btn-calculate text-primary text-sm font-medium hover:underline" data-id="3">核算</button>
-                <button class="text-on-surface-variant text-sm hover:text-on-surface transition-colors">详情</button>
+                <button data-element="finance-icon-btn04" class="text-on-surface-variant text-sm hover:text-on-surface transition-colors">详情</button>
               </div>
             </div>
             <!-- 列表-待核算订单4 -->
@@ -431,7 +431,7 @@
               </div>
               <div class="col-span-2 flex items-center gap-2">
                 <button class="btn-calculate text-primary text-sm font-medium hover:underline" data-id="4">核算</button>
-                <button class="text-on-surface-variant text-sm hover:text-on-surface transition-colors">详情</button>
+                <button data-element="finance-icon-btn05" class="text-on-surface-variant text-sm hover:text-on-surface transition-colors">详情</button>
               </div>
             </div>
             <!-- 列表-待核算订单5 -->
@@ -457,7 +457,7 @@
               </div>
               <div class="col-span-2 flex items-center gap-2">
                 <button class="btn-calculate text-primary text-sm font-medium hover:underline" data-id="5">核算</button>
-                <button class="text-on-surface-variant text-sm hover:text-on-surface transition-colors">详情</button>
+                <button data-element="finance-icon-btn06" class="text-on-surface-variant text-sm hover:text-on-surface transition-colors">详情</button>
               </div>
             </div>
           </div>
@@ -466,17 +466,17 @@
           <div class="flex items-center justify-between px-4 py-3 border-t border-outline/30">
             <p class="text-sm text-on-surface-variant">共 23 条记录</p>
             <div class="flex items-center gap-1">
-              <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">上一页</button>
-              <button class="px-3 py-1.5 text-sm font-medium text-on-surface bg-primary/10 rounded-md">1</button>
-              <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">2</button>
-              <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">3</button>
-              <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">下一页</button>
+              <button data-element="finance-btn07" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">上一页</button>
+              <button data-element="finance-btn08" class="px-3 py-1.5 text-sm font-medium text-on-surface bg-primary/10 rounded-md">1</button>
+              <button data-element="finance-btn09" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">2</button>
+              <button data-element="finance-btn10" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">3</button>
+              <button data-element="finance-icon-btn11" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">下一页</button>
             </div>
           </div>
         </div>
 
         <!-- 核算中订单Tab -->
-        <div id="content-processing" class="tab-content hidden">
+        <div id="content-processing" class="tab-content hidden" >
           <!-- 列表-核算中订单 -->
           <div class="divide-y divide-outline-variant/30">
             <div class="grid grid-cols-12 gap-4 px-4 py-3 hover:bg-surface-container/50 transition-colors items-center">
@@ -501,7 +501,7 @@
                 <p class="text-sm text-on-surface-variant">等待审核确认</p>
               </div>
               <div class="col-span-1">
-                <button class="text-on-surface-variant text-sm hover:text-on-surface transition-colors">查看</button>
+                <button data-element="finance-icon-btn12" class="text-on-surface-variant text-sm hover:text-on-surface transition-colors">查看</button>
               </div>
             </div>
             <div class="grid grid-cols-12 gap-4 px-4 py-3 hover:bg-surface-container/50 transition-colors items-center">
@@ -526,14 +526,14 @@
                 <p class="text-sm text-on-surface-variant">等待审核确认</p>
               </div>
               <div class="col-span-1">
-                <button class="text-on-surface-variant text-sm hover:text-on-surface transition-colors">查看</button>
+                <button data-element="finance-icon-btn13" class="text-on-surface-variant text-sm hover:text-on-surface transition-colors">查看</button>
               </div>
             </div>
           </div>
         </div>
 
         <!-- 已核算订单Tab -->
-        <div id="content-completed" class="tab-content hidden">
+        <div id="content-completed" class="tab-content hidden" >
           <!-- 筛选栏 -->
           <div class="flex items-center justify-between px-4 py-3 border-b border-outline/30">
             <div class="flex items-center gap-3">
@@ -543,10 +543,10 @@
               <input type="date" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/>
             </div>
             <div class="flex items-center gap-2">
-              <button id="btn-export-excel" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all inline-flex items-center gap-2">
+              <button data-element=""btn-export-excelid="" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all inline-flex items-center gap-2" >>
                 <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>导出Excel
               </button>
-              <button id="btn-export-pdf" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all inline-flex items-center gap-2">
+              <button data-element=""btn-export-pdfid="" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all inline-flex items-center gap-2" >>
                 <i data-lucide="file-text" class="w-3.5 h-3.5"></i>导出PDF
               </button>
             </div>
@@ -576,8 +576,8 @@
                 <p class="text-xs text-on-surface-variant">含库存成本¥5.20</p>
               </div>
               <div class="col-span-2 flex items-center gap-2">
-                <button class="text-primary text-sm font-medium hover:underline">明细</button>
-                <button class="text-on-surface-variant text-sm hover:text-on-surface transition-colors">凭证</button>
+                <button data-element="finance-icon-btn14" class="text-primary text-sm font-medium hover:underline">明细</button>
+                <button data-element="finance-icon-btn15" class="text-on-surface-variant text-sm hover:text-on-surface transition-colors">凭证</button>
               </div>
             </div>
             <!-- 列表-已核算订单2 -->
@@ -602,8 +602,8 @@
                 <p class="text-xs text-on-surface-variant">无库存成本</p>
               </div>
               <div class="col-span-2 flex items-center gap-2">
-                <button class="text-primary text-sm font-medium hover:underline">明细</button>
-                <button class="text-on-surface-variant text-sm hover:text-on-surface transition-colors">凭证</button>
+                <button data-element="finance-icon-btn16" class="text-primary text-sm font-medium hover:underline">明细</button>
+                <button data-element="finance-icon-btn17" class="text-on-surface-variant text-sm hover:text-on-surface transition-colors">凭证</button>
               </div>
             </div>
             <!-- 列表-已核算订单3 -->
@@ -628,8 +628,8 @@
                 <p class="text-xs text-on-surface-variant">含库存成本¥8.30</p>
               </div>
               <div class="col-span-2 flex items-center gap-2">
-                <button class="text-primary text-sm font-medium hover:underline">明细</button>
-                <button class="text-on-surface-variant text-sm hover:text-on-surface transition-colors">凭证</button>
+                <button data-element="finance-icon-btn18" class="text-primary text-sm font-medium hover:underline">明细</button>
+                <button data-element="finance-icon-btn19" class="text-on-surface-variant text-sm hover:text-on-surface transition-colors">凭证</button>
               </div>
             </div>
           </div>
@@ -638,19 +638,19 @@
           <div class="flex items-center justify-between px-4 py-3 border-t border-outline/30">
             <p class="text-sm text-on-surface-variant">共 128 条记录</p>
             <div class="flex items-center gap-1">
-              <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">上一页</button>
-              <button class="px-3 py-1.5 text-sm font-medium text-on-surface bg-primary/10 rounded-md">1</button>
-              <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">2</button>
-              <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">3</button>
+              <button data-element="finance-icon-btn20" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">上一页</button>
+              <button data-element="finance-btn21" class="px-3 py-1.5 text-sm font-medium text-on-surface bg-primary/10 rounded-md">1</button>
+              <button data-element="finance-btn22" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">2</button>
+              <button data-element="finance-icon-btn23" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">3</button>
               <span class="px-2 text-on-surface-variant">...</span>
-              <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">13</button>
-              <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">下一页</button>
+              <button data-element="finance-btn24" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">13</button>
+              <button data-element="finance-icon-btn25" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">下一页</button>
             </div>
           </div>
         </div>
 
         <!-- 售后期中订单Tab -->
-        <div id="content-after-sale" class="tab-content hidden">
+        <div id="content-after-sale" class="tab-content hidden" >
           <div class="px-4 py-3 bg-warning/5 border-b border-warning/20">
             <div class="flex items-center gap-2">
               <i data-lucide="info" class="w-4 h-4 text-warning"></i>
@@ -680,7 +680,7 @@
                 <p class="text-xs text-on-surface-variant">售后期结束</p>
               </div>
               <div class="col-span-1">
-                <button class="text-on-surface-variant text-sm hover:text-on-surface transition-colors">详情</button>
+                <button data-element="finance-icon-btn26" class="text-on-surface-variant text-sm hover:text-on-surface transition-colors">详情</button>
               </div>
             </div>
             <!-- 列表-售后期中订单2 -->
@@ -705,7 +705,7 @@
                 <p class="text-xs text-on-surface-variant">售后期结束</p>
               </div>
               <div class="col-span-1">
-                <button class="text-on-surface-variant text-sm hover:text-on-surface transition-colors">详情</button>
+                <button data-element="finance-icon-btn27" class="text-on-surface-variant text-sm hover:text-on-surface transition-colors">详情</button>
               </div>
             </div>
             <!-- 列表-售后期中订单3 -->
@@ -730,14 +730,14 @@
                 <p class="text-xs text-on-surface-variant">售后期结束</p>
               </div>
               <div class="col-span-1">
-                <button class="text-on-surface-variant text-sm hover:text-on-surface transition-colors">详情</button>
+                <button data-element="finance-icon-btn28" class="text-on-surface-variant text-sm hover:text-on-surface transition-colors">详情</button>
               </div>
             </div>
           </div>
         </div>
 
         <!-- 库存成本统计Tab -->
-        <div id="content-inventory-cost" class="tab-content hidden">
+        <div id="content-inventory-cost" class="tab-content hidden" >
           <div class="p-4">
             <!-- 库存成本概览 -->
             <div class="grid grid-cols-4 gap-4 mb-6">
@@ -787,7 +787,7 @@
             <div class="bg-surface-container rounded-lg p-4 mb-6">
               <div class="flex items-center justify-between mb-4">
                 <h4 class="text-base font-semibold text-on-surface">库存成本明细</h4>
-                <button id="btn-export-inventory" class="bg-surface text-on-surface px-3 py-1.5 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all inline-flex items-center gap-1.5 shadow-sm">
+                <button data-element=""btn-export-inventoryid="" class="bg-surface text-on-surface px-3 py-1.5 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all inline-flex items-center gap-1.5 shadow-sm" >>
                   <i data-lucide="download" class="w-3.5 h-3.5"></i>导出库存成本报表
                 </button>
               </div>
@@ -952,9 +952,9 @@
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-base font-semibold text-on-surface">利润趋势</h3>
           <div class="flex items-center gap-1 bg-surface-container rounded-md p-0.5">
-            <button class="chart-period-btn px-3 py-1.5 text-sm font-medium text-on-surface bg-surface rounded-md shadow-sm" data-period="day">日</button>
-            <button class="chart-period-btn px-3 py-1.5 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors" data-period="week">周</button>
-            <button class="chart-period-btn px-3 py-1.5 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors" data-period="month">月</button>
+            <button data-element="finance-btn29" class="chart-period-btn px-3 py-1.5 text-sm font-medium text-on-surface bg-surface rounded-md shadow-sm" data-period="day">日</button>
+            <button data-element="finance-btn30" class="chart-period-btn px-3 py-1.5 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors" data-period="week">周</button>
+            <button data-element="finance-icon-btn31" class="chart-period-btn px-3 py-1.5 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors" data-period="month">月</button>
           </div>
         </div>
         <!-- 图表区域（模拟柱状图） -->
@@ -1040,11 +1040,11 @@
       </div>
 
       <!-- 核算详情弹窗 -->
-      <div id="modal-calculate" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
+      <div id="modal-calculate" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden" >
         <div class="bg-surface rounded-xl shadow-dialog max-w-2xl w-full max-h-[90vh] overflow-y-auto">
           <div class="flex items-center justify-between px-6 py-4 border-b border-outline/50">
             <h3 class="text-lg font-semibold text-on-surface">核算详情</h3>
-            <button id="btn-close-modal" class="text-on-surface-variant hover:text-on-surface transition-colors">
+            <button data-element=""btn-close-modalid="" class="text-on-surface-variant hover:text-on-surface transition-colors" >>
               <i data-lucide="x" class="w-5 h-5"></i>
             </button>
           </div>
@@ -1156,8 +1156,8 @@
             </div>
           </div>
           <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-outline/50">
-            <button id="btn-cancel-modal" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all">取消</button>
-            <button id="btn-confirm-modal" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">确认核算</button>
+            <button data-element=""btn-cancel-modalid="" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all" >>取消</button>
+            <button data-element=""btn-confirm-modalid="" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all" >>确认核算</button>
           </div>
         </div>
       </div>

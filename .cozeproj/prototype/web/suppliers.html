@@ -78,7 +78,7 @@
       <span class="font-semibold text-base">Ozon ERP</span>
     </div>
     <div class="flex items-center gap-4">
-      <button class="flex items-center gap-2 text-sm text-on-surface-variant hover:text-on-surface transition-colors">
+      <button data-element="suppliers-icon-btn01" class="flex items-center gap-2 text-sm text-on-surface-variant hover:text-on-surface transition-colors">
         <i data-lucide="bell" class="w-4 h-4"></i>
         <span class="bg-error text-white text-xs px-1.5 py-0.5 rounded-full font-medium">3</span>
       </button>
@@ -154,7 +154,7 @@
       <!-- 页面标题 -->
       <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-bold text-on-surface">供应商管理</h1>
-        <button id="btn-add-supplier" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-2">
+        <button data-element=""btn-add-supplierid="" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-2" >>
           <i data-lucide="plus" class="w-4 h-4"></i>新增供应商
         </button>
       </div>
@@ -215,30 +215,30 @@
           <div class="flex-1 min-w-[200px]">
             <div class="relative">
               <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant"></i>
-              <input id="search-name" type="text" placeholder="搜索供应商名称..." class="w-full bg-surface-container border-none rounded-md pl-9 pr-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/>
+              <input id="search-name" type="text" placeholder="搜索供应商名称..." class="w-full bg-surface-container border-none rounded-md pl-9 pr-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/ >
             </div>
           </div>
-          <select id="filter-platform" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
+          <select id="filter-platform" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" >
             <option value="">全部平台</option>
             <option value="1688">1688</option>
             <option value="pdd">拼多多</option>
           </select>
-          <select id="filter-status" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
+          <select id="filter-status" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" >
             <option value="">全部状态</option>
             <option value="active">合作中</option>
             <option value="inactive">已停用</option>
             <option value="blacklist">黑名单</option>
           </select>
-          <select id="filter-rating" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
+          <select id="filter-rating" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" >
             <option value="">全部评分</option>
             <option value="5">5星</option>
             <option value="4">4星及以上</option>
             <option value="3">3星及以上</option>
           </select>
-          <button id="btn-search" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 transition-all">
+          <button data-element=""btn-searchid="" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 transition-all" >>
             搜索
           </button>
-          <button id="btn-reset" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high transition-all">
+          <button data-element=""btn-resetid="" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high transition-all" >>
             重置
           </button>
         </div>
@@ -250,16 +250,16 @@
         <div class="flex items-center justify-between px-4 py-3 bg-surface-container border-b border-outline-variant/20">
           <div class="flex items-center gap-3">
             <label class="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" id="select-all" class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30"/>
+              <input type="checkbox" id="select-all" class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30"/  type="checkbox">
               <span class="text-sm text-on-surface-variant">全选</span>
             </label>
-            <span class="text-sm text-on-surface-variant">已选择 <span id="selected-count" class="font-medium text-on-surface">0</span> 项</span>
+            <span class="text-sm text-on-surface-variant">已选择 <span id="selected-count" class="font-medium text-on-surface" >0</span> 项</span>
           </div>
           <div class="flex items-center gap-2">
-            <button id="btn-batch-status" class="text-sm text-on-surface-variant hover:text-on-surface px-3 py-1.5 rounded-md hover:bg-surface-container-high transition-all inline-flex items-center gap-1.5">
+            <button data-element=""btn-batch-statusid="" class="text-sm text-on-surface-variant hover:text-on-surface px-3 py-1.5 rounded-md hover:bg-surface-container-high transition-all inline-flex items-center gap-1.5" >>
               <i data-lucide="settings-2" class="w-3.5 h-3.5"></i>批量设置状态
             </button>
-            <button id="btn-export" class="text-sm text-on-surface-variant hover:text-on-surface px-3 py-1.5 rounded-md hover:bg-surface-container-high transition-all inline-flex items-center gap-1.5">
+            <button data-element=""btn-exportid="" class="text-sm text-on-surface-variant hover:text-on-surface px-3 py-1.5 rounded-md hover:bg-surface-container-high transition-all inline-flex items-center gap-1.5" >>
               <i data-lucide="download" class="w-3.5 h-3.5"></i>导出数据
             </button>
           </div>
@@ -277,7 +277,7 @@
           <span class="col-span-2">操作</span>
         </div>
         <!-- 表格内容 -->
-        <div id="supplier-list" class="divide-y divide-outline-variant/30">
+        <div id="supplier-list" class="divide-y divide-outline-variant/30" >
           <!-- 列表-供应商1 -->
           <div class="supplier-row grid grid-cols-11 gap-2 px-4 py-4 hover:bg-surface-container/50 transition-colors items-center" data-id="1" data-status="active">
             <div class="col-span-2">
@@ -298,10 +298,10 @@
             <span class="text-sm text-on-surface-variant">86单</span>
             <span class="text-sm text-on-surface-variant">2024-01-18</span>
             <div class="col-span-2 flex items-center gap-2">
-              <button class="btn-detail text-primary text-xs font-medium hover:underline">详情</button>
-              <button class="btn-edit text-on-surface-variant text-xs font-medium hover:text-on-surface hover:underline">编辑</button>
-              <button class="btn-history text-on-surface-variant text-xs font-medium hover:text-on-surface hover:underline">采购历史</button>
-              <button class="btn-blacklist text-error text-xs font-medium hover:underline">加入黑名单</button>
+              <button data-element="suppliers-icon-btn02" class="btn-detail text-primary text-xs font-medium hover:underline">详情</button>
+              <button data-element="suppliers-icon-btn03" class="btn-edit text-on-surface-variant text-xs font-medium hover:text-on-surface hover:underline">编辑</button>
+              <button data-element="suppliers-btn04" class="btn-history text-on-surface-variant text-xs font-medium hover:text-on-surface hover:underline">采购历史</button>
+              <button data-element="suppliers-icon-btn05" class="btn-blacklist text-error text-xs font-medium hover:underline">加入黑名单</button>
             </div>
           </div>
           <!-- 列表-供应商2 -->
@@ -324,10 +324,10 @@
             <span class="text-sm text-on-surface-variant">142单</span>
             <span class="text-sm text-on-surface-variant">2024-01-17</span>
             <div class="col-span-2 flex items-center gap-2">
-              <button class="btn-detail text-primary text-xs font-medium hover:underline">详情</button>
-              <button class="btn-edit text-on-surface-variant text-xs font-medium hover:text-on-surface hover:underline">编辑</button>
-              <button class="btn-history text-on-surface-variant text-xs font-medium hover:text-on-surface hover:underline">采购历史</button>
-              <button class="btn-blacklist text-error text-xs font-medium hover:underline">加入黑名单</button>
+              <button data-element="suppliers-icon-btn06" class="btn-detail text-primary text-xs font-medium hover:underline">详情</button>
+              <button data-element="suppliers-icon-btn07" class="btn-edit text-on-surface-variant text-xs font-medium hover:text-on-surface hover:underline">编辑</button>
+              <button data-element="suppliers-btn08" class="btn-history text-on-surface-variant text-xs font-medium hover:text-on-surface hover:underline">采购历史</button>
+              <button data-element="suppliers-icon-btn09" class="btn-blacklist text-error text-xs font-medium hover:underline">加入黑名单</button>
             </div>
           </div>
           <!-- 列表-供应商3 -->
@@ -350,10 +350,10 @@
             <span class="text-sm text-on-surface-variant">67单</span>
             <span class="text-sm text-on-surface-variant">2024-01-16</span>
             <div class="col-span-2 flex items-center gap-2">
-              <button class="btn-detail text-primary text-xs font-medium hover:underline">详情</button>
-              <button class="btn-edit text-on-surface-variant text-xs font-medium hover:text-on-surface hover:underline">编辑</button>
-              <button class="btn-history text-on-surface-variant text-xs font-medium hover:text-on-surface hover:underline">采购历史</button>
-              <button class="btn-blacklist text-error text-xs font-medium hover:underline">加入黑名单</button>
+              <button data-element="suppliers-icon-btn10" class="btn-detail text-primary text-xs font-medium hover:underline">详情</button>
+              <button data-element="suppliers-icon-btn11" class="btn-edit text-on-surface-variant text-xs font-medium hover:text-on-surface hover:underline">编辑</button>
+              <button data-element="suppliers-btn12" class="btn-history text-on-surface-variant text-xs font-medium hover:text-on-surface hover:underline">采购历史</button>
+              <button data-element="suppliers-icon-btn13" class="btn-blacklist text-error text-xs font-medium hover:underline">加入黑名单</button>
             </div>
           </div>
           <!-- 列表-供应商4 -->
@@ -376,10 +376,10 @@
             <span class="text-sm text-on-surface-variant">34单</span>
             <span class="text-sm text-on-surface-variant">2023-11-20</span>
             <div class="col-span-2 flex items-center gap-2">
-              <button class="btn-detail text-primary text-xs font-medium hover:underline">详情</button>
-              <button class="btn-edit text-on-surface-variant text-xs font-medium hover:text-on-surface hover:underline">编辑</button>
-              <button class="btn-history text-on-surface-variant text-xs font-medium hover:text-on-surface hover:underline">采购历史</button>
-              <button class="btn-blacklist text-error text-xs font-medium hover:underline">加入黑名单</button>
+              <button data-element="suppliers-icon-btn14" class="btn-detail text-primary text-xs font-medium hover:underline">详情</button>
+              <button data-element="suppliers-icon-btn15" class="btn-edit text-on-surface-variant text-xs font-medium hover:text-on-surface hover:underline">编辑</button>
+              <button data-element="suppliers-btn16" class="btn-history text-on-surface-variant text-xs font-medium hover:text-on-surface hover:underline">采购历史</button>
+              <button data-element="suppliers-icon-btn17" class="btn-blacklist text-error text-xs font-medium hover:underline">加入黑名单</button>
             </div>
           </div>
           <!-- 列表-供应商5 -->
@@ -402,10 +402,10 @@
             <span class="text-sm text-on-surface-variant">98单</span>
             <span class="text-sm text-on-surface-variant">2024-01-18</span>
             <div class="col-span-2 flex items-center gap-2">
-              <button class="btn-detail text-primary text-xs font-medium hover:underline">详情</button>
-              <button class="btn-edit text-on-surface-variant text-xs font-medium hover:text-on-surface hover:underline">编辑</button>
-              <button class="btn-history text-on-surface-variant text-xs font-medium hover:text-on-surface hover:underline">采购历史</button>
-              <button class="btn-blacklist text-error text-xs font-medium hover:underline">加入黑名单</button>
+              <button data-element="suppliers-icon-btn18" class="btn-detail text-primary text-xs font-medium hover:underline">详情</button>
+              <button data-element="suppliers-icon-btn19" class="btn-edit text-on-surface-variant text-xs font-medium hover:text-on-surface hover:underline">编辑</button>
+              <button data-element="suppliers-btn20" class="btn-history text-on-surface-variant text-xs font-medium hover:text-on-surface hover:underline">采购历史</button>
+              <button data-element="suppliers-icon-btn21" class="btn-blacklist text-error text-xs font-medium hover:underline">加入黑名单</button>
             </div>
           </div>
           <!-- 列表-供应商6-黑名单 -->
@@ -428,10 +428,10 @@
             <span class="text-sm text-on-surface-variant">8单</span>
             <span class="text-sm text-on-surface-variant">2023-08-15</span>
             <div class="col-span-2 flex items-center gap-2">
-              <button class="btn-detail text-primary text-xs font-medium hover:underline">详情</button>
-              <button class="btn-edit text-on-surface-variant text-xs font-medium hover:text-on-surface hover:underline">编辑</button>
-              <button class="btn-history text-on-surface-variant text-xs font-medium hover:text-on-surface hover:underline">采购历史</button>
-              <button class="btn-remove-blacklist text-success text-xs font-medium hover:underline">移出黑名单</button>
+              <button data-element="suppliers-icon-btn22" class="btn-detail text-primary text-xs font-medium hover:underline">详情</button>
+              <button data-element="suppliers-icon-btn23" class="btn-edit text-on-surface-variant text-xs font-medium hover:text-on-surface hover:underline">编辑</button>
+              <button data-element="suppliers-btn24" class="btn-history text-on-surface-variant text-xs font-medium hover:text-on-surface hover:underline">采购历史</button>
+              <button data-element="suppliers-icon-btn25" class="btn-remove-blacklist text-success text-xs font-medium hover:underline">移出黑名单</button>
             </div>
           </div>
         </div>
@@ -439,13 +439,13 @@
         <div class="flex items-center justify-between px-4 py-3 bg-surface-container-lowest">
           <span class="text-sm text-on-surface-variant">共 156 条记录，每页 10 条</span>
           <div class="flex items-center gap-1">
-            <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">上一页</button>
-            <button class="px-3 py-1.5 text-sm bg-primary text-on-primary rounded-md">1</button>
-            <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">2</button>
-            <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">3</button>
+            <button data-element="suppliers-btn26" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">上一页</button>
+            <button data-element="suppliers-icon-btn27" class="px-3 py-1.5 text-sm bg-primary text-on-primary rounded-md">1</button>
+            <button data-element="suppliers-icon-btn28" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">2</button>
+            <button data-element="suppliers-icon-btn29" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">3</button>
             <span class="px-2 text-sm text-on-surface-variant">...</span>
-            <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">16</button>
-            <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">下一页</button>
+            <button data-element="suppliers-icon-btn30" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">16</button>
+            <button data-element="suppliers-icon-btn31" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">下一页</button>
           </div>
         </div>
       </div>
@@ -458,11 +458,11 @@
             <h2 class="text-base font-semibold text-on-surface">黑名单管理</h2>
             <span class="text-sm text-on-surface-variant">(10家供应商)</span>
           </div>
-          <button id="btn-toggle-blacklist" class="text-sm text-primary font-medium hover:underline inline-flex items-center gap-1">
+          <button data-element=""btn-toggle-blacklistid="" class="text-sm text-primary font-medium hover:underline inline-flex items-center gap-1" >>
             <i data-lucide="chevron-down" class="w-4 h-4"></i>展开查看
           </button>
         </div>
-        <div id="blacklist-content" class="hidden">
+        <div id="blacklist-content" class="hidden" >
           <div class="divide-y divide-outline-variant/30">
             <!-- 黑名单-供应商1 -->
             <div class="grid grid-cols-6 gap-4 px-5 py-4 hover:bg-surface-container/50 transition-colors items-center">
@@ -473,7 +473,7 @@
               <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-primary/10 text-primary w-fit">1688</span>
               <span class="text-sm text-on-surface-variant">2023-08-20 加入</span>
               <span class="text-sm text-on-surface-variant">¥12,300 累计</span>
-              <button class="btn-remove-blacklist text-success text-sm font-medium hover:underline w-fit">移出黑名单</button>
+              <button data-element="suppliers-icon-btn32" class="btn-remove-blacklist text-success text-sm font-medium hover:underline w-fit">移出黑名单</button>
             </div>
             <!-- 黑名单-供应商2 -->
             <div class="grid grid-cols-6 gap-4 px-5 py-4 hover:bg-surface-container/50 transition-colors items-center">
@@ -484,7 +484,7 @@
               <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-error/10 text-error w-fit">拼多多</span>
               <span class="text-sm text-on-surface-variant">2023-06-15 加入</span>
               <span class="text-sm text-on-surface-variant">¥5,600 累计</span>
-              <button class="btn-remove-blacklist text-success text-sm font-medium hover:underline w-fit">移出黑名单</button>
+              <button data-element="suppliers-icon-btn33" class="btn-remove-blacklist text-success text-sm font-medium hover:underline w-fit">移出黑名单</button>
             </div>
             <!-- 黑名单-供应商3 -->
             <div class="grid grid-cols-6 gap-4 px-5 py-4 hover:bg-surface-container/50 transition-colors items-center">
@@ -495,7 +495,7 @@
               <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-primary/10 text-primary w-fit">1688</span>
               <span class="text-sm text-on-surface-variant">2023-04-10 加入</span>
               <span class="text-sm text-on-surface-variant">¥8,900 累计</span>
-              <button class="btn-remove-blacklist text-success text-sm font-medium hover:underline w-fit">移出黑名单</button>
+              <button data-element="suppliers-icon-btn34" class="btn-remove-blacklist text-success text-sm font-medium hover:underline w-fit">移出黑名单</button>
             </div>
           </div>
         </div>
@@ -506,11 +506,11 @@
   <!-- @nav:end 导航组件 -->
 
   <!-- 供应商详情抽屉 -->
-  <div id="drawer-detail" class="fixed inset-0 bg-black/50 z-50 hidden">
+  <div id="drawer-detail" class="fixed inset-0 bg-black/50 z-50 hidden" >
     <div class="absolute right-0 top-0 h-full w-[560px] bg-surface shadow-dialog overflow-y-auto">
       <div class="sticky top-0 bg-surface px-6 py-4 border-b border-outline-variant/20 flex items-center justify-between">
         <h3 class="text-lg font-semibold text-on-surface">供应商详情</h3>
-        <button id="btn-close-drawer" class="p-1.5 hover:bg-surface-container rounded-md transition-colors">
+        <button data-element=""btn-close-drawerid="" class="p-1.5 hover:bg-surface-container rounded-md transition-colors" >>
           <i data-lucide="x" class="w-5 h-5 text-on-surface-variant"></i>
         </button>
       </div>
@@ -640,11 +640,11 @@
   </div>
 
   <!-- 新增供应商弹窗 -->
-  <div id="modal-add" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
+  <div id="modal-add" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden" >
     <div class="bg-surface rounded-xl shadow-dialog max-w-lg w-full max-h-[90vh] overflow-y-auto">
       <div class="px-6 py-4 border-b border-outline-variant/20 flex items-center justify-between">
         <h3 class="text-lg font-semibold text-on-surface">新增供应商</h3>
-        <button id="btn-close-modal" class="p-1.5 hover:bg-surface-container rounded-md transition-colors">
+        <button data-element=""btn-close-modalid="" class="p-1.5 hover:bg-surface-container rounded-md transition-colors" >>
           <i data-lucide="x" class="w-5 h-5 text-on-surface-variant"></i>
         </button>
       </div>
@@ -687,18 +687,18 @@
         </div>
       </div>
       <div class="px-6 py-4 border-t border-outline-variant/20 flex items-center justify-end gap-3">
-        <button id="btn-cancel-modal" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all">取消</button>
-        <button id="btn-submit-modal" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">确认添加</button>
+        <button data-element=""btn-cancel-modalid="" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all" >>取消</button>
+        <button data-element=""btn-submit-modalid="" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all" >>确认添加</button>
       </div>
     </div>
   </div>
 
   <!-- 编辑供应商弹窗 -->
-  <div id="modal-edit" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
+  <div id="modal-edit" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden" >
     <div class="bg-surface rounded-xl shadow-dialog max-w-lg w-full max-h-[90vh] overflow-y-auto">
       <div class="px-6 py-4 border-b border-outline-variant/20 flex items-center justify-between">
         <h3 class="text-lg font-semibold text-on-surface">编辑供应商</h3>
-        <button id="btn-close-edit-modal" class="p-1.5 hover:bg-surface-container rounded-md transition-colors">
+        <button data-element=""btn-close-edit-modalid="" class="p-1.5 hover:bg-surface-container rounded-md transition-colors" >>
           <i data-lucide="x" class="w-5 h-5 text-on-surface-variant"></i>
         </button>
       </div>
@@ -736,31 +736,31 @@
         </div>
       </div>
       <div class="px-6 py-4 border-t border-outline-variant/20 flex items-center justify-end gap-3">
-        <button id="btn-cancel-edit-modal" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all">取消</button>
-        <button id="btn-submit-edit-modal" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">保存修改</button>
+        <button data-element=""btn-cancel-edit-modalid="" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all" >>取消</button>
+        <button data-element=""btn-submit-edit-modalid="" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all" >>保存修改</button>
       </div>
     </div>
   </div>
 
   <!-- 确认操作弹窗 -->
-  <div id="modal-confirm" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
+  <div id="modal-confirm" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden" >
     <div class="bg-surface rounded-xl shadow-dialog max-w-sm w-full">
       <div class="p-6 text-center">
         <div class="w-12 h-12 bg-error/10 rounded-full flex items-center justify-center mx-auto mb-4">
           <i data-lucide="alert-triangle" class="w-6 h-6 text-error"></i>
         </div>
-        <h3 class="text-lg font-semibold text-on-surface mb-2" id="confirm-title">确认操作</h3>
-        <p class="text-sm text-on-surface-variant" id="confirm-message">确定要将该供应商加入黑名单吗？加入后将无法进行采购操作。</p>
+        <h3 class="text-lg font-semibold text-on-surface mb-2" id="confirm-title"  class="text-lg font-semibold text-on-surface mb-2">确认操作</h3>
+        <p class="text-sm text-on-surface-variant" id="confirm-message"  class="text-sm text-on-surface-variant">确定要将该供应商加入黑名单吗？加入后将无法进行采购操作。</p>
       </div>
       <div class="px-6 py-4 border-t border-outline-variant/20 flex items-center justify-center gap-3">
-        <button id="btn-cancel-confirm" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all">取消</button>
-        <button id="btn-submit-confirm" class="bg-error text-white px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">确认</button>
+        <button data-element=""btn-cancel-confirmid="" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all" >>取消</button>
+        <button data-element=""btn-submit-confirmid="" class="bg-error text-white px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all" >>确认</button>
       </div>
     </div>
   </div>
 
   <!-- 批量设置状态弹窗 -->
-  <div id="modal-batch-status" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
+  <div id="modal-batch-status" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden" >
     <div class="bg-surface rounded-xl shadow-dialog max-w-sm w-full">
       <div class="px-6 py-4 border-b border-outline-variant/20">
         <h3 class="text-lg font-semibold text-on-surface">批量设置状态</h3>
@@ -769,7 +769,7 @@
         <p class="text-sm text-on-surface-variant">已选择 <span class="font-medium text-on-surface">3</span> 个供应商</p>
         <div>
           <label class="block text-sm font-medium text-on-surface mb-1.5">设置状态</label>
-          <select id="batch-status-select" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors">
+          <select id="batch-status-select" class="w-full bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors" >
             <option value="active">合作中</option>
             <option value="inactive">已停用</option>
             <option value="blacklist">黑名单</option>
@@ -777,8 +777,8 @@
         </div>
       </div>
       <div class="px-6 py-4 border-t border-outline-variant/20 flex items-center justify-end gap-3">
-        <button id="btn-cancel-batch" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all">取消</button>
-        <button id="btn-submit-batch" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">确认设置</button>
+        <button data-element=""btn-cancel-batchid="" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all" >>取消</button>
+        <button data-element=""btn-submit-batchid="" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all" >>确认设置</button>
       </div>
     </div>
   </div>

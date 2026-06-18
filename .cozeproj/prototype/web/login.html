@@ -72,14 +72,14 @@
 
   <!-- @main-content:start -->
   <main class="w-full max-w-5xl">
-    <div class="bg-surface rounded-2xl shadow-card overflow-hidden">
+    <div id="login-card01" class="bg-surface rounded-2xl shadow-card overflow-hidden" >
       <div class="grid lg:grid-cols-2">
         
         <!-- 左侧品牌展示区域 -->
         <div class="bg-gradient-to-br from-primary to-primary/80 p-10 lg:p-12 flex flex-col justify-center">
           <!-- Logo和名称 -->
-          <div class="flex items-center gap-3 mb-6">
-            <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+          <div id="login-card02" class="flex items-center gap-3 mb-6" >
+            <div id="login-card03" class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center" >
               <i data-lucide="box" class="w-7 h-7 text-white"></i>
             </div>
             <span class="text-2xl font-bold text-white">Ozon ERP</span>
@@ -90,26 +90,26 @@
           
           <!-- 系统特性列表 -->
           <div class="space-y-4">
-            <div class="flex items-center gap-3">
-              <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+            <div id="login-card04" class="flex items-center gap-3" >
+              <div id="login-card05" class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0" >
                 <i data-lucide="download-cloud" class="w-4 h-4 text-white"></i>
               </div>
               <span class="text-white/90 text-sm">订单自动抓取</span>
             </div>
-            <div class="flex items-center gap-3">
-              <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+            <div id="login-card06" class="flex items-center gap-3" >
+              <div id="login-card07" class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0" >
                 <i data-lucide="sparkles" class="w-4 h-4 text-white"></i>
               </div>
               <span class="text-white/90 text-sm">智能采购匹配</span>
             </div>
-            <div class="flex items-center gap-3">
-              <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+            <div id="login-card08" class="flex items-center gap-3" >
+              <div id="login-card09" class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0" >
                 <i data-lucide="map-pin" class="w-4 h-4 text-white"></i>
               </div>
               <span class="text-white/90 text-sm">物流追踪管理</span>
             </div>
-            <div class="flex items-center gap-3">
-              <div class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
+            <div id="login-card10" class="flex items-center gap-3" >
+              <div id="login-card11" class="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0" >
                 <i data-lucide="calculator" class="w-4 h-4 text-white"></i>
               </div>
               <span class="text-white/90 text-sm">财务精准核算</span>
@@ -126,11 +126,11 @@
         <div class="p-10 lg:p-12 flex flex-col justify-center">
           <h1 class="text-2xl font-bold text-on-surface mb-8">欢迎登录</h1>
           
-          <form id="login-form" class="space-y-5">
+          <form id="login-form" class="space-y-5" >
             <!-- 手机号输入框 -->
             <div class="space-y-1.5">
               <label for="phone-input" class="text-sm font-medium text-on-surface">手机号</label>
-              <div class="relative flex items-center">
+              <div id="login-card12" class="relative flex items-center" >
                 <span class="absolute left-3 text-sm text-on-surface-variant font-medium">+86</span>
                 <input 
                   type="tel" 
@@ -140,16 +140,22 @@
                   class="w-full bg-surface-container border-none rounded-lg pl-14 pr-10 py-3 text-sm
                          text-on-surface placeholder:text-on-surface-variant/50
                          focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
-                />
-                <button 
+                /  
+                  type="tel" 
+                 >
+                <button data-element=" 
                   type="button" 
-                  id="phone-clear-btn"
+                 "phone-clear-btnid=" 
+                  type="button" 
+                 "
                   class="absolute right-3 text-on-surface-variant/50 hover:text-on-surface-variant transition-colors hidden"
-                >
+                  
+                  type="button" 
+                 >>
                   <i data-lucide="x" class="w-4 h-4"></i>
                 </button>
               </div>
-              <p id="phone-error" class="text-xs text-error hidden">请输入正确的11位手机号</p>
+              <p id="phone-error" class="text-xs text-error hidden" >请输入正确的11位手机号</p>
             </div>
             
             <!-- 验证码输入框 -->
@@ -164,28 +170,38 @@
                   class="flex-1 bg-surface-container border-none rounded-lg px-3 py-3 text-sm
                          text-on-surface placeholder:text-on-surface-variant/50
                          focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all"
-                />
-                <button 
+                /  
+                  type="text" 
+                 >
+                <button data-element=" 
                   type="button" 
-                  id="get-code-btn"
+                 "get-code-btnid=" 
+                  type="button" 
+                 "
                   disabled
                   class="px-4 py-3 text-sm font-medium rounded-lg transition-all whitespace-nowrap
                          bg-surface-container-high text-on-surface-variant cursor-not-allowed"
-                >
+                  
+                  type="button" 
+                 >>
                   获取验证码
                 </button>
               </div>
             </div>
             
             <!-- 登录按钮 -->
-            <button 
+            <button data-element=" 
               type="submit" 
-              id="login-btn"
+             "login-btnid=" 
+              type="submit" 
+             "
               disabled
               class="w-full bg-primary text-on-primary py-3 rounded-lg text-sm font-medium
                      hover:opacity-90 active:scale-[0.98] transition-all
                      disabled:bg-surface-container-high disabled:text-on-surface-variant disabled:cursor-not-allowed disabled:hover:opacity-100 disabled:active:scale-100"
-            >
+              
+              type="submit" 
+             >>
               登录
             </button>
           </form>

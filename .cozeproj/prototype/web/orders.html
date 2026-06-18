@@ -79,7 +79,7 @@
       <span class="font-semibold text-base">Ozon ERP</span>
     </div>
     <div class="flex items-center gap-4">
-      <button class="flex items-center gap-2 text-sm text-on-surface-variant hover:text-on-surface transition-colors">
+      <button data-element="orders-icon-btn01" class="flex items-center gap-2 text-sm text-on-surface-variant hover:text-on-surface transition-colors">
         <i data-lucide="bell" class="w-4 h-4"></i>
         <span class="bg-error text-white text-xs px-1.5 py-0.5 rounded-full font-medium">3</span>
       </button>
@@ -171,19 +171,19 @@
           <div class="flex-1 min-w-[200px] max-w-[300px]">
             <div class="relative">
               <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant"></i>
-              <input id="search-order-no" type="text" placeholder="搜索订单号..." class="w-full bg-surface-container border-none rounded-md pl-10 pr-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/>
+              <input id="search-order-no" type="text" placeholder="搜索订单号..." class="w-full bg-surface-container border-none rounded-md pl-10 pr-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/ >
             </div>
           </div>
           
           <!-- 日期范围选择 -->
           <div class="flex items-center gap-2">
-            <input id="date-start" type="date" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/>
+            <input id="date-start" type="date" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/ >
             <span class="text-on-surface-variant">至</span>
-            <input id="date-end" type="date" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/>
+            <input id="date-end" type="date" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors"/ >
           </div>
 
           <!-- 订单状态筛选 -->
-          <select id="filter-status" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors cursor-pointer">
+          <select id="filter-status" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors cursor-pointer" >
             <option value="all">全部状态</option>
             <option value="pending-payment">待付款</option>
             <option value="paid">已付款</option>
@@ -194,14 +194,14 @@
           </select>
 
           <!-- 平台来源筛选 -->
-          <select id="filter-platform" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors cursor-pointer">
+          <select id="filter-platform" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors cursor-pointer" >
             <option value="all">全部平台</option>
             <option value="ozon">Ozon</option>
             <option value="aliexpress">AliExpress</option>
           </select>
 
           <!-- 同步按钮 -->
-          <button id="btn-sync" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-2">
+          <button data-element=""btn-syncid="" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-2" >>
             <i data-lucide="refresh-cw" class="w-4 h-4"></i>同步订单
           </button>
         </div>
@@ -213,19 +213,19 @@
           <div class="flex items-center gap-4">
             <!-- 全选复选框 -->
             <label class="flex items-center gap-2 cursor-pointer">
-              <input id="checkbox-all" type="checkbox" class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30 cursor-pointer"/>
+              <input id="checkbox-all" type="checkbox" class="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30 cursor-pointer"/ >
               <span class="text-sm text-on-surface-variant">全选</span>
             </label>
-            <span id="selected-count" class="text-sm text-on-surface-variant">已选择 <span class="font-semibold text-on-surface">0</span> 条</span>
+            <span id="selected-count" class="text-sm text-on-surface-variant" >已选择 <span class="font-semibold text-on-surface">0</span> 条</span>
           </div>
           <div class="flex items-center gap-2">
-            <button id="btn-batch-ship" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all inline-flex items-center gap-2 border-none">
+            <button data-element=""btn-batch-shipid="" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all inline-flex items-center gap-2 border-none" >>
               <i data-lucide="truck" class="w-4 h-4"></i>批量标记发货
             </button>
-            <button id="btn-batch-export" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all inline-flex items-center gap-2 border-none">
+            <button data-element=""btn-batch-exportid="" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all inline-flex items-center gap-2 border-none" >>
               <i data-lucide="download" class="w-4 h-4"></i>批量导出
             </button>
-            <button id="btn-batch-purchase" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all inline-flex items-center gap-2 border-none">
+            <button data-element=""btn-batch-purchaseid="" class="bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all inline-flex items-center gap-2 border-none" >>
               <i data-lucide="package-plus" class="w-4 h-4"></i>批量创建采购
             </button>
           </div>
@@ -248,7 +248,7 @@
         </div>
         
         <!-- 表格内容 -->
-        <div id="order-table-body" class="divide-y divide-outline-variant/50">
+        <div id="order-table-body" class="divide-y divide-outline-variant/50" >
           <!-- 列表-订单1: 待付款状态 -->
           <div class="order-row grid grid-cols-12 gap-4 px-4 py-4 hover:bg-surface-container/50 transition-colors items-center" data-order-id="ORD-2024-001" data-status="pending-payment">
             <div class="col-span-1">
@@ -488,13 +488,13 @@
         <div class="flex items-center justify-between px-4 py-3 bg-surface-container-lowest border-t border-outline-variant/30">
           <span class="text-sm text-on-surface-variant">共 128 条记录</span>
           <div class="flex items-center gap-1">
-            <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">上一页</button>
-            <button class="px-3 py-1.5 text-sm font-medium text-on-surface bg-primary/10 rounded-md">1</button>
-            <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">2</button>
-            <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">3</button>
+            <button data-element="orders-icon-btn02" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">上一页</button>
+            <button data-element="orders-icon-btn03" class="px-3 py-1.5 text-sm font-medium text-on-surface bg-primary/10 rounded-md">1</button>
+            <button data-element="orders-icon-btn04" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">2</button>
+            <button data-element="orders-btn05" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">3</button>
             <span class="px-2 text-sm text-on-surface-variant">...</span>
-            <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">13</button>
-            <button class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">下一页</button>
+            <button data-element="orders-icon-btn06" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">13</button>
+            <button data-element="orders-icon-btn07" class="px-3 py-1.5 text-sm text-on-surface-variant hover:bg-surface-container rounded-md transition-colors">下一页</button>
           </div>
         </div>
       </div>
@@ -504,15 +504,15 @@
   <!-- @nav:end 导航组件 -->
 
   <!-- 订单详情抽屉 -->
-  <div id="order-drawer" class="fixed inset-0 z-50 hidden">
+  <div id="order-drawer" class="fixed inset-0 z-50 hidden" >
     <!-- 遮罩层 -->
-    <div id="drawer-overlay" class="absolute inset-0 bg-black/50"></div>
+    <div id="drawer-overlay" class="absolute inset-0 bg-black/50" ></div>
     <!-- 抽屉内容 -->
     <div class="absolute right-0 top-0 h-full w-[600px] bg-surface shadow-dialog overflow-y-auto">
       <div class="sticky top-0 bg-surface border-b border-outline-variant/30 px-6 py-4 z-10">
         <div class="flex items-center justify-between">
           <h2 class="text-lg font-semibold text-on-surface">订单详情</h2>
-          <button id="btn-close-drawer" class="p-2 hover:bg-surface-container rounded-md transition-colors">
+          <button data-element=""btn-close-drawerid="" class="p-2 hover:bg-surface-container rounded-md transition-colors" >>
             <i data-lucide="x" class="w-5 h-5 text-on-surface-variant"></i>
           </button>
         </div>

@@ -78,7 +78,7 @@
       <span class="font-semibold text-base">Ozon ERP</span>
     </div>
     <div class="flex items-center gap-4">
-      <button class="flex items-center gap-2 text-sm text-on-surface-variant hover:text-on-surface transition-colors">
+      <button data-element="wms-icon-btn01" class="flex items-center gap-2 text-sm text-on-surface-variant hover:text-on-surface transition-colors">
         <i data-lucide="bell" class="w-4 h-4"></i>
         <span class="bg-error text-white text-xs px-1.5 py-0.5 rounded-full font-medium">3</span>
       </button>
@@ -155,10 +155,10 @@
           <p class="text-sm text-on-surface-variant mt-1">智能化WMS仓库管理系统</p>
         </div>
         <div class="flex items-center gap-3">
-          <button id="btn-pda-scan" class="bg-surface-container text-on-surface border-none px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all inline-flex items-center gap-2">
+          <button data-element=""btn-pda-scanid="" class="bg-surface-container text-on-surface border-none px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all inline-flex items-center gap-2" >>
             <i data-lucide="scan" class="w-4 h-4"></i>PDA扫码
           </button>
-          <button id="btn-move-record" class="bg-surface-container text-on-surface border-none px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all inline-flex items-center gap-2">
+          <button data-element=""btn-move-recordid="" class="bg-surface-container text-on-surface border-none px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all inline-flex items-center gap-2" >>
             <i data-lucide="move" class="w-4 h-4"></i>移库记录
           </button>
         </div>
@@ -219,7 +219,7 @@
       <div class="bg-surface rounded-lg shadow-card p-5 mb-6">
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-base font-semibold text-on-surface">仓库平面布局</h2>
-          <select id="select-warehouse-view" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30">
+          <select id="select-warehouse-view" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30" >
             <option value="wh001">主仓库 A</option>
             <option value="wh002">主仓库 B</option>
             <option value="wh003">中转仓</option>
@@ -296,14 +296,14 @@
       <div class="bg-surface rounded-lg shadow-card overflow-hidden">
         <!-- Tab导航 -->
         <div class="flex border-b border-outline/50">
-          <button id="tab-warehouse" class="px-5 py-3 text-sm font-medium text-primary border-b-2 border-primary bg-primary/5">仓库配置</button>
-          <button id="tab-location" class="px-5 py-3 text-sm font-medium text-on-surface-variant hover:text-on-surface hover:bg-surface-container/50 transition-colors">库位管理</button>
-          <button id="tab-inventory-check" class="px-5 py-3 text-sm font-medium text-on-surface-variant hover:text-on-surface hover:bg-surface-container/50 transition-colors">智能盘点</button>
-          <button id="tab-location-recommend" class="px-5 py-3 text-sm font-medium text-on-surface-variant hover:text-on-surface hover:bg-surface-container/50 transition-colors">库位推荐</button>
+          <button data-element=""tab-warehouseid="" class="px-5 py-3 text-sm font-medium text-primary border-b-2 border-primary bg-primary/5" >>仓库配置</button>
+          <button data-element=""tab-locationid="" class="px-5 py-3 text-sm font-medium text-on-surface-variant hover:text-on-surface hover:bg-surface-container/50 transition-colors" >>库位管理</button>
+          <button data-element=""tab-inventory-checkid="" class="px-5 py-3 text-sm font-medium text-on-surface-variant hover:text-on-surface hover:bg-surface-container/50 transition-colors" >>智能盘点</button>
+          <button data-element=""tab-location-recommendid="" class="px-5 py-3 text-sm font-medium text-on-surface-variant hover:text-on-surface hover:bg-surface-container/50 transition-colors" >>库位推荐</button>
         </div>
 
         <!-- Tab内容：仓库配置 -->
-        <div id="panel-warehouse" class="p-5">
+        <div id="panel-warehouse" class="p-5" >
           <div class="flex items-center justify-between mb-4">
             <div class="flex items-center gap-3">
               <input type="text" placeholder="搜索仓库名称或编码" class="w-64 bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30">
@@ -314,7 +314,7 @@
                 <option value="closed">已关闭</option>
               </select>
             </div>
-            <button id="btn-add-warehouse" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-2">
+            <button data-element=""btn-add-warehouseid="" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-2" >>
               <i data-lucide="plus" class="w-4 h-4"></i>新增仓库
             </button>
           </div>
@@ -331,7 +331,7 @@
               <span>状态</span>
               <span>操作</span>
             </div>
-            <div id="warehouse-list" class="divide-y divide-outline-variant/50">
+            <div id="warehouse-list" class="divide-y divide-outline-variant/50" >
               <!-- 列表-仓库1 -->
               <div class="grid grid-cols-8 px-4 py-3 hover:bg-surface-container/50 transition-colors items-center">
                 <span class="text-sm font-medium text-on-surface">主仓库 A</span>
@@ -342,9 +342,9 @@
                 <span class="text-sm text-on-surface-variant">15,680</span>
                 <span><span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">运营中</span></span>
                 <div class="flex gap-2">
-                  <button class="text-primary text-sm font-medium hover:underline" onclick="editWarehouse('WH-A001')">编辑</button>
-                  <button class="text-primary text-sm font-medium hover:underline" onclick="openLocationManage('WH-A001')">库位管理</button>
-                  <button class="text-primary text-sm font-medium hover:underline" onclick="viewWarehouseDetail('WH-A001')">详情</button>
+                  <button data-element="wms-btn02" class="text-primary text-sm font-medium hover:underline" onclick="editWarehouse('WH-A001')">编辑</button>
+                  <button data-element="wms-btn03" class="text-primary text-sm font-medium hover:underline" onclick="openLocationManage('WH-A001')">库位管理</button>
+                  <button data-element="wms-icon-btn04" class="text-primary text-sm font-medium hover:underline" onclick="viewWarehouseDetail('WH-A001')">详情</button>
                 </div>
               </div>
               <!-- 列表-仓库2 -->
@@ -357,9 +357,9 @@
                 <span class="text-sm text-on-surface-variant">12,350</span>
                 <span><span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">运营中</span></span>
                 <div class="flex gap-2">
-                  <button class="text-primary text-sm font-medium hover:underline" onclick="editWarehouse('WH-B002')">编辑</button>
-                  <button class="text-primary text-sm font-medium hover:underline" onclick="openLocationManage('WH-B002')">库位管理</button>
-                  <button class="text-primary text-sm font-medium hover:underline" onclick="viewWarehouseDetail('WH-B002')">详情</button>
+                  <button data-element="wms-btn05" class="text-primary text-sm font-medium hover:underline" onclick="editWarehouse('WH-B002')">编辑</button>
+                  <button data-element="wms-btn06" class="text-primary text-sm font-medium hover:underline" onclick="openLocationManage('WH-B002')">库位管理</button>
+                  <button data-element="wms-icon-btn07" class="text-primary text-sm font-medium hover:underline" onclick="viewWarehouseDetail('WH-B002')">详情</button>
                 </div>
               </div>
               <!-- 列表-仓库3 -->
@@ -372,9 +372,9 @@
                 <span class="text-sm text-on-surface-variant">3,200</span>
                 <span><span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">运营中</span></span>
                 <div class="flex gap-2">
-                  <button class="text-primary text-sm font-medium hover:underline" onclick="editWarehouse('WH-T003')">编辑</button>
-                  <button class="text-primary text-sm font-medium hover:underline" onclick="openLocationManage('WH-T003')">库位管理</button>
-                  <button class="text-primary text-sm font-medium hover:underline" onclick="viewWarehouseDetail('WH-T003')">详情</button>
+                  <button data-element="wms-btn08" class="text-primary text-sm font-medium hover:underline" onclick="editWarehouse('WH-T003')">编辑</button>
+                  <button data-element="wms-btn09" class="text-primary text-sm font-medium hover:underline" onclick="openLocationManage('WH-T003')">库位管理</button>
+                  <button data-element="wms-icon-btn10" class="text-primary text-sm font-medium hover:underline" onclick="viewWarehouseDetail('WH-T003')">详情</button>
                 </div>
               </div>
               <!-- 列表-仓库4 -->
@@ -387,9 +387,9 @@
                 <span class="text-sm text-on-surface-variant">1,850</span>
                 <span><span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">运营中</span></span>
                 <div class="flex gap-2">
-                  <button class="text-primary text-sm font-medium hover:underline" onclick="editWarehouse('WH-R004')">编辑</button>
-                  <button class="text-primary text-sm font-medium hover:underline" onclick="openLocationManage('WH-R004')">库位管理</button>
-                  <button class="text-primary text-sm font-medium hover:underline" onclick="viewWarehouseDetail('WH-R004')">详情</button>
+                  <button data-element="wms-btn11" class="text-primary text-sm font-medium hover:underline" onclick="editWarehouse('WH-R004')">编辑</button>
+                  <button data-element="wms-btn12" class="text-primary text-sm font-medium hover:underline" onclick="openLocationManage('WH-R004')">库位管理</button>
+                  <button data-element="wms-icon-btn13" class="text-primary text-sm font-medium hover:underline" onclick="viewWarehouseDetail('WH-R004')">详情</button>
                 </div>
               </div>
               <!-- 列表-仓库5 -->
@@ -402,9 +402,9 @@
                 <span class="text-sm text-on-surface-variant">2,100</span>
                 <span><span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning">维护中</span></span>
                 <div class="flex gap-2">
-                  <button class="text-primary text-sm font-medium hover:underline" onclick="editWarehouse('WH-C005')">编辑</button>
-                  <button class="text-primary text-sm font-medium hover:underline" onclick="openLocationManage('WH-C005')">库位管理</button>
-                  <button class="text-primary text-sm font-medium hover:underline" onclick="viewWarehouseDetail('WH-C005')">详情</button>
+                  <button data-element="wms-btn14" class="text-primary text-sm font-medium hover:underline" onclick="editWarehouse('WH-C005')">编辑</button>
+                  <button data-element="wms-btn15" class="text-primary text-sm font-medium hover:underline" onclick="openLocationManage('WH-C005')">库位管理</button>
+                  <button data-element="wms-icon-btn16" class="text-primary text-sm font-medium hover:underline" onclick="viewWarehouseDetail('WH-C005')">详情</button>
                 </div>
               </div>
             </div>
@@ -412,10 +412,10 @@
         </div>
 
         <!-- Tab内容：库位管理 -->
-        <div id="panel-location" class="p-5 hidden">
+        <div id="panel-location" class="p-5 hidden" >
           <div class="flex items-center justify-between mb-4">
             <div class="flex items-center gap-3">
-              <select id="select-location-warehouse" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30">
+              <select id="select-location-warehouse" class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30" >
                 <option value="wh001">主仓库 A</option>
                 <option value="wh002">主仓库 B</option>
                 <option value="wh003">中转仓</option>
@@ -435,7 +435,7 @@
                 <option value="full">已满</option>
               </select>
             </div>
-            <button id="btn-batch-location" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-2">
+            <button data-element=""btn-batch-locationid="" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-2" >>
               <i data-lucide="layers" class="w-4 h-4"></i>批量生成库位
             </button>
           </div>
@@ -445,8 +445,8 @@
             <div class="flex items-center justify-between mb-3">
               <span class="text-sm font-medium text-on-surface">货架立体视图：A区-货架01</span>
               <div class="flex items-center gap-2">
-                <button class="px-2 py-1 text-xs bg-surface rounded hover:bg-surface-container-high">← 上一货架</button>
-                <button class="px-2 py-1 text-xs bg-surface rounded hover:bg-surface-container-high">下一货架 →</button>
+                <button data-element="wms-icon-btn17" class="px-2 py-1 text-xs bg-surface rounded hover:bg-surface-container-high">← 上一货架</button>
+                <button data-element="wms-icon-btn18" class="px-2 py-1 text-xs bg-surface rounded hover:bg-surface-container-high">下一货架 →</button>
               </div>
             </div>
             <div class="grid grid-cols-5 gap-4">
@@ -518,7 +518,7 @@
               <span>状态</span>
               <span>操作</span>
             </div>
-            <div id="location-list" class="divide-y divide-outline-variant/50">
+            <div id="location-list" class="divide-y divide-outline-variant/50" >
               <!-- 列表-库位1 -->
               <div class="grid grid-cols-7 px-4 py-3 hover:bg-surface-container/50 transition-colors items-center">
                 <span class="text-sm font-medium text-on-surface">A-01-1-01</span>
@@ -527,8 +527,8 @@
                 <span class="text-sm text-on-surface-variant">3</span>
                 <span><span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-primary/15 text-primary">使用中</span></span>
                 <div class="flex gap-2">
-                  <button class="text-primary text-sm font-medium hover:underline">查看</button>
-                  <button class="text-primary text-sm font-medium hover:underline">调整</button>
+                  <button data-element="wms-icon-btn19" class="text-primary text-sm font-medium hover:underline">查看</button>
+                  <button data-element="wms-icon-btn20" class="text-primary text-sm font-medium hover:underline">调整</button>
                 </div>
               </div>
               <!-- 列表-库位2 -->
@@ -539,8 +539,8 @@
                 <span class="text-sm text-on-surface-variant">5</span>
                 <span><span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-error/15 text-error">已满</span></span>
                 <div class="flex gap-2">
-                  <button class="text-primary text-sm font-medium hover:underline">查看</button>
-                  <button class="text-primary text-sm font-medium hover:underline">调整</button>
+                  <button data-element="wms-icon-btn21" class="text-primary text-sm font-medium hover:underline">查看</button>
+                  <button data-element="wms-icon-btn22" class="text-primary text-sm font-medium hover:underline">调整</button>
                 </div>
               </div>
               <!-- 列表-库位3 -->
@@ -551,8 +551,8 @@
                 <span class="text-sm text-on-surface-variant">2</span>
                 <span><span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-primary/15 text-primary">使用中</span></span>
                 <div class="flex gap-2">
-                  <button class="text-primary text-sm font-medium hover:underline">查看</button>
-                  <button class="text-primary text-sm font-medium hover:underline">调整</button>
+                  <button data-element="wms-icon-btn23" class="text-primary text-sm font-medium hover:underline">查看</button>
+                  <button data-element="wms-icon-btn24" class="text-primary text-sm font-medium hover:underline">调整</button>
                 </div>
               </div>
               <!-- 列表-库位4 -->
@@ -563,8 +563,8 @@
                 <span class="text-sm text-on-surface-variant">0</span>
                 <span><span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">空闲</span></span>
                 <div class="flex gap-2">
-                  <button class="text-primary text-sm font-medium hover:underline">查看</button>
-                  <button class="text-primary text-sm font-medium hover:underline">调整</button>
+                  <button data-element="wms-icon-btn25" class="text-primary text-sm font-medium hover:underline">查看</button>
+                  <button data-element="wms-icon-btn26" class="text-primary text-sm font-medium hover:underline">调整</button>
                 </div>
               </div>
               <!-- 列表-库位5 -->
@@ -575,8 +575,8 @@
                 <span class="text-sm text-on-surface-variant">0</span>
                 <span><span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">空闲</span></span>
                 <div class="flex gap-2">
-                  <button class="text-primary text-sm font-medium hover:underline">查看</button>
-                  <button class="text-primary text-sm font-medium hover:underline">调整</button>
+                  <button data-element="wms-icon-btn27" class="text-primary text-sm font-medium hover:underline">查看</button>
+                  <button data-element="wms-icon-btn28" class="text-primary text-sm font-medium hover:underline">调整</button>
                 </div>
               </div>
             </div>
@@ -584,7 +584,7 @@
         </div>
 
         <!-- Tab内容：智能盘点 -->
-        <div id="panel-inventory-check" class="p-5 hidden">
+        <div id="panel-inventory-check" class="p-5 hidden" >
           <div class="flex items-center justify-between mb-4">
             <div class="flex items-center gap-3">
               <select class="bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30">
@@ -601,7 +601,7 @@
                 <option value="cancelled">已取消</option>
               </select>
             </div>
-            <button id="btn-new-check-task" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-2">
+            <button data-element=""btn-new-check-taskid="" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-2" >>
               <i data-lucide="plus" class="w-4 h-4"></i>新建盘点任务
             </button>
           </div>
@@ -617,7 +617,7 @@
               <span>完成时间</span>
               <span>操作</span>
             </div>
-            <div id="check-task-list" class="divide-y divide-outline-variant/50">
+            <div id="check-task-list" class="divide-y divide-outline-variant/50" >
               <!-- 列表-盘点任务1 -->
               <div class="grid grid-cols-7 px-4 py-3 hover:bg-surface-container/50 transition-colors items-center">
                 <span class="text-sm font-medium text-on-surface">PD20240115001</span>
@@ -627,7 +627,7 @@
                 <span class="text-sm text-on-surface-variant">2024-01-15 09:00</span>
                 <span class="text-sm text-on-surface-variant">-</span>
                 <div class="flex gap-2">
-                  <button class="text-primary text-sm font-medium hover:underline" onclick="viewCheckResult('PD20240115001')">查看结果</button>
+                  <button data-element="wms-icon-btn29" class="text-primary text-sm font-medium hover:underline" onclick="viewCheckResult('PD20240115001')">查看结果</button>
                 </div>
               </div>
               <!-- 列表-盘点任务2 -->
@@ -639,8 +639,8 @@
                 <span class="text-sm text-on-surface-variant">2024-01-14 14:00</span>
                 <span class="text-sm text-on-surface-variant">2024-01-14 16:30</span>
                 <div class="flex gap-2">
-                  <button class="text-primary text-sm font-medium hover:underline" onclick="viewCheckResult('PD20240114002')">查看结果</button>
-                  <button class="text-primary text-sm font-medium hover:underline" onclick="generateAdjust('PD20240114002')">生成调整单</button>
+                  <button data-element="wms-icon-btn30" class="text-primary text-sm font-medium hover:underline" onclick="viewCheckResult('PD20240114002')">查看结果</button>
+                  <button data-element="wms-icon-btn31" class="text-primary text-sm font-medium hover:underline" onclick="generateAdjust('PD20240114002')">生成调整单</button>
                 </div>
               </div>
               <!-- 列表-盘点任务3 -->
@@ -652,8 +652,8 @@
                 <span class="text-sm text-on-surface-variant">2024-01-13 10:00</span>
                 <span class="text-sm text-on-surface-variant">-</span>
                 <div class="flex gap-2">
-                  <button class="text-primary text-sm font-medium hover:underline" onclick="startCheck('PD20240113003')">开始盘点</button>
-                  <button class="text-error text-sm font-medium hover:underline" onclick="cancelCheck('PD20240113003')">取消</button>
+                  <button data-element="wms-icon-btn32" class="text-primary text-sm font-medium hover:underline" onclick="startCheck('PD20240113003')">开始盘点</button>
+                  <button data-element="wms-icon-btn33" class="text-error text-sm font-medium hover:underline" onclick="cancelCheck('PD20240113003')">取消</button>
                 </div>
               </div>
               <!-- 列表-盘点任务4 -->
@@ -665,8 +665,8 @@
                 <span class="text-sm text-on-surface-variant">2024-01-12 08:00</span>
                 <span class="text-sm text-on-surface-variant">2024-01-12 15:00</span>
                 <div class="flex gap-2">
-                  <button class="text-primary text-sm font-medium hover:underline" onclick="viewCheckResult('PD20240112004')">查看结果</button>
-                  <button class="text-primary text-sm font-medium hover:underline" onclick="generateAdjust('PD20240112004')">生成调整单</button>
+                  <button data-element="wms-icon-btn34" class="text-primary text-sm font-medium hover:underline" onclick="viewCheckResult('PD20240112004')">查看结果</button>
+                  <button data-element="wms-icon-btn35" class="text-primary text-sm font-medium hover:underline" onclick="generateAdjust('PD20240112004')">生成调整单</button>
                 </div>
               </div>
               <!-- 列表-盘点任务5 -->
@@ -678,7 +678,7 @@
                 <span class="text-sm text-on-surface-variant">2024-01-11 11:00</span>
                 <span class="text-sm text-on-surface-variant">-</span>
                 <div class="flex gap-2">
-                  <button class="text-on-surface-variant text-sm">-</button>
+                  <button data-element="wms-icon-btn36" class="text-on-surface-variant text-sm">-</button>
                 </div>
               </div>
             </div>
@@ -686,7 +686,7 @@
         </div>
 
         <!-- Tab内容：库位推荐 -->
-        <div id="panel-location-recommend" class="p-5 hidden">
+        <div id="panel-location-recommend" class="p-5 hidden" >
           <div class="grid grid-cols-3 gap-6">
             <!-- 入库推荐 -->
             <div class="bg-surface-container rounded-lg p-5">
@@ -698,11 +698,11 @@
               </div>
               <p class="text-sm text-on-surface-variant mb-4">输入SKU，系统推荐最优库位</p>
               <div class="space-y-3">
-                <input id="input-inbound-sku" type="text" placeholder="输入SKU编码" class="w-full bg-surface border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30">
-                <button id="btn-recommend-inbound" class="w-full bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">推荐库位</button>
+                <input id="input-inbound-sku" type="text" placeholder="输入SKU编码" class="w-full bg-surface border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30" >
+                <button data-element=""btn-recommend-inboundid="" class="w-full bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all" >>推荐库位</button>
               </div>
               <!-- 推荐结果 -->
-              <div id="recommend-inbound-result" class="mt-4 space-y-2">
+              <div id="recommend-inbound-result" class="mt-4 space-y-2" >
                 <div class="text-xs font-medium text-on-surface-variant mb-2">推荐库位（按优先级排序）：</div>
                 <!-- 推荐结果1 -->
                 <div class="bg-surface rounded-md p-3 flex items-center justify-between">
@@ -741,11 +741,11 @@
               </div>
               <p class="text-sm text-on-surface-variant mb-4">输入待出库SKU列表，推荐最优拣货路径</p>
               <div class="space-y-3">
-                <textarea id="input-outbound-skus" placeholder="输入SKU编码（每行一个）" rows="3" class="w-full bg-surface border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"></textarea>
-                <button id="btn-optimize-route" class="w-full bg-success text-white px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">优化路径</button>
+                <textarea id="input-outbound-skus" placeholder="输入SKU编码（每行一个）" rows="3" class="w-full bg-surface border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none" ></textarea>
+                <button data-element=""btn-optimize-routeid="" class="w-full bg-success text-white px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all" >>优化路径</button>
               </div>
               <!-- 路径结果 -->
-              <div id="optimize-route-result" class="mt-4">
+              <div id="optimize-route-result" class="mt-4" >
                 <div class="text-xs font-medium text-on-surface-variant mb-2">推荐拣货路径：</div>
                 <div class="bg-surface rounded-md p-3 space-y-2">
                   <div class="flex items-center gap-2 text-sm">
@@ -826,7 +826,7 @@
                   <div class="text-xs text-success mt-1">建议移至: A-02-1-03 (出入频次高区域)</div>
                 </div>
               </div>
-              <button id="btn-apply-hot-suggest" class="w-full mt-3 bg-surface-container-high text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-highest active:scale-[0.98] transition-all">一键应用建议</button>
+              <button data-element=""btn-apply-hot-suggestid="" class="w-full mt-3 bg-surface-container-high text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-highest active:scale-[0.98] transition-all" >>一键应用建议</button>
             </div>
           </div>
         </div>
@@ -837,12 +837,12 @@
   <!-- @nav:end 导航组件 -->
 
   <!-- 新建仓库弹窗 -->
-  <div id="modal-add-warehouse" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
+  <div id="modal-add-warehouse" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden" >
     <div class="bg-surface rounded-xl shadow-dialog max-w-lg w-full max-h-[90vh] overflow-y-auto">
       <div class="p-6">
         <div class="flex items-center justify-between mb-6">
           <h3 class="text-lg font-semibold text-on-surface">新增仓库</h3>
-          <button id="btn-close-add-warehouse" class="text-on-surface-variant hover:text-on-surface transition-colors">
+          <button data-element=""btn-close-add-warehouseid="" class="text-on-surface-variant hover:text-on-surface transition-colors" >>
             <i data-lucide="x" class="w-5 h-5"></i>
           </button>
         </div>
@@ -869,20 +869,20 @@
           </div>
         </div>
         <div class="flex justify-end gap-3 mt-6">
-          <button id="btn-cancel-add-warehouse" class="bg-surface-container text-on-surface border-none px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all">取消</button>
-          <button id="btn-confirm-add-warehouse" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">确定</button>
+          <button data-element=""btn-cancel-add-warehouseid="" class="bg-surface-container text-on-surface border-none px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all" >>取消</button>
+          <button data-element=""btn-confirm-add-warehouseid="" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all" >>确定</button>
         </div>
       </div>
     </div>
   </div>
 
   <!-- 新建盘点任务弹窗 -->
-  <div id="modal-new-check-task" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
+  <div id="modal-new-check-task" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden" >
     <div class="bg-surface rounded-xl shadow-dialog max-w-lg w-full max-h-[90vh] overflow-y-auto">
       <div class="p-6">
         <div class="flex items-center justify-between mb-6">
           <h3 class="text-lg font-semibold text-on-surface">新建盘点任务</h3>
-          <button id="btn-close-new-check" class="text-on-surface-variant hover:text-on-surface transition-colors">
+          <button data-element=""btn-close-new-checkid="" class="text-on-surface-variant hover:text-on-surface transition-colors" >>
             <i data-lucide="x" class="w-5 h-5"></i>
           </button>
         </div>
@@ -925,20 +925,20 @@
           </div>
         </div>
         <div class="flex justify-end gap-3 mt-6">
-          <button id="btn-cancel-new-check" class="bg-surface-container text-on-surface border-none px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all">取消</button>
-          <button id="btn-confirm-new-check" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">创建任务</button>
+          <button data-element=""btn-cancel-new-checkid="" class="bg-surface-container text-on-surface border-none px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all" >>取消</button>
+          <button data-element=""btn-confirm-new-checkid="" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all" >>创建任务</button>
         </div>
       </div>
     </div>
   </div>
 
   <!-- 批量生成库位弹窗 -->
-  <div id="modal-batch-location" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
+  <div id="modal-batch-location" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden" >
     <div class="bg-surface rounded-xl shadow-dialog max-w-lg w-full max-h-[90vh] overflow-y-auto">
       <div class="p-6">
         <div class="flex items-center justify-between mb-6">
           <h3 class="text-lg font-semibold text-on-surface">批量生成库位</h3>
-          <button id="btn-close-batch-location" class="text-on-surface-variant hover:text-on-surface transition-colors">
+          <button data-element=""btn-close-batch-locationid="" class="text-on-surface-variant hover:text-on-surface transition-colors" >>
             <i data-lucide="x" class="w-5 h-5"></i>
           </button>
         </div>
@@ -975,20 +975,20 @@
           </div>
         </div>
         <div class="flex justify-end gap-3 mt-6">
-          <button id="btn-cancel-batch-location" class="bg-surface-container text-on-surface border-none px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all">取消</button>
-          <button id="btn-confirm-batch-location" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">生成库位</button>
+          <button data-element=""btn-cancel-batch-locationid="" class="bg-surface-container text-on-surface border-none px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all" >>取消</button>
+          <button data-element=""btn-confirm-batch-locationid="" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all" >>生成库位</button>
         </div>
       </div>
     </div>
   </div>
 
   <!-- 移库记录弹窗 -->
-  <div id="modal-move-record" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
+  <div id="modal-move-record" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden" >
     <div class="bg-surface rounded-xl shadow-dialog max-w-4xl w-full max-h-[90vh] overflow-y-auto">
       <div class="p-6">
         <div class="flex items-center justify-between mb-6">
           <h3 class="text-lg font-semibold text-on-surface">移库记录</h3>
-          <button id="btn-close-move-record" class="text-on-surface-variant hover:text-on-surface transition-colors">
+          <button data-element=""btn-close-move-recordid="" class="text-on-surface-variant hover:text-on-surface transition-colors" >>
             <i data-lucide="x" class="w-5 h-5"></i>
           </button>
         </div>
@@ -1057,19 +1057,19 @@
           </div>
         </div>
         <div class="flex justify-end mt-4">
-          <button id="btn-close-move-record-footer" class="bg-surface-container text-on-surface border-none px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all">关闭</button>
+          <button data-element=""btn-close-move-record-footerid="" class="bg-surface-container text-on-surface border-none px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all" >>关闭</button>
         </div>
       </div>
     </div>
   </div>
 
   <!-- PDA扫码弹窗 -->
-  <div id="modal-pda-scan" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
+  <div id="modal-pda-scan" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden" >
     <div class="bg-surface rounded-xl shadow-dialog max-w-md w-full max-h-[90vh] overflow-y-auto">
       <div class="p-6">
         <div class="flex items-center justify-between mb-6">
           <h3 class="text-lg font-semibold text-on-surface">PDA扫码</h3>
-          <button id="btn-close-pda-scan" class="text-on-surface-variant hover:text-on-surface transition-colors">
+          <button data-element=""btn-close-pda-scanid="" class="text-on-surface-variant hover:text-on-surface transition-colors" >>
             <i data-lucide="x" class="w-5 h-5"></i>
           </button>
         </div>
@@ -1077,8 +1077,8 @@
           <div>
             <label class="block text-sm font-medium text-on-surface mb-1.5">扫码类型</label>
             <div class="flex gap-2">
-              <button id="btn-scan-location" class="flex-1 bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium">库位扫码</button>
-              <button id="btn-scan-sku" class="flex-1 bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high">SKU扫码</button>
+              <button data-element=""btn-scan-locationid="" class="flex-1 bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium" >>库位扫码</button>
+              <button data-element=""btn-scan-skuid="" class="flex-1 bg-surface-container text-on-surface px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high" >>SKU扫码</button>
             </div>
           </div>
           <div>
@@ -1094,8 +1094,8 @@
           </div>
         </div>
         <div class="flex justify-end gap-3 mt-6">
-          <button id="btn-cancel-pda-scan" class="bg-surface-container text-on-surface border-none px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all">取消</button>
-          <button id="btn-confirm-pda-scan" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">确认</button>
+          <button data-element=""btn-cancel-pda-scanid="" class="bg-surface-container text-on-surface border-none px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all" >>取消</button>
+          <button data-element=""btn-confirm-pda-scanid="" class="bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all" >>确认</button>
         </div>
       </div>
     </div>

@@ -78,7 +78,7 @@
       <span class="font-semibold text-base">Ozon ERP</span>
     </div>
     <div class="flex items-center gap-4">
-      <button class="flex items-center gap-2 text-sm text-on-surface-variant hover:text-on-surface transition-colors">
+      <button data-element="logistics-icon-btn01" class="flex items-center gap-2 text-sm text-on-surface-variant hover:text-on-surface transition-colors">
         <i data-lucide="bell" class="w-4 h-4"></i>
         <span class="bg-error text-white text-xs px-1.5 py-0.5 rounded-full font-medium">3</span>
       </button>
@@ -158,7 +158,7 @@
       </div>
 
       <!-- 硬件集成状态栏 -->
-      <div id="hardware-status-bar" class="bg-surface rounded-lg shadow-card p-4 mb-6">
+      <div id="hardware-status-bar" class="bg-surface rounded-lg shadow-card p-4 mb-6" >
         <div class="flex items-center justify-between flex-wrap gap-4">
           <div class="flex items-center gap-6">
             <!-- 扫描枪状态 -->
@@ -167,8 +167,8 @@
               <div>
                 <div class="text-xs text-on-surface-variant">扫描枪连接</div>
                 <div class="flex items-center gap-1.5">
-                  <span id="scanner-status-dot" class="w-2 h-2 rounded-full bg-success"></span>
-                  <span id="scanner-status-text" class="text-sm font-medium text-success">已连接</span>
+                  <span id="scanner-status-dot" class="w-2 h-2 rounded-full bg-success" ></span>
+                  <span id="scanner-status-text" class="text-sm font-medium text-success" >已连接</span>
                 </div>
               </div>
             </div>
@@ -178,8 +178,8 @@
               <div>
                 <div class="text-xs text-on-surface-variant">电子秤连接</div>
                 <div class="flex items-center gap-1.5">
-                  <span id="scale-status-dot" class="w-2 h-2 rounded-full bg-success"></span>
-                  <span id="scale-status-text" class="text-sm font-medium text-success">已连接</span>
+                  <span id="scale-status-dot" class="w-2 h-2 rounded-full bg-success" ></span>
+                  <span id="scale-status-text" class="text-sm font-medium text-success" >已连接</span>
                 </div>
               </div>
             </div>
@@ -188,12 +188,12 @@
               <i data-lucide="usb" class="w-5 h-5 text-on-surface-variant"></i>
               <div>
                 <div class="text-xs text-on-surface-variant">数据端口</div>
-                <span id="scanner-port" class="text-sm font-medium text-on-surface">COM3 / USB HID</span>
+                <span id="scanner-port" class="text-sm font-medium text-on-surface" >COM3 / USB HID</span>
               </div>
             </div>
           </div>
           <div class="flex items-center gap-3">
-            <button id="btn-test-scanner" class="bg-primary/10 text-primary px-4 py-2 rounded-md text-sm font-medium hover:bg-primary/20 transition-colors inline-flex items-center gap-2">
+            <button data-element=""btn-test-scannerid="" class="bg-primary/10 text-primary px-4 py-2 rounded-md text-sm font-medium hover:bg-primary/20 transition-colors inline-flex items-center gap-2" >>
               <i data-lucide="scan" class="w-4 h-4"></i>测试扫描
             </button>
           </div>
@@ -201,7 +201,7 @@
       </div>
 
       <!-- 快速扫描区 -->
-      <div id="scan-area" class="bg-primary-container rounded-xl p-6 mb-6">
+      <div id="scan-area" class="bg-primary-container rounded-xl p-6 mb-6" >
         <div class="text-center mb-4">
           <h2 class="text-lg font-semibold text-on-surface">快速扫描验货</h2>
           <p class="text-sm text-on-surface-variant mt-1">扫描国内快递单号，自动跳转至对应Ozon订单验货</p>
@@ -209,8 +209,8 @@
         <div class="max-w-2xl mx-auto">
           <div class="relative">
             <input id="scan-input" type="text" placeholder="请用扫描枪扫描国内快递单号..." 
-                   class="w-full bg-surface border-none rounded-lg px-4 py-4 text-lg text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors pr-12" />
-            <button id="btn-scan" class="absolute right-2 top-1/2 -translate-y-1/2 bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 transition-opacity inline-flex items-center gap-2">
+                   class="w-full bg-surface border-none rounded-lg px-4 py-4 text-lg text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors pr-12" / >
+            <button data-element=""btn-scanid="" class="absolute right-2 top-1/2 -translate-y-1/2 bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 transition-opacity inline-flex items-center gap-2" >>
               <i data-lucide="scan" class="w-4 h-4"></i>扫描
             </button>
           </div>
@@ -224,9 +224,9 @@
         <div class="max-w-2xl mx-auto mt-5">
           <div class="flex items-center justify-between mb-2">
             <span class="text-xs font-medium text-on-surface-variant">最近扫描记录</span>
-            <button id="btn-clear-history" class="text-xs text-primary hover:underline">清空</button>
+            <button data-element=""btn-clear-historyid="" class="text-xs text-primary hover:underline" >>清空</button>
           </div>
-          <div id="scan-history" class="bg-surface rounded-lg overflow-hidden">
+          <div id="scan-history" class="bg-surface rounded-lg overflow-hidden" >
             <!-- 扫描历史记录1 -->
             <div class="flex items-center justify-between px-4 py-2.5 border-b border-outline-variant/20">
               <div class="flex items-center gap-3">
@@ -274,19 +274,19 @@
       <!-- Tab切换 -->
       <div class="bg-surface rounded-lg shadow-card">
         <div class="flex border-b border-outline-variant/30">
-          <button id="tab-pending" class="px-6 py-3 text-sm font-medium text-primary border-b-2 border-primary bg-primary/5">
+          <button data-element=""tab-pendingid="" class="px-6 py-3 text-sm font-medium text-primary border-b-2 border-primary bg-primary/5" >>
             待验货 <span class="ml-1.5 bg-primary/20 text-primary px-1.5 py-0.5 rounded text-xs">12</span>
           </button>
-          <button id="tab-tickets" class="px-6 py-3 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors">
+          <button data-element=""tab-ticketsid="" class="px-6 py-3 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors" >>
             供应商售后工单 <span class="ml-1.5 bg-error/15 text-error px-1.5 py-0.5 rounded text-xs">3</span>
           </button>
-          <button id="tab-completed" class="px-6 py-3 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors">
+          <button data-element=""tab-completedid="" class="px-6 py-3 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors" >>
             已验货记录
           </button>
         </div>
 
         <!-- 待验货列表 -->
-        <div id="panel-pending" class="p-4">
+        <div id="panel-pending" class="p-4" >
           <div class="overflow-x-auto">
             <table class="w-full">
               <thead>
@@ -482,7 +482,7 @@
         </div>
 
         <!-- 供应商售后工单 -->
-        <div id="panel-tickets" class="p-4 hidden">
+        <div id="panel-tickets" class="p-4 hidden" >
           <div class="overflow-x-auto">
             <table class="w-full">
               <thead>
@@ -526,8 +526,8 @@
                   </td>
                   <td class="px-4 py-3">
                     <div class="flex items-center gap-2">
-                      <button class="text-primary text-sm font-medium hover:underline">详情</button>
-                      <button class="text-warning text-sm font-medium hover:underline">处理中</button>
+                      <button data-element="logistics-btn02" class="text-primary text-sm font-medium hover:underline">详情</button>
+                      <button data-element="logistics-icon-btn03" class="text-warning text-sm font-medium hover:underline">处理中</button>
                     </div>
                   </td>
                 </tr>
@@ -559,8 +559,8 @@
                   </td>
                   <td class="px-4 py-3">
                     <div class="flex items-center gap-2">
-                      <button class="text-primary text-sm font-medium hover:underline">详情</button>
-                      <button class="text-success text-sm font-medium hover:underline">已解决</button>
+                      <button data-element="logistics-btn04" class="text-primary text-sm font-medium hover:underline">详情</button>
+                      <button data-element="logistics-icon-btn05" class="text-success text-sm font-medium hover:underline">已解决</button>
                     </div>
                   </td>
                 </tr>
@@ -592,7 +592,7 @@
                   </td>
                   <td class="px-4 py-3">
                     <div class="flex items-center gap-2">
-                      <button class="text-primary text-sm font-medium hover:underline">详情</button>
+                      <button data-element="logistics-icon-btn06" class="text-primary text-sm font-medium hover:underline">详情</button>
                     </div>
                   </td>
                 </tr>
@@ -602,7 +602,7 @@
         </div>
 
         <!-- 已验货记录 -->
-        <div id="panel-completed" class="p-4 hidden">
+        <div id="panel-completed" class="p-4 hidden" >
           <div class="overflow-x-auto">
             <table class="w-full">
               <thead>
@@ -711,11 +711,11 @@
   <!-- @nav:end 导航组件 -->
 
   <!-- 验货详情模态框 -->
-  <div id="modal-inspect" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
+  <div id="modal-inspect" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden" >
     <div class="bg-surface rounded-xl shadow-dialog max-w-3xl w-full max-h-[90vh] overflow-y-auto">
       <div class="sticky top-0 bg-surface border-b border-outline-variant/30 px-6 py-4 flex items-center justify-between">
         <h3 class="text-lg font-semibold text-on-surface">验货详情</h3>
-        <button id="btn-close-modal" class="text-on-surface-variant hover:text-on-surface transition-colors">
+        <button data-element=""btn-close-modalid="" class="text-on-surface-variant hover:text-on-surface transition-colors" >>
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
@@ -746,7 +746,7 @@
           <div class="space-y-3">
             <!-- 商品项1 -->
             <div class="flex items-center gap-4 bg-surface-container rounded-lg p-4">
-              <input type="checkbox" id="item-check-1" class="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary/30" checked />
+              <input type="checkbox" id="item-check-1" class="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary/30" checked /  type="checkbox">
               <div class="w-16 h-16 bg-surface rounded flex items-center justify-center">
                 <i data-lucide="image" class="w-6 h-6 text-on-surface-variant"></i>
               </div>
@@ -765,7 +765,7 @@
             </div>
             <!-- 商品项2 -->
             <div class="flex items-center gap-4 bg-surface-container rounded-lg p-4">
-              <input type="checkbox" id="item-check-2" class="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary/30" />
+              <input type="checkbox" id="item-check-2" class="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary/30" /  type="checkbox">
               <div class="w-16 h-16 bg-surface rounded flex items-center justify-center">
                 <i data-lucide="image" class="w-6 h-6 text-on-surface-variant"></i>
               </div>
@@ -789,10 +789,10 @@
         <div class="mb-6">
           <h4 class="text-sm font-semibold text-on-surface-variant uppercase tracking-wide mb-3">快捷操作</h4>
           <div class="flex gap-3">
-            <button id="btn-all-pass" class="bg-success/10 text-success px-4 py-2 rounded-md text-sm font-medium hover:bg-success/20 transition-colors inline-flex items-center gap-2">
+            <button data-element=""btn-all-passid="" class="bg-success/10 text-success px-4 py-2 rounded-md text-sm font-medium hover:bg-success/20 transition-colors inline-flex items-center gap-2" >>
               <i data-lucide="check-circle" class="w-4 h-4"></i>全部合格
             </button>
-            <button id="btn-all-abnormal" class="bg-error/10 text-error px-4 py-2 rounded-md text-sm font-medium hover:bg-error/20 transition-colors inline-flex items-center gap-2">
+            <button data-element=""btn-all-abnormalid="" class="bg-error/10 text-error px-4 py-2 rounded-md text-sm font-medium hover:bg-error/20 transition-colors inline-flex items-center gap-2" >>
               <i data-lucide="alert-circle" class="w-4 h-4"></i>全部异常
             </button>
           </div>
@@ -802,14 +802,14 @@
         <div class="mb-6">
           <h4 class="text-sm font-semibold text-on-surface-variant uppercase tracking-wide mb-3">验货结果</h4>
           <div class="flex gap-3">
-            <button id="btn-result-pass" class="flex-1 bg-surface-container rounded-lg p-4 text-center border-2 border-transparent hover:border-success/50 transition-colors group">
+            <button data-element=""btn-result-passid="" class="flex-1 bg-surface-container rounded-lg p-4 text-center border-2 border-transparent hover:border-success/50 transition-colors group" >>
               <div class="w-12 h-12 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-2 group-hover:bg-success/20 transition-colors">
                 <i data-lucide="check" class="w-6 h-6 text-success"></i>
               </div>
               <div class="text-sm font-medium text-on-surface">验货合格</div>
               <div class="text-xs text-on-surface-variant mt-1">进入打包流程</div>
             </button>
-            <button id="btn-result-abnormal" class="flex-1 bg-surface-container rounded-lg p-4 text-center border-2 border-transparent hover:border-error/50 transition-colors group">
+            <button data-element=""btn-result-abnormalid="" class="flex-1 bg-surface-container rounded-lg p-4 text-center border-2 border-transparent hover:border-error/50 transition-colors group" >>
               <div class="w-12 h-12 bg-error/10 rounded-full flex items-center justify-center mx-auto mb-2 group-hover:bg-error/20 transition-colors">
                 <i data-lucide="x" class="w-6 h-6 text-error"></i>
               </div>
@@ -820,7 +820,7 @@
         </div>
 
         <!-- 异常情况选择（选择异常后显示） -->
-        <div id="abnormal-section" class="hidden">
+        <div id="abnormal-section" class="hidden" >
           <h4 class="text-sm font-semibold text-on-surface-variant uppercase tracking-wide mb-3">异常情况</h4>
           <div class="grid grid-cols-2 gap-3 mb-4">
             <label class="flex items-center gap-3 bg-surface-container rounded-lg p-3 cursor-pointer hover:bg-surface-container-high transition-colors">
@@ -842,11 +842,11 @@
           </div>
           <div class="mb-4">
             <label class="text-sm font-medium text-on-surface mb-2 block">异常描述</label>
-            <textarea id="abnormal-desc" rows="3" placeholder="请描述异常情况..." class="w-full bg-surface-container border-none rounded-lg px-4 py-3 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors resize-none"></textarea>
+            <textarea id="abnormal-desc" rows="3" placeholder="请描述异常情况..." class="w-full bg-surface-container border-none rounded-lg px-4 py-3 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30 transition-colors resize-none" ></textarea>
           </div>
           <div>
             <label class="text-sm font-medium text-on-surface mb-2 block">拍照上传</label>
-            <div id="photo-upload-area" class="border-2 border-dashed border-outline-variant/50 rounded-lg p-6 text-center hover:border-primary/50 transition-colors cursor-pointer">
+            <div id="photo-upload-area" class="border-2 border-dashed border-outline-variant/50 rounded-lg p-6 text-center hover:border-primary/50 transition-colors cursor-pointer" >
               <i data-lucide="camera" class="w-8 h-8 text-on-surface-variant mx-auto mb-2"></i>
               <div class="text-sm text-on-surface-variant">点击或拖拽上传图片</div>
               <div class="text-xs text-on-surface-variant/60 mt-1">支持多张图片</div>
@@ -856,8 +856,8 @@
 
         <!-- 操作按钮 -->
         <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-outline-variant/30">
-          <button id="btn-cancel-inspect" class="bg-surface-container text-on-surface px-6 py-2.5 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all">取消</button>
-          <button id="btn-confirm-inspect" class="bg-primary text-on-primary px-6 py-2.5 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-2">
+          <button data-element=""btn-cancel-inspectid="" class="bg-surface-container text-on-surface px-6 py-2.5 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all" >>取消</button>
+          <button data-element=""btn-confirm-inspectid="" class="bg-primary text-on-primary px-6 py-2.5 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center gap-2" >>
             <i data-lucide="check" class="w-4 h-4"></i>确认验货
           </button>
         </div>

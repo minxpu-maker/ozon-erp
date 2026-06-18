@@ -78,7 +78,7 @@
       <span class="font-semibold text-base">Ozon ERP</span>
     </div>
     <div class="flex items-center gap-4">
-      <button class="flex items-center gap-2 text-sm text-on-surface-variant hover:text-on-surface transition-colors">
+      <button data-element="packaging-icon-btn01" class="flex items-center gap-2 text-sm text-on-surface-variant hover:text-on-surface transition-colors">
         <i data-lucide="bell" class="w-4 h-4"></i>
         <span class="bg-error text-white text-xs px-1.5 py-0.5 rounded-full font-medium">3</span>
       </button>
@@ -158,7 +158,7 @@
           <p class="text-sm text-on-surface-variant mt-1">Ozon面单打印与电子秤硬件集成</p>
         </div>
         <div class="flex items-center gap-3">
-          <button id="btn-refresh-scale" class="bg-surface-container text-on-surface border-none px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all inline-flex items-center gap-2">
+          <button data-element=""btn-refresh-scaleid="" class="bg-surface-container text-on-surface border-none px-4 py-2 rounded-md text-sm font-medium hover:bg-surface-container-high active:scale-[0.98] transition-all inline-flex items-center gap-2" >>
             <i data-lucide="refresh-cw" class="w-4 h-4"></i>刷新设备
           </button>
         </div>
@@ -178,7 +178,7 @@
                 <i data-lucide="scale" class="w-4 h-4 text-on-surface-variant"></i>
                 <span class="text-sm font-medium text-on-surface">电子秤</span>
               </div>
-              <span id="scale-status" class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">
+              <span id="scale-status" class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success" >
                 <span class="w-1.5 h-1.5 rounded-full bg-success mr-1.5"></span>已连接
               </span>
             </div>
@@ -201,7 +201,7 @@
                 <i data-lucide="printer" class="w-4 h-4 text-on-surface-variant"></i>
                 <span class="text-sm font-medium text-on-surface">面单打印机</span>
               </div>
-              <span id="printer-status" class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success">
+              <span id="printer-status" class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-success/15 text-success" >
                 <span class="w-1.5 h-1.5 rounded-full bg-success mr-1.5"></span>已连接
               </span>
             </div>
@@ -225,12 +225,12 @@
                 <span class="text-sm font-medium text-on-surface">实时重量</span>
               </div>
               <div class="flex items-center gap-2">
-                <button id="btn-refresh-weight" class="text-primary text-xs font-medium hover:underline">刷新</button>
-                <button id="btn-zero-scale" class="text-primary text-xs font-medium hover:underline">清零</button>
+                <button data-element=""btn-refresh-weightid="" class="text-primary text-xs font-medium hover:underline" >>刷新</button>
+                <button data-element=""btn-zero-scaleid="" class="text-primary text-xs font-medium hover:underline" >>清零</button>
               </div>
             </div>
             <div class="flex items-baseline gap-1">
-              <span id="scale-weight" class="text-3xl font-bold text-primary">0.00</span>
+              <span id="scale-weight" class="text-3xl font-bold text-primary" >0.00</span>
               <span class="text-sm text-on-surface-variant">kg</span>
             </div>
             <p class="text-xs text-on-surface-variant mt-2">协议: WEIGHT:XX.XXkg</p>
@@ -293,17 +293,17 @@
           <!-- Tab切换 -->
           <div class="bg-surface rounded-lg shadow-card mb-4">
             <div class="flex border-b border-outline-variant/50">
-              <button id="tab-pending" class="flex-1 px-4 py-3 text-sm font-medium text-primary border-b-2 border-primary bg-primary/5 transition-colors">
+              <button data-element=""tab-pendingid="" class="flex-1 px-4 py-3 text-sm font-medium text-primary border-b-2 border-primary bg-primary/5 transition-colors" >>
                 待打包 <span class="ml-1 px-1.5 py-0.5 rounded bg-primary/10 text-xs">12</span>
               </button>
-              <button id="tab-shipped" class="flex-1 px-4 py-3 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors">
+              <button data-element=""tab-shippedid="" class="flex-1 px-4 py-3 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors" >>
                 已发货记录
               </button>
             </div>
           </div>
 
           <!-- 待打包列表 -->
-          <div id="pending-list" class="bg-surface rounded-lg shadow-card overflow-hidden">
+          <div id="pending-list" class="bg-surface rounded-lg shadow-card overflow-hidden" >
             <!-- 表头 -->
             <div class="grid grid-cols-7 px-4 py-3 bg-surface-container text-xs font-semibold text-on-surface-variant uppercase tracking-wide">
               <span>Ozon订单号</span>
@@ -331,7 +331,7 @@
                 </div>
                 <span class="text-sm text-on-surface-variant">2024/01/15 10:30</span>
                 <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning w-fit">待打包</span>
-                <button class="btn-start-pack bg-primary text-on-primary px-3 py-1.5 rounded-md text-xs font-medium hover:opacity-90 active:scale-[0.98] transition-all" data-order="OZN-20240115-001">开始打包</button>
+                <button data-element="packaging-icon-btn02" class="btn-start-pack bg-primary text-on-primary px-3 py-1.5 rounded-md text-xs font-medium hover:opacity-90 active:scale-[0.98] transition-all" data-order="OZN-20240115-001">开始打包</button>
                 <span></span>
               </div>
               <!-- 列表项2 -->
@@ -350,7 +350,7 @@
                 </div>
                 <span class="text-sm text-on-surface-variant">2024/01/15 11:15</span>
                 <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning w-fit">待打包</span>
-                <button class="btn-start-pack bg-primary text-on-primary px-3 py-1.5 rounded-md text-xs font-medium hover:opacity-90 active:scale-[0.98] transition-all" data-order="OZN-20240115-002">开始打包</button>
+                <button data-element="packaging-icon-btn03" class="btn-start-pack bg-primary text-on-primary px-3 py-1.5 rounded-md text-xs font-medium hover:opacity-90 active:scale-[0.98] transition-all" data-order="OZN-20240115-002">开始打包</button>
                 <span></span>
               </div>
               <!-- 列表项3 -->
@@ -369,7 +369,7 @@
                 </div>
                 <span class="text-sm text-on-surface-variant">2024/01/15 12:00</span>
                 <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning w-fit">待打包</span>
-                <button class="btn-start-pack bg-primary text-on-primary px-3 py-1.5 rounded-md text-xs font-medium hover:opacity-90 active:scale-[0.98] transition-all" data-order="OZN-20240115-003">开始打包</button>
+                <button data-element="packaging-icon-btn04" class="btn-start-pack bg-primary text-on-primary px-3 py-1.5 rounded-md text-xs font-medium hover:opacity-90 active:scale-[0.98] transition-all" data-order="OZN-20240115-003">开始打包</button>
                 <span></span>
               </div>
               <!-- 列表项4 -->
@@ -388,7 +388,7 @@
                 </div>
                 <span class="text-sm text-on-surface-variant">2024/01/15 13:20</span>
                 <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning w-fit">待打包</span>
-                <button class="btn-start-pack bg-primary text-on-primary px-3 py-1.5 rounded-md text-xs font-medium hover:opacity-90 active:scale-[0.98] transition-all" data-order="OZN-20240115-004">开始打包</button>
+                <button data-element="packaging-icon-btn05" class="btn-start-pack bg-primary text-on-primary px-3 py-1.5 rounded-md text-xs font-medium hover:opacity-90 active:scale-[0.98] transition-all" data-order="OZN-20240115-004">开始打包</button>
                 <span></span>
               </div>
               <!-- 列表项5 -->
@@ -407,14 +407,14 @@
                 </div>
                 <span class="text-sm text-on-surface-variant">2024/01/15 14:05</span>
                 <span class="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-warning/15 text-warning w-fit">待打包</span>
-                <button class="btn-start-pack bg-primary text-on-primary px-3 py-1.5 rounded-md text-xs font-medium hover:opacity-90 active:scale-[0.98] transition-all" data-order="OZN-20240115-005">开始打包</button>
+                <button data-element="packaging-icon-btn06" class="btn-start-pack bg-primary text-on-primary px-3 py-1.5 rounded-md text-xs font-medium hover:opacity-90 active:scale-[0.98] transition-all" data-order="OZN-20240115-005">开始打包</button>
                 <span></span>
               </div>
             </div>
           </div>
 
           <!-- 已发货列表（默认隐藏） -->
-          <div id="shipped-list" class="bg-surface rounded-lg shadow-card overflow-hidden hidden">
+          <div id="shipped-list" class="bg-surface rounded-lg shadow-card overflow-hidden hidden" >
             <!-- 表头 -->
             <div class="grid grid-cols-6 px-4 py-3 bg-surface-container text-xs font-semibold text-on-surface-variant uppercase tracking-wide">
               <span>Ozon订单号</span>
@@ -485,7 +485,7 @@
         <!-- 右侧：打包操作面板 -->
         <div class="w-96 shrink-0">
           <!-- 未选择订单时的提示 -->
-          <div id="no-selection-hint" class="bg-surface rounded-lg shadow-card p-6">
+          <div id="no-selection-hint" class="bg-surface rounded-lg shadow-card p-6" >
             <div class="text-center py-12">
               <div class="w-16 h-16 bg-surface-container rounded-full flex items-center justify-center mx-auto mb-4">
                 <i data-lucide="package-open" class="w-8 h-8 text-on-surface-variant"></i>
@@ -496,7 +496,7 @@
           </div>
 
           <!-- 打包操作面板（默认隐藏） -->
-          <div id="packing-panel" class="space-y-4 hidden">
+          <div id="packing-panel" class="space-y-4 hidden" >
             <!-- 当前订单信息 -->
             <div class="bg-surface rounded-lg shadow-card p-4">
               <div class="flex items-center justify-between mb-4">
@@ -504,22 +504,22 @@
                   <i data-lucide="file-text" class="w-4 h-4 text-primary"></i>
                   <span class="text-sm font-semibold text-on-surface">订单信息</span>
                 </div>
-                <button id="btn-close-panel" class="text-on-surface-variant hover:text-on-surface transition-colors">
+                <button data-element=""btn-close-panelid="" class="text-on-surface-variant hover:text-on-surface transition-colors" >>
                   <i data-lucide="x" class="w-4 h-4"></i>
                 </button>
               </div>
               <div class="space-y-3">
                 <div>
                   <p class="text-xs text-on-surface-variant">Ozon订单号</p>
-                  <p id="panel-order-id" class="text-sm font-semibold text-primary">OZN-20240115-001</p>
+                  <p id="panel-order-id" class="text-sm font-semibold text-primary" >OZN-20240115-001</p>
                 </div>
                 <div>
                   <p class="text-xs text-on-surface-variant">买家姓名</p>
-                  <p id="panel-buyer-name" class="text-sm text-on-surface">Ivan Petrov</p>
+                  <p id="panel-buyer-name" class="text-sm text-on-surface" >Ivan Petrov</p>
                 </div>
                 <div>
                   <p class="text-xs text-on-surface-variant">收货地址</p>
-                  <p id="panel-address" class="text-sm text-on-surface">俄罗斯，莫斯科，Tverskaya街15号，邮编123456</p>
+                  <p id="panel-address" class="text-sm text-on-surface" >俄罗斯，莫斯科，Tverskaya街15号，邮编123456</p>
                 </div>
                 <div>
                   <p class="text-xs text-on-surface-variant mb-2">商品清单</p>
@@ -544,11 +544,11 @@
                 <span class="text-sm font-semibold text-on-surface">打印Ozon面单</span>
               </div>
               <div class="space-y-3">
-                <button id="btn-get-label" class="w-full bg-primary text-on-primary px-4 py-2.5 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center justify-center gap-2">
+                <button data-element=""btn-get-labelid="" class="w-full bg-primary text-on-primary px-4 py-2.5 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center justify-center gap-2" >>
                   <i data-lucide="download" class="w-4 h-4"></i>获取电子面单
                 </button>
                 <!-- 面单预览区域 -->
-                <div id="label-preview" class="bg-surface-container rounded-lg p-3 hidden">
+                <div id="label-preview" class="bg-surface-container rounded-lg p-3 hidden" >
                   <div class="border border-outline-variant/50 rounded p-3 bg-white">
                     <div class="text-center">
                       <p class="text-xs font-bold text-on-surface mb-2">OZON EXPRESS</p>
@@ -562,17 +562,17 @@
                   </div>
                 </div>
                 <!-- 打印设置 -->
-                <div id="print-settings" class="hidden">
+                <div id="print-settings" class="hidden" >
                   <div class="flex items-center gap-3 mb-3">
                     <label class="text-xs text-on-surface-variant">打印份数</label>
-                    <input type="number" id="print-copies" value="1" min="1" max="5" class="w-20 bg-surface-container border-none rounded-md px-2 py-1.5 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30">
+                    <input type="number" id="print-copies" value="1" min="1" max="5" class="w-20 bg-surface-container border-none rounded-md px-2 py-1.5 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30"  type="number">
                   </div>
-                  <button id="btn-print-label" class="w-full bg-success text-white px-4 py-2.5 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center justify-center gap-2">
+                  <button data-element=""btn-print-labelid="" class="w-full bg-success text-white px-4 py-2.5 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center justify-center gap-2" >>
                     <i data-lucide="printer" class="w-4 h-4"></i>打印面单
                   </button>
                 </div>
                 <!-- 打印成功提示 -->
-                <div id="print-success" class="hidden bg-success/10 rounded-lg p-3">
+                <div id="print-success" class="hidden bg-success/10 rounded-lg p-3" >
                   <div class="flex items-center gap-2">
                     <i data-lucide="check-circle" class="w-4 h-4 text-success"></i>
                     <span class="text-sm text-success font-medium">面单打印成功</span>
@@ -592,20 +592,20 @@
                 <div class="bg-surface-container rounded-lg p-4 text-center">
                   <p class="text-xs text-on-surface-variant mb-2">电子秤实时重量</p>
                   <div class="flex items-baseline justify-center gap-1">
-                    <span id="panel-weight" class="text-4xl font-bold text-primary">0.00</span>
+                    <span id="panel-weight" class="text-4xl font-bold text-primary" >0.00</span>
                     <span class="text-lg text-on-surface-variant">kg</span>
                   </div>
                 </div>
                 <div class="flex items-center gap-2">
                   <label class="text-xs text-on-surface-variant shrink-0">手动修正</label>
-                  <input type="text" id="manual-weight" placeholder="电子秤故障时输入" class="flex-1 bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30">
+                  <input type="text" id="manual-weight" placeholder="电子秤故障时输入" class="flex-1 bg-surface-container border-none rounded-md px-3 py-2 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30"  type="text">
                   <span class="text-xs text-on-surface-variant">kg</span>
                 </div>
-                <button id="btn-confirm-weight" class="w-full bg-surface-container-high text-on-surface px-4 py-2.5 rounded-md text-sm font-medium hover:bg-surface-container-highest active:scale-[0.98] transition-all inline-flex items-center justify-center gap-2">
+                <button data-element=""btn-confirm-weightid="" class="w-full bg-surface-container-high text-on-surface px-4 py-2.5 rounded-md text-sm font-medium hover:bg-surface-container-highest active:scale-[0.98] transition-all inline-flex items-center justify-center gap-2" >>
                   <i data-lucide="check" class="w-4 h-4"></i>确认重量
                 </button>
                 <!-- 称重确认成功 -->
-                <div id="weight-confirmed" class="hidden bg-success/10 rounded-lg p-3">
+                <div id="weight-confirmed" class="hidden bg-success/10 rounded-lg p-3" >
                   <div class="flex items-center gap-2">
                     <i data-lucide="check-circle" class="w-4 h-4 text-success"></i>
                     <span class="text-sm text-success font-medium">重量已确认：1.25 kg</span>
@@ -624,15 +624,15 @@
                 <div>
                   <p class="text-xs text-on-surface-variant mb-1">物流单号</p>
                   <div class="flex items-center gap-2">
-                    <p id="tracking-number" class="text-sm font-semibold text-on-surface">OZ789456128RU</p>
-                    <button id="btn-copy-tracking" class="text-primary text-xs font-medium hover:underline">复制</button>
+                    <p id="tracking-number" class="text-sm font-semibold text-on-surface" >OZ789456128RU</p>
+                    <button data-element=""btn-copy-trackingid="" class="text-primary text-xs font-medium hover:underline" >>复制</button>
                   </div>
                 </div>
-                <button id="btn-confirm-ship" class="w-full bg-success text-white px-4 py-2.5 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center justify-center gap-2">
+                <button data-element=""btn-confirm-shipid="" class="w-full bg-success text-white px-4 py-2.5 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all inline-flex items-center justify-center gap-2" >>
                   <i data-lucide="send" class="w-4 h-4"></i>确认发货
                 </button>
                 <!-- 发货成功提示 -->
-                <div id="ship-success" class="hidden bg-success/10 rounded-lg p-3">
+                <div id="ship-success" class="hidden bg-success/10 rounded-lg p-3" >
                   <div class="flex items-center gap-2">
                     <i data-lucide="check-circle" class="w-4 h-4 text-success"></i>
                     <span class="text-sm text-success font-medium">发货成功！</span>

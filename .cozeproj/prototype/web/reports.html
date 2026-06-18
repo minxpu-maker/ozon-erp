@@ -78,7 +78,7 @@
       <span class="font-semibold text-base">Ozon ERP</span>
     </div>
     <div class="flex items-center gap-4">
-      <button class="flex items-center gap-2 text-sm text-on-surface-variant hover:text-on-surface transition-colors">
+      <button data-element="reports-icon-btn01" class="flex items-center gap-2 text-sm text-on-surface-variant hover:text-on-surface transition-colors">
         <i data-lucide="bell" class="w-4 h-4"></i>
         <span class="bg-error text-white text-xs px-1.5 py-0.5 rounded-full font-medium">3</span>
       </button>
@@ -157,27 +157,27 @@
         <div class="flex items-center gap-3">
           <!-- 时间范围选择器 -->
           <div class="flex items-center gap-1 bg-surface-container rounded-lg p-1">
-            <button id="time-today" class="time-btn px-3 py-1.5 text-sm font-medium rounded-md bg-primary text-on-primary transition-all">今日</button>
-            <button id="time-yesterday" class="time-btn px-3 py-1.5 text-sm font-medium rounded-md text-on-surface-variant hover:bg-surface-container-high transition-all">昨日</button>
-            <button id="time-week" class="time-btn px-3 py-1.5 text-sm font-medium rounded-md text-on-surface-variant hover:bg-surface-container-high transition-all">本周</button>
-            <button id="time-last-week" class="time-btn px-3 py-1.5 text-sm font-medium rounded-md text-on-surface-variant hover:bg-surface-container-high transition-all">上周</button>
-            <button id="time-month" class="time-btn px-3 py-1.5 text-sm font-medium rounded-md text-on-surface-variant hover:bg-surface-container-high transition-all">本月</button>
-            <button id="time-last-month" class="time-btn px-3 py-1.5 text-sm font-medium rounded-md text-on-surface-variant hover:bg-surface-container-high transition-all">上月</button>
-            <button id="time-custom" class="time-btn px-3 py-1.5 text-sm font-medium rounded-md text-on-surface-variant hover:bg-surface-container-high transition-all flex items-center gap-1">
+            <button data-element=""time-todayid="" class="time-btn px-3 py-1.5 text-sm font-medium rounded-md bg-primary text-on-primary transition-all" >>今日</button>
+            <button data-element=""time-yesterdayid="" class="time-btn px-3 py-1.5 text-sm font-medium rounded-md text-on-surface-variant hover:bg-surface-container-high transition-all" >>昨日</button>
+            <button data-element=""time-weekid="" class="time-btn px-3 py-1.5 text-sm font-medium rounded-md text-on-surface-variant hover:bg-surface-container-high transition-all" >>本周</button>
+            <button data-element=""time-last-weekid="" class="time-btn px-3 py-1.5 text-sm font-medium rounded-md text-on-surface-variant hover:bg-surface-container-high transition-all" >>上周</button>
+            <button data-element=""time-monthid="" class="time-btn px-3 py-1.5 text-sm font-medium rounded-md text-on-surface-variant hover:bg-surface-container-high transition-all" >>本月</button>
+            <button data-element=""time-last-monthid="" class="time-btn px-3 py-1.5 text-sm font-medium rounded-md text-on-surface-variant hover:bg-surface-container-high transition-all" >>上月</button>
+            <button data-element=""time-customid="" class="time-btn px-3 py-1.5 text-sm font-medium rounded-md text-on-surface-variant hover:bg-surface-container-high transition-all flex items-center gap-1" >>
               <i data-lucide="calendar" class="w-3.5 h-3.5"></i>自定义
             </button>
           </div>
           <!-- 导出按钮 -->
           <div class="relative">
-            <button id="btn-export" class="flex items-center gap-2 bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all">
+            <button data-element=""btn-exportid="" class="flex items-center gap-2 bg-primary text-on-primary px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 active:scale-[0.98] transition-all" >>
               <i data-lucide="download" class="w-4 h-4"></i>导出报表
             </button>
             <!-- 导出下拉菜单 -->
-            <div id="export-dropdown" class="hidden absolute right-0 top-full mt-2 bg-surface rounded-lg shadow-float border border-outline/30 py-1 min-w-[140px] z-10">
-              <button id="export-excel" class="w-full px-4 py-2 text-sm text-on-surface hover:bg-surface-container text-left flex items-center gap-2">
+            <div id="export-dropdown" class="hidden absolute right-0 top-full mt-2 bg-surface rounded-lg shadow-float border border-outline/30 py-1 min-w-[140px] z-10" >
+              <button data-element=""export-excelid="" class="w-full px-4 py-2 text-sm text-on-surface hover:bg-surface-container text-left flex items-center gap-2" >>
                 <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>导出 Excel
               </button>
-              <button id="export-pdf" class="w-full px-4 py-2 text-sm text-on-surface hover:bg-surface-container text-left flex items-center gap-2">
+              <button data-element=""export-pdfid="" class="w-full px-4 py-2 text-sm text-on-surface hover:bg-surface-container text-left flex items-center gap-2" >>
                 <i data-lucide="file-text" class="w-4 h-4"></i>导出 PDF
               </button>
             </div>
@@ -187,19 +187,19 @@
 
       <!-- Tab 切换 -->
       <div class="flex items-center gap-1 mb-6 border-b border-outline/50">
-        <button id="tab-business" class="tab-btn px-4 py-3 text-sm font-medium text-primary border-b-2 border-primary transition-all">
+        <button data-element=""tab-businessid="" class="tab-btn px-4 py-3 text-sm font-medium text-primary border-b-2 border-primary transition-all" >>
           经营报表
         </button>
-        <button id="tab-purchase" class="tab-btn px-4 py-3 text-sm font-medium text-on-surface-variant hover:text-on-surface border-b-2 border-transparent transition-all">
+        <button data-element=""tab-purchaseid="" class="tab-btn px-4 py-3 text-sm font-medium text-on-surface-variant hover:text-on-surface border-b-2 border-transparent transition-all" >>
           采购报表
         </button>
-        <button id="tab-efficiency" class="tab-btn px-4 py-3 text-sm font-medium text-on-surface-variant hover:text-on-surface border-b-2 border-transparent transition-all">
+        <button data-element=""tab-efficiencyid="" class="tab-btn px-4 py-3 text-sm font-medium text-on-surface-variant hover:text-on-surface border-b-2 border-transparent transition-all" >>
           效率报表
         </button>
       </div>
 
       <!-- 经营报表内容 -->
-      <div id="panel-business" class="report-panel">
+      <div id="panel-business" class="report-panel" >
         <!-- 核心指标卡片 -->
         <div class="grid grid-cols-5 gap-4 mb-6">
           <!-- 指标卡片1-销售额 -->
@@ -450,7 +450,7 @@
       </div>
 
       <!-- 采购报表内容 -->
-      <div id="panel-purchase" class="report-panel hidden">
+      <div id="panel-purchase" class="report-panel hidden" >
         <!-- 核心指标卡片 -->
         <div class="grid grid-cols-4 gap-4 mb-6">
           <!-- 指标卡片1-采购金额 -->
@@ -682,7 +682,7 @@
       </div>
 
       <!-- 效率报表内容 -->
-      <div id="panel-efficiency" class="report-panel hidden">
+      <div id="panel-efficiency" class="report-panel hidden" >
         <!-- 核心指标卡片 -->
         <div class="grid grid-cols-4 gap-4 mb-6">
           <!-- 指标卡片1-订单处理时效 -->
