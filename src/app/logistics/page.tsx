@@ -5,6 +5,12 @@ import { useEffect, useState, useRef } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Truck, RefreshCw, Search, ScanLine, CheckCircle, XCircle, Box, ShoppingCart, Package } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 export default function LogisticsPage() {
   const [tasks, setTasks] = useState<any[]>([]);
@@ -22,6 +28,17 @@ export default function LogisticsPage() {
   const [failCount, setFailCount] = useState(0);
   const scanInputRef = useRef<HTMLInputElement>(null);
   const [scanFeedback, setScanFeedback] = useState<'pass' | 'fail' | null>(null);
+  const [showExceptionDialog, setShowExceptionDialog] = useState(false);
+  const [exceptionType, setExceptionType] = useState('');
+  const [exceptionNote, setExceptionNote] = useState('');
+
+  const EXCEPTION_TYPES = [
+    { value: 'wrong_item', label: '商品不符' },
+    { value: 'damaged', label: '商品破损' },
+    { value: 'missing', label: '缺件/漏发' },
+    { value: 'quality', label: '质量问题' },
+    { value: 'other', label: '其他' },
+  ];
 
   useEffect(() => { fetchTasks(); }, []);
 
@@ -110,17 +127,7 @@ export default function LogisticsPage() {
         setTimeout(() => scanInputRef.current?.focus(), 100);
       }
       if (e.key.toLowerCase() === 'e' && matchedOrder) {
-        fetch('/api/qc-records', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ orderId: matchedOrder.id, qcResult: 'fail', expressNo: scanCode }),
-        });
-        setScanCode('');
-        setScanResult(null);
-        setMatchedOrder(null);
-        setTodayVerified(c => c + 1);
-        setFailCount(c => c + 1);
-        setTimeout(() => scanInputRef.current?.focus(), 100);
+        setShowExceptionDialog(true);
       }
     };
     window.addEventListener('keydown', handler);
@@ -379,6 +386,91 @@ return (
                       </div>
                     )}
                   </div>
+
+                  {/* 异常处理弹窗 */}
+                  {showExceptionDialog && (
+                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-10">
+                      <div className="bg-white rounded-xl w-full max-w-md shadow-2xl">
+                        <div className="px-6 py-4 border-b border-gray-200">
+                          <h3 className="text-lg font-semibold text-gray-900">标记异常</h3>
+                          <p className="text-sm text-gray-500 mt-1">快递单号: <span className="font-mono">{scanCode}</span></p>
+                        </div>
+                        <div className="p-6 space-y-4">
+                          {/* 异常类型选择 */}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">异常类型</label>
+                            <div className="grid grid-cols-2 gap-2">
+                              {EXCEPTION_TYPES.map(t => (
+                                <button
+                                  key={t.value}
+                                  onClick={() => setExceptionType(t.value)}
+                                  className={`px-4 py-2 text-sm rounded-lg border transition-colors ${
+                                    exceptionType === t.value
+                                      ? 'border-red-500 bg-red-50 text-red-700 font-medium'
+                                      : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                                  }`}
+                                >
+                                  {t.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                          {/* 异常备注 */}
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">备注（选填）</label>
+                            <textarea
+                              value={exceptionNote}
+                              onChange={(e) => setExceptionNote(e.target.value)}
+                              placeholder="补充异常说明..."
+                              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-300 resize-none"
+                              rows={3}
+                            />
+                          </div>
+                        </div>
+                        <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setShowExceptionDialog(false);
+                              setExceptionType('');
+                              setExceptionNote('');
+                            }}
+                          >
+                            取消
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            disabled={!exceptionType}
+                            onClick={async () => {
+                              await fetch('/api/qc-records', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                  expressNo: scanCode,
+                                  qcResult: 'fail',
+                                  exceptionType,
+                                  exceptionNote,
+                                }),
+                              });
+                              setShowExceptionDialog(false);
+                              setExceptionType('');
+                              setExceptionNote('');
+                              setScanCode('');
+                              setScanResult(null);
+                              setMatchedOrder(null);
+                              setTodayVerified(c => c + 1);
+                              setFailCount(c => c + 1);
+                              setTimeout(() => scanInputRef.current?.focus(), 100);
+                            }}
+                          >
+                            确认异常
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* 底部进度条 */}
                   <div className="px-6 py-4 bg-gray-800 border-t border-gray-700">
