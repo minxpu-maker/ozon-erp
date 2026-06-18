@@ -166,6 +166,8 @@ export const MESSAGE_TYPES = {
   COLLECTION_COMPLETE: 'COLLECTION_COMPLETE',
   /** 验证配置 */
   VALIDATE_CONFIG: 'VALIDATE_CONFIG',
+  /** Ozon API 调用代理（用于绕过沙箱网络限制） */
+  OZON_API_CALL: 'OZON_API_CALL',
 } as const;
 
 /**

@@ -576,6 +576,80 @@ function handleCollectStop(): { success: boolean } {
 }
 
 // ============================================================================
+// Ozon API 调用代理（用于 ERP 前端绕过沙箱网络限制）
+// ============================================================================
+
+/**
+ * Ozon Seller API 调用代理
+ * 由 ERP 前端（shops 页面）通过 content script 转发
+ */
+async function handleOzonApiCall(msg: {
+  type: string;
+  shopId: string;
+  ozonClientId: string;
+  ozonApiKey: string;
+  method: 'GET' | 'POST';
+  path: string;
+  body?: Record<string, unknown>;
+}): Promise<{ connected: boolean; error?: string; data?: unknown }> {
+  const { ozonClientId, ozonApiKey, method, path, body } = msg;
+
+  if (!ozonClientId || !ozonApiKey) {
+    return { connected: false, error: 'ClientId 或 ApiKey 为空' };
+  }
+
+  try {
+    const url = `https://api-seller.ozon.ru${path}`;
+    const headers: Record<string, string> = {
+      'Client-Id': ozonClientId,
+      'Api-Key': ozonApiKey,
+    };
+
+    let response: Response;
+    if (method === 'POST') {
+      headers['Content-Type'] = 'application/json';
+      response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body ?? {}),
+      });
+    } else {
+      response = await fetch(url, { method: 'GET', headers });
+    }
+
+    const text = await response.text();
+    let data: Record<string, unknown> = {};
+    try {
+      data = JSON.parse(text);
+    } catch {
+      // 非 JSON 响应
+    }
+
+    if (response.ok) {
+      // v1/product/list 成功时会返回 result 对象
+      const hasResult = data && typeof data === 'object' && 'result' in data;
+      const isConnected = !hasResult || (hasResult && data.result !== undefined);
+      return { connected: true, data };
+    } else {
+      // 提取 Ozon 错误信息
+      const errorMsg =
+        (data?.message as string) ||
+        (data?.code as string) ||
+        (data?.error as string) ||
+        text.substring(0, 200) ||
+        `HTTP ${response.status}`;
+      return { connected: false, error: errorMsg };
+    }
+  } catch (err) {
+    const msg2 = err instanceof Error ? err.message : String(err);
+    if (msg2.includes('fetch') || msg2.includes('net::') || msg2.includes('Failed')) {
+      return { connected: false, error: '无法连接API服务（可能被代理拦截），请检查网络' };
+    }
+    return { connected: false, error: msg2 };
+  }
+}
+
+// ============================================================================
 // 消息监听器
 // ============================================================================
 
@@ -641,7 +715,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     case MESSAGE_TYPES.PUSH_BATCH:
       handlePushBatch(message).then(sendResponse);
       return true;
-      
+
+    case MESSAGE_TYPES.OZON_API_CALL:
+      handleOzonApiCall(message).then(sendResponse);
+      return true;
+
+    case '__OZON_API_CALL__':
+      handleOzonApiCall(message).then(sendResponse);
+      return true;
+
+    case '__PING__':
+      sendResponse({ ok: true });
+      return true;
+
     default:
       // 未知消息类型，返回 false 不保持通道
       return false;

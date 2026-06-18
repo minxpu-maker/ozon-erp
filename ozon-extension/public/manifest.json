@@ -11,7 +11,8 @@
     "https://ozon.ru/*",
     "https://www.ozon.ru/*",
     "https://*.ozon.ru/*",
-    "https://*.coze.site/*"
+    "https://*.coze.site/*",
+    "https://api-seller.ozon.ru/*"
   ],
   "action": {
     "default_popup": "index.html",
@@ -41,6 +42,11 @@
       ],
       "js": ["src/content/main.ts"],
       "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://*.dev.coze.site/*"],
+      "js": ["src/content/erp-relay.ts"],
+      "run_at": "document_end"
     }
   ],
   "icons": {

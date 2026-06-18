@@ -88,19 +88,59 @@ export default function ShopsPage() {
     }
   };
 
+  // 通过 Chrome 插件桥接（浏览器网络，可访问外网）
+  const testViaExtension = async (shopId: string, ozonClientId: string, ozonApiKey: string): Promise<{ connected: boolean; error?: string }> => {
+    const win = window as unknown as Record<string, unknown>;
+    const relay = win.__ozonExtensionRelay as { ozonApiCall: (p: {
+      shopId: string; ozonClientId: string; ozonApiKey: string;
+      method: 'GET' | 'POST'; path: string; body?: Record<string, unknown>;
+    }) => Promise<{ connected: boolean; error?: string; data?: unknown }> } | undefined;
+    if (!relay) return { connected: false, error: '插件未安装' };
+    return relay.ozonApiCall({
+      shopId,
+      ozonClientId,
+      ozonApiKey,
+      method: 'POST',
+      path: '/v1/product/list',
+      body: { limit: 1 },
+    });
+  };
+
+  // 通过服务端 API 测试
+  const testViaServer = async (shopId: string): Promise<{ connected: boolean; error?: string }> => {
+    const res = await fetch(`/api/shops/${shopId}/test-connection`, { method: 'POST' });
+    const data = await res.json();
+    return data;
+  };
+
   const handleTestConnection = async (shopId: string) => {
     setTestingId(shopId);
     try {
-      const res = await fetch(`/api/shops/${shopId}/test-connection`, { method: 'POST' });
-      if (res.status === 404) {
-        alert('⚠️ 连接测试功能开发中');
-        return;
+      // 1. 优先尝试 Chrome 插件桥接（浏览器网络，可访问外网）
+      const extAvailable = (window as unknown as Record<string, unknown>).__ozonExtensionRelay !== undefined;
+      if (extAvailable) {
+        const credRes = await fetch(`/api/shops/${shopId}/credentials`);
+        const credData = await credRes.json();
+        const cred = credData?.data;
+        if (cred?.ozonClientId && cred?.ozonApiKey) {
+          const extResult = await testViaExtension(shopId, cred.ozonClientId, cred.ozonApiKey);
+          if (extResult.connected) {
+            alert('✅ 连接正常，API密钥验证通过（通过浏览器插件）');
+            setTestingId(null);
+            return;
+          } else if (extResult.error) {
+            alert('❌ 连接失败：' + extResult.error);
+            setTestingId(null);
+            return;
+          }
+        }
       }
-      const data = await res.json();
-      if (data.connected) {
+      // 2. 降级到服务端 API
+      const result = await testViaServer(shopId);
+      if (result.connected) {
         alert('✅ 连接正常，API密钥验证通过');
       } else {
-        alert('❌ 连接失败：' + (data.error || '请检查API密钥'));
+        alert('❌ 连接失败：' + (result.error || '请检查API密钥'));
       }
     } catch {
       alert('测试请求失败');
