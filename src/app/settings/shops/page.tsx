@@ -1,6 +1,11 @@
 'use client';
 
+import { useState } from 'react';
 import useSWR from 'swr';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { toast, Toaster } from 'sonner';
 
 interface Shop {
   id: number;
@@ -15,7 +20,68 @@ interface Shop {
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 export default function ShopsPage() {
-  const { data: shops = [], isLoading } = useSWR<Shop[]>('/api/shops', fetcher);
+  const { data: shops = [], isLoading, mutate } = useSWR<Shop[]>('/api/shops', fetcher);
+
+  const [showDialog, setShowDialog] = useState(false);
+  const [editShop, setEditShop] = useState<Shop | null>(null);
+  const [formShopName, setFormShopName] = useState('');
+  const [formClientId, setFormClientId] = useState('');
+  const [formApiKey, setFormApiKey] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const openAdd = () => {
+    setEditShop(null);
+    setFormShopName('');
+    setFormClientId('');
+    setFormApiKey('');
+    setShowDialog(true);
+  };
+
+  const openEdit = (shop: Shop) => {
+    setEditShop(shop);
+    setFormShopName(shop.shopName);
+    setFormClientId(shop.clientId);
+    setFormApiKey('');
+    setShowDialog(true);
+  };
+
+  const handleSave = async () => {
+    if (!formShopName.trim() || !formClientId.trim()) {
+      toast.error('请填写店铺名称和Client-Id');
+      return;
+    }
+    if (!editShop && !formApiKey.trim()) {
+      toast.error('新增店铺必须填写Api-Key');
+      return;
+    }
+    setSaving(true);
+    try {
+      const url = editShop ? `/api/shops/${editShop.id}` : '/api/shops';
+      const method = editShop ? 'PUT' : 'POST';
+      const body: Record<string, string> = {
+        shopName: formShopName.trim(),
+        clientId: formClientId.trim(),
+      };
+      if (formApiKey.trim()) body.apiKey = formApiKey.trim();
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || '保存失败');
+      }
+      setShowDialog(false);
+      setEditShop(null);
+      mutate();
+      toast.success(editShop ? '店铺已更新' : '店铺已新增');
+    } catch (e: any) {
+      toast.error(e.message || '保存失败');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#F6F8FB]">
@@ -25,7 +91,7 @@ export default function ShopsPage() {
           <h1 className="text-xl font-semibold text-[#152033]">店铺管理</h1>
           <p className="text-sm text-[#637089] mt-0.5">管理Ozon店铺API密钥，支持多店铺统一管理</p>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 bg-[#2F6BFF] text-white text-sm font-medium rounded-lg hover:bg-[#2F6BFF]/90 transition-colors">
+        <button onClick={openAdd} className="flex items-center gap-2 px-4 py-2 bg-[#2F6BFF] text-white text-sm font-medium rounded-lg hover:bg-[#2F6BFF]/90 transition-colors">
           + 新增店铺
         </button>
       </div>
@@ -76,6 +142,68 @@ export default function ShopsPage() {
           </div>
         )}
       </div>
+      {/* 新增/编辑店铺Dialog */}
+      <Dialog open={showDialog} onOpenChange={(open) => {
+        setShowDialog(open);
+        if (!open) setEditShop(null);
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editShop ? '编辑店铺' : '新增店铺'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <label className="block text-sm font-medium text-[#152033] mb-1.5">
+                店铺名称 <span className="text-red-500">*</span>
+              </label>
+              <Input
+                value={formShopName}
+                onChange={(e) => setFormShopName(e.target.value)}
+                placeholder="如: TIANTAN"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[#152033] mb-1.5">
+                Client-Id <span className="text-red-500">*</span>
+              </label>
+              <Input
+                value={formClientId}
+                onChange={(e) => setFormClientId(e.target.value)}
+                placeholder="Ozon Client-Id"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[#152033] mb-1.5">
+                Api-Key {editShop ? '（留空则不修改）' : ''}<span className="text-red-500">{editShop ? '' : '*'}</span>
+              </label>
+              <Input
+                type="password"
+                value={formApiKey}
+                onChange={(e) => setFormApiKey(e.target.value)}
+                placeholder={editShop ? '留空则保持原密钥不变' : 'Ozon Api-Key（加密存储）'}
+              />
+              {editShop && (
+                <p className="text-xs text-[#637089] mt-1">当前密钥: ••••••••（已加密存储）</p>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDialog(false);
+                setEditShop(null);
+              }}
+            >
+              取消
+            </Button>
+            <Button onClick={handleSave} disabled={saving}>
+              {saving ? '保存中...' : '保存'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Toaster />
     </div>
   );
 }
