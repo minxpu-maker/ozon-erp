@@ -8,19 +8,19 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
 interface Shop {
-  id: number;
+  id: string;
   shopName: string;
-  clientId: string;
-  apiKey: string;
+  ozonClientId: string;
+  apiKey?: string;
   isActive: boolean;
-  lastSyncedAt: string | null;
-  createdAt: string;
+  lastSyncedAt?: string | null;
+  createdAt?: string;
 }
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
 export default function ShopsPage() {
-  const { data, mutate } = useSWR<{ success: boolean; data: Shop[]; total: number }>('/api/shops', fetcher);
+  const { data, mutate } = useSWR<{ success: boolean; data: Shop[]; total?: number }>('/api/shops', fetcher);
   const shops = data?.data ?? [];
 
   const [showDialog, setShowDialog] = useState(false);
@@ -29,7 +29,7 @@ export default function ShopsPage() {
   const [formClientId, setFormClientId] = useState('');
   const [formApiKey, setFormApiKey] = useState('');
   const [saving, setSaving] = useState(false);
-  const [testingId, setTestingId] = useState<number | null>(null);
+  const [testingId, setTestingId] = useState<string | null>(null);
 
   const openAdd = () => {
     setEditShop(null);
@@ -42,7 +42,7 @@ export default function ShopsPage() {
   const openEdit = (shop: Shop) => {
     setEditShop(shop);
     setFormShopName(shop.shopName);
-    setFormClientId(shop.clientId);
+    setFormClientId(shop.ozonClientId);
     setFormApiKey('');
     setShowDialog(true);
   };
@@ -62,9 +62,9 @@ export default function ShopsPage() {
       const method = editShop ? 'PUT' : 'POST';
       const body: Record<string, string> = {
         shopName: formShopName.trim(),
-        clientId: formClientId.trim(),
+        ozonClientId: formClientId.trim(),
       };
-      if (formApiKey.trim()) body.apiKey = formApiKey.trim();
+      if (formApiKey.trim()) body.ozonApiKey = formApiKey.trim();
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
@@ -85,7 +85,7 @@ export default function ShopsPage() {
     }
   };
 
-  const handleTestConnection = async (shopId: number) => {
+  const handleTestConnection = async (shopId: string) => {
     setTestingId(shopId);
     try {
       const res = await fetch(`/api/shops/${shopId}/test-connection`, { method: 'POST' });
@@ -151,7 +151,7 @@ export default function ShopsPage() {
                   </div>
                   <div>
                     <p className="font-semibold text-[#152033] text-sm">{shop.shopName}</p>
-                    <p className="text-xs text-[#637089]">Ozon · Client-Id: {shop.clientId}</p>
+                    <p className="text-xs text-[#637089]">Ozon · Client-Id: {shop.ozonClientId}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5 flex-wrap justify-end">

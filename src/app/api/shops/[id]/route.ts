@@ -17,6 +17,7 @@ interface UpdateShopBody {
   ozonClientId?: string;
   ozonApiKey?: string;
   platform?: string;
+  isActive?: boolean;
 }
 
 /**
@@ -125,30 +126,27 @@ export async function PUT(
     }
 
     if (body.ozonClientId !== undefined) {
-      if (!body.ozonClientId.trim()) {
-        return NextResponse.json(
-          { success: false, error: 'Ozon Client-ID 不能为空' },
-          { status: 400 }
-        );
+      // 空白 = 不修改
+      if (body.ozonClientId.trim()) {
+        updateData.clientId = body.ozonClientId.trim();
+        connectionTestNeeded = true;
       }
-      updateData.clientId = body.ozonClientId.trim();
-      connectionTestNeeded = true;
     }
 
     if (body.ozonApiKey !== undefined) {
-      if (!body.ozonApiKey.trim()) {
-        return NextResponse.json(
-          { success: false, error: 'Ozon API-Key 不能为空' },
-          { status: 400 }
-        );
+      // 空白 = 不修改API密钥
+      if (body.ozonApiKey.trim()) {
+        updateData.apiKey = encrypt(body.ozonApiKey.trim());
+        connectionTestNeeded = true;
       }
-      // 重新加密API密钥 - 使用主字段 api_key
-      updateData.apiKey = encrypt(body.ozonApiKey.trim());
-      connectionTestNeeded = true;
     }
 
     if (body.platform !== undefined) {
       updateData.platform = body.platform;
+    }
+
+    if (body.isActive !== undefined) {
+      updateData.isActive = body.isActive;
     }
 
     // 执行更新
