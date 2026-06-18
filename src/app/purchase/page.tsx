@@ -130,13 +130,19 @@ export default function PurchasePage() {
   const [viewMode, setViewMode] = useState<'list' | 'sku'>('list');
   const [trackingNo, setTrackingNo] = useState('');
   const [purchasePrice, setPurchasePrice] = useState('');
-  const [supplierSource, setSupplierSource] = useState('1688');
+  const [purchasePlatform, setPurchasePlatform] = useState('1688');
   const [supplierName, setSupplierName] = useState('');
   const [showBatchDialog, setShowBatchDialog] = useState(false);
   const [batchText, setBatchText] = useState('');
   const [notify, setNotify] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
   const trackingInputRef = useRef<HTMLInputElement>(null);
   const priceInputRef = useRef<HTMLInputElement>(null);
+  // 同SKU历史采购
+  const [lastPurchase, setLastPurchase] = useState<any>(null);
+  const [historyList, setHistoryList] = useState<any[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  // 采购链接（选填）
+  const [purchaseUrl, setPurchaseUrl] = useState('');
 
   // 提示函数
   const toast = (opt: { title: string; variant?: 'default' | 'destructive' }) => {
@@ -210,6 +216,46 @@ export default function PurchasePage() {
     fetchOrders();
   }, [fetchOrders]);
 
+  // 选中订单变化时，查询该SKU的历史采购记录
+  useEffect(() => {
+    if (!selectedOrder) {
+      setLastPurchase(null);
+      setHistoryList([]);
+      return;
+    }
+    // 重置表单 + 查询历史
+    setTrackingNo('');
+    setPurchasePrice('');
+    setPurchasePlatform('1688');
+    setSupplierName('');
+    setPurchaseUrl('');
+
+    const orderSku = (selectedOrder as any).sku || (selectedOrder as any).productName || (selectedOrder as any).postingNumber;
+    if (!orderSku) return;
+
+    const fetchHistory = async () => {
+      try {
+        const res = await fetch(`/api/purchase/history?sku=${encodeURIComponent(orderSku)}`);
+        const data = await res.json();
+        const history = data.records || [];
+        setHistoryList(history);
+        if (history.length > 0) {
+          const last = history[0];
+          setLastPurchase(last);
+          setPurchasePrice(last.purchasePrice?.toString() || '');
+          setPurchasePlatform(last.supplierSource || '1688');
+          setSupplierName(last.supplierName || '');
+        } else {
+          setLastPurchase(null);
+        }
+      } catch {
+        setHistoryList([]);
+        setLastPurchase(null);
+      }
+    };
+    fetchHistory();
+  }, [selectedOrder]);
+
   // 同步订单
   const syncOrders = async () => {
     setSyncing(true);
@@ -251,39 +297,44 @@ export default function PurchasePage() {
     }
   };
 
-  // 确认采购
-  const handleConfirmPurchase = async () => {
-    if (!selectedOrder) return;
-    if (!purchasePrice) {
-      toast({ title: '请输入采购价', variant: 'destructive' });
-      return;
-    }
-    await fetch('/api/purchase-records', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        demandId: selectedOrder.id,
-        domesticTrackingNo: trackingNo,
-        purchasePrice: parseFloat(purchasePrice),
-        supplierSource,
-        supplierName,
-      }),
-    });
-    setTrackingNo('');
-    setPurchasePrice('');
-    setSupplierName('');
-    setSelectedOrder(null);
-    fetchOrders();
-    toast({ title: '采购记录已保存' });
-  };
+  // 统一采购提交
+  const handlePurchaseSubmit = async (goNext: boolean) => {
+    if (!selectedOrder || !trackingNo || !purchasePrice) return;
+    setSubmitting(true);
+    try {
+      await fetch('/api/purchase-records', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          demandId: selectedOrder.id,
+          domesticTrackingNo: trackingNo,
+          purchasePrice: parseFloat(purchasePrice),
+          supplierSource: purchasePlatform,
+          supplierName,
+          purchaseUrl,
+        }),
+      });
+      toast({ title: '采购记录已保存' });
 
-  // 确认并下一单
-  const handleConfirmAndNext = async () => {
-    await handleConfirmPurchase();
-    const nextOrder = orders.find(o => o.id !== selectedOrder?.id && o.purchaseStatus === 'awaiting');
-    if (nextOrder) {
-      setSelectedOrder(nextOrder);
-      trackingInputRef.current?.focus();
+      // 从列表移除已采购的
+      setOrders(prev => prev.filter(o => o.id !== selectedOrder.id));
+
+      if (goNext) {
+        const currentIdx = orders.findIndex(o => o.id === selectedOrder.id);
+        const next = orders[currentIdx + 1];
+        if (next) {
+          setSelectedOrder(next);
+          trackingInputRef.current?.focus();
+        } else {
+          setSelectedOrder(null);
+        }
+      } else {
+        setSelectedOrder(null);
+      }
+    } catch {
+      toast({ title: '保存失败，请重试', variant: 'destructive' });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -612,57 +663,70 @@ return (
               <div className="flex-1 overflow-auto p-4 space-y-4">
                 {/* 快递单号 */}
                 <div>
-                  <label className="block text-xs font-medium text-[#637089] mb-1.5">快递单号</label>
-                  <Input
-                    ref={trackingInputRef}
-                    placeholder="扫描或输入快递单号"
-                    value={trackingNo}
-                    onChange={(e) => setTrackingNo(e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter' && trackingNo) {
-                        priceInputRef.current?.focus();
-                      }
-                    }}
-                    className="font-mono text-sm"
-                  />
+                  <label className="block text-xs font-medium text-[#637089] mb-1.5">快递单号 *</label>
+                  <div className="relative">
+                    <Input
+                      ref={trackingInputRef}
+                      placeholder="扫描或输入快递单号"
+                      value={trackingNo}
+                      onChange={(e) => setTrackingNo(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' && trackingNo) {
+                          handlePurchaseSubmit(false);
+                        }
+                      }}
+                      className="font-mono text-sm pr-10"
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      title="扫码枪输入"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+                      </svg>
+                    </button>
+                  </div>
                 </div>
 
                 {/* 采购价 */}
                 <div>
-                  <label className="block text-xs font-medium text-[#637089] mb-1.5">采购价 (¥)</label>
+                  <label className="block text-xs font-medium text-[#637089] mb-1.5">采购价 (¥) *</label>
                   <Input
                     ref={priceInputRef}
                     type="number"
+                    step="0.01"
                     placeholder="0.00"
                     value={purchasePrice}
                     onChange={(e) => setPurchasePrice(e.target.value)}
                     onKeyDown={e => {
-                      if (e.key === 'Enter' && purchasePrice) {
-                        handleConfirmPurchase();
+                      if (e.key === 'Enter' && purchasePrice && trackingNo) {
+                        handlePurchaseSubmit(false);
                       }
                     }}
                     className="text-sm font-medium"
                   />
+                  {lastPurchase?.purchasePrice && (
+                    <p className="text-xs text-green-600 mt-1">
+                      ↑ 上次: {formatCNY(lastPurchase.purchasePrice)} ← 自动填充
+                    </p>
+                  )}
                 </div>
 
                 {/* 采购平台 */}
                 <div>
                   <label className="block text-xs font-medium text-[#637089] mb-1.5">采购平台</label>
-                  <div className="flex gap-2">
-                    {['1688', '拼多多', '手动录入'].map(platform => (
-                      <button
-                        key={platform}
-                        onClick={() => setSupplierSource(platform)}
-                        className={`flex-1 px-3 py-1.5 text-xs rounded-lg border transition-colors ${
-                          supplierSource === platform
-                            ? 'bg-blue-50 border-blue-300 text-blue-700 font-medium'
-                            : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
-                        }`}
-                      >
-                        {platform}
-                      </button>
-                    ))}
-                  </div>
+                  <select
+                    value={purchasePlatform}
+                    onChange={(e) => setPurchasePlatform(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  >
+                    <option value="1688">1688</option>
+                    <option value="pinduoduo">拼多多</option>
+                    <option value="taobao">淘宝</option>
+                    <option value="manual">手动录入</option>
+                  </select>
                 </div>
 
                 {/* 供应商名称 */}
@@ -674,25 +738,58 @@ return (
                     onChange={(e) => setSupplierName(e.target.value)}
                     className="text-sm"
                   />
+                  {lastPurchase?.supplierName && (
+                    <p className="text-xs text-green-600 mt-1">
+                      ↑ 上次: {lastPurchase.supplierName} ← 自动填充
+                    </p>
+                  )}
                 </div>
+
+                {/* 采购链接（选填） */}
+                <div>
+                  <label className="block text-xs font-medium text-[#637089] mb-1.5">采购链接 <span className="text-gray-300">选填</span></label>
+                  <Input
+                    type="url"
+                    placeholder="https://..."
+                    value={purchaseUrl}
+                    onChange={(e) => setPurchaseUrl(e.target.value)}
+                    className="text-sm font-mono"
+                  />
+                </div>
+
+                {/* 同SKU历史采购 */}
+                {historyList.length > 0 && (
+                  <div className="border-t border-gray-100 pt-3">
+                    <p className="text-xs text-gray-400 text-center mb-2">── 该SKU历史采购 ──</p>
+                    <div className="space-y-1 max-h-32 overflow-auto">
+                      {historyList.slice(0, 5).map((h, i) => (
+                        <div key={i} className="flex items-center justify-between text-xs px-2 py-1 bg-gray-50 rounded">
+                          <span className="text-gray-500">{h.date || h.createdAt?.slice(0, 10)}</span>
+                          <span className="text-gray-600 truncate mx-1">{h.supplierName}</span>
+                          <span className="text-gray-700 font-medium shrink-0">{formatCNY(h.purchasePrice)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* 操作按钮 */}
               <div className="px-4 py-3 border-t border-gray-200 flex gap-2">
                 <Button
                   className="flex-1 bg-blue-600 hover:bg-blue-700"
-                  onClick={handleConfirmPurchase}
-                  disabled={!purchasePrice}
+                  onClick={() => handlePurchaseSubmit(false)}
+                  disabled={!purchasePrice || !trackingNo || submitting}
                 >
-                  确认采购
+                  {submitting ? '提交中...' : '确认采购'}
                 </Button>
                 <Button
                   variant="outline"
-                  className="flex-1"
-                  onClick={handleConfirmAndNext}
-                  disabled={!purchasePrice}
+                  className="flex-1 border-blue-200 text-blue-600 hover:bg-blue-50"
+                  onClick={() => handlePurchaseSubmit(true)}
+                  disabled={!purchasePrice || !trackingNo || submitting}
                 >
-                  确认并下一单
+                  确认并下一单 →
                 </Button>
               </div>
             </>
