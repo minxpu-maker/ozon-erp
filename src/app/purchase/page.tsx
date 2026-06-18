@@ -127,6 +127,7 @@ export default function PurchasePage() {
   const [editingPurchasePrice, setEditingPurchasePrice] = useState('');
   const [savingPrice, setSavingPrice] = useState(false);
   const [rubToCny, setRubToCny] = useState(0.0923);
+  const [viewMode, setViewMode] = useState<'list' | 'sku'>('list');
 
   // 统计数据
   const stats = {
@@ -135,6 +136,32 @@ export default function PurchasePage() {
     delivered: orders.filter(o => o.purchaseStatus === 'delivered').length,
     total: orders.length,
   };
+
+  // 紧急度边框颜色
+  const getBorderColor = (order: Order) => {
+    if (!order.ozonCreatedAt) return 'border-l-4 border-l-gray-200';
+    const hours = (new Date(order.ozonCreatedAt).getTime() - Date.now()) / 3600000;
+    if (hours < 24) return 'border-l-4 border-l-red-500';
+    if (hours < 72) return 'border-l-4 border-l-yellow-400';
+    return 'border-l-4 border-l-gray-200';
+  };
+
+  // SKU聚合视图数据
+  const skuGroups = orders.reduce((acc, order) => {
+    const key = order.products[0]?.sku || order.postingNumber || String(Math.random());
+    if (!acc[key]) {
+      acc[key] = {
+        sku: key,
+        name: order.products[0]?.name,
+        image: order.products[0]?.image,
+        count: 0,
+        orders: [],
+      };
+    }
+    acc[key].count++;
+    acc[key].orders.push(order);
+    return acc;
+  }, {} as Record<string, { sku: string; name: string; image?: string; count: number; orders: Order[] }>);
 
   // 获取汇率
   useEffect(() => {
@@ -230,177 +257,281 @@ export default function PurchasePage() {
 return (
     <AppLayout title="采购管理" subtitle="Ozon FBS 订单采购管理">
 
-          {/* 统计卡片 - 紧凑布局 */}
-          <div className="px-6 py-3">
+      {/* === 左右分栏布局 === */}
+      <div className="flex gap-4 p-4 h-[calc(100vh-8rem)] overflow-hidden">
+
+        {/* 左栏：采购列表 (60%) */}
+        <div className="flex-1 flex flex-col bg-white rounded-lg border border-gray-200 overflow-hidden">
+
+          {/* 统计卡片 */}
+          <div className="px-4 py-3 border-b border-gray-200">
             <div className="flex items-center gap-6 text-sm">
               <div className="flex items-center gap-2">
-     <Clock className="w-7 h-7 text-orange-500" />
-     <div>
-       <div className="text-xs text-[#637089]">待采购</div>
-       <div className="text-lg font-semibold text-[#152033]">{stats.awaiting}</div>
-     </div>
+                <Clock className="w-6 h-6 text-orange-500" />
+                <div>
+                  <div className="text-xs text-gray-500">待采购</div>
+                  <div className="text-base font-semibold text-gray-900">{stats.awaiting}</div>
+                </div>
               </div>
               <div className="flex items-center gap-2">
-     <ShoppingCart className="w-7 h-7 text-blue-500" />
-     <div>
-       <div className="text-xs text-[#637089]">已采购</div>
-       <div className="text-lg font-semibold text-[#152033]">{stats.purchased}</div>
-     </div>
+                <ShoppingCart className="w-6 h-6 text-blue-500" />
+                <div>
+                  <div className="text-xs text-gray-500">已采购</div>
+                  <div className="text-base font-semibold text-gray-900">{stats.purchased}</div>
+                </div>
               </div>
               <div className="flex items-center gap-2">
-     <CheckCircle className="w-7 h-7 text-green-500" />
-     <div>
-       <div className="text-xs text-[#637089]">已送达</div>
-       <div className="text-lg font-semibold text-[#152033]">{stats.delivered}</div>
-     </div>
+                <CheckCircle className="w-6 h-6 text-green-500" />
+                <div>
+                  <div className="text-xs text-gray-500">已送达</div>
+                  <div className="text-base font-semibold text-gray-900">{stats.delivered}</div>
+                </div>
               </div>
               <div className="flex items-center gap-2">
-     <Package className="w-7 h-7 text-gray-400" />
-     <div>
-       <div className="text-xs text-[#637089]">订单总数</div>
-       <div className="text-lg font-semibold text-[#152033]">{stats.total}</div>
-     </div>
+                <Package className="w-6 h-6 text-gray-400" />
+                <div>
+                  <div className="text-xs text-gray-500">订单总数</div>
+                  <div className="text-base font-semibold text-gray-900">{stats.total}</div>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* 操作栏 */}
-          <div className="px-6 py-3 bg-white border-y border-[#E6EAF2]">
-            <div className="flex items-center gap-4">
-              <div className="flex-1 flex items-center gap-2">
-     <div className="relative flex-1 max-w-xs">
-       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#637089]" />
-       <input
-         type="text"
-         placeholder="搜索订单号..."
-         value={searchQuery}
-         onChange={(e) => setSearchQuery(e.target.value)}
-         className="w-full pl-9 pr-4 py-2 text-sm border border-[#E6EAF2] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-       />
-     </div>
-     <select
-       value={statusFilter}
-       onChange={(e) => setStatusFilter(e.target.value)}
-       className="px-3 py-2 text-sm border border-[#E6EAF2] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-     >
-       <option value="all">全部状态</option>
-       <option value="awaiting_deliver">待采购</option>
-       <option value="awaiting_packaging">已采购</option>
-       <option value="delivered">已送达</option>
-     </select>
-              </div>
-              <div className="flex items-center gap-2">
-     <Button onClick={syncOrders} disabled={syncing}>
-       <RefreshCw className={`w-4 h-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
-       同步订单
-     </Button>
-     <Button variant="outline">
-       <Download className="w-4 h-4 mr-2" />
-       导出
-     </Button>
-              </div>
+          {/* 操作栏：搜索 + 筛选 + 视图切换 */}
+          <div className="px-4 py-3 border-b border-gray-200 flex items-center gap-3">
+            <div className="relative flex-1 max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="搜索订单号..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              />
+            </div>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            >
+              <option value="all">全部</option>
+              <option value="awaiting">待采购</option>
+              <option value="purchased">已采购</option>
+              <option value="delivered">已送达</option>
+            </select>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={syncOrders}
+              disabled={syncing}
+              className="gap-1.5"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} />
+              {syncing ? '同步中...' : '同步Ozon'}
+            </Button>
+
+            {/* 视图切换 */}
+            <div className="ml-auto flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+              <button
+                onClick={() => setViewMode('list')}
+                className={`px-3 py-1 text-xs rounded-md transition-colors ${
+                  viewMode === 'list' ? 'bg-white text-blue-600 shadow-sm font-medium' : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                列表视图
+              </button>
+              <button
+                onClick={() => setViewMode('sku')}
+                className={`px-3 py-1 text-xs rounded-md transition-colors ${
+                  viewMode === 'sku' ? 'bg-white text-blue-600 shadow-sm font-medium' : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                SKU聚合
+              </button>
             </div>
           </div>
 
-          {/* 订单列表 */}
-          <div className="px-6 py-4">
-            <div className="bg-white rounded-lg border border-[#E6EAF2] overflow-hidden">
+          {/* 订单视图 */}
+          <div className="flex-1 overflow-auto">
+            {viewMode === 'list' ? (
               <table className="w-full">
-     <thead>
-       <tr className="bg-[#F6F8FB] text-left text-xs text-[#637089]">
-         <th className="w-12"></th>
-         <th className="px-4 py-3 font-medium">订单号</th>
-         <th className="px-4 py-3 font-medium">发货单号</th>
-         <th className="px-4 py-3 font-medium">商品</th>
-         <th className="px-4 py-3 font-medium">店铺</th>
-         <th className="px-4 py-3 font-medium">状态</th>
-         <th className="px-4 py-3 font-medium">销售金额</th>
-         <th className="px-4 py-3 font-medium">采购价</th>
-         <th className="px-4 py-3 font-medium">下单时间</th>
-         <th className="px-4 py-3 font-medium">操作</th>
-       </tr>
-     </thead>
-     <tbody className="divide-y divide-[#E6EAF2]">
-       {loading ? (
-         <tr>
-           <td colSpan={10} className="px-4 py-8 text-center text-[#637089]">
-             加载中...
-           </td>
-         </tr>
-       ) : filteredOrders.length === 0 ? (
-         <tr>
-           <td colSpan={10} className="px-4 py-8 text-center text-[#637089]">
-             暂无订单
-           </td>
-         </tr>
-       ) : (
-         filteredOrders.map((order) => (
-           <tr key={order.id} className="hover:bg-gray-50">
-             <td className="px-4 py-3">
-               <input type="checkbox" className="rounded border-gray-300" />
-             </td>
-             <td className="px-4 py-3 text-sm font-medium text-[#152033]">
-               {order.ozonOrderId}
-             </td>
-             <td className="px-4 py-3 text-sm text-[#637089]">
-               {order.postingNumber}
-             </td>
-             <td className="px-4 py-3">
-               <div className="flex items-center gap-2">
-                 {order.products?.[0]?.image ? (
-                   <ProductImage src={order.products[0].image} />
-                 ) : (
-                   <div className="w-10 h-10 rounded bg-gray-100 flex items-center justify-center">
-                     <ImageIcon className="w-4 h-4 text-gray-400" />
-                   </div>
-                 )}
-                 <span className="text-sm text-[#152033] truncate max-w-[120px]">
-                   {order.products?.[0]?.name || '-'}
-                 </span>
-               </div>
-             </td>
-             <td className="px-4 py-3">
-               <Badge variant="outline" className="text-xs">{order.shopName}</Badge>
-             </td>
-             <td className="px-4 py-3">
-               <Badge className={statusMap[order.status]?.color || 'bg-gray-100 text-gray-700'}>
-                 {statusMap[order.status]?.label || order.status}
-               </Badge>
-             </td>
-             <td className="px-4 py-3 text-sm font-medium text-[#152033]">
-               ¥{(parseFloat(order.totalPrice || '0') * rubToCny).toFixed(2)}
-             </td>
-             <td className="px-4 py-3 text-sm">
-               {order.purchasePrice ? (
-                 <span className="text-[#16A37B]">¥{(parseFloat(String(order.purchasePrice)) || 0).toFixed(2)}</span>
-               ) : (
-                 <span className="text-[#637089]">未录入</span>
-               )}
-             </td>
-             <td className="px-4 py-3 text-sm text-[#637089]">
-               {(order.ozonCreatedAt || order.createdAt) ? new Date(order.ozonCreatedAt || order.createdAt).toLocaleString('zh-CN', {
-                 year: 'numeric',
-                 month: '2-digit',
-                 day: '2-digit',
-                 hour: '2-digit',
-                 minute: '2-digit',
-               }).replace(/\//g, '/') : '-'}
-             </td>
-             <td className="px-4 py-3">
-               <button
-                 onClick={() => openDetail(order)}
-                 className="p-1.5 rounded-full hover:bg-gray-100"
-               >
-                 <Eye className="w-4 h-4 text-[#637089]" />
-               </button>
-             </td>
-           </tr>
-         ))
-       )}
-     </tbody>
+                <thead>
+                  <tr className="bg-[#F6F8FB] text-left text-xs text-[#637089]">
+                    <th className="w-12 px-4 py-3"></th>
+                    <th className="px-4 py-3 font-medium">订单号</th>
+                    <th className="px-4 py-3 font-medium">发货单号</th>
+                    <th className="px-4 py-3 font-medium">商品</th>
+                    <th className="px-4 py-3 font-medium">SKU</th>
+                    <th className="px-4 py-3 font-medium">数量</th>
+                    <th className="px-4 py-3 font-medium">单价(CNY)</th>
+                    <th className="px-4 py-3 font-medium">状态</th>
+                    <th className="px-4 py-3 font-medium">紧迫度</th>
+                    <th className="px-4 py-3 font-medium">操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {orders.length === 0 ? (
+                    <tr>
+                      <td colSpan={10} className="text-center py-12 text-[#637089]">
+                        暂无待采购订单
+                      </td>
+                    </tr>
+                  ) : (
+                    orders
+                      .filter(order => {
+                        if (searchQuery) {
+                          return (order.ozonOrderId || '').includes(searchQuery) ||
+                            (order.postingNumber || '').includes(searchQuery);
+                        }
+                        return true;
+                      })
+                      .map((order) => {
+                        const hours = order.ozonCreatedAt
+                          ? Math.max(0, (new Date(order.ozonCreatedAt).getTime() - Date.now()) / 3600000)
+                          : Infinity;
+                        const deadlineColor = hours < 24 ? 'text-red-500' : hours < 72 ? 'text-yellow-500' : 'text-gray-400';
+                        const deadlineText = hours === Infinity ? '-' : hours < 24
+                          ? `仅剩${Math.floor(hours)}h`
+                          : hours < 72
+                          ? `${Math.floor(hours)}h`
+                          : `${Math.floor(hours / 24)}天`;
+                        const statusColor = order.purchaseStatus === 'awaiting' ? 'bg-orange-100 text-orange-700'
+                          : order.purchaseStatus === 'purchased' ? 'bg-blue-100 text-blue-700'
+                          : 'bg-green-100 text-green-700';
+                        const statusLabel = order.purchaseStatus === 'awaiting' ? '待采购'
+                          : order.purchaseStatus === 'purchased' ? '已采购'
+                          : '已送达';
+                        return (
+                          <tr
+                            key={order.id}
+                            className={`border-b border-[#E6EAF2] hover:bg-blue-50/50 cursor-pointer transition-colors ${getBorderColor(order)} ${selectedOrder?.id === order.id ? 'bg-blue-50 ring-2 ring-blue-200' : ''}`}
+                            onClick={() => setSelectedOrder(order)}
+                          >
+                            <td className="px-4 py-3">
+                              <input
+                                type="checkbox"
+                                checked={selectedOrder?.id === order.id}
+                                onChange={() => {}}
+                                className="rounded border-[#E6EAF2]"
+                              />
+                            </td>
+                            <td className="px-4 py-3 text-sm text-[#152033]">{order.ozonOrderId || '-'}</td>
+                            <td className="px-4 py-3 text-sm text-[#152033]">{order.postingNumber}</td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2">
+                                {order.products[0]?.image && (
+                                  <img
+                                    src={order.products[0]?.image}
+                                    alt={order.products[0]?.name}
+                                    className="w-10 h-10 object-cover rounded"
+                                  />
+                                )}
+                                <span className="text-sm text-[#152033] line-clamp-1">{order.products[0]?.name}</span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-sm text-[#152033]">{order.products[0]?.sku || '-'}</td>
+                            <td className="px-4 py-3 text-sm text-[#152033]">{order.products[0]?.quantity}</td>
+                            <td className="px-4 py-3 text-sm font-medium text-[#152033]">
+                              ¥{(Number(order.totalPrice) * rubToCny).toFixed(2)}
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className={`text-xs px-2 py-0.5 rounded ${statusColor}`}>{statusLabel}</span>
+                            </td>
+                            <td className={`px-4 py-3 text-xs font-medium ${deadlineColor}`}>
+                              {deadlineText}
+                            </td>
+                            <td className="px-4 py-3">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={(e) => { e.stopPropagation(); setDetailOrder(order); }}
+                              >
+                                查看
+                              </Button>
+                            </td>
+                          </tr>
+                        );
+                      })
+                  )}
+                </tbody>
               </table>
+            ) : (
+              <div className="flex-1 overflow-auto p-4">
+                {Object.keys(skuGroups).length === 0 ? (
+                  <div className="text-center py-12 text-[#637089]">暂无数据</div>
+                ) : (
+                  <div className="space-y-3">
+                    {Object.entries(skuGroups).map(([key, group]) => (
+                      <div
+                        key={key}
+                        className="bg-white rounded-lg border border-gray-200 p-4 hover:border-blue-300 cursor-pointer transition-colors"
+                        onClick={() => {
+                          const first = group.orders[0];
+                          if (first) setSelectedOrder(first);
+                        }}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            {group.image && (
+                              <img src={group.image} className="w-12 h-12 rounded object-cover" />
+                            )}
+                            <div>
+                              <div className="font-medium text-sm text-[#152033]">{group.name}</div>
+                              <div className="text-xs text-[#637089]">SKU: {key}</div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <div className="text-center">
+                              <div className="text-lg font-bold text-[#152033]">{group.count}</div>
+                              <div className="text-xs text-[#637089]">订单数</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-lg font-bold text-blue-600">
+                                {group.orders.reduce((sum, o) => sum + (Number(o.totalPrice) * rubToCny), 0).toFixed(2)}¥
+                              </div>
+                              <div className="text-xs text-[#637089]">预估总额</div>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="mt-2 border-t border-gray-100 pt-2 space-y-1">
+                          {group.orders.map((order) => (
+                            <div
+                              key={order.id}
+                              className={`text-xs px-2 py-1 rounded hover:bg-blue-50 cursor-pointer ${getBorderColor(order)} bg-gray-50`}
+                              onClick={(e) => { e.stopPropagation(); setDetailOrder(order); }}
+                            >
+                              <span className="text-gray-500">{order.postingNumber}</span>
+                              <span className="mx-2 text-gray-300">·</span>
+                              <span className="text-gray-700">¥{(Number(order.totalPrice) * rubToCny).toFixed(2)}</span>
+                              {order.purchasePrice && (
+                                <span className="ml-2 text-green-600">已采购</span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 右栏：采购录入 (40%) */}
+        <div className="w-[40%] bg-white rounded-lg border border-gray-200 overflow-hidden flex flex-col">
+          <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
+            <h3 className="text-sm font-semibold text-gray-700">采购录入</h3>
+          </div>
+          <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
+            <div className="text-center">
+              <Package className="w-12 h-12 mx-auto mb-2 opacity-30" />
+              <p>← 请从左侧选择订单</p>
             </div>
           </div>
+        </div>
+
+      </div>
 
           {/* 订单详情弹窗 - 居中铺满 */}
           <Dialog open={!!detailOrder} onOpenChange={(open) => !open && setDetailOrder(null)}>
