@@ -97,34 +97,39 @@ export default function ShopsPage() {
       if (!credData.success) return { connected: false, error: credData.error || '获取凭证失败' };
       const { ozonClientId, ozonApiKey } = credData.data;
 
-      // 2. 浏览器直调 Ozon API（用 v2/product/list GET 测试连通性）
-      const url = new URL('https://api-seller.ozon.ru/v2/product/list');
-      url.searchParams.set('limit', '1');
-      const ozonRes = await fetch(url.toString(), {
-        method: 'GET',
-        headers: {
-          'Client-Id': ozonClientId,
-          'Api-Key': ozonApiKey,
-        },
-      });
-
-      if (ozonRes.ok) return { connected: true };
-      const errData = await ozonRes.json().catch(() => null);
-      if (errData?.code) {
-        const msg = `${errData.message || errData.code} (code: ${errData.code})`;
+      // 2. 浏览器直调 Ozon API /v2/product/list（GET请求，无CORS preflight）
+      try {
+        const ozonRes = await fetch('https://api-seller.ozon.ru/v2/product/list?limit=1', {
+          method: 'GET',
+          headers: {
+            'Client-Id': ozonClientId,
+            'Api-Key': ozonApiKey,
+          },
+        });
+        if (ozonRes.ok) return { connected: true };
+        const errText = await ozonRes.text();
+        try {
+          const errData = JSON.parse(errText);
+          if (errData.code || errData.message) {
+            return { connected: false, error: errData.message || `code: ${errData.code}` };
+          }
+        } catch { /* ignore */ }
+        if (ozonRes.status === 0) {
+          return { connected: false, error: 'CORS阻止直调，请安装Chrome插件绕过' };
+        }
+        return { connected: false, error: `HTTP ${ozonRes.status}` };
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : '网络错误';
+        if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('net::')) {
+          return { connected: false, error: 'CORS阻止直调，可安装Chrome插件绕过' };
+        }
         return { connected: false, error: msg };
       }
-      return { connected: false, error: `HTTP ${ozonRes.status} ${ozonRes.statusText}` };
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('net::')) {
-        return { connected: false, error: '浏览器直连失败（可能被CORS拦截），请安装Chrome插件' };
-      }
-      return { connected: false, error: msg };
+    } catch {
+      return { connected: false, error: '浏览器直调失败' };
     }
-  };
+    };
 
-  // 方式二：服务端 API（沙箱服务器无法访问外网，仅作兜底）
   const testViaServer = async (shopId: string): Promise<{ connected: boolean; error?: string }> => {
     const res = await fetch(`/api/shops/${shopId}/test-connection`, { method: 'POST' });
     const data = await res.json();
