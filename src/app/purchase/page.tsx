@@ -133,7 +133,13 @@ export default function PurchasePage() {
   const [purchasePlatform, setPurchasePlatform] = useState('1688');
   const [supplierName, setSupplierName] = useState('');
   const [showBatchDialog, setShowBatchDialog] = useState(false);
-  const [batchText, setBatchText] = useState('');
+  // 批量录入（表格形式）
+  const [batchItems, setBatchItems] = useState<any[]>([]);
+  const [selectedSkuOrders, setSelectedSkuOrders] = useState<any[]>([]);
+  const [batchPlatform, setBatchPlatform] = useState('1688');
+  const [batchSupplier, setBatchSupplier] = useState('');
+  const [batchPurchaseUrl, setBatchPurchaseUrl] = useState('');
+  const [batchSubmitting, setBatchSubmitting] = useState(false);
   const [notify, setNotify] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
   const trackingInputRef = useRef<HTMLInputElement>(null);
   const priceInputRef = useRef<HTMLInputElement>(null);
@@ -338,22 +344,54 @@ export default function PurchasePage() {
     }
   };
 
+  // 打开批量录入Dialog
+  const openBatchDialog = (skuOrders?: any[]) => {
+    const items = skuOrders || orders;
+    setBatchItems(items.map((o: any) => ({
+      orderId: o.id,
+      orderNo: o.postingNumber || o.orderNo,
+      productName: o.products?.[0]?.productName || o.productName || o.sku,
+      sku: o.products?.[0]?.sku || o.sku,
+      quantity: o.products?.[0]?.quantity || o.quantity || 1,
+      expressNo: '',
+      purchasePrice: '',
+    })));
+    setSelectedSkuOrders(skuOrders || []);
+    setBatchPlatform('1688');
+    setBatchSupplier('');
+    setBatchPurchaseUrl('');
+    setShowBatchDialog(true);
+  };
+
   // 批量提交
   const handleBatchSubmit = async () => {
-    const lines = batchText.trim().split('\n').filter(Boolean);
-    const records = lines.map(line => {
-      const [trackingNo, price] = line.split(',');
-      return { trackingNo: trackingNo.trim(), purchasePrice: parseFloat(price.trim()) };
-    });
-    await fetch('/api/purchase-records/batch', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ records }),
-    });
-    setBatchText('');
-    setShowBatchDialog(false);
-    fetchOrders();
-    toast({ title: `已批量录入 ${records.length} 条` });
+    const readyItems = batchItems.filter(i => i.expressNo && i.purchasePrice);
+    if (readyItems.length === 0) return;
+
+    setBatchSubmitting(true);
+    try {
+      await fetch('/api/purchase', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: readyItems.map((item: any) => ({
+            orderId: item.orderId,
+            expressNo: item.expressNo,
+            purchasePrice: parseFloat(item.purchasePrice),
+            purchasePlatform: selectedSkuOrders.length > 0 ? batchPlatform : '1688',
+            supplierName: selectedSkuOrders.length > 0 ? batchSupplier : '',
+            purchaseUrl: selectedSkuOrders.length > 0 ? batchPurchaseUrl : '',
+          })),
+        }),
+      });
+
+      const submittedIds = new Set(readyItems.map((i: any) => i.orderId));
+      setOrders((prev: any[]) => prev.filter(o => !submittedIds.has(o.id)));
+      setShowBatchDialog(false);
+      setSelectedOrder(null);
+    } finally {
+      setBatchSubmitting(false);
+    }
   };
 
   // 打开详情
@@ -486,7 +524,7 @@ return (
               <Button
                 size="sm"
                 className="bg-blue-600 hover:bg-blue-700"
-                onClick={() => setShowBatchDialog(true)}
+                onClick={() => openBatchDialog()}
               >
                 批量录入
               </Button>
@@ -590,7 +628,7 @@ return (
                             </span>
                           )}
                           <Button size="sm" className="bg-blue-600 hover:bg-blue-700"
-                            onClick={() => setShowBatchDialog(true)}>
+                            onClick={() => openBatchDialog(group.orders as any[])}>
                             一键全采购 →
                           </Button>
                         </div>
@@ -806,7 +844,7 @@ return (
             <Button
               variant="ghost"
               className="w-full text-blue-600 hover:text-blue-700 hover:bg-blue-50 text-xs"
-              onClick={() => setShowBatchDialog(true)}
+              onClick={() => openBatchDialog()}
             >
               <ClipboardList className="w-4 h-4 mr-1.5" />
               批量录入快递号
@@ -816,25 +854,136 @@ return (
 
       </div>
 
-          {/* 批量录入弹窗 */}
+          {/* 批量录入弹窗 - 表格形式 */}
           <Dialog open={showBatchDialog} onOpenChange={setShowBatchDialog}>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle>批量录入快递号</DialogTitle>
+            <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+              <DialogHeader className="shrink-0">
+                <div className="flex items-center justify-between pr-8">
+                  <div>
+                    <DialogTitle>{selectedSkuOrders.length > 0 ? 'SKU批量采购' : '批量录入'}</DialogTitle>
+                    <p className="text-xs text-[#637089] mt-1">{batchItems.length}笔订单待录入</p>
+                  </div>
+                </div>
               </DialogHeader>
-              <div className="space-y-3">
-                <p className="text-xs text-[#637089]">每行一条：快递单号,采购价（用逗号分隔）</p>
-                <textarea
-                  value={batchText}
-                  onChange={(e) => setBatchText(e.target.value)}
-                  placeholder={"SF1234567890,25.00\nYTO9876543210,18.50"}
-                  className="w-full h-40 px-3 py-2 text-sm font-mono border border-gray-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                />
+
+              {/* 公共采购信息区（仅SKU批量时显示） */}
+              {selectedSkuOrders.length > 0 && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4 grid grid-cols-3 gap-3 shrink-0">
+                  <p className="col-span-3 text-xs font-medium text-blue-700 mb-1">公共采购信息（将应用到所有订单）</p>
+                  <select
+                    value={batchPlatform}
+                    onChange={(e) => setBatchPlatform(e.target.value)}
+                    className="px-3 py-2 text-sm border border-blue-200 rounded-lg bg-white focus:outline-none"
+                  >
+                    <option value="1688">1688</option>
+                    <option value="pinduoduo">拼多多</option>
+                    <option value="taobao">淘宝</option>
+                    <option value="manual">手动录入</option>
+                  </select>
+                  <input
+                    value={batchSupplier}
+                    onChange={(e) => setBatchSupplier(e.target.value)}
+                    placeholder="公共供应商"
+                    className="px-3 py-2 text-sm border border-blue-200 rounded-lg bg-white focus:outline-none"
+                  />
+                  <input
+                    value={batchPurchaseUrl}
+                    onChange={(e) => setBatchPurchaseUrl(e.target.value)}
+                    placeholder="采购链接（可选）"
+                    className="px-3 py-2 text-sm border border-blue-200 rounded-lg bg-white focus:outline-none"
+                  />
+                </div>
+              )}
+
+              {/* 逐行录入表格 */}
+              <div className="flex-1 overflow-auto border border-gray-200 rounded-lg">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 sticky top-0">
+                    <tr>
+                      <th className="px-3 py-2 text-left text-[#637089] font-medium w-8"></th>
+                      <th className="px-3 py-2 text-left text-[#637089] font-medium">订单号</th>
+                      <th className="px-3 py-2 text-left text-[#637089] font-medium">商品</th>
+                      <th className="px-3 py-2 text-left text-[#637089] font-medium w-40">快递单号 *</th>
+                      <th className="px-3 py-2 text-left text-[#637089] font-medium w-28">采购价(¥) *</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {batchItems.map((item: any, idx: number) => {
+                      const isFilled = item.expressNo && item.purchasePrice;
+                      return (
+                        <tr key={item.orderId || idx} className={`border-t border-gray-100 ${isFilled ? 'bg-green-50/50' : ''}`}>
+                          <td className="px-3 py-2">
+                            {isFilled && <span className="text-green-500 font-bold">✓</span>}
+                          </td>
+                          <td className="px-3 py-2 font-mono text-xs text-[#152033]">{item.orderNo}</td>
+                          <td className="px-3 py-2 text-[#637089] text-xs">{item.productName} ×{item.quantity}</td>
+                          <td className="px-3 py-2">
+                            <input
+                              value={item.expressNo}
+                              onChange={(e) => {
+                                const newItems = [...batchItems];
+                                newItems[idx] = { ...newItems[idx], expressNo: e.target.value };
+                                setBatchItems(newItems);
+                              }}
+                              placeholder="快递单号"
+                              className="w-full px-2 py-1 text-sm border border-gray-200 rounded focus:outline-none focus:border-blue-400"
+                            />
+                          </td>
+                          <td className="px-3 py-2">
+                            <input
+                              value={item.purchasePrice}
+                              onChange={(e) => {
+                                const newItems = [...batchItems];
+                                newItems[idx] = { ...newItems[idx], purchasePrice: e.target.value };
+                                setBatchItems(newItems);
+                              }}
+                              placeholder="¥"
+                              className="w-full px-2 py-1 text-sm border border-gray-200 rounded focus:outline-none focus:border-blue-400"
+                            />
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
-              <DialogFooter className="gap-2">
-                <Button variant="outline" onClick={() => setShowBatchDialog(false)}>取消</Button>
-                <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleBatchSubmit}>确认录入</Button>
-              </DialogFooter>
+
+              {/* 统一采购价快捷填充（仅SKU批量时） */}
+              {selectedSkuOrders.length > 0 && (
+                <div className="mt-3 flex items-center gap-3 text-xs text-[#637089] shrink-0">
+                  <span>统一采购价:</span>
+                  <input
+                    placeholder="输入后回车批量填充"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        const val = (e.target as HTMLInputElement).value;
+                        setBatchItems((prev: any[]) => prev.map(item => ({ ...item, purchasePrice: val })));
+                      }
+                    }}
+                    className="w-32 px-2 py-1 text-sm border border-gray-200 rounded focus:outline-none focus:border-blue-400"
+                  />
+                  <span className="text-gray-400">回车填充所有行</span>
+                </div>
+              )}
+
+              {/* 底部操作栏 */}
+              <div className="flex items-center justify-between pt-4 shrink-0">
+                <p className="text-sm text-[#637089]">
+                  已填写 {batchItems.filter((i: any) => i.expressNo && i.purchasePrice).length} / {batchItems.length} 笔
+                </p>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setShowBatchDialog(false)}>取消</Button>
+                  <Button
+                    disabled={
+                      batchItems.filter((i: any) => i.expressNo && i.purchasePrice).length === 0
+                      || batchSubmitting
+                    }
+                    onClick={handleBatchSubmit}
+                  >
+                    {batchSubmitting ? '提交中...' : `确认提交 (${batchItems.filter((i: any) => i.expressNo && i.purchasePrice).length}笔)`}
+                  </Button>
+                </div>
+              </div>
             </DialogContent>
           </Dialog>
 
