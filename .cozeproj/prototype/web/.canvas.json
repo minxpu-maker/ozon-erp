@@ -3,9 +3,17 @@
     {
       "type": "html",
       "options": {
+        "path": ".cozeproj/prototype/web/login.html"
+      },
+      "title": "登录页",
+      "size": "web"
+    },
+    {
+      "type": "html",
+      "options": {
         "path": ".cozeproj/prototype/web/dashboard.html"
       },
-      "title": "仪表盘",
+      "title": "Ozon ERP 仪表盘",
       "size": "web"
     },
     {
@@ -13,7 +21,7 @@
       "options": {
         "path": ".cozeproj/prototype/web/orders.html"
       },
-      "title": "订单管理",
+      "title": "订单列表",
       "size": "web"
     },
     {
@@ -21,15 +29,7 @@
       "options": {
         "path": ".cozeproj/prototype/web/purchase.html"
       },
-      "title": "采购管理",
-      "size": "web"
-    },
-    {
-      "type": "html",
-      "options": {
-        "path": ".cozeproj/prototype/web/quick-entry.html"
-      },
-      "title": "快捷录单",
+      "title": "采购工作台",
       "size": "web"
     },
     {
@@ -37,7 +37,7 @@
       "options": {
         "path": ".cozeproj/prototype/web/logistics.html"
       },
-      "title": "物流追踪",
+      "title": "验货入库",
       "size": "web"
     },
     {
@@ -45,7 +45,7 @@
       "options": {
         "path": ".cozeproj/prototype/web/packaging.html"
       },
-      "title": "打包流程",
+      "title": "打包发货",
       "size": "web"
     },
     {
@@ -53,15 +53,23 @@
       "options": {
         "path": ".cozeproj/prototype/web/finance.html"
       },
-      "title": "财务核算",
+      "title": "利润核算",
       "size": "web"
     },
     {
       "type": "html",
       "options": {
-        "path": ".cozeproj/prototype/web/settings.html"
+        "path": ".cozeproj/prototype/web/inventory.html"
       },
-      "title": "系统设置",
+      "title": "库存管理",
+      "size": "web"
+    },
+    {
+      "type": "html",
+      "options": {
+        "path": ".cozeproj/prototype/web/wms.html"
+      },
+      "title": "仓库盘点",
       "size": "web"
     },
     {
@@ -75,14 +83,6 @@
     {
       "type": "html",
       "options": {
-        "path": ".cozeproj/prototype/web/reports.html"
-      },
-      "title": "数据报表",
-      "size": "web"
-    },
-    {
-      "type": "html",
-      "options": {
         "path": ".cozeproj/prototype/web/suppliers.html"
       },
       "title": "供应商管理",
@@ -91,9 +91,9 @@
     {
       "type": "html",
       "options": {
-        "path": ".cozeproj/prototype/web/login.html"
+        "path": ".cozeproj/prototype/web/reports.html"
       },
-      "title": "登录页面",
+      "title": "数据报表",
       "size": "web"
     },
     {
@@ -115,17 +115,17 @@
     {
       "type": "html",
       "options": {
-        "path": ".cozeproj/prototype/web/inventory.html"
+        "path": ".cozeproj/prototype/web/settings.html"
       },
-      "title": "库存管理",
+      "title": "系统设置",
       "size": "web"
     },
     {
       "type": "html",
       "options": {
-        "path": ".cozeproj/prototype/web/wms.html"
+        "path": ".cozeproj/prototype/web/quick-entry.html"
       },
-      "title": "仓库管理",
+      "title": "快捷录单",
       "size": "web"
     }
   ]
