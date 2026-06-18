@@ -8,8 +8,5 @@
         }
       }
     ]
-  ],
-  "plugins": [
-    "@react-dev-inspector/babel-plugin"
   ]
 }
