@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 import { AppLayout } from '@/components/layout/AppLayout';import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   RefreshCw, 
@@ -128,6 +128,21 @@ export default function PurchasePage() {
   const [savingPrice, setSavingPrice] = useState(false);
   const [rubToCny, setRubToCny] = useState(0.0923);
   const [viewMode, setViewMode] = useState<'list' | 'sku'>('list');
+  const [trackingNo, setTrackingNo] = useState('');
+  const [purchasePrice, setPurchasePrice] = useState('');
+  const [supplierSource, setSupplierSource] = useState('1688');
+  const [supplierName, setSupplierName] = useState('');
+  const [showBatchDialog, setShowBatchDialog] = useState(false);
+  const [batchText, setBatchText] = useState('');
+  const [notify, setNotify] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+  const trackingInputRef = useRef<HTMLInputElement>(null);
+  const priceInputRef = useRef<HTMLInputElement>(null);
+
+  // 提示函数
+  const toast = (opt: { title: string; variant?: 'default' | 'destructive' }) => {
+    setNotify({ msg: opt.title, type: opt.variant === 'destructive' ? 'error' : 'success' });
+    setTimeout(() => setNotify(null), 3000);
+  };
 
   // 统计数据
   const stats = {
@@ -238,6 +253,60 @@ export default function PurchasePage() {
     } finally {
       setSavingPrice(false);
     }
+  };
+
+  // 确认采购
+  const handleConfirmPurchase = async () => {
+    if (!selectedOrder) return;
+    if (!purchasePrice) {
+      toast({ title: '请输入采购价', variant: 'destructive' });
+      return;
+    }
+    await fetch('/api/purchase-records', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        demandId: selectedOrder.id,
+        domesticTrackingNo: trackingNo,
+        purchasePrice: parseFloat(purchasePrice),
+        supplierSource,
+        supplierName,
+      }),
+    });
+    setTrackingNo('');
+    setPurchasePrice('');
+    setSupplierName('');
+    setSelectedOrder(null);
+    fetchOrders();
+    toast({ title: '采购记录已保存' });
+  };
+
+  // 确认并下一单
+  const handleConfirmAndNext = async () => {
+    await handleConfirmPurchase();
+    const nextOrder = orders.find(o => o.id !== selectedOrder?.id && o.purchaseStatus === 'awaiting');
+    if (nextOrder) {
+      setSelectedOrder(nextOrder);
+      trackingInputRef.current?.focus();
+    }
+  };
+
+  // 批量提交
+  const handleBatchSubmit = async () => {
+    const lines = batchText.trim().split('\n').filter(Boolean);
+    const records = lines.map(line => {
+      const [trackingNo, price] = line.split(',');
+      return { trackingNo: trackingNo.trim(), purchasePrice: parseFloat(price.trim()) };
+    });
+    await fetch('/api/purchase-records/batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ records }),
+    });
+    setBatchText('');
+    setShowBatchDialog(false);
+    fetchOrders();
+    toast({ title: `已批量录入 ${records.length} 条` });
   };
 
   // 打开详情
@@ -520,18 +589,173 @@ return (
 
         {/* 右栏：采购录入 (40%) */}
         <div className="w-[40%] bg-white rounded-lg border border-gray-200 overflow-hidden flex flex-col">
-          <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
-            <h3 className="text-sm font-semibold text-gray-700">采购录入</h3>
-          </div>
-          <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
-            <div className="text-center">
-              <Package className="w-12 h-12 mx-auto mb-2 opacity-30" />
-              <p>← 请从左侧选择订单</p>
+          {/* 通知提示 */}
+          {notify && (
+            <div className={`mx-4 mt-3 px-4 py-2 rounded-lg text-sm ${
+              notify.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'
+            }`}>
+              {notify.msg}
             </div>
+          )}
+
+          {selectedOrder ? (
+            <>
+              {/* 选中订单信息 */}
+              <div className="px-4 py-3 border-b border-gray-100">
+                <div className="flex items-center gap-3">
+                  {selectedOrder.products[0]?.image && (
+                    <img
+                      src={selectedOrder.products[0].image}
+                      alt={selectedOrder.products[0]?.name}
+                      className="w-12 h-12 rounded object-cover border border-gray-200"
+                    />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-[#152033] truncate">
+                      {selectedOrder.products[0]?.name || selectedOrder.postingNumber}
+                    </div>
+                    <div className="text-xs text-[#637089]">
+                      SKU: {selectedOrder.products[0]?.sku || '-'}
+                    </div>
+                    <div className="text-xs font-medium text-orange-500 mt-0.5">
+                      {(Number(selectedOrder.totalPrice) * rubToCny).toFixed(2)} ¥
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 表单区域 */}
+              <div className="flex-1 overflow-auto p-4 space-y-4">
+                {/* 快递单号 */}
+                <div>
+                  <label className="block text-xs font-medium text-[#637089] mb-1.5">快递单号</label>
+                  <Input
+                    ref={trackingInputRef}
+                    placeholder="扫描或输入快递单号"
+                    value={trackingNo}
+                    onChange={(e) => setTrackingNo(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && trackingNo) {
+                        priceInputRef.current?.focus();
+                      }
+                    }}
+                    className="font-mono text-sm"
+                  />
+                </div>
+
+                {/* 采购价 */}
+                <div>
+                  <label className="block text-xs font-medium text-[#637089] mb-1.5">采购价 (¥)</label>
+                  <Input
+                    ref={priceInputRef}
+                    type="number"
+                    placeholder="0.00"
+                    value={purchasePrice}
+                    onChange={(e) => setPurchasePrice(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && purchasePrice) {
+                        handleConfirmPurchase();
+                      }
+                    }}
+                    className="text-sm font-medium"
+                  />
+                </div>
+
+                {/* 采购平台 */}
+                <div>
+                  <label className="block text-xs font-medium text-[#637089] mb-1.5">采购平台</label>
+                  <div className="flex gap-2">
+                    {['1688', '拼多多', '手动录入'].map(platform => (
+                      <button
+                        key={platform}
+                        onClick={() => setSupplierSource(platform)}
+                        className={`flex-1 px-3 py-1.5 text-xs rounded-lg border transition-colors ${
+                          supplierSource === platform
+                            ? 'bg-blue-50 border-blue-300 text-blue-700 font-medium'
+                            : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
+                        }`}
+                      >
+                        {platform}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 供应商名称 */}
+                <div>
+                  <label className="block text-xs font-medium text-[#637089] mb-1.5">供应商名称</label>
+                  <Input
+                    placeholder="选填"
+                    value={supplierName}
+                    onChange={(e) => setSupplierName(e.target.value)}
+                    className="text-sm"
+                  />
+                </div>
+              </div>
+
+              {/* 操作按钮 */}
+              <div className="px-4 py-3 border-t border-gray-200 flex gap-2">
+                <Button
+                  className="flex-1 bg-blue-600 hover:bg-blue-700"
+                  onClick={handleConfirmPurchase}
+                  disabled={!purchasePrice}
+                >
+                  确认采购
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={handleConfirmAndNext}
+                  disabled={!purchasePrice}
+                >
+                  确认并下一单
+                </Button>
+              </div>
+            </>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center text-gray-400 text-sm">
+              <Package className="w-12 h-12 mb-2 opacity-30" />
+              <p className="mb-1">← 请从左侧选择订单</p>
+              <p className="text-xs text-gray-300">或使用扫码枪扫描快递单号</p>
+            </div>
+          )}
+
+          {/* 批量录入入口 */}
+          <div className="px-4 py-3 border-t border-gray-200">
+            <Button
+              variant="ghost"
+              className="w-full text-blue-600 hover:text-blue-700 hover:bg-blue-50 text-xs"
+              onClick={() => setShowBatchDialog(true)}
+            >
+              <ClipboardList className="w-4 h-4 mr-1.5" />
+              批量录入快递号
+            </Button>
           </div>
         </div>
 
       </div>
+
+          {/* 批量录入弹窗 */}
+          <Dialog open={showBatchDialog} onOpenChange={setShowBatchDialog}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>批量录入快递号</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3">
+                <p className="text-xs text-[#637089]">每行一条：快递单号,采购价（用逗号分隔）</p>
+                <textarea
+                  value={batchText}
+                  onChange={(e) => setBatchText(e.target.value)}
+                  placeholder={"SF1234567890,25.00\nYTO9876543210,18.50"}
+                  className="w-full h-40 px-3 py-2 text-sm font-mono border border-gray-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                />
+              </div>
+              <DialogFooter className="gap-2">
+                <Button variant="outline" onClick={() => setShowBatchDialog(false)}>取消</Button>
+                <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleBatchSubmit}>确认录入</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           {/* 订单详情弹窗 - 居中铺满 */}
           <Dialog open={!!detailOrder} onOpenChange={(open) => !open && setDetailOrder(null)}>
