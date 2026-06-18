@@ -80,7 +80,12 @@ export class OzonClient {
       clearTimeout(timeoutId);
 
       const status = response.status;
-      const data = await response.json().catch(() => null);
+      const contentType = response.headers.get('content-type') || '';
+      const isJson = contentType.includes('application/json');
+      let data: unknown = null;
+      if (isJson) {
+        data = await response.json().catch(() => null);
+      }
 
       // 429 Too Many Requests - 限流，自动退避重试
       if (status === 429 && retryCount < MAX_RETRIES) {
@@ -90,11 +95,31 @@ export class OzonClient {
         return this.executeWithRetry<T>(url, method, headers, body, retryCount + 1);
       }
 
+      // 非2xx状态码，提取错误信息
+      if (!response.ok) {
+        const errMsg = this.extractError(data);
+        return {
+          ok: false,
+          data: data as T,
+          status,
+          error: errMsg || `HTTP ${status}`,
+        };
+      }
+
+      // 2xx 但响应体不是JSON（可能被代理劫持）
+      if (!isJson || data === null) {
+        return {
+          ok: false,
+          data: undefined,
+          status,
+          error: 'API响应格式异常（可能网络不通）',
+        };
+      }
+
       return {
-        ok: response.ok,
+        ok: true,
         data: data as T,
         status,
-        error: response.ok ? undefined : this.extractError(data),
       };
     } catch (error) {
       clearTimeout(timeoutId);
@@ -139,18 +164,32 @@ export class OzonClient {
     }
 
     const obj = data as Record<string, unknown>;
-    
-    // Ozon API 标准错误格式
+
+    // Ozon API 标准错误格式 { "code": 16, "message": "..." }
     if (obj.message) {
       return String(obj.message);
     }
-    
-    if (obj.error) {
-      return String(obj.error);
+
+    // { "error": "..." }
+    if (typeof obj.error === 'string') {
+      return obj.error;
     }
 
-    if (obj.code) {
-      return String(obj.code);
+    // { "error_code": "..." }
+    if (typeof obj.error_code === 'string') {
+      return obj.error_code;
+    }
+
+    // { "code": 16 }
+    if (obj.code !== undefined) {
+      const code = Number(obj.code);
+      const codeMessages: Record<number, string> = {
+        1: '未授权，请检查 Client-Id 和 Api-Key',
+        16: '认证凭据无效',
+        100: '参数错误',
+        500: 'Ozon 服务器内部错误',
+      };
+      return codeMessages[code] || `错误码 ${code}`;
     }
 
     // 尝试提取第一个错误消息
@@ -159,7 +198,16 @@ export class OzonClient {
       return String(errorMessages[0]);
     }
 
-    return '未知错误';
+    // { "errors": [{ "code": "...", "message": "..." }] }
+    if (Array.isArray(obj.errors) && obj.errors.length > 0) {
+      const first = obj.errors[0] as Record<string, unknown>;
+      if (first.message) return String(first.message);
+      if (first.code) return String(first.code);
+    }
+
+    // 返回原始数据片段作为线索
+    const keys = Object.keys(obj).slice(0, 3).map(k => `${k}:${JSON.stringify(obj[k])}`).join(', ');
+    return keys || '未知错误';
   }
 
   /**
