@@ -126,7 +126,7 @@ export function AppLayout({ children, title, subtitle, actions }: AppLayoutProps
   const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-[#F6F8FB]">
+    <div className="flex min-h-screen bg-[#F6F8FB]" suppressHydrationWarning>
       {/* 左侧导航栏 */}
       <aside
         className={`${collapsed ? 'w-[60px]' : 'w-[220px]'} bg-white border-r border-[#E6EAF2] flex flex-col transition-all duration-300`}

@@ -105,6 +105,7 @@ function UrgentBell() {
       className="relative"
       onClick={() => router.push('/quick-entry?filter=urgent')}
       title="超时提醒"
+      suppressHydrationWarning
     >
       <Bell className="h-5 w-5" />
       {urgentCount > 0 && (
@@ -217,12 +218,13 @@ function TodoCapsules() {
   const shipmentCount = pendingShipments?.total ?? pendingShipments?.data?.length ?? 0;
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2" suppressHydrationWarning>
       <Button
         variant="outline"
         size="sm"
         className="h-8 gap-2 text-red-600 border-red-200 hover:bg-red-50"
         onClick={() => router.push('/quick-entry')}
+        suppressHydrationWarning
       >
         <Package className="h-3.5 w-3.5" />
         待采购
@@ -237,6 +239,7 @@ function TodoCapsules() {
         size="sm"
         className="h-8 gap-2 text-orange-600 border-orange-200 hover:bg-orange-50"
         onClick={() => router.push('/packaging')}
+        suppressHydrationWarning
       >
         <Truck className="h-3.5 w-3.5" />
         待发货
@@ -253,7 +256,7 @@ function TodoCapsules() {
 // TopBar主组件
 export function TopBar() {
   return (
-    <div className="sticky top-0 z-50 h-12 bg-white border-b border-gray-200">
+    <div className="sticky top-0 z-50 h-12 bg-white border-b border-gray-200" suppressHydrationWarning>
       <div className="flex items-center h-full px-4 gap-4">
         {/* 左侧：店铺切换器 */}
         <ShopSwitcher />

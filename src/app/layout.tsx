@@ -67,7 +67,7 @@ export default function RootLayout({
     <html lang="zh-CN" suppressHydrationWarning>
       <body className="antialiased" suppressHydrationWarning>
         {isDev && <Inspector />}
-        {children}
+        <div suppressHydrationWarning>{children}</div>
       </body>
     </html>
   );

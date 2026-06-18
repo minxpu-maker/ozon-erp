@@ -16,6 +16,7 @@ export const useShopStore = create<ShopState>()(
     }),
     {
       name: 'erp-current-shop',
+      skipHydration: true,
     }
   )
 );

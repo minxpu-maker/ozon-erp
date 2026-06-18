@@ -120,7 +120,7 @@ function OrdersListPageInner() {
   const shops: Shop[] = shopsData?.data || [];
 
   return (
-    <div className="min-h-screen bg-[#F6F8FB] p-6">
+    <div className="min-h-screen bg-[#F6F8FB] p-6" suppressHydrationWarning>
       <div className="max-w-7xl mx-auto space-y-6">
         {/* 页面标题 */}
         <div>
@@ -345,7 +345,7 @@ function OrdersListPageInner() {
                           {order.quantity}
                         </td>
                         <td className="px-4 py-3 text-right text-sm font-medium text-[#152033]">
-                          {order.orderAmount.toFixed(2)} ₽
+                          {(order.orderAmount ?? 0).toFixed(2)} ₽
                         </td>
                         <td className="px-4 py-3 text-center">
                           <span
@@ -368,8 +368,8 @@ function OrdersListPageInner() {
                               {isOverdue
                                 ? '已超时'
                                 : hours < 1
-                                ? `${Math.round(hours * 60)}分钟`
-                                : `${hours.toFixed(1)}小时`}
+                                ? `${Math.round((hours ?? 0) * 60)}分钟`
+                                : `${(hours ?? 0).toFixed(1)}小时`}
                             </span>
                           ) : (
                             <span className="text-xs text-[#637089]">-</span>
