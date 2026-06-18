@@ -97,20 +97,24 @@ export default function ShopsPage() {
       if (!credData.success) return { connected: false, error: credData.error || '获取凭证失败' };
       const { ozonClientId, ozonApiKey } = credData.data;
 
-      // 2. 浏览器直调 Ozon API（Ozon 支持 CORS）
-      const ozonRes = await fetch('https://api-seller.ozon.ru/v1/info', {
+      // 2. 浏览器直调 Ozon API（用 v2/product/list GET 测试连通性）
+      const url = new URL('https://api-seller.ozon.ru/v2/product/list');
+      url.searchParams.set('limit', '1');
+      const ozonRes = await fetch(url.toString(), {
         method: 'GET',
         headers: {
           'Client-Id': ozonClientId,
           'Api-Key': ozonApiKey,
-          'Content-Type': 'application/json',
         },
       });
 
       if (ozonRes.ok) return { connected: true };
-      const errData = await ozonRes.json().catch(() => ({}));
-      const msg = errData?.message || errData?.code || errData?.error || `HTTP ${ozonRes.status}`;
-      return { connected: false, error: String(msg) };
+      const errData = await ozonRes.json().catch(() => null);
+      if (errData?.code) {
+        const msg = `${errData.message || errData.code} (code: ${errData.code})`;
+        return { connected: false, error: msg };
+      }
+      return { connected: false, error: `HTTP ${ozonRes.status} ${ozonRes.statusText}` };
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('net::')) {
