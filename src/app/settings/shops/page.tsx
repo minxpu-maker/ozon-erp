@@ -97,7 +97,7 @@ export default function ShopsPage() {
         return;
       }
       const data = await res.json();
-      if (data.success) {
+      if (data.connected) {
         alert('✅ 连接正常，API密钥验证通过');
       } else {
         alert('❌ 连接失败：' + (data.error || '请检查API密钥'));
