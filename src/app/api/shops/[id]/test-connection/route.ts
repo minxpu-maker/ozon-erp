@@ -53,16 +53,20 @@ export async function POST(
       });
     }
 
-    // 解密API密钥
+    // 解密API密钥（加密格式: iv:encryptedData，明文则跳过解密）
     let decryptedKey: string;
-    try {
-      decryptedKey = decrypt(apiKey);
-    } catch (error) {
-      console.error('[Test Connection] Decrypt error:', error);
-      return NextResponse.json({
-        connected: false,
-        error: 'API密钥格式错误，解密失败',
-      });
+    if (apiKey.includes(':')) {
+      try {
+        decryptedKey = decrypt(apiKey);
+      } catch (error) {
+        console.error('[Test Connection] Decrypt error:', error);
+        return NextResponse.json({
+          connected: false,
+          error: 'API密钥格式错误，解密失败',
+        });
+      }
+    } else {
+      decryptedKey = apiKey; // 明文直接使用
     }
 
     // 测试连接

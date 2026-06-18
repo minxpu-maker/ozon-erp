@@ -30,13 +30,14 @@ export async function GET(
     let ozonApiKey: string | null = null;
 
     // 解密 API Key（兼容新旧字段名）
+    // 加密格式含冒号 (iv:encryptedData)，明文则直接使用
     const rawApiKey = (shop as Record<string, unknown>).apiKey as string | null;
     const rawOzonApiKey = (shop as Record<string, unknown>).ozonApiKey as string | null;
     if (rawApiKey) {
-      try { ozonApiKey = decrypt(rawApiKey); } catch { ozonApiKey = null; }
+      ozonApiKey = rawApiKey.includes(':') ? (() => { try { return decrypt(rawApiKey); } catch { return null; } })() : rawApiKey;
     }
     if (!ozonApiKey && rawOzonApiKey) {
-      try { ozonApiKey = decrypt(rawOzonApiKey); } catch { ozonApiKey = null; }
+      ozonApiKey = rawOzonApiKey.includes(':') ? (() => { try { return decrypt(rawOzonApiKey); } catch { return null; } })() : rawOzonApiKey;
     }
 
     return NextResponse.json({
