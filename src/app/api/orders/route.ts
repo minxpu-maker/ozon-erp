@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/storage/database/client';
 import { orders } from '@/storage/database/shared/schema';
-import { eq, and, desc, like, sql, count } from 'drizzle-orm';
+import { webhookLogs } from '@/db/schema/fulfillment';
+import { eq, and, desc, like, sql, count, inArray } from 'drizzle-orm';
 
 export async function GET(request: NextRequest) {
   try {
@@ -34,7 +35,7 @@ export async function GET(request: NextRequest) {
 
     // Orders with pagination
     const offset = (page - 1) * pageSize;
-    const orderList = await db
+    const orderListRaw: Record<string, unknown>[] = await db
       .select({
         id: orders.id,
         ozonOrderId: orders.ozonOrderId,
@@ -60,6 +61,26 @@ export async function GET(request: NextRequest) {
       .limit(pageSize)
       .offset(offset);
 
+    // Per-order unread message count
+    const orderIds = orderListRaw.map((o: Record<string, unknown>) => o.id as string);
+    const validOrderIds = orderIds.filter(Boolean);
+    const unreadCounts = validOrderIds.length > 0
+      ? await db
+          .select({ orderId: webhookLogs.orderId, count: count() })
+          .from(webhookLogs)
+          .where(and(
+            inArray(webhookLogs.orderId, validOrderIds),
+            eq(webhookLogs.eventType, 'TYPE_NEW_MESSAGE'),
+            eq(webhookLogs.isRead, false)
+          ))
+          .groupBy(webhookLogs.orderId)
+      : [];
+    const unreadMap = new Map<string, number>(unreadCounts.map(u => [u.orderId ?? '', Number(u.count)]));
+    const orderList = orderListRaw.map((o: Record<string, unknown>) => ({
+      ...o,
+      unreadMessageCount: unreadMap.get(o.id as string) ?? 0,
+    }));
+
     // Stats
     const [statsResult] = await db
       .select({
@@ -71,11 +92,22 @@ export async function GET(request: NextRequest) {
       })
       .from(orders);
 
+    // Unread message count (all orders, regardless of filters)
+    const [unreadMsgCountResult] = await db
+      .select({ count: count() })
+      .from(webhookLogs)
+      .where(and(
+        eq(webhookLogs.eventType, 'TYPE_NEW_MESSAGE'),
+        eq(webhookLogs.isRead, false)
+      ));
+    const unreadMsgCount = unreadMsgCountResult?.count ?? 0;
+
     const stats = {
       newCount: Number(statsResult?.newCount ?? 0),
       pendingCount: Number(statsResult?.pendingCount ?? 0),
       shippingCount: Number(statsResult?.shippingCount ?? 0),
       overdueCount: Number(statsResult?.overdueCount ?? 0),
+      unreadMessageCount: Number(unreadMsgCount ?? 0),
     };
 
     return NextResponse.json({

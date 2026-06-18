@@ -70,6 +70,7 @@ interface OrdersResponse {
     pendingCount: number;
     shippingCount: number;
     overdueCount: number;
+    unreadMessageCount: number;
   };
   total: number;
   page: number;
@@ -95,6 +96,7 @@ interface OrderRecord {
   shipmentDeadline: string | null;
   createdAt: string;
   lastSyncedAt: string | null;
+  unreadMessageCount?: number;
 }
 
 interface Shop {
@@ -141,7 +143,7 @@ export default function OrdersListPage() {
   );
 
   const orderList: OrderRecord[] = data?.orders ?? [];
-  const stats = data?.stats ?? { newCount: 0, pendingCount: 0, shippingCount: 0, overdueCount: 0 };
+  const stats = data?.stats ?? { newCount: 0, pendingCount: 0, shippingCount: 0, overdueCount: 0, unreadMessageCount: 0 };
   const total = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / 20));
 
@@ -184,7 +186,7 @@ export default function OrdersListPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-5 gap-4">
         <div className="bg-card rounded-lg border border-border p-4">
           <p className="text-sm text-muted-foreground">新订单</p>
           <p className="text-3xl font-bold text-blue-600">{stats.newCount}</p>
@@ -201,7 +203,11 @@ export default function OrdersListPage() {
           <p className="text-sm text-muted-foreground">超时预警</p>
           <p className="text-3xl font-bold text-red-600">{stats.overdueCount}</p>
         </div>
+      <div className="bg-card rounded-lg border border-border p-4">
+        <p className="text-sm text-muted-foreground">未读消息</p>
+        <p className="text-3xl font-bold text-purple-600">{stats.unreadMessageCount}</p>
       </div>
+    </div>
 
       {/* Filter Bar */}
       <div className="flex items-center gap-3 flex-wrap">
@@ -270,24 +276,25 @@ export default function OrdersListPage() {
                 <TableHead>发货时限</TableHead>
                 <TableHead>创建时间</TableHead>
                 <TableHead>同步时间</TableHead>
+                <TableHead className="text-center">消息</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-16 text-muted-foreground">
+                  <TableCell colSpan={10} className="text-center py-16 text-muted-foreground">
                     加载中...
                   </TableCell>
                 </TableRow>
               ) : error ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-16 text-red-500">
+                  <TableCell colSpan={10} className="text-center py-16 text-red-500">
                     数据加载失败
                   </TableCell>
                 </TableRow>
               ) : orderList.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-16 text-muted-foreground">
+                  <TableCell colSpan={10} className="text-center py-16 text-muted-foreground">
                     暂无订单数据
                   </TableCell>
                 </TableRow>
@@ -351,6 +358,15 @@ export default function OrdersListPage() {
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {formatDate(order.lastSyncedAt)}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {(order.unreadMessageCount ?? 0) > 0 ? (
+                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-medium">
+                            {(order.unreadMessageCount ?? 0)}
+                          </span>
+                        ) : (
+                          <span className="text-gray-300 text-xs">—</span>
+                        )}
                       </TableCell>
                     </TableRow>
                   );
