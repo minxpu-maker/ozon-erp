@@ -1,14 +1,27 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
-import { AppLayout } from '@/components/layout/AppLayout';import { Truck, RefreshCw, Search, ScanLine, CheckCircle, XCircle, Box, ShoppingCart, Package } from 'lucide-react';
+import { AppLayout } from '@/components/layout/AppLayout';
+import { Button } from '@/components/ui/button';
+import { Truck, RefreshCw, Search, ScanLine, CheckCircle, XCircle, Box, ShoppingCart, Package } from 'lucide-react';
 
 export default function LogisticsPage() {
   const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [trackingNumber, setTrackingNumber] = useState('');
   const [currentTask, setCurrentTask] = useState<any>(null);
+
+  // 全屏扫码模式状态
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [scanCode, setScanCode] = useState('');
+  const [scanResult, setScanResult] = useState<'pass' | 'fail' | null>(null);
+  const [matchedOrder, setMatchedOrder] = useState<any>(null);
+  const [todayVerified, setTodayVerified] = useState(0);
+  const [passCount, setPassCount] = useState(0);
+  const [failCount, setFailCount] = useState(0);
+  const scanInputRef = useRef<HTMLInputElement>(null);
+  const [scanFeedback, setScanFeedback] = useState<'pass' | 'fail' | null>(null);
 
   useEffect(() => { fetchTasks(); }, []);
 
@@ -52,14 +65,83 @@ export default function LogisticsPage() {
     } catch (error) { console.error('验货操作失败:', error); }
   };
 
+  // 全屏扫码模式：扫码匹配
+  const handleFullscreenScan = async () => {
+    if (!scanCode.trim()) return;
+    setScanFeedback(null);
+    try {
+      const res = await fetch(`/api/qc-records?express_no=${encodeURIComponent(scanCode.trim())}`);
+      const data = await res.json();
+      if (data.matched) {
+        setScanResult('pass');
+        setMatchedOrder(data.order);
+        setScanFeedback('pass');
+      } else {
+        setScanResult('fail');
+        setMatchedOrder(null);
+        setScanFeedback('fail');
+      }
+    } catch {
+      setScanResult('fail');
+      setMatchedOrder(null);
+      setScanFeedback('fail');
+    }
+    setScanCode('');
+    setTimeout(() => setScanFeedback(null), 2000);
+  };
+
+  // 全屏快捷键处理
+  useEffect(() => {
+    if (!isFullscreen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { setIsFullscreen(false); setScanCode(''); setScanResult(null); }
+      if (e.key === ' ' && matchedOrder) {
+        e.preventDefault();
+        fetch('/api/qc-records', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId: matchedOrder.id, qcResult: 'pass', expressNo: scanCode }),
+        });
+        setScanCode('');
+        setScanResult(null);
+        setMatchedOrder(null);
+        setTodayVerified(c => c + 1);
+        setPassCount(c => c + 1);
+        setTimeout(() => scanInputRef.current?.focus(), 100);
+      }
+      if (e.key.toLowerCase() === 'e' && matchedOrder) {
+        fetch('/api/qc-records', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId: matchedOrder.id, qcResult: 'fail', expressNo: scanCode }),
+        });
+        setScanCode('');
+        setScanResult(null);
+        setMatchedOrder(null);
+        setTodayVerified(c => c + 1);
+        setFailCount(c => c + 1);
+        setTimeout(() => scanInputRef.current?.focus(), 100);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [isFullscreen, matchedOrder, scanCode]);
+
   
 return (
     <AppLayout title="入库验货" subtitle="扫描枪扫描快递单号 → 毫秒级响应 → 验货/异常处理">
-              <div className="mb-6">
-     <h1 className="text-2xl font-bold text-[#152033]">入库验货</h1>
-     <p className="text-sm text-[#637089] mt-1">扫描枪扫描快递单号 → 毫秒级响应 → 验货/异常处理</p>
+              {/* 全屏扫码模式入口 */}
+              <div className="mb-4 flex justify-end">
+                <button
+                  onClick={() => { setIsFullscreen(true); setTimeout(() => scanInputRef.current?.focus(), 200); }}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg font-medium transition-colors"
+                >
+                  <ScanLine className="w-4 h-4" />
+                  全屏扫码
+                </button>
               </div>
 
+              {/* 扫描输入 */}
               {/* 扫描输入 */}
               <div className="bg-white rounded-lg shadow-sm p-6 mb-6 border border-[#E6EAF2]">
      <div className="flex items-center gap-4">
@@ -221,6 +303,104 @@ return (
          </tbody>
        </table>}
               </div>
+
+              {/* ===== 全屏扫码模式 ===== */}
+              {isFullscreen && (
+                <div className="fixed inset-0 z-50 bg-gray-900 flex flex-col">
+
+                  {/* 顶部信息栏 */}
+                  <div className="flex items-center justify-between px-6 py-4 bg-gray-800 text-white">
+                    <button
+                      onClick={() => { setIsFullscreen(false); setScanCode(''); setScanResult(null); }}
+                      className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm font-medium transition-colors"
+                    >
+                      ← 返回验货列表
+                    </button>
+                    <div className="text-sm text-gray-400">
+                      按 Esc 退出全屏 | <kbd className="px-1 py-0.5 bg-gray-700 rounded">Space</kbd> 通过 | <kbd className="px-1 py-0.5 bg-gray-700 rounded">E</kbd> 异常
+                    </div>
+                  </div>
+
+                  {/* 中央扫码输入区 */}
+                  <div className="flex-1 flex flex-col items-center justify-center px-8">
+                    <div className="w-full max-w-2xl">
+                      <div className="text-center mb-8">
+                        <ScanLine className={`w-20 h-20 mx-auto mb-4 transition-colors ${scanFeedback === 'pass' ? 'text-green-400' : scanFeedback === 'fail' ? 'text-red-400' : 'text-blue-400'}`} />
+                        <h2 className="text-2xl font-bold text-white mb-2">扫描快递单号</h2>
+                        <p className="text-gray-400 text-sm">对准扫描枪，按 Enter 确认</p>
+                      </div>
+                      <input
+                        ref={scanInputRef}
+                        type="text"
+                        value={scanCode}
+                        onChange={(e) => setScanCode(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleFullscreenScan(); }}
+                        placeholder="等待扫描..."
+                        className={`w-full px-6 py-4 text-xl text-center font-mono border-2 rounded-xl focus:outline-none transition-colors ${
+                          scanFeedback === 'pass' ? 'border-green-400 bg-green-400/10' :
+                          scanFeedback === 'fail' ? 'border-red-400 bg-red-400/10' :
+                          'border-gray-600 bg-gray-800 text-white'
+                        }`}
+                        autoFocus
+                      />
+                    </div>
+
+                    {/* 扫码结果展示 */}
+                    {scanResult && (
+                      <div className={`mt-8 w-full max-w-2xl rounded-xl p-6 text-center transition-all ${
+                        scanResult === 'pass' ? 'bg-green-500/20 border-2 border-green-500' : 'bg-red-500/20 border-2 border-red-500'
+                      }`}>
+                        {scanResult === 'pass' ? (
+                          <>
+                            <div className="text-6xl mb-4">✅</div>
+                            <div className="text-2xl font-bold text-green-400 mb-2">匹配成功</div>
+                            <div className="text-white font-medium">{matchedOrder?.products?.[0]?.name || '-'}</div>
+                            <div className="text-gray-300 text-sm mt-1">{matchedOrder?.postingNumber || matchedOrder?.ozonPostingNumber || '-'}</div>
+                            <div className="text-gray-400 text-xs mt-1">快递单号: {scanCode}</div>
+                            <div className="mt-4 text-sm text-gray-400">按 <kbd className="px-1 py-0.5 bg-gray-700 rounded">Space</kbd> 验货通过 · <kbd className="px-1 py-0.5 bg-gray-700 rounded">E</kbd> 标记异常</div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="text-6xl mb-4">❌</div>
+                            <div className="text-2xl font-bold text-red-400 mb-2">未匹配到订单</div>
+                            <div className="text-gray-300 text-sm">快递单号: <span className="font-mono">{scanCode}</span></div>
+                            <div className="mt-4 text-sm text-gray-400">请检查快递单号或手动搜索</div>
+                          </>
+                        )}
+                      </div>
+                    )}
+
+                    {/* 快捷键提示 */}
+                    {!scanResult && (
+                      <div className="mt-8 flex items-center gap-6 text-sm text-gray-500">
+                        <span><kbd className="px-2 py-1 bg-gray-800 border border-gray-600 rounded text-gray-300">Space</kbd> 验货通过</span>
+                        <span><kbd className="px-2 py-1 bg-gray-800 border border-gray-600 rounded text-gray-300">E</kbd> 标记异常</span>
+                        <span><kbd className="px-2 py-1 bg-gray-800 border border-gray-600 rounded text-gray-300">Esc</kbd> 退出</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 底部进度条 */}
+                  <div className="px-6 py-4 bg-gray-800 border-t border-gray-700">
+                    <div className="flex items-center justify-between text-sm text-gray-400">
+                      <span>今日已验 <span className="text-white font-bold">{todayVerified}</span> 件</span>
+                      <div className="flex items-center gap-6">
+                        <span>合格 <span className="text-green-400 font-bold">{passCount}</span></span>
+                        <span>异常 <span className="text-red-400 font-bold">{failCount}</span></span>
+                      </div>
+                    </div>
+                    <div className="mt-2 h-2 bg-gray-700 rounded-full overflow-hidden">
+                      {todayVerified > 0 && (
+                        <div
+                          className="h-full bg-green-500 transition-all duration-300"
+                          style={{ width: `${(passCount / todayVerified) * 100}%` }}
+                        />
+                      )}
+                    </div>
+                  </div>
+
+                </div>
+              )}
 
     </AppLayout>
   );
