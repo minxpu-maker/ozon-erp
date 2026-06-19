@@ -444,6 +444,11 @@ export default function PurchasePage() {
     }
   }, []);
 
+  // 初始加载订单列表
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
+
   // 同步订单
   const syncOrders = async () => {
     setSyncing(true);
