@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,12 +14,7 @@ import {
   PackageSearch,
   Warehouse,
   Database,
-  Users,
   BarChart3,
-  UserCircle,
-  Shield,
-  Settings,
-  LayoutDashboard,
   Calculator,
   Eye,
   ShoppingCart,
@@ -27,10 +22,18 @@ import {
   X,
   ChevronDown,
   ChevronRight,
+  ChevronUp,
   Layers,
   ListOrdered,
+  Link2,
+  Check,
+  AlertCircle,
+  Loader2,
+  Save,
+  Trash2,
 } from 'lucide-react';
 
+// ============ 类型定义 ============
 interface Order {
   id: string;
   ozonOrderId: string;
@@ -53,9 +56,18 @@ interface Order {
   ozonCreatedAt: string | null;
   createdAt: string;
   shipmentDeadline?: string | null;
+  // 采购相关字段（可能来自API）
+  purchaseInfo?: {
+    platform?: 'alibaba' | 'pinduoduo';
+    productUrl?: string;
+    unitPrice?: number;
+    quantity?: number;
+    supplierNote?: string;
+    trackingNumber?: string;
+    isDraft?: boolean;
+  };
 }
 
-// 按商品聚合的SKU类型
 interface AggregatedSku {
   sku: string;
   name: string;
@@ -65,8 +77,21 @@ interface AggregatedSku {
   earliestDeadline: string | null;
 }
 
+// 采购表单数据
+interface PurchaseFormData {
+  platform: 'alibaba' | 'pinduoduo';
+  productUrl: string;
+  unitPrice: string;
+  quantity: string;
+  supplierNote: string;
+  trackingNumber: string;
+}
+
+// 状态映射
 const erpStatusMap: Record<string, { label: string; color: string }> = {
   pending_purchase: { label: '待采购', color: 'bg-orange-100 text-orange-700' },
+  purchasing: { label: '采购中', color: 'bg-yellow-100 text-yellow-700' },
+  purchased: { label: '已采购', color: 'bg-green-100 text-green-700' },
   pending_inspect: { label: '待验货', color: 'bg-blue-100 text-blue-700' },
   pending_pack: { label: '待打包', color: 'bg-purple-100 text-purple-700' },
   shipped: { label: '已发货', color: 'bg-green-100 text-green-700' },
@@ -82,6 +107,7 @@ const ozonStatusMap: Record<string, { label: string; color: string }> = {
   cancelled: { label: '已取消', color: 'bg-red-100 text-red-700' },
 };
 
+// ============ 工具函数 ============
 function ProductImage({ src, className = '' }: { src: string; className?: string }) {
   const [error, setError] = useState(false);
   if (error || !src) {
@@ -101,7 +127,6 @@ function ProductImage({ src, className = '' }: { src: string; className?: string
   );
 }
 
-// 计算发货倒计时
 function getDeadlineDisplay(deadline: string | null | undefined) {
   if (!deadline) return null;
   const deadlineTime = new Date(deadline).getTime();
@@ -128,7 +153,13 @@ function getDeadlineDisplay(deadline: string | null | undefined) {
   return { text: `${hours}h`, color: 'text-green-600', urgent: false };
 }
 
-// 按SKU聚合订单
+function formatCNY(value: number | string | null | undefined): string {
+  if (value === null || value === undefined) return '¥0.00';
+  const num = typeof value === 'string' ? parseFloat(value) : value;
+  if (isNaN(num)) return '¥0.00';
+  return `¥${num.toFixed(2)}`;
+}
+
 function aggregateBySku(orders: Order[]): AggregatedSku[] {
   const skuMap = new Map<string, AggregatedSku>();
 
@@ -139,7 +170,6 @@ function aggregateBySku(orders: Order[]): AggregatedSku[] {
       if (existing) {
         existing.totalQuantity += product.quantity;
         existing.orders.push(order);
-        // 更新最早截止时间
         if (order.shipmentDeadline) {
           if (!existing.earliestDeadline || order.shipmentDeadline < existing.earliestDeadline) {
             existing.earliestDeadline = order.shipmentDeadline;
@@ -158,7 +188,6 @@ function aggregateBySku(orders: Order[]): AggregatedSku[] {
     });
   });
 
-  // 按最早截止时间排序（最紧急在前）
   return Array.from(skuMap.values()).sort((a, b) => {
     if (!a.earliestDeadline) return 1;
     if (!b.earliestDeadline) return -1;
@@ -166,7 +195,9 @@ function aggregateBySku(orders: Order[]): AggregatedSku[] {
   });
 }
 
+// ============ 主组件 ============
 export default function PurchasePage() {
+  // 基础状态
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
@@ -175,12 +206,42 @@ export default function PurchasePage() {
   const [notify, setNotify] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
   const [selectedTab, setSelectedTab] = useState('pending');
 
-  // 双视图相关状态
+  // 视图相关
   const [viewMode, setViewMode] = useState<'byProduct' | 'byOrder'>('byProduct');
   const [expandedSkus, setExpandedSkus] = useState<Set<string>>(new Set());
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [selectedSkuOrder, setSelectedSkuOrder] = useState<AggregatedSku | null>(null);
 
+  // 表单相关
+  const [formCollapsed, setFormCollapsed] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  // 初始表单数据
+  const initialFormData: PurchaseFormData = {
+    platform: 'alibaba',
+    productUrl: '',
+    unitPrice: '',
+    quantity: '',
+    supplierNote: '',
+    trackingNumber: '',
+  };
+  const [formData, setFormData] = useState<PurchaseFormData>(initialFormData);
+
+  // 判断是否为已采购状态
+  const isAlreadyPurchased = useMemo(() => {
+    if (selectedOrder) {
+      return ['purchasing', 'purchased', 'pending_inspect', 'pending_pack', 'shipped'].includes(selectedOrder.erpStatus);
+    }
+    return false;
+  }, [selectedOrder]);
+
+  // 检查是否有采购记录
+  const hasPurchaseRecord = useMemo(() => {
+    return isAlreadyPurchased && selectedOrder?.purchaseInfo;
+  }, [isAlreadyPurchased, selectedOrder]);
+
+  // Toast提示
   const toast = (msg: string, type: 'success' | 'error' = 'success') => {
     setNotify({ msg, type });
     setTimeout(() => setNotify(null), 3000);
@@ -225,7 +286,7 @@ export default function PurchasePage() {
       const res = await fetch('/api/sync/orders', { method: 'POST' });
       const data = await res.json();
       if (data.success) {
-        toast(`同步完成`);
+        toast('同步完成');
         fetchOrders();
       } else {
         toast(`同步失败: ${data.message || data.error || ''}`, 'error');
@@ -238,76 +299,115 @@ export default function PurchasePage() {
     }
   };
 
-  // 格式化金额
-  const formatCNY = (value: number | string | null | undefined): string => {
-    if (value === null || value === undefined) return '¥0.00';
-    const num = typeof value === 'string' ? parseFloat(value) : value;
-    if (isNaN(num)) return '¥0.00';
-    return `¥${num.toFixed(2)}`;
-  };
+  // 计算总金额
+  const totalAmount = useMemo(() => {
+    const price = parseFloat(formData.unitPrice) || 0;
+    const qty = parseInt(formData.quantity) || 0;
+    return price * qty;
+  }, [formData.unitPrice, formData.quantity]);
 
-  // Tab配置
-  const tabs = [
-    { key: 'pending', label: '待采购', filter: 'pending_purchase', erp: true },
-    { key: 'inspecting', label: '待验货', filter: 'pending_inspect', erp: true },
-    { key: 'packing', label: '待打包', filter: 'pending_pack', erp: true },
-    { key: 'all', label: '全部', filter: '', erp: false },
-  ];
+  // 过滤和聚合
+  const currentFilter = useMemo(() => {
+    const tabs = [
+      { key: 'pending', filter: 'pending_purchase' },
+      { key: 'inspecting', filter: 'pending_inspect' },
+      { key: 'packing', filter: 'pending_pack' },
+      { key: 'all', filter: '' },
+    ];
+    return tabs.find(t => t.key === selectedTab)?.filter || '';
+  }, [selectedTab]);
 
-  const currentFilter = tabs.find(t => t.key === selectedTab)?.filter || '';
+  const filteredOrders = useMemo(() => {
+    return orders.filter(order => {
+      if (!currentFilter) return true;
+      return order.erpStatus === currentFilter;
+    }).filter(order => {
+      if (!searchQuery) return true;
+      const q = searchQuery.toLowerCase();
+      return (
+        (order.ozonOrderId || '').toLowerCase().includes(q) ||
+        (order.ozonPostingNumber || '').toLowerCase().includes(q) ||
+        (order.recipientCity || '').toLowerCase().includes(q) ||
+        order.products.some(p => 
+          (p.name || '').toLowerCase().includes(q) || 
+          (p.sku || '').toLowerCase().includes(q)
+        )
+      );
+    });
+  }, [orders, currentFilter, searchQuery]);
 
-  // 过滤后的订单（支持搜索）
-  const filteredOrders = orders.filter(order => {
-    if (!currentFilter) return true;
-    return order.erpStatus === currentFilter;
-  }).filter(order => {
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      (order.ozonOrderId || '').toLowerCase().includes(q) ||
-      (order.ozonPostingNumber || '').toLowerCase().includes(q) ||
-      (order.recipientCity || '').toLowerCase().includes(q) ||
-      order.products.some(p => (p.name || '').toLowerCase().includes(q) || (p.sku || '').toLowerCase().includes(q))
-    );
-  });
+  const aggregatedSkus = useMemo(() => aggregateBySku(filteredOrders), [filteredOrders]);
 
-  // 按SKU聚合
-  const aggregatedSkus = aggregateBySku(filteredOrders);
-
-  // 按发货截止时间排序的订单列表
-  const sortedOrders = [...filteredOrders].sort((a, b) => {
-    if (!a.shipmentDeadline) return 1;
-    if (!b.shipmentDeadline) return -1;
-    return a.shipmentDeadline.localeCompare(b.shipmentDeadline);
-  });
+  const sortedOrders = useMemo(() => {
+    return [...filteredOrders].sort((a, b) => {
+      if (!a.shipmentDeadline) return 1;
+      if (!b.shipmentDeadline) return -1;
+      return a.shipmentDeadline.localeCompare(b.shipmentDeadline);
+    });
+  }, [filteredOrders]);
 
   // 统计数据
-  const stats = {
+  const stats = useMemo(() => ({
     pending: orders.filter(o => o.erpStatus === 'pending_purchase').length,
     inspecting: orders.filter(o => o.erpStatus === 'pending_inspect').length,
     packing: orders.filter(o => o.erpStatus === 'pending_pack').length,
     shipped: orders.filter(o => o.erpStatus === 'shipped').length,
     total: orders.length,
-  };
+  }), [orders]);
 
-  // 切换视图 - 清空选中状态
+  // 选中处理
   const handleViewChange = (mode: 'byProduct' | 'byOrder') => {
     setViewMode(mode);
     setSelectedOrder(null);
     setSelectedSkuOrder(null);
+    setFormData(initialFormData);
+    setFormErrors({});
   };
 
-  // 选中订单处理
   const handleSelectOrder = (order: Order) => {
-    setSelectedOrder(prev => prev?.id === order.id ? null : order);
+    const isDeselect = selectedOrder?.id === order.id;
+    setSelectedOrder(isDeselect ? null : order);
+    setSelectedSkuOrder(null);
+    
+    if (!isDeselect) {
+      // 回填已有采购记录
+      if (order.purchaseInfo) {
+        setFormData({
+          platform: order.purchaseInfo.platform || 'alibaba',
+          productUrl: order.purchaseInfo.productUrl || '',
+          unitPrice: order.purchaseInfo.unitPrice?.toString() || '',
+          quantity: order.purchaseInfo.quantity?.toString() || order.products[0]?.quantity.toString() || '1',
+          supplierNote: order.purchaseInfo.supplierNote || '',
+          trackingNumber: order.purchaseInfo.trackingNumber || '',
+        });
+      } else {
+        setFormData({
+          ...initialFormData,
+          quantity: order.products[0]?.quantity.toString() || '1',
+        });
+      }
+      setFormErrors({});
+    } else {
+      setFormData(initialFormData);
+    }
   };
 
-  // 选中SKU处理
   const handleSelectSku = (sku: AggregatedSku) => {
-    setSelectedSkuOrder(prev => prev?.sku === sku.sku ? null : sku);
+    const isDeselect = selectedSkuOrder?.sku === sku.sku;
+    setSelectedSkuOrder(isDeselect ? null : sku);
+    setSelectedOrder(null);
+    
+    if (!isDeselect) {
+      setFormData({
+        ...initialFormData,
+        quantity: sku.totalQuantity.toString(),
+      });
+      setFormErrors({});
+    } else {
+      setFormData(initialFormData);
+    }
   };
 
-  // 展开/收起SKU下的订单
   const toggleSkuExpand = (sku: string) => {
     setExpandedSkus(prev => {
       const next = new Set(prev);
@@ -320,21 +420,141 @@ export default function PurchasePage() {
     });
   };
 
-  // 清空选中
   const handleClearSelection = () => {
     setSelectedOrder(null);
     setSelectedSkuOrder(null);
+    setFormData(initialFormData);
+    setFormErrors({});
   };
 
-  // 判断右栏是否有选中
+  // 表单处理
+  const handleFormChange = (field: keyof PurchaseFormData, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    if (formErrors[field]) {
+      setFormErrors(prev => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+  };
+
+  // 表单校验
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    if (!formData.platform) {
+      errors.platform = '请选择采购平台';
+    }
+    
+    const unitPrice = parseFloat(formData.unitPrice);
+    if (!formData.unitPrice || isNaN(unitPrice) || unitPrice <= 0) {
+      errors.unitPrice = '请输入有效的采购单价';
+    }
+
+    const quantity = parseInt(formData.quantity);
+    if (!formData.quantity || isNaN(quantity) || quantity <= 0) {
+      errors.quantity = '请输入有效的采购数量';
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  // 提交表单
+  const handleSubmit = async (isDraft: boolean = false) => {
+    if (!isDraft && !validateForm()) {
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      // 获取关联的订单ID
+      const orderIds = selectedSkuOrder 
+        ? selectedSkuOrder.orders.map(o => o.id)
+        : selectedOrder 
+          ? [selectedOrder.id] 
+          : [];
+
+      const payload = {
+        orderIds,
+        platform: formData.platform,
+        productUrl: formData.productUrl,
+        unitPrice: parseFloat(formData.unitPrice) || 0,
+        quantity: parseInt(formData.quantity) || 0,
+        supplierNote: formData.supplierNote,
+        trackingNumber: formData.trackingNumber,
+        isDraft,
+      };
+
+      const res = await fetch('/api/purchase/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        toast(isDraft ? '草稿已保存' : '采购信息已提交');
+        
+        // 更新本地订单状态
+        setOrders(prev => prev.map(order => {
+          if (orderIds.includes(order.id)) {
+            return {
+              ...order,
+              erpStatus: isDraft ? order.erpStatus : 'purchasing',
+              purchaseInfo: {
+                platform: formData.platform,
+                productUrl: formData.productUrl,
+                unitPrice: parseFloat(formData.unitPrice),
+                quantity: parseInt(formData.quantity),
+                supplierNote: formData.supplierNote,
+                trackingNumber: formData.trackingNumber,
+                isDraft,
+              },
+            };
+          }
+          return order;
+        }));
+
+        if (!isDraft) {
+          // 成功提交后2秒清空表单
+          setTimeout(() => {
+            setFormData(initialFormData);
+            handleClearSelection();
+          }, 2000);
+        }
+      } else {
+        toast(data.message || '提交失败', 'error');
+      }
+    } catch (error) {
+      console.error('提交失败:', error);
+      toast('提交失败，请重试', 'error');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // 是否有选中
   const hasSelection = selectedOrder !== null || selectedSkuOrder !== null;
+
+  // 获取当前选中项的默认数量
+  const defaultQuantity = selectedSkuOrder 
+    ? selectedSkuOrder.totalQuantity 
+    : selectedOrder 
+      ? selectedOrder.products[0]?.quantity || 1 
+      : 1;
 
   return (
     <AppLayout title="采购中心" subtitle="采购工作台">
       {/* Toast 通知 */}
       {notify && (
         <div className={`mx-4 mt-2 px-4 py-2 rounded-lg text-sm ${
-          notify.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'
+          notify.type === 'success' 
+            ? 'bg-green-50 text-green-700 border border-green-200' 
+            : 'bg-red-50 text-red-700 border border-red-200'
         }`}>
           {notify.msg}
         </div>
@@ -342,7 +562,7 @@ export default function PurchasePage() {
 
       {/* 左右分栏布局 */}
       <div className="flex h-[calc(100vh-140px)]">
-        {/* 左栏 - 任务列表 (60%) */}
+        {/* ========== 左栏 - 任务列表 (60%) ========== */}
         <div className="w-3/5 border-r border-[#E6EAF2] flex flex-col overflow-hidden">
           {/* 统计卡片 */}
           <div className="p-4 border-b border-[#E6EAF2] bg-white flex-shrink-0">
@@ -412,7 +632,12 @@ export default function PurchasePage() {
 
               {/* Tab切换 */}
               <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
-                {tabs.map(tab => (
+                {[
+                  { key: 'pending', label: '待采购' },
+                  { key: 'inspecting', label: '待验货' },
+                  { key: 'packing', label: '待打包' },
+                  { key: 'all', label: '全部' },
+                ].map(tab => (
                   <button
                     key={tab.key}
                     onClick={() => setSelectedTab(tab.key)}
@@ -439,7 +664,7 @@ export default function PurchasePage() {
               </Button>
             </div>
 
-            {/* 视图切换Tab - 放在工具栏下方 */}
+            {/* 视图切换Tab */}
             <div className="flex items-center gap-1 mt-3 bg-gray-100 rounded-lg p-0.5 w-fit">
               <button
                 onClick={() => handleViewChange('byProduct')}
@@ -489,7 +714,6 @@ export default function PurchasePage() {
 
                   return (
                     <div key={skuItem.sku}>
-                      {/* SKU聚合行 */}
                       <div
                         onClick={() => handleSelectSku(skuItem)}
                         className={`p-4 cursor-pointer transition-all ${
@@ -511,7 +735,6 @@ export default function PurchasePage() {
                                     {deadline.text}
                                   </span>
                                 )}
-                                {/* 待采购数量醒目显示 */}
                                 <span className="px-2 py-0.5 bg-orange-100 text-orange-700 rounded text-sm font-bold">
                                   ×{skuItem.totalQuantity}
                                 </span>
@@ -525,11 +748,7 @@ export default function PurchasePage() {
                                 onClick={(e) => { e.stopPropagation(); toggleSkuExpand(skuItem.sku); }}
                                 className="flex items-center gap-1 text-xs text-[#2F6BFF] hover:text-blue-700 transition-colors"
                               >
-                                {isExpanded ? (
-                                  <ChevronDown className="w-3.5 h-3.5" />
-                                ) : (
-                                  <ChevronRight className="w-3.5 h-3.5" />
-                                )}
+                                {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
                                 涉及 {skuItem.orders.length} 个订单
                               </button>
                               <div className="text-xs text-[#637089]">
@@ -547,6 +766,7 @@ export default function PurchasePage() {
                             const orderDeadline = getDeadlineDisplay(order.shipmentDeadline);
                             const erpInfo = erpStatusMap[order.erpStatus] || { label: order.erpStatus, color: 'bg-gray-100 text-gray-700' };
                             const product = order.products.find(p => p.sku === skuItem.sku) || order.products[0];
+
                             return (
                               <div key={order.id} className="px-4 py-2.5 border-b border-gray-200 last:border-b-0 hover:bg-white transition-colors">
                                 <div className="flex items-center justify-between gap-2">
@@ -580,7 +800,6 @@ export default function PurchasePage() {
 
                 {/* ========== 按订单视图 ========== */}
                 {viewMode === 'byOrder' && sortedOrders.map(order => {
-                  const statusInfo = ozonStatusMap[order.status] || { label: order.status, color: 'bg-gray-100 text-gray-700' };
                   const erpInfo = erpStatusMap[order.erpStatus] || { label: order.erpStatus, color: 'bg-gray-100 text-gray-700' };
                   const product = order.products[0];
                   const isSelected = selectedOrder?.id === order.id;
@@ -648,7 +867,7 @@ export default function PurchasePage() {
           </div>
         </div>
 
-        {/* 右栏 - 详情/表单区 (40%) */}
+        {/* ========== 右栏 - 详情/表单区 (40%) ========== */}
         <div className="w-2/5 flex flex-col overflow-hidden bg-[#F6F8FB]">
           {hasSelection ? (
             <>
@@ -657,7 +876,7 @@ export default function PurchasePage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="font-semibold text-[#152033]">
-                      {selectedSkuOrder ? '商品聚合详情' : '订单详情'}
+                      {selectedSkuOrder ? '商品采购' : '订单采购'}
                     </h3>
                     <p className="text-xs text-[#637089] mt-0.5 font-mono">
                       {selectedSkuOrder
@@ -665,134 +884,211 @@ export default function PurchasePage() {
                         : (selectedOrder?.ozonPostingNumber || selectedOrder?.ozonOrderId || '-')}
                     </p>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={handleClearSelection}
-                    className="h-8 w-8 p-0"
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setFormCollapsed(!formCollapsed)}
+                      className="h-8 px-2"
+                    >
+                      {formCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={handleClearSelection}
+                      className="h-8 w-8 p-0"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
 
               {/* 右栏内容 - 可滚动 */}
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {/* 商品信息 */}
-                <div className="bg-white rounded-lg border border-[#E6EAF2] p-4">
-                  <h4 className="text-sm font-medium text-[#152033] mb-3">商品信息</h4>
-                  <div className="flex items-start gap-3">
-                    <ProductImage
-                      src={(selectedSkuOrder?.image || selectedOrder?.products[0]?.image) || ''}
-                    />
-                    <div className="flex-1">
-                      <div className="text-sm text-[#152033]">
-                        {selectedSkuOrder?.name || selectedOrder?.products[0]?.name || '-'}
-                      </div>
-                      <div className="text-xs text-[#637089] mt-1">
-                        SKU: {selectedSkuOrder?.sku || selectedOrder?.products[0]?.sku || '-'}
-                      </div>
-                      <div className="text-xs text-[#637089]">
-                        {selectedSkuOrder
-                          ? `合并采购数量: ${selectedSkuOrder.totalQuantity}`
-                          : `数量: ${selectedOrder?.products[0]?.quantity || 1}`}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 订单信息 */}
-                <div className="bg-white rounded-lg border border-[#E6EAF2] p-4">
-                  <h4 className="text-sm font-medium text-[#152033] mb-3">订单信息</h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-[#637089]">店铺</span>
-                      <span className="text-[#152033]">
-                        {selectedSkuOrder?.orders[0]?.shopName || selectedOrder?.shopName || '-'}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-[#637089]">订单金额</span>
-                      <span className="text-[#152033] font-medium">
-                        {selectedSkuOrder
-                          ? formatCNY(
-                              selectedSkuOrder.orders.reduce(
-                                (sum, o) => sum + parseFloat(o.totalPrice || '0') * rubToCny, 0
-                              )
-                            )
-                          : formatCNY(parseFloat(selectedOrder?.totalPrice || '0') * rubToCny)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-[#637089]">ERP状态</span>
-                      <Badge className={erpStatusMap[selectedOrder?.erpStatus || '']?.color || 'bg-gray-100 text-gray-700'}>
-                        {erpStatusMap[selectedOrder?.erpStatus || '']?.label || selectedOrder?.erpStatus || '-'}
-                      </Badge>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-[#637089]">收件城市</span>
-                      <span className="text-[#152033]">
-                        {selectedSkuOrder?.orders[0]?.recipientCity || selectedOrder?.recipientCity || '-'}
-                      </span>
-                    </div>
-                    {selectedSkuOrder && (
-                      <>
-                        <div className="flex justify-between">
-                          <span className="text-[#637089]">涉及订单数</span>
-                          <span className="text-[#152033] font-medium">
-                            {selectedSkuOrder.orders.length}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-[#637089]">最早截止</span>
-                          <span className="text-[#152033]">
-                            {selectedSkuOrder.earliestDeadline
-                              ? new Date(selectedSkuOrder.earliestDeadline).toLocaleDateString('zh-CN')
-                              : '-'}
-                          </span>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {/* 按商品视图 - 显示涉及的订单列表 */}
-                {selectedSkuOrder && selectedSkuOrder.orders.length > 0 && (
+                {/* ========== 表单顶部信息区（可折叠）========== */}
+                {!formCollapsed && (
                   <div className="bg-white rounded-lg border border-[#E6EAF2] p-4">
-                    <h4 className="text-sm font-medium text-[#152033] mb-3">涉及订单</h4>
-                    <div className="space-y-2">
-                      {selectedSkuOrder.orders.map(order => {
-                        const product = order.products.find(p => p.sku === selectedSkuOrder.sku) || order.products[0];
-                        const deadline = getDeadlineDisplay(order.shipmentDeadline);
-                        return (
-                          <div key={order.id} className="text-sm border-b border-gray-100 pb-2 last:border-0 last:pb-0">
-                            <div className="flex items-center justify-between">
-                              <span className="font-mono text-xs text-[#637089]">
-                                {order.ozonPostingNumber}
-                              </span>
-                              {deadline && (
-                                <span className={`text-xs ${deadline.color}`}>{deadline.text}</span>
-                              )}
-                            </div>
-                            <div className="text-xs text-[#637089] mt-0.5">
-                              ×{product?.quantity || 1} · {order.recipientCity || '-'}
-                            </div>
-                          </div>
-                        );
-                      })}
+                    <h4 className="text-sm font-medium text-[#152033] mb-3">采购对象</h4>
+                    <div className="flex items-start gap-3">
+                      <ProductImage 
+                        src={(selectedSkuOrder?.image || selectedOrder?.products[0]?.image) || ''} 
+                        className="w-16 h-16"
+                      />
+                      <div className="flex-1">
+                        <div className="text-sm text-[#152033] font-medium">
+                          {selectedSkuOrder?.name || selectedOrder?.products[0]?.name || '-'}
+                        </div>
+                        <div className="text-xs text-[#637089] mt-1">
+                          SKU: {selectedSkuOrder?.sku || selectedOrder?.products[0]?.sku || '-'}
+                        </div>
+                        <div className="text-xs text-[#637089] mt-1">
+                          {selectedSkuOrder
+                            ? `涉及 ${selectedSkuOrder.orders.length} 个订单，合并采购 ×${selectedSkuOrder.totalQuantity}`
+                            : `订单数量 ×${selectedOrder?.products[0]?.quantity || 1}`}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
 
-                {/* 采购表单占位 */}
+                {/* ========== 采购录入表单 ========== */}
                 <div className="bg-white rounded-lg border border-[#E6EAF2] p-4">
-                  <h4 className="text-sm font-medium text-[#152033] mb-3">采购操作</h4>
-                  <div className="text-center py-8 text-[#637089]">
-                    <ShoppingCart className="w-10 h-10 mx-auto mb-2 text-gray-300" />
-                    <p className="text-sm">采购表单开发中</p>
-                    <p className="text-xs text-gray-400 mt-1">敬请期待</p>
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-sm font-medium text-[#152033]">采购信息</h4>
+                    {isAlreadyPurchased && (
+                      <Badge className="bg-yellow-100 text-yellow-700">
+                        {hasPurchaseRecord ? '已有采购记录' : '已采购'}
+                      </Badge>
+                    )}
+                  </div>
+
+                  <div className="space-y-4">
+                    {/* 采购平台 */}
+                    <div>
+                      <label className="block text-xs text-[#637089] mb-1.5">采购平台 <span className="text-red-500">*</span></label>
+                      <select
+                        value={formData.platform}
+                        onChange={(e) => handleFormChange('platform', e.target.value)}
+                        className={`w-full px-3 py-2 text-sm border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${
+                          formErrors.platform ? 'border-red-500' : 'border-[#E6EAF2]'
+                        }`}
+                      >
+                        <option value="alibaba">1688</option>
+                        <option value="pinduoduo">拼多多</option>
+                      </select>
+                      {formErrors.platform && (
+                        <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3" />
+                          {formErrors.platform}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* 商品链接 */}
+                    <div>
+                      <label className="block text-xs text-[#637089] mb-1.5">
+                        {formData.platform === 'alibaba' ? '1688' : '拼多多'}商品链接
+                      </label>
+                      <div className="relative">
+                        <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input
+                          type="text"
+                          placeholder="粘贴商品详情页URL"
+                          value={formData.productUrl}
+                          onChange={(e) => handleFormChange('productUrl', e.target.value)}
+                          className="w-full pl-9 pr-4 py-2 text-sm border border-[#E6EAF2] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                        />
+                      </div>
+                    </div>
+
+                    {/* 采购单价和数量 */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs text-[#637089] mb-1.5">采购单价 <span className="text-red-500">*</span></label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[#637089]">¥</span>
+                          <input
+                            type="number"
+                            placeholder="0.00"
+                            value={formData.unitPrice}
+                            onChange={(e) => handleFormChange('unitPrice', e.target.value)}
+                            className={`w-full pl-7 pr-4 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${
+                              formErrors.unitPrice ? 'border-red-500' : 'border-[#E6EAF2]'
+                            }`}
+                          />
+                        </div>
+                        {formErrors.unitPrice && (
+                          <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                            <AlertCircle className="w-3 h-3" />
+                            {formErrors.unitPrice}
+                          </p>
+                        )}
+                      </div>
+                      <div>
+                        <label className="block text-xs text-[#637089] mb-1.5">采购数量 <span className="text-red-500">*</span></label>
+                        <input
+                          type="number"
+                          placeholder="1"
+                          value={formData.quantity}
+                          onChange={(e) => handleFormChange('quantity', e.target.value)}
+                          className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${
+                            formErrors.quantity ? 'border-red-500' : 'border-[#E6EAF2]'
+                          }`}
+                        />
+                        {formErrors.quantity && (
+                          <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                            <AlertCircle className="w-3 h-3" />
+                            {formErrors.quantity}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* 总金额 */}
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-[#637089]">总金额</span>
+                        <span className="text-lg font-bold text-[#152033]">
+                          {formatCNY(totalAmount)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* 供应商备注 */}
+                    <div>
+                      <label className="block text-xs text-[#637089] mb-1.5">供应商备注</label>
+                      <textarea
+                        placeholder="记录供应商名称或特殊要求"
+                        value={formData.supplierNote}
+                        onChange={(e) => handleFormChange('supplierNote', e.target.value)}
+                        rows={2}
+                        className="w-full px-3 py-2 text-sm border border-[#E6EAF2] rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                      />
+                    </div>
+
+                    {/* 快递单号 */}
+                    <div>
+                      <label className="block text-xs text-[#637089] mb-1.5">快递单号</label>
+                      <input
+                        type="text"
+                        placeholder="到货后填写"
+                        value={formData.trackingNumber}
+                        onChange={(e) => handleFormChange('trackingNumber', e.target.value)}
+                        className="w-full px-3 py-2 text-sm border border-[#E6EAF2] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                      />
+                    </div>
                   </div>
                 </div>
+
+                {/* ========== 底部操作区 ========== */}
+                <div className="flex items-center gap-3 pt-2">
+                  <Button
+                    onClick={() => handleSubmit(false)}
+                    disabled={submitting}
+                    className="flex-1 bg-[#2F6BFF] hover:bg-blue-600 text-white gap-1.5"
+                  >
+                    {submitting ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Check className="w-4 h-4" />
+                    )}
+                    {hasPurchaseRecord ? '更新采购' : '确认采购'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => handleSubmit(true)}
+                    disabled={submitting}
+                    className="gap-1.5"
+                  >
+                    <Save className="w-4 h-4" />
+                    暂存草稿
+                  </Button>
+                </div>
+                <p className="text-xs text-[#637089] text-center">
+                  暂存草稿不会改变订单状态，方便稍后继续填写
+                </p>
               </div>
             </>
           ) : (
@@ -800,7 +1096,7 @@ export default function PurchasePage() {
             <div className="flex-1 flex flex-col items-center justify-center text-[#637089]">
               <FileText className="w-16 h-16 mb-4 text-gray-300" />
               <p className="text-sm">请从左侧选择一个采购任务</p>
-              <p className="text-xs text-gray-400 mt-1">点击任务卡片查看详情</p>
+              <p className="text-xs text-gray-400 mt-1">点击任务卡片开始采购录入</p>
             </div>
           )}
         </div>
