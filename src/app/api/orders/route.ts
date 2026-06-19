@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
       // awaiting_packaging - 待打包（已付款等待商家打包）
       // awaiting_deliver - 待发货（已打包等待物流取货）
       const statusMap: Record<string, string[]> = {
-        pending: ['awaiting_packaging', 'awaiting_deliver'], // 待采购：只有待发运订单
+        pending: ['awaiting-packaging', 'awaiting_packaging', 'awaiting-deliver', 'awaiting_deliver'], // 待采购：所有等待发运状态
         purchasing: ['purchasing'],
         purchased: ['purchased'],
         delivering: ['delivering'],
