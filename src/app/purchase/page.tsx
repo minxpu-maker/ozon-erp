@@ -87,6 +87,17 @@ interface PurchaseFormData {
   trackingNumber: string;
 }
 
+// 批量录入单条记录
+interface BatchTrackingItem {
+  id: string;
+  rawText: string;
+  trackingNumber: string;
+  orderId: string | null;
+  orderPostingNumber: string | null;
+  matched: boolean;
+  orderSearchQuery: string;
+}
+
 // 状态映射
 const erpStatusMap: Record<string, { label: string; color: string }> = {
   pending_purchase: { label: '待采购', color: 'bg-orange-100 text-orange-700' },
@@ -228,6 +239,101 @@ export default function PurchasePage() {
   };
   const [formData, setFormData] = useState<PurchaseFormData>(initialFormData);
 
+  // 批量录入快递相关状态
+  const [batchMode, setBatchMode] = useState(false);
+  const [batchText, setBatchText] = useState('');
+  const [batchItems, setBatchItems] = useState<BatchTrackingItem[]>([]);
+  const [batchSubmitting, setBatchSubmitting] = useState(false);
+
+  // 解析批量文本为记录
+  const parseBatchText = useCallback((text: string, allOrders: Order[]) => {
+    const lines = text.split('\n').filter(line => line.trim());
+    
+    const items: BatchTrackingItem[] = lines.map((line, idx) => {
+      const trimmed = line.trim();
+      const parts = trimmed.split(/\s+/);
+      
+      let trackingNumber = '';
+      let orderId: string | null = null;
+      let orderPostingNumber: string | null = null;
+      let matched = false;
+      
+      if (parts.length >= 2) {
+        // 可能是 "订单号 快递号" 格式
+        const potentialOrderNum = parts[0];
+        const potentialTracking = parts[1];
+        
+        // 查找匹配的订单
+        const matchedOrder = allOrders.find(o => 
+          o.ozonPostingNumber === potentialOrderNum || 
+          o.ozonOrderId === potentialOrderNum
+        );
+        
+        if (matchedOrder) {
+          trackingNumber = potentialTracking;
+          orderId = matchedOrder.id;
+          orderPostingNumber = matchedOrder.ozonPostingNumber || matchedOrder.ozonOrderId;
+          matched = true;
+        } else {
+          // 纯快递号格式
+          trackingNumber = trimmed;
+        }
+      } else {
+        // 纯快递号
+        trackingNumber = trimmed;
+      }
+      
+      return {
+        id: `batch-${idx}-${Date.now()}`,
+        rawText: trimmed,
+        trackingNumber,
+        orderId,
+        orderPostingNumber,
+        matched,
+        orderSearchQuery: '',
+      };
+    });
+    
+    return items;
+  }, []);
+
+  // 更新批量文本时自动解析
+  const handleBatchTextChange = useCallback((text: string) => {
+    setBatchText(text);
+    const parsed = parseBatchText(text, orders);
+    setBatchItems(parsed);
+  }, [orders, parseBatchText]);
+
+  // 手动匹配订单
+  const handleMatchOrder = useCallback((itemId: string, order: Order) => {
+    setBatchItems(prev => prev.map(item => {
+      if (item.id === itemId) {
+        return {
+          ...item,
+          orderId: order.id,
+          orderPostingNumber: order.ozonPostingNumber || order.ozonOrderId,
+          matched: true,
+          orderSearchQuery: '',
+        };
+      }
+      return item;
+    }));
+  }, []);
+
+  // 切换批量录入模式
+  const toggleBatchMode = useCallback(() => {
+    if (batchMode && batchItems.length > 0) {
+      if (!confirm('确定退出批量录入模式？未提交的内容将丢失。')) {
+        return;
+      }
+    }
+    setBatchMode(false);
+    setBatchText('');
+    setBatchItems([]);
+  }, [batchMode, batchItems]);
+
+  // 批量提交 - 稍后在 toast 和 fetchOrders 之后定义
+
   // 判断是否为已采购状态
   const isAlreadyPurchased = useMemo(() => {
     if (selectedOrder) {
@@ -298,6 +404,46 @@ export default function PurchasePage() {
       setSyncing(false);
     }
   };
+
+  // 批量提交
+  const handleBatchSubmit = useCallback(async () => {
+    const unmatchedItems = batchItems.filter(item => !item.matched);
+    if (unmatchedItems.length > 0) {
+      toast('请先匹配所有未识别的快递号', 'error');
+      return;
+    }
+
+    setBatchSubmitting(true);
+    try {
+      const res = await fetch('/api/purchase/batch-tracking', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: batchItems.map(item => ({
+            orderId: item.orderId,
+            trackingNumber: item.trackingNumber,
+          })),
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        toast(`提交成功：${data.data?.success || batchItems.length}条`);
+        setBatchMode(false);
+        setBatchText('');
+        setBatchItems([]);
+        fetchOrders();
+      } else {
+        toast(`提交失败: ${data.message || '未知错误'}`, 'error');
+      }
+    } catch (error) {
+      console.error('批量提交失败:', error);
+      toast('提交失败', 'error');
+    } finally {
+      setBatchSubmitting(false);
+    }
+  }, [batchItems, toast, fetchOrders]);
 
   // 计算总金额
   const totalAmount = useMemo(() => {
@@ -688,6 +834,15 @@ export default function PurchasePage() {
                 <ListOrdered className="w-3.5 h-3.5" />
                 按订单
               </button>
+              {viewMode === 'byOrder' && (
+                <button
+                  onClick={() => setBatchMode(true)}
+                  className="ml-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5 bg-[#2F6BFF] text-white hover:bg-[#2558e0]"
+                >
+                  <Truck className="w-3.5 h-3.5" />
+                  批量录快递
+                </button>
+              )}
             </div>
           </div>
 
@@ -869,7 +1024,124 @@ export default function PurchasePage() {
 
         {/* ========== 右栏 - 详情/表单区 (40%) ========== */}
         <div className="w-2/5 flex flex-col overflow-hidden bg-[#F6F8FB]">
-          {hasSelection ? (
+          {batchMode ? (
+            <>
+              {/* 批量录入模式头部 */}
+              <div className="p-4 bg-white border-b border-[#E6EAF2] flex-shrink-0">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold text-[#152033]">批量录入快递号</h3>
+                    <p className="text-xs text-[#637089] mt-0.5">已识别 {batchItems.filter(i => i.matched).length} / {batchItems.length} 条</p>
+                  </div>
+                  <button
+                    onClick={toggleBatchMode}
+                    className="text-sm text-[#2F6BFF] hover:underline"
+                  >
+                    返回单条录入
+                  </button>
+                </div>
+              </div>
+
+              {/* 批量录入内容 */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {/* 输入说明 */}
+                <div className="bg-blue-50 rounded-lg p-3 text-xs text-blue-700">
+                  每行一个快递号，格式：订单号+空格+快递号，或纯快递号（需手动匹配）
+                </div>
+
+                {/* 文本输入 */}
+                <div className="bg-white rounded-lg border border-[#E6EAF2] p-4">
+                  <textarea
+                    value={batchText}
+                    onChange={(e) => handleBatchTextChange(e.target.value)}
+                    placeholder={"粘贴示例：\nO-20260619-001 SF1234567890\nSF9876543210"}
+                    className="w-full h-32 px-3 py-2 text-sm border border-[#E6EAF2] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 resize-none"
+                  />
+                </div>
+
+                {/* 解析预览 */}
+                {batchItems.length > 0 && (
+                  <div className="bg-white rounded-lg border border-[#E6EAF2] p-4">
+                    <h4 className="text-sm font-medium text-[#152033] mb-3">识别结果</h4>
+                    <div className="space-y-2 max-h-80 overflow-y-auto">
+                      {batchItems.map((item, idx) => (
+                        <div key={item.id} className="flex items-start gap-2 p-2 bg-gray-50 rounded">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className={`w-2 h-2 rounded-full ${item.matched ? 'bg-green-500' : 'bg-red-500'}`} />
+                              <span className="text-xs font-mono text-[#152033] truncate">{item.trackingNumber}</span>
+                            </div>
+                            {item.matched && item.orderPostingNumber && (
+                              <div className="text-xs text-green-600 mt-0.5 ml-4">
+                                → {item.orderPostingNumber}
+                              </div>
+                            )}
+                            {!item.matched && (
+                              <div className="mt-1 ml-4">
+                                <input
+                                  type="text"
+                                  placeholder="输入订单号搜索..."
+                                  value={item.orderSearchQuery}
+                                  onChange={(e) => {
+                                    const query = e.target.value;
+                                    setBatchItems(prev => prev.map(it => 
+                                      it.id === item.id ? { ...it, orderSearchQuery: query } : it
+                                    ));
+                                  }}
+                                  className="w-full px-2 py-1 text-xs border border-[#E6EAF2] rounded focus:outline-none focus:ring-1 focus:ring-blue-500/20"
+                                />
+                                {item.orderSearchQuery && (
+                                  <div className="mt-1 border border-[#E6EAF2] rounded bg-white max-h-32 overflow-y-auto">
+                                    {orders.filter(o => {
+                                      const q = item.orderSearchQuery.toLowerCase();
+                                      return (
+                                        (o.ozonPostingNumber || '').toLowerCase().includes(q) ||
+                                        (o.ozonOrderId || '').toLowerCase().includes(q)
+                                      );
+                                    }).slice(0, 5).map(order => (
+                                      <button
+                                        key={order.id}
+                                        onClick={() => handleMatchOrder(item.id, order)}
+                                        className="w-full px-2 py-1.5 text-xs text-left hover:bg-blue-50 border-b last:border-b-0"
+                                      >
+                                        <div className="font-mono">{order.ozonPostingNumber || order.ozonOrderId}</div>
+                                        <div className="text-[#637089] truncate">{order.products[0]?.name}</div>
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 提交按钮 */}
+                <div className="sticky bottom-0 pt-4 bg-[#F6F8FB]">
+                  <Button
+                    onClick={handleBatchSubmit}
+                    disabled={batchSubmitting || batchItems.filter(i => i.matched).length !== batchItems.length || batchItems.length === 0}
+                    className="w-full bg-[#2F6BFF] hover:bg-[#2558e0] disabled:bg-gray-300"
+                  >
+                    {batchSubmitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        提交中...
+                      </>
+                    ) : (
+                      <>
+                        <Check className="w-4 h-4 mr-2" />
+                        确认提交 ({batchItems.filter(i => i.matched).length}/{batchItems.length})
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </>
+          ) : hasSelection ? (
             <>
               {/* 右栏头部 */}
               <div className="p-4 bg-white border-b border-[#E6EAF2] flex-shrink-0">
