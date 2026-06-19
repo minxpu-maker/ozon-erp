@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/pagination';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { ShoppingCart, Eye } from 'lucide-react';
+import { ShoppingCart, Eye, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 
 const fetcher = (url: string) => fetch(url).then(async r => {
   if (!r.ok) throw new Error('请求失败');
@@ -186,6 +186,8 @@ export default function OrdersListPage() {
   const [page, setPage] = useState(parseInt(searchParams.get('page') || '1'));
   const [mounted, setMounted] = useState(false);
   const [now, setNow] = useState<number | null>(null);
+  // 排序状态：deadline_asc=截止时间升序(默认), deadline_desc=截止时间降序, created_desc=创建时间降序
+  const [sortMode, setSortMode] = useState<'deadline_asc' | 'deadline_desc' | 'created_desc'>('deadline_asc');
 
   useEffect(() => setMounted(true), []);
   useEffect(() => { if (mounted) setNow(Date.now()); }, [mounted]);
@@ -223,23 +225,32 @@ export default function OrdersListPage() {
     return new Date(deadline).getTime() < Date.now();
   };
 
-  // 按发货截止时间排序：超时订单置顶，然后按剩余时间升序
+  // 按排序模式排序订单
   const sortedOrders = useMemo(() => {
     const currentTime = Date.now();
     return [...orderList].sort((a, b) => {
-      const aTime = a.shipmentDeadline ? new Date(a.shipmentDeadline).getTime() : Infinity;
-      const bTime = b.shipmentDeadline ? new Date(b.shipmentDeadline).getTime() : Infinity;
-      const aOverdue = a.shipmentDeadline ? aTime < currentTime : false;
-      const bOverdue = b.shipmentDeadline ? bTime < currentTime : false;
-
-      // 超时订单置顶
-      if (aOverdue && !bOverdue) return -1;
-      if (!aOverdue && bOverdue) return 1;
-
-      // 按截止时间升序（最紧急的排最前）
-      return aTime - bTime;
+      if (sortMode === 'deadline_asc') {
+        // 超时订单置顶，然后按截止时间升序
+        const aTime = a.shipmentDeadline ? new Date(a.shipmentDeadline).getTime() : Infinity;
+        const bTime = b.shipmentDeadline ? new Date(b.shipmentDeadline).getTime() : Infinity;
+        const aOverdue = a.shipmentDeadline ? aTime < currentTime : false;
+        const bOverdue = b.shipmentDeadline ? bTime < currentTime : false;
+        if (aOverdue && !bOverdue) return -1;
+        if (!aOverdue && bOverdue) return 1;
+        return aTime - bTime;
+      } else if (sortMode === 'deadline_desc') {
+        // 按截止时间降序（最晚的排最前）
+        const aTime = a.shipmentDeadline ? new Date(a.shipmentDeadline).getTime() : 0;
+        const bTime = b.shipmentDeadline ? new Date(b.shipmentDeadline).getTime() : 0;
+        return bTime - aTime;
+      } else {
+        // created_desc: 按创建时间降序（最新的排最前）
+        const aTime = new Date(a.createdAt).getTime();
+        const bTime = new Date(b.createdAt).getTime();
+        return bTime - aTime;
+      }
     });
-  }, [orderList]);
+  }, [orderList, sortMode]);
 
   const formatPrice = (price: number | string | null | undefined) => {
     if (price == null) return '—';
@@ -356,8 +367,34 @@ export default function OrdersListPage() {
                 <TableHead className="text-right">订单金额</TableHead>
                 <TableHead>订单状态</TableHead>
                 <TableHead>采购状态</TableHead>
-                <TableHead>发货倒计时</TableHead>
-                <TableHead>创建时间</TableHead>
+                <TableHead>
+                  <button
+                    onClick={() => setSortMode(sortMode === 'deadline_asc' ? 'deadline_desc' : 'deadline_asc')}
+                    className="flex items-center gap-1 hover:text-blue-600 transition-colors"
+                  >
+                    发货倒计时
+                    {sortMode === 'deadline_asc' ? (
+                      <ArrowUp className="w-3 h-3 text-blue-600" />
+                    ) : sortMode === 'deadline_desc' ? (
+                      <ArrowDown className="w-3 h-3 text-blue-600" />
+                    ) : (
+                      <ArrowUpDown className="w-3 h-3 text-gray-400" />
+                    )}
+                  </button>
+                </TableHead>
+                <TableHead>
+                  <button
+                    onClick={() => setSortMode('created_desc')}
+                    className="flex items-center gap-1 hover:text-blue-600 transition-colors"
+                  >
+                    创建时间
+                    {sortMode === 'created_desc' ? (
+                      <ArrowDown className="w-3 h-3 text-blue-600" />
+                    ) : (
+                      <ArrowUpDown className="w-3 h-3 text-gray-400" />
+                    )}
+                  </button>
+                </TableHead>
                 <TableHead>同步时间</TableHead>
                 <TableHead className="text-center">消息</TableHead>
                 <TableHead className="w-[100px]">操作</TableHead>
