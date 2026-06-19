@@ -500,8 +500,9 @@ export function OrderCard({ order, selected, onSelect }: OrderCardProps) {
   return (
     <div
       className={cn(
-        'bg-white rounded-xl shadow-sm transition-all duration-200 cursor-pointer',
+        'rounded-xl shadow-sm transition-all duration-200',
         'hover:shadow-md',
+        selected ? 'bg-gray-50' : 'bg-white',
         selected && 'ring-2 ring-blue-500'
       )}
       onClick={() => onSelect?.(order.id)}
@@ -511,7 +512,14 @@ export function OrderCard({ order, selected, onSelect }: OrderCardProps) {
         className={cn(
           'w-1 rounded-l-xl transition-all duration-200',
           selected ? 'w-1.5' : 'w-1',
-          colors.bar
+          // 选中时颜色变浅
+          selected && isEmpty ? 'bg-gray-400' :
+          selected && isOverdue ? 'bg-red-400' :
+          selected && isUrgent ? 'bg-red-400' :
+          selected && countdown.level === 'warning' ? 'bg-amber-300' :
+          selected && 'bg-green-400',
+          // 未选中时使用正常颜色
+          !selected && colors.bar
         )}
       />
 

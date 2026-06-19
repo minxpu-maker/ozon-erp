@@ -174,6 +174,8 @@ export default function OrdersListPage() {
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'purchasing' | 'purchased' | 'pending_ship' | 'shipped'>('all');
   // 选中订单状态
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  // 排序方式
+  const [sortBy, setSortBy] = useState<'urgency' | 'created'>('urgency');
 
   useEffect(() => setMounted(true), []);
   useEffect(() => { if (mounted) setNow(Date.now()); }, [mounted]);
@@ -244,12 +246,20 @@ export default function OrdersListPage() {
     return new Date(deadline).getTime() < Date.now();
   };
 
-  // 按紧急度排序订单
+  // 按紧急度或创建时间排序订单
   const sortedOrders = useMemo(() => {
     // eslint-disable-next-line react-hooks/purity
     const currentTime = Date.now();
     
     return [...orderList].sort((a, b) => {
+      // 按创建时间排序
+      if (sortBy === 'created') {
+        const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return bTime - aTime; // 最新创建的排前面
+      }
+      
+      // 按紧急度排序
       const aCountdown = getCountdown(a.shipmentDeadline);
       const bCountdown = getCountdown(b.shipmentDeadline);
       
@@ -272,7 +282,7 @@ export default function OrdersListPage() {
       const bTime = new Date(b.shipmentDeadline!).getTime();
       return aTime - bTime;
     });
-  }, [orderList]);
+  }, [orderList, sortBy]);
 
   // Tab状态计数
   const tabCounts = useMemo(() => {
@@ -481,40 +491,101 @@ export default function OrdersListPage() {
         ))}
       </div>
 
-      {/* 批量操作栏 */}
+      {/* 全选控件 + 排序 */}
+      <div className="flex items-center justify-between py-2 px-1">
+        <div className="flex items-center gap-3">
+          <Checkbox
+            checked={filteredOrders.length > 0 && selectedIds.size === filteredOrders.length}
+            onCheckedChange={toggleSelectAll}
+            disabled={filteredOrders.length === 0}
+          />
+          <span className="text-sm text-gray-500">
+            已选 <span className="font-medium text-gray-700">{selectedIds.size}</span> / 共 <span className="font-medium text-gray-700">{filteredOrders.length}</span> 单
+          </span>
+        </div>
+        <Select value={sortBy} onValueChange={v => setSortBy(v as 'urgency' | 'created')}>
+          <SelectTrigger className="w-36 bg-card text-sm h-8">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="urgency">按紧急度排序</SelectItem>
+            <SelectItem value="created">按创建时间排序</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* 批量操作浮动栏 */}
       {selectedIds.size > 0 && (
-        <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5">
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4 bg-white border border-gray-200 rounded-xl shadow-lg px-6 py-3">
           <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-blue-700">
-              已选 <span className="font-bold">{selectedIds.size}</span> 单
+            <span className="text-sm font-medium text-gray-700">
+              已选 <span className="font-bold text-blue-600">{selectedIds.size}</span> 单
             </span>
-            {filteredOrders.some(o => selectedIds.has(String(o.id)) && PENDING_STATUSES.includes(o.erpStatus || '')) && (
-              <Button
-                size="sm"
-                className="h-7 bg-blue-600 hover:bg-blue-700 text-white"
-                onClick={handleBatchPurchase}
-              >
-                <ShoppingCart className="w-3 h-3 mr-1" />
-                批量去采购
-              </Button>
-            )}
-            {filteredOrders.some(o => selectedIds.has(String(o.id)) && o.erpStatus === 'purchasing') && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-7 border-yellow-400 text-yellow-700 hover:bg-yellow-50"
-                onClick={handleBatchView}
-              >
-                <Eye className="w-3 h-3 mr-1" />
-                批量查看采购
-              </Button>
+            {selectedIds.size > 20 && (
+              <span className="text-xs text-red-500">单次最多处理20单</span>
             )}
           </div>
+          
+          <div className="flex items-center gap-2">
+            {/* 批量去采购按钮 */}
+            {(() => {
+              const pendingCount = filteredOrders.filter(o => selectedIds.has(String(o.id)) && PENDING_STATUSES.includes(o.erpStatus || '')).length;
+              const purchasingCount = filteredOrders.filter(o => selectedIds.has(String(o.id)) && o.erpStatus === 'purchasing').length;
+              
+              return (
+                <>
+                  {pendingCount > 0 && (
+                    <Button
+                      size="sm"
+                      className="h-8 bg-blue-600 hover:bg-blue-700 text-white"
+                      onClick={() => {
+                        if (selectedIds.size > 20) {
+                          alert('单次最多处理20单，请减少选择');
+                          return;
+                        }
+                        const ids = filteredOrders.filter(o => selectedIds.has(String(o.id)) && PENDING_STATUSES.includes(o.erpStatus || '')).map(o => o.id).join(',');
+                        router.push(`/purchase?orderIds=${ids}&action=batch`);
+                      }}
+                    >
+                      <ShoppingCart className="w-3.5 h-3.5 mr-1.5" />
+                      批量去采购
+                      {pendingCount < selectedIds.size && (
+                        <span className="ml-1 text-xs opacity-80">({pendingCount}单待采购)</span>
+                      )}
+                    </Button>
+                  )}
+                  
+                  {/* 批量查看采购按钮 */}
+                  {purchasingCount > 0 && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 border-yellow-400 text-yellow-700 hover:bg-yellow-50"
+                      onClick={() => {
+                        if (selectedIds.size > 20) {
+                          alert('单次最多处理20单，请减少选择');
+                          return;
+                        }
+                        const ids = filteredOrders.filter(o => selectedIds.has(String(o.id)) && o.erpStatus === 'purchasing').map(o => o.id).join(',');
+                        router.push(`/purchase?orderIds=${ids}&action=batch-view`);
+                      }}
+                    >
+                      <Eye className="w-3.5 h-3.5 mr-1.5" />
+                      批量查看采购
+                    </Button>
+                  )}
+                </>
+              );
+            })()}
+          </div>
+          
+          <div className="w-px h-6 bg-gray-200" />
+          
           <button
             onClick={clearSelection}
-            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
-            <X className="w-3.5 h-3.5" />
+            <X className="w-4 h-4" />
             取消选择
           </button>
         </div>
