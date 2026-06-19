@@ -27,6 +27,15 @@ export const ozonOrders = pgTable('ozon_orders', {
   lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  // 采购相关字段
+  purchasePlatform: varchar('purchase_platform', { length: 20 }), // 1688/pdd
+  purchaseUrl: varchar('purchase_url', { length: 500 }), // 采购链接
+  purchasePrice: numeric('purchase_price', { precision: 10, scale: 2 }), // 采购单价
+  purchaseQty: integer('purchase_qty'), // 采购数量
+  purchaseTotalAmount: numeric('purchase_total_amount', { precision: 10, scale: 2 }), // 采购总金额
+  purchaseTrackingNumber: varchar('purchase_tracking_number', { length: 100 }), // 快递单号
+  purchaseNote: text('purchase_note'), // 供应商备注
+  purchaseStatus: varchar('purchase_status', { length: 20 }).default('none'), // none/draft/confirmed
 }, (table) => [
   uniqueIndex('idx_ozon_orders_shop_ozon_id').on(table.shopId, table.ozonOrderId),
   index('idx_ozon_orders_shop').on(table.shopId),
