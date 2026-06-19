@@ -299,8 +299,8 @@ function PurchaseDetailPopover({
                 <div className="flex justify-between text-sm pt-2 border-t border-gray-100">
                   <span className="text-gray-400">采购总价</span>
                   <span className="text-gray-900 font-bold">
-                    {purchaseInfo.totalAmount
-                      ? formatCNY(purchaseInfo.totalAmount)
+                    {(purchaseInfo as Record<string, unknown>).total_cost != null
+                      ? formatCNY(Number((purchaseInfo as Record<string, unknown>).total_cost))
                       : '—'}
                   </span>
                 </div>

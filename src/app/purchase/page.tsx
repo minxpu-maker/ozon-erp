@@ -105,18 +105,18 @@ interface BatchTrackingItem {
 const erpStatusMap: Record<string, { label: string; color: string }> = {
   pending: { label: '待采购', color: 'bg-blue-100 text-blue-700' },
   pending_purchase: { label: '待采购', color: 'bg-blue-100 text-blue-700' },
-  purchasing: { label: '采购中', color: 'bg-yellow-100 text-yellow-700' },
+  purchasing: { label: '采购中', color: 'bg-amber-100 text-amber-700' },
   purchased: { label: '已采购', color: 'bg-green-100 text-green-700' },
-  shipped_domestic: { label: '运输中', color: 'bg-orange-100 text-orange-700' },
-  received: { label: '已到货', color: 'bg-green-100 text-green-700' },
-  qc_passed: { label: '验货通过', color: 'bg-green-100 text-green-700' },
+  shipped_domestic: { label: '运输中', color: 'bg-purple-100 text-purple-700' },
+  received: { label: '已到货', color: 'bg-teal-100 text-teal-700' },
+  qc_passed: { label: '验货通过', color: 'bg-teal-100 text-teal-700' },
   packing: { label: '打包中', color: 'bg-purple-100 text-purple-700' },
   pending_inspect: { label: '待验货', color: 'bg-blue-100 text-blue-700' },
   pending_pack: { label: '待打包', color: 'bg-purple-100 text-purple-700' },
   shipped: { label: '已发货', color: 'bg-gray-100 text-gray-600' },
-  delivered: { label: '已完成', color: 'bg-green-100 text-green-700' },
+  delivered: { label: '已完成', color: 'bg-gray-100 text-gray-600' },
   settled: { label: '已结算', color: 'bg-gray-100 text-gray-500' },
-  cancelled: { label: '已取消', color: 'bg-gray-100 text-gray-500' },
+  cancelled: { label: '已取消', color: 'bg-red-100 text-red-700' },
 };
 
 const ozonStatusMap: Record<string, { label: string; color: string }> = {

@@ -79,11 +79,23 @@ export async function GET(request: NextRequest) {
         console.error('解析商品信息失败:', e);
       }
 
+      // Ozon状态中文映射
+      const ozonStatusMap: Record<string, string> = {
+        'awaiting-collecting': '等待揽收',
+        'awaiting-deliver': '等待发货',
+        'awaiting-packaging': '等待打包',
+        'cancelled': '已取消',
+        'delivered': '已送达',
+        'not_accepted': '未验收',
+        'sent': '已发货',
+        'refunded': '已退款',
+      };
+
       return {
         id: o.id,
         ozonOrderId: o.ozon_order_id || o.id,
         ozonPostingNumber: o.ozon_posting_number,
-        erpStatus: o.erp_status,
+        erpStatus: o.erp_status || 'pending',
         shipmentDeadline: o.shipment_deadline,
         buyerName: o.buyer_name,
         recipientName: o.recipient_name,
@@ -91,6 +103,7 @@ export async function GET(request: NextRequest) {
         totalPrice: o.total_price,
         orderAmount: o.total_price,
         status: o.status,
+        ozonStatus: ozonStatusMap[o.status] || o.status,
         isInspected: o.is_inspected,
         isPacked: o.is_packed,
         isPurchaseBound: o.is_purchase_bound,
