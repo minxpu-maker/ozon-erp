@@ -27,6 +27,8 @@ import {
   X,
   Copy,
   ExternalLink,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 
 interface OrderProduct {
@@ -47,7 +49,7 @@ interface PurchaseInfo {
   purchaseUrl?: string;
 }
 
-interface OrderRecord {
+export interface OrderRecord {
   id: string | number;
   ozonOrderId: string;
   ozonPostingNumber: string;
@@ -63,9 +65,11 @@ interface OrderRecord {
   shipmentDeadline?: string | null;
   products?: OrderProduct[];
   purchaseInfo?: PurchaseInfo | null;
+  createdAt?: string;
+  lastSyncedAt?: string;
 }
 
-interface OrderCardProps {
+export interface OrderCardProps {
   order: OrderRecord;
   selected?: boolean;
   onSelect?: (id: string | number) => void;
@@ -444,13 +448,13 @@ function getActionButton(
 
 export function OrderCard({ order, selected, onSelect }: OrderCardProps) {
   const router = useRouter();
-  const [expanded, setExpanded] = useState(false);
+  const [expandedProducts, setExpandedProducts] = useState(false);
   const countdown = getCountdown(order.shipmentDeadline);
   const isEmpty = !order.shipmentDeadline;
 
   // 获取商品列表
   const products = order.products || [];
-  const visibleProducts = expanded ? products : products.slice(0, 2);
+  const visibleProducts = expandedProducts ? products : products.slice(0, 2);
   const hiddenCount = products.length - 2;
   const totalSkus = products.length;
   const totalItems = products.reduce((sum: number, p: OrderProduct) => sum + (p.quantity || 0), 0);
@@ -565,10 +569,10 @@ export function OrderCard({ order, selected, onSelect }: OrderCardProps) {
                     className="text-xs text-blue-500 hover:text-blue-600 mt-2"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setExpanded(!expanded);
+                      setExpandedProducts(!expandedProducts);
                     }}
                   >
-                    {expanded ? '收起 ▲' : `+${hiddenCount}个商品`}
+                    {expandedProducts ? '收起 ▲' : `+${hiddenCount}个商品`}
                   </button>
                 )}
 
@@ -622,9 +626,17 @@ export function OrderCard({ order, selected, onSelect }: OrderCardProps) {
           </div>
         </div>
 
-        {/* 底部：订单号 + 店铺名 + Ozon原始状态 */}
-        <div className="px-4 pb-3 flex items-center gap-3 text-xs">
-          <span className="font-mono text-gray-500">#{order.ozonPostingNumber || order.ozonOrderId}</span>
+        {/* 底部：订单号 + 店铺名 + Ozon原始状态 + 展开箭头 */}
+        <div 
+          className="px-4 pb-3 flex items-center gap-3 text-xs cursor-pointer select-none"
+          onClick={(e) => {
+            e.stopPropagation();
+            setExpandedProducts((prev) => !prev);
+          }}
+        >
+          <span className="font-mono text-gray-500 hover:text-blue-500 transition-colors">
+            #{order.ozonPostingNumber || order.ozonOrderId}
+          </span>
           <span className="text-gray-300">·</span>
           <span className="text-gray-500">{order.shopName || '未知店铺'}</span>
           <span className="text-gray-300">·</span>
@@ -639,6 +651,124 @@ export function OrderCard({ order, selected, onSelect }: OrderCardProps) {
           >
             {ozonStatusConfig.label}
           </Badge>
+          <span className="ml-auto">
+            {expandedProducts ? (
+              <ChevronUp className="w-3.5 h-3.5 text-gray-400 transition-transform duration-200" />
+            ) : (
+              <ChevronDown className="w-3.5 h-3.5 text-gray-400 transition-transform duration-200" />
+            )}
+          </span>
+        </div>
+
+        {/* 展开详情面板 */}
+        <div 
+          className={cn(
+            'overflow-hidden transition-all duration-200',
+            expandedProducts ? 'max-h-[500px]' : 'max-h-0'
+          )}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="px-4 pb-4">
+            <div className="bg-gray-50 rounded-b-xl p-4 border-t border-gray-100">
+              <div className="grid grid-cols-3 gap-4">
+                {/* 左列 - 买家信息 */}
+                <div className="space-y-2">
+                  <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide">买家信息</h4>
+                  <div className="space-y-1.5">
+                    {order.recipientName || order.buyerName ? (
+                      <>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <p className="text-sm text-gray-700 truncate cursor-help">
+                              {order.recipientName || order.buyerName}
+                            </p>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom">
+                            <p className="max-w-xs">{order.recipientName || order.buyerName}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                        {order.recipientCity && (
+                          <p className="text-xs text-gray-500">{order.recipientCity}</p>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-sm text-gray-400">买家信息缺失</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* 中列 - 时间信息 */}
+                <div className="space-y-2 border-l border-gray-200 pl-4">
+                  <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide">时间信息</h4>
+                  <div className="space-y-1.5">
+                    {order.createdAt && (
+                      <div>
+                        <p className="text-xs text-gray-400">创建时间</p>
+                        <p className="text-sm text-gray-700">
+                          {new Date(order.createdAt).toLocaleString('zh-CN', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </p>
+                      </div>
+                    )}
+                    {order.lastSyncedAt && (
+                      <div>
+                        <p className="text-xs text-gray-400">同步时间</p>
+                        <p className="text-sm text-gray-700">
+                          {new Date(order.lastSyncedAt).toLocaleString('zh-CN', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </p>
+                      </div>
+                    )}
+                    <a
+                      href={`https://www.ozon.ru.com/seller/products/${order.ozonPostingNumber}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs text-blue-500 hover:text-blue-600 hover:underline"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      在Ozon查看
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                </div>
+
+                {/* 右列 - 订单摘要 */}
+                <div className="space-y-2 border-l border-gray-200 pl-4">
+                  <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide">订单摘要</h4>
+                  <div className="space-y-1.5">
+                    <div>
+                      <p className="text-xs text-gray-400">订单金额</p>
+                      <p className="text-sm font-semibold text-gray-900">
+                        {order.totalPrice ? formatCNY(Number(order.totalPrice)) : '—'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-400">商品数</p>
+                      <p className="text-sm text-gray-700">
+                        {products.length > 0 
+                          ? `${totalSkus}个SKU · ${totalItems}件商品` 
+                          : '—'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-400">Ozon状态</p>
+                      <p className="text-sm text-gray-700">{ozonStatusConfig.label}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

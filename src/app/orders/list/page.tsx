@@ -26,7 +26,7 @@ import { cn, formatCNY, getCountdown } from '@/lib/utils';
 import { ShoppingCart, Eye, ArrowUpDown, ArrowUp, ArrowDown, Check, X, ExternalLink } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { OrderCard } from '@/components/orders/OrderCard';
+import { OrderCard, OrderRecord } from '@/components/orders/OrderCard';
 
 const fetcher = (url: string) => fetch(url).then(async r => {
   if (!r.ok) throw new Error('请求失败');
@@ -149,30 +149,6 @@ interface PurchaseInfo {
   url?: string;
   trackingNumber?: string;
   note?: string;
-}
-
-interface OrderRecord {
-  id: number;
-  ozonOrderId: string;
-  ozonPostingNumber: string;
-  shopId: string;
-  shopName?: string | null;
-  status: string;
-  erpStatus: string;
-  buyerName: string | null;
-  recipientName: string | null;
-  recipientCity: string | null;
-  totalPrice: number | string | null;
-  orderAmount: number | string | null;
-  isPurchaseBound: boolean | null;
-  isInspected: boolean | null;
-  isPacked: boolean | null;
-  shippedAt: string | null;
-  shipmentDeadline: string | null;
-  createdAt: string;
-  lastSyncedAt: string | null;
-  unreadMessageCount?: number;
-  purchaseInfo?: PurchaseInfo | null;
 }
 
 interface Shop {
