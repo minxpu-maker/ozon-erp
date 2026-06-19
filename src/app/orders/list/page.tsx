@@ -31,6 +31,7 @@ import {
 } from '@/components/ui/pagination';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { ShoppingCart, Eye } from 'lucide-react';
 
 const fetcher = (url: string) => fetch(url).then(async r => {
   if (!r.ok) throw new Error('请求失败');
@@ -325,24 +326,25 @@ export default function OrdersListPage() {
                 <TableHead>创建时间</TableHead>
                 <TableHead>同步时间</TableHead>
                 <TableHead className="text-center">消息</TableHead>
+                <TableHead className="w-[100px]">操作</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={11} className="text-center py-16 text-muted-foreground">
+                  <TableCell colSpan={12} className="text-center py-16 text-muted-foreground">
                     加载中...
                   </TableCell>
                 </TableRow>
               ) : error ? (
                 <TableRow>
-                  <TableCell colSpan={11} className="text-center py-16 text-red-500">
+                  <TableCell colSpan={12} className="text-center py-16 text-red-500">
                     数据加载失败
                   </TableCell>
                 </TableRow>
               ) : sortedOrders.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={11} className="text-center py-16 text-muted-foreground">
+                  <TableCell colSpan={12} className="text-center py-16 text-muted-foreground">
                     暂无订单数据
                   </TableCell>
                 </TableRow>
@@ -429,6 +431,31 @@ export default function OrdersListPage() {
                           </span>
                         ) : (
                           <span className="text-gray-300 text-xs">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {/* 操作按钮 */}
+                        {(!order.erpStatus || order.erpStatus === 'pending') ? (
+                          <Button
+                            size="sm"
+                            className="h-7 bg-blue-600 hover:bg-blue-700 text-white"
+                            onClick={() => router.push(`/purchase?orderId=${order.id}&action=create`)}
+                          >
+                            <ShoppingCart className="w-3 h-3 mr-1" />
+                            去采购
+                          </Button>
+                        ) : order.erpStatus === 'purchasing' ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 border-yellow-400 text-yellow-700 hover:bg-yellow-50"
+                            onClick={() => router.push(`/purchase?orderId=${order.id}&action=view`)}
+                          >
+                            <Eye className="w-3 h-3 mr-1" />
+                            查看
+                          </Button>
+                        ) : (
+                          <span className="text-gray-400 text-xs">已处理</span>
                         )}
                       </TableCell>
                     </TableRow>
