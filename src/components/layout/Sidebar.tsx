@@ -97,7 +97,7 @@ export function Sidebar() {
       icon: Calculator,
       items: [
         { name: '利润核算', href: '/finance' },
-        { name: '运费核对', href: '/finance/freight' },
+        { name: '运费核对', href: '/finance/freight', locked: true },
       ],
     },
     {

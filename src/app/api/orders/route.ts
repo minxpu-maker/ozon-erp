@@ -1,163 +1,108 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/storage/database/client';
-import { orders, shops as shopsTable } from '@/storage/database/shared/schema';
-import { webhookLogs } from '@/db/schema/fulfillment';
-import { eq, and, desc, like, sql, count, inArray } from 'drizzle-orm';
+import { pool } from '@/storage/database/client';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
+    const pageSize = Math.min(100, Math.max(1, parseInt(searchParams.get('pageSize') || '20')));
     const shopId = searchParams.get('shopId');
     const status = searchParams.get('status');
     const orderId = searchParams.get('orderId');
-    const page = parseInt(searchParams.get('page') || '1');
-    const pageSize = parseInt(searchParams.get('pageSize') || '20');
 
-    // Build where conditions
-    const conditions = [];
+    // Build WHERE clause
+    const conditions: string[] = [];
     if (shopId && shopId !== 'all') {
-      conditions.push(eq(orders.shopId, shopId));
+      conditions.push(`shop_id = '${shopId.replace(/'/g, "''")}'`);
     }
     if (status && status !== 'all') {
-      conditions.push(eq(orders.erpStatus, status));
+      const statusMap: Record<string, string> = {
+        pending: 'pending_purchase',
+        purchasing: 'purchasing',
+        purchased: 'purchased',
+        delivering: 'delivering',
+        shipped: 'shipped',
+        cancelled: 'cancelled',
+      };
+      const erpStatus = statusMap[status];
+      if (erpStatus) {
+        conditions.push(`erp_status = '${erpStatus}'`);
+      }
     }
     if (orderId) {
-      conditions.push(like(orders.ozonPostingNumber, `%${orderId}%`));
+      const safe = orderId.replace(/'/g, "''");
+      conditions.push(`(ozon_posting_number ILIKE '%${safe}%' OR buyer_name ILIKE '%${safe}%')`);
     }
+    const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
 
-    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+    // Count total
+    const countResult = await pool.query(`SELECT COUNT(*) as total FROM orders ${whereClause}`);
+    const total = Number(countResult.rows[0]?.total || 0);
 
-    // Total count
-    const [{ total }] = await db
-      .select({ total: count() })
-      .from(orders)
-      .where(whereClause);
-
-    // Orders with pagination
+    // Get orders
     const offset = (page - 1) * pageSize;
-    const orderListRaw: Record<string, unknown>[] = await db
-      .select({
-        id: orders.id,
-        ozonOrderId: orders.ozonOrderId,
-        ozonPostingNumber: orders.ozonPostingNumber,
-        shopId: orders.shopId,
-        shopName: shopsTable.name,
-        status: orders.status,
-        erpStatus: orders.erpStatus,
-        buyerName: orders.buyerName,
-        recipientName: orders.recipientName,
-        recipientCity: orders.recipientCity,
-        totalPrice: orders.totalPrice,
-        isPurchaseBound: orders.isPurchaseBound,
-        isInspected: orders.isInspected,
-        isPacked: orders.isPacked,
-        shippedAt: orders.shippedAt,
-        shipmentDeadline: orders.shipmentDeadline,
-        createdAt: orders.createdAt,
-        lastSyncedAt: orders.lastSyncedAt,
-        ozonRawData: orders.ozonRawData,
-        // 采购信息
-        purchasePlatform: orders.purchasePlatform,
-        purchaseUrl: orders.purchaseUrl,
-        purchasePrice: orders.purchasePrice,
-        purchaseQty: orders.purchaseQty,
-        purchaseTotalAmount: orders.purchaseTotalAmount,
-        purchaseTrackingNumber: orders.purchaseTrackingNumber,
-        purchaseNote: orders.purchaseNote,
-        purchaseStatus: orders.purchaseStatus,
-      })
-      .from(orders)
-      .leftJoin(shopsTable, eq(orders.shopId, shopsTable.id))
-      .where(whereClause)
-      .orderBy(desc(orders.createdAt))
-      .limit(pageSize)
-      .offset(offset);
+    const ordersResult = await pool.query(`
+      SELECT 
+        o.id, o.ozon_posting_number, o.erp_status, o.shipment_deadline,
+        o.buyer_name, o.recipient_address, o.recipient_city, o.total_price, o.status,
+        o.is_inspected, o.is_packed, o.created_at, o.updated_at,
+        o.shop_id, o.purchase_price, o.tracking_number, o.is_purchase_bound,
+        s.name as shop_name
+      FROM orders o
+      LEFT JOIN shops s ON o.shop_id = s.id
+      ${whereClause}
+      ORDER BY o.created_at DESC
+      LIMIT ${pageSize} OFFSET ${offset}
+    `);
+    const orders = ordersResult.rows || [];
 
-    // Per-order unread message count
-    const orderIds = orderListRaw.map((o: Record<string, unknown>) => o.id as string);
-    const validOrderIds = orderIds.filter(Boolean);
-    const unreadCounts = validOrderIds.length > 0
-      ? await db
-          .select({ orderId: webhookLogs.orderId, count: count() })
-          .from(webhookLogs)
-          .where(and(
-            inArray(webhookLogs.orderId, validOrderIds),
-            eq(webhookLogs.eventType, 'TYPE_NEW_MESSAGE'),
-            eq(webhookLogs.isRead, false)
-          ))
-          .groupBy(webhookLogs.orderId)
-      : [];
-    const unreadMap = new Map<string, number>(unreadCounts.map(u => [u.orderId ?? '', Number(u.count)]));
-    // Stats - 统计所有 Ozon 状态
-    const [statsResult] = await db
-      .select({
-        total: count(),
-        newCount: sql<number>`count(*) filter (where ${orders.erpStatus} in ('new','awaiting_pack','awaiting_packaging'))`,
-        pendingCount: sql<number>`count(*) filter (where ${orders.erpStatus} in ('pending','pending_purchase','awaiting_deliver'))`,
-        shippingCount: sql<number>`count(*) filter (where ${orders.erpStatus} in ('delivering','in_transit','verified','packed','shipped'))`,
-        overdueCount: sql<number>`count(*) filter (where ${orders.shipmentDeadline} < now() and ${orders.erpStatus} not in ('shipped','delivered','cancelled'))`,
-      })
-      .from(orders);
-
-    // 提取 ozon_raw_data 中的 products，合并 unreadMessageCount 和采购信息
-    const orderList = orderListRaw.map((o: Record<string, unknown>) => {
-      const rawData = o.ozonRawData as Record<string, unknown> | undefined;
-      const rawProducts = rawData?.products as Array<Record<string, unknown>> | undefined;
-      const products = (rawProducts || []).map((p: Record<string, unknown>) => ({
-        name: String(p.name || ''),
-        sku: String(p.sku || ''),
-        quantity: Number(p.quantity || 1),
-        price: String(p.price || '0'),
-      }));
-      // 采购信息包装
-      const purchaseInfo = o.purchasePlatform
-        ? {
-            platform: o.purchasePlatform,
-            url: o.purchaseUrl,
-            unitPrice: Number(o.purchasePrice) || null,
-            quantity: Number(o.purchaseQty) || null,
-            totalAmount: Number(o.purchaseTotalAmount) || null,
-            trackingNumber: o.purchaseTrackingNumber,
-            note: o.purchaseNote,
-            status: o.purchaseStatus,
-          }
-        : null;
-      return {
-        ...o,
-        products,
-        purchaseInfo,
-        unreadMessageCount: unreadMap.get(o.id as string) ?? 0,
-      };
-    });
-
-    // Unread message count (all orders, regardless of filters)
-    const [unreadMsgCountResult] = await db
-      .select({ count: count() })
-      .from(webhookLogs)
-      .where(and(
-        eq(webhookLogs.eventType, 'TYPE_NEW_MESSAGE'),
-        eq(webhookLogs.isRead, false)
-      ));
-    const unreadMsgCount = unreadMsgCountResult?.count ?? 0;
-
-    const stats = {
-      newCount: Number(statsResult?.newCount ?? 0),
-      pendingCount: Number(statsResult?.pendingCount ?? 0),
-      shippingCount: Number(statsResult?.shippingCount ?? 0),
-      overdueCount: Number(statsResult?.overdueCount ?? 0),
-      unreadMessageCount: Number(unreadMsgCount ?? 0),
-    };
+    // Format response
+    const formattedOrders = orders.map((o: any) => ({
+      id: o.id,
+      ozonOrderId: o.ozon_order_id || o.id,
+      ozonPostingNumber: o.ozon_posting_number,
+      erpStatus: o.erp_status,
+      shipmentDeadline: o.shipment_deadline,
+      buyerName: o.buyer_name,
+      recipientName: o.recipient_name,
+      recipientCity: o.recipient_city,
+      totalPrice: o.total_price,
+      orderAmount: o.total_price,
+      status: o.status,
+      isInspected: o.is_inspected,
+      isPacked: o.is_packed,
+      isPurchaseBound: o.is_purchase_bound,
+      createdAt: o.created_at,
+      updatedAt: o.updated_at,
+      lastSyncedAt: o.updated_at,
+      shopId: o.shop_id,
+      shopName: o.shop_name,
+      purchaseInfo: o.is_purchase_bound ? {
+        platform: null,
+        unitPrice: Number(o.purchase_price) || 0,
+        quantity: null,
+        totalAmount: (Number(o.purchase_price) || 0),
+        url: null,
+        trackingNumber: o.tracking_number || null,
+        note: null,
+      } : null,
+    }));
 
     return NextResponse.json({
       success: true,
-      orders: orderList,
-      stats,
-      total: Number(total),
-      page,
-      pageSize,
+      orders: formattedOrders,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.ceil(total / pageSize),
+      },
     });
   } catch (error) {
-    console.error('[Orders] GET error:', error);
-    return NextResponse.json({ success: false, error: '查询失败' }, { status: 500 });
+    console.error('Orders API error:', error);
+    return NextResponse.json(
+      { success: false, error: '查询失败', detail: String(error) },
+      { status: 500 }
+    );
   }
 }

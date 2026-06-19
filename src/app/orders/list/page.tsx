@@ -381,7 +381,7 @@ export default function OrdersListPage() {
 
   const formatPrice = (price: number | string | null | undefined) => {
     if (price == null) return '—';
-    return `¥${Number(price).toFixed(2)}`;
+    return formatCNY(Number(price));
   };
 
   const formatDate = (dateStr: string | null) => {

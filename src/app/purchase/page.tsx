@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -100,16 +101,22 @@ interface BatchTrackingItem {
   orderSearchQuery: string;
 }
 
-// 状态映射
+// 状态映射 - 与订单列表保持一致
 const erpStatusMap: Record<string, { label: string; color: string }> = {
-  pending_purchase: { label: '待采购', color: 'bg-orange-100 text-orange-700' },
+  pending: { label: '待采购', color: 'bg-blue-100 text-blue-700' },
+  pending_purchase: { label: '待采购', color: 'bg-blue-100 text-blue-700' },
   purchasing: { label: '采购中', color: 'bg-yellow-100 text-yellow-700' },
   purchased: { label: '已采购', color: 'bg-green-100 text-green-700' },
+  shipped_domestic: { label: '运输中', color: 'bg-orange-100 text-orange-700' },
+  received: { label: '已到货', color: 'bg-green-100 text-green-700' },
+  qc_passed: { label: '验货通过', color: 'bg-green-100 text-green-700' },
+  packing: { label: '打包中', color: 'bg-purple-100 text-purple-700' },
   pending_inspect: { label: '待验货', color: 'bg-blue-100 text-blue-700' },
   pending_pack: { label: '待打包', color: 'bg-purple-100 text-purple-700' },
-  shipped: { label: '已发货', color: 'bg-green-100 text-green-700' },
-  delivered: { label: '已送达', color: 'bg-emerald-100 text-emerald-700' },
-  cancelled: { label: '已取消', color: 'bg-red-100 text-red-700' },
+  shipped: { label: '已发货', color: 'bg-gray-100 text-gray-600' },
+  delivered: { label: '已完成', color: 'bg-green-100 text-green-700' },
+  settled: { label: '已结算', color: 'bg-gray-100 text-gray-500' },
+  cancelled: { label: '已取消', color: 'bg-gray-100 text-gray-500' },
 };
 
 const ozonStatusMap: Record<string, { label: string; color: string }> = {
