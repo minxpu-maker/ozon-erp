@@ -15,14 +15,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
   Pagination,
   PaginationContent,
   PaginationItem,
@@ -30,15 +22,11 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination';
 import { Badge } from '@/components/ui/badge';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
 import { cn, formatCNY } from '@/lib/utils';
 import { ShoppingCart, Eye, ArrowUpDown, ArrowUp, ArrowDown, Check, X, ExternalLink } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { OrderCard } from '@/components/orders/OrderCard';
 
 const fetcher = (url: string) => fetch(url).then(async r => {
   if (!r.ok) throw new Error('请求失败');
@@ -209,7 +197,7 @@ export default function OrdersListPage() {
   // Tab筛选状态
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'purchasing' | 'purchased' | 'pending_ship' | 'shipped'>('all');
   // 选中订单状态
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => setMounted(true), []);
   useEffect(() => { if (mounted) setNow(Date.now()); }, [mounted]);
@@ -343,24 +331,25 @@ export default function OrdersListPage() {
     if (selectedIds.size === filteredOrders.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(filteredOrders.map(o => o.id)));
+      setSelectedIds(new Set(filteredOrders.map(o => String(o.id))));
     }
   };
 
   // 切换单个订单选中
-  const toggleSelect = (id: number) => {
+  const toggleSelect = (id: string | number) => {
+    const idStr = String(id);
     const newSet = new Set(selectedIds);
-    if (newSet.has(id)) {
-      newSet.delete(id);
+    if (newSet.has(idStr)) {
+      newSet.delete(idStr);
     } else {
-      newSet.add(id);
+      newSet.add(idStr);
     }
     setSelectedIds(newSet);
   };
 
   // 批量去采购
   const handleBatchPurchase = () => {
-    const pendingOrders = filteredOrders.filter(o => selectedIds.has(o.id) && PENDING_STATUSES.includes(o.erpStatus || ''));
+    const pendingOrders = filteredOrders.filter(o => selectedIds.has(String(o.id)) && PENDING_STATUSES.includes(o.erpStatus || ''));
     if (pendingOrders.length > 0) {
       const ids = pendingOrders.map(o => o.id).join(',');
       router.push(`/purchase?orderIds=${ids}&action=batch`);
@@ -369,7 +358,7 @@ export default function OrdersListPage() {
 
   // 批量查看采购
   const handleBatchView = () => {
-    const purchasingOrders = filteredOrders.filter(o => selectedIds.has(o.id) && o.erpStatus === 'purchasing');
+    const purchasingOrders = filteredOrders.filter(o => selectedIds.has(String(o.id)) && o.erpStatus === 'purchasing');
     if (purchasingOrders.length > 0) {
       const ids = purchasingOrders.map(o => o.id).join(',');
       router.push(`/purchase?orderIds=${ids}&action=batch-view`);
@@ -521,7 +510,7 @@ export default function OrdersListPage() {
             <span className="text-sm font-medium text-blue-700">
               已选 <span className="font-bold">{selectedIds.size}</span> 单
             </span>
-            {filteredOrders.some(o => selectedIds.has(o.id) && PENDING_STATUSES.includes(o.erpStatus || '')) && (
+            {filteredOrders.some(o => selectedIds.has(String(o.id)) && PENDING_STATUSES.includes(o.erpStatus || '')) && (
               <Button
                 size="sm"
                 className="h-7 bg-blue-600 hover:bg-blue-700 text-white"
@@ -531,7 +520,7 @@ export default function OrdersListPage() {
                 批量去采购
               </Button>
             )}
-            {filteredOrders.some(o => selectedIds.has(o.id) && o.erpStatus === 'purchasing') && (
+            {filteredOrders.some(o => selectedIds.has(String(o.id)) && o.erpStatus === 'purchasing') && (
               <Button
                 size="sm"
                 variant="outline"
@@ -553,333 +542,81 @@ export default function OrdersListPage() {
         </div>
       )}
 
-      {/* Orders Table */}
-      <div className="bg-card rounded-lg border border-border overflow-hidden">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/50 hover:bg-muted/50">
-                <TableHead className="w-[40px]">
-                  <Checkbox
-                    checked={filteredOrders.length > 0 && selectedIds.size === filteredOrders.length}
-                    onCheckedChange={toggleSelectAll}
-                  />
-                </TableHead>
-                <TableHead className="w-[160px]">订单号</TableHead>
-                <TableHead>店铺</TableHead>
-                <TableHead>收件人</TableHead>
-                <TableHead>收货城市</TableHead>
-                <TableHead className="text-right">订单金额</TableHead>
-                <TableHead>订单状态</TableHead>
-                <TableHead>采购状态</TableHead>
-                <TableHead>
-                  <button
-                    onClick={() => setSortMode(sortMode === 'deadline_asc' ? 'deadline_desc' : 'deadline_asc')}
-                    className="flex items-center gap-1 hover:text-blue-600 transition-colors"
-                  >
-                    发货倒计时
-                    {sortMode === 'deadline_asc' ? (
-                      <ArrowUp className="w-3 h-3 text-blue-600" />
-                    ) : sortMode === 'deadline_desc' ? (
-                      <ArrowDown className="w-3 h-3 text-blue-600" />
-                    ) : (
-                      <ArrowUpDown className="w-3 h-3 text-gray-400" />
-                    )}
-                  </button>
-                </TableHead>
-                <TableHead>
-                  <button
-                    onClick={() => setSortMode('created_desc')}
-                    className="flex items-center gap-1 hover:text-blue-600 transition-colors"
-                  >
-                    创建时间
-                    {sortMode === 'created_desc' ? (
-                      <ArrowDown className="w-3 h-3 text-blue-600" />
-                    ) : (
-                      <ArrowUpDown className="w-3 h-3 text-gray-400" />
-                    )}
-                  </button>
-                </TableHead>
-                <TableHead>同步时间</TableHead>
-                <TableHead className="text-center">消息</TableHead>
-                <TableHead className="w-[100px]">操作</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={13} className="text-center py-16 text-muted-foreground">
-                    加载中...
-                  </TableCell>
-                </TableRow>
-              ) : error ? (
-                <TableRow>
-                  <TableCell colSpan={13} className="text-center py-16 text-red-500">
-                    数据加载失败
-                  </TableCell>
-                </TableRow>
-              ) : filteredOrders.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={13} className="text-center py-16 text-muted-foreground">
-                    暂无订单数据
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredOrders.map(order => {
-                  const overdue = isOverdue(order.shipmentDeadline);
-                  const hoursLeft = mounted ? getDeadlineHours(order.shipmentDeadline) : null;
-                  const shop = shops.find(s => s.id === order.shopId);
-
-                  // 计算倒计时显示
-                  const getCountdownDisplay = () => {
-                    // 已取消/已完成的订单不显示倒计时
-                    if (order.erpStatus === 'cancelled' || order.erpStatus === 'delivered') {
-                      return <span className="text-muted-foreground text-sm">—</span>;
-                    }
-                    if (order.shipmentDeadline) {
-                      if (overdue) {
-                        return <span className="text-red-700 font-bold text-sm">已超时</span>;
-                      }
-                      if (hoursLeft !== null) {
-                        if (hoursLeft >= 48) {
-                          const days = Math.floor(hoursLeft / 24);
-                          const remainingHours = hoursLeft % 24;
-                          return <span className="text-green-600 text-sm">{days}d {remainingHours}h</span>;
-                        } else if (hoursLeft >= 12) {
-                          return <span className="text-yellow-600 font-medium text-sm">{hoursLeft}h</span>;
-                        } else {
-                          return <span className="text-red-600 font-bold text-sm">{hoursLeft}h</span>;
-                        }
-                      }
-                      return <span className="text-muted-foreground text-sm">{new Date(order.shipmentDeadline).toLocaleDateString('zh-CN')}</span>;
-                    }
-                    return <span className="text-muted-foreground text-sm">—</span>;
-                  };
-
-                  return (
-                    <TableRow key={order.id} className={cn("group", selectedIds.has(order.id) && "bg-blue-50/50")}>
-                      <TableCell>
-                        <Checkbox
-                          checked={selectedIds.has(order.id)}
-                          onCheckedChange={() => toggleSelect(order.id)}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <span className="font-mono text-sm text-blue-600">
-                          {order.ozonPostingNumber || order.ozonOrderId || order.id}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {shop?.shopName || order.shopName || order.shopId || '—'}
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {order.recipientName || order.buyerName || '—'}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {order.recipientCity || '—'}
-                      </TableCell>
-                      <TableCell className="text-right font-medium">
-                        {formatPrice(order.totalPrice)}
-                      </TableCell>
-                      <TableCell>
-                        <span className={cn(
-                          'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border',
-                          statusColors[order.erpStatus] || 'bg-gray-100 text-gray-600 border-gray-200'
-                        )}>
-                          {statusLabels[order.erpStatus] || statusLabels[order.status] || order.erpStatus || '未知'}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        {order.purchaseInfo ? (
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <button className={cn(
-                                'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border cursor-pointer hover:opacity-80 transition-opacity',
-                                erpStatusColors[order.erpStatus] || 'bg-gray-100 text-gray-600 border-gray-200'
-                              )}>
-                                {erpStatusLabels[order.erpStatus] || order.erpStatus}
-                              </button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-72 p-0" align="start">
-                              <div className="px-3 py-2 border-b bg-muted/50">
-                                <p className="font-medium text-sm">采购详情</p>
-                                <p className="text-xs text-muted-foreground">{order.ozonPostingNumber}</p>
-                              </div>
-                              <ScrollArea className="max-h-64">
-                                <div className="p-3 space-y-2">
-                                  {/* 平台 */}
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-xs text-muted-foreground">采购平台</span>
-                                    <span className="text-sm font-medium">
-                                      {order.purchaseInfo.platform === '1688' ? '1688' : order.purchaseInfo.platform === 'pdd' ? '拼多多' : order.purchaseInfo.platform || '—'}
-                                    </span>
-                                  </div>
-                                  {/* 单价 */}
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-xs text-muted-foreground">采购单价</span>
-                                    <span className="text-sm font-medium">
-                                      {order.purchaseInfo.unitPrice ? formatCNY(order.purchaseInfo.unitPrice) : '—'}
-                                    </span>
-                                  </div>
-                                  {/* 数量 */}
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-xs text-muted-foreground">采购数量</span>
-                                    <span className="text-sm font-medium">{order.purchaseInfo.quantity ?? '—'}</span>
-                                  </div>
-                                  {/* 总金额 */}
-                                  <div className="flex items-center justify-between border-t pt-2 mt-2">
-                                    <span className="text-xs text-muted-foreground">采购总额</span>
-                                    <span className="text-sm font-bold text-green-600">
-                                      {order.purchaseInfo.totalAmount ? formatCNY(order.purchaseInfo.totalAmount) : '—'}
-                                    </span>
-                                  </div>
-                                  {/* 1688链接 */}
-                                  {order.purchaseInfo.url && (
-                                    <div className="border-t pt-2 mt-2">
-                                      <span className="text-xs text-muted-foreground block mb-1">采购链接</span>
-                                      <a
-                                        href={order.purchaseInfo.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1 break-all"
-                                      >
-                                        <ExternalLink className="w-3 h-3 flex-shrink-0" />
-                                        {order.purchaseInfo.url.length > 40 
-                                          ? order.purchaseInfo.url.substring(0, 40) + '...' 
-                                          : order.purchaseInfo.url}
-                                      </a>
-                                    </div>
-                                  )}
-                                  {/* 快递单号 */}
-                                  {order.purchaseInfo.trackingNumber && (
-                                    <div className="flex items-center justify-between border-t pt-2 mt-2">
-                                      <span className="text-xs text-muted-foreground">快递单号</span>
-                                      <span className="text-sm font-medium">{order.purchaseInfo.trackingNumber}</span>
-                                    </div>
-                                  )}
-                                  {/* 供应商备注 */}
-                                  {order.purchaseInfo.note && (
-                                    <div className="border-t pt-2 mt-2">
-                                      <span className="text-xs text-muted-foreground block mb-1">供应商备注</span>
-                                      <p className="text-xs">{order.purchaseInfo.note}</p>
-                                    </div>
-                                  )}
-                                </div>
-                              </ScrollArea>
-                            </PopoverContent>
-                          </Popover>
-                        ) : order.erpStatus && order.erpStatus !== 'pending_purchase' && order.erpStatus !== 'new' ? (
-                          <span className={cn(
-                            'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border',
-                            erpStatusColors[order.erpStatus] || 'bg-gray-100 text-gray-600 border-gray-200'
-                          )}>
-                            {erpStatusLabels[order.erpStatus] || order.erpStatus}
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground text-sm">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {getCountdownDisplay()}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {formatDate(order.createdAt)}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {formatDate(order.lastSyncedAt)}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {(order.unreadMessageCount ?? 0) > 0 ? (
-                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-medium">
-                            {(order.unreadMessageCount ?? 0)}
-                          </span>
-                        ) : (
-                          <span className="text-gray-300 text-xs">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {/* 操作按钮 */}
-                        {PENDING_STATUSES.includes(order.erpStatus || '') ? (
-                          <Button
-                            size="sm"
-                            className="h-7 bg-blue-600 hover:bg-blue-700 text-white"
-                            onClick={() => router.push(`/purchase?orderId=${order.id}&action=create`)}
-                          >
-                            <ShoppingCart className="w-3 h-3 mr-1" />
-                            去采购
-                          </Button>
-                        ) : PURCHASING_STATUSES.includes(order.erpStatus) ? (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-7 border-yellow-400 text-yellow-700 hover:bg-yellow-50"
-                            onClick={() => router.push(`/purchase?orderId=${order.id}&action=view`)}
-                          >
-                            <Eye className="w-3 h-3 mr-1" />
-                            查看
-                          </Button>
-                        ) : (
-                          <span className="text-gray-400 text-xs">已处理</span>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
-        </div>
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-border">
-            <p className="text-sm text-muted-foreground">
-              共 {total} 条，第 {page} / {totalPages} 页
-            </p>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page <= 1}
-                onClick={() => setPage(p => p - 1)}
-              >
-                上一页
-              </Button>
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                let p: number;
-                if (totalPages <= 5) {
-                  p = i + 1;
-                } else if (page <= 3) {
-                  p = i + 1;
-                } else if (page >= totalPages - 2) {
-                  p = totalPages - 4 + i;
-                } else {
-                  p = page - 2 + i;
-                }
-                return (
-                  <Button
-                    key={p}
-                    variant={p === page ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setPage(p)}
-                    className="w-9"
-                  >
-                    {p}
-                  </Button>
-                );
-              })}
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page >= totalPages}
-                onClick={() => setPage(p => p + 1)}
-              >
-                下一页
-              </Button>
-            </div>
+      {/* Orders Cards */}
+      <div className="space-y-3">
+        {isLoading ? (
+          <div className="text-center py-16 text-muted-foreground">
+            加载中...
           </div>
+        ) : error ? (
+          <div className="text-center py-16 text-red-500">
+            数据加载失败
+          </div>
+        ) : filteredOrders.length === 0 ? (
+          <div className="text-center py-16 text-muted-foreground">
+            暂无订单数据
+          </div>
+        ) : (
+          filteredOrders.map(order => (
+            <OrderCard
+              key={order.id}
+              order={order}
+              selected={selectedIds.has(String(order.id))}
+              onSelect={toggleSelect}
+            />
+          ))
         )}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+          <p className="text-sm text-muted-foreground">
+            共 {total} 条，第 {page} / {totalPages} 页
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page <= 1}
+              onClick={() => setPage(p => p - 1)}
+            >
+              上一页
+            </Button>
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              let p: number;
+              if (totalPages <= 5) {
+                p = i + 1;
+              } else if (page <= 3) {
+                p = i + 1;
+              } else if (page >= totalPages - 2) {
+                p = totalPages - 4 + i;
+              } else {
+                p = page - 2 + i;
+              }
+              return (
+                <Button
+                  key={p}
+                  variant={p === page ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setPage(p)}
+                  className="w-9"
+                >
+                  {p}
+                </Button>
+              );
+            })}
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page >= totalPages}
+              onClick={() => setPage(p => p + 1)}
+            >
+              下一页
+            </Button>
+          </div>
+        </div>
+      )}
     </AppLayout>
   );
 }
