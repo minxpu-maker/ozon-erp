@@ -10,7 +10,7 @@ import { randomUUID } from 'crypto';
  */
 
 import { db } from '@/storage/database/client';
-import { ozonOrders, purchaseDemands } from '@/storage/database/shared/fulfillment';
+import { purchaseDemands } from '@/storage/database/shared/fulfillment';
 import { shops, orders } from '@/storage/database/shared/schema';
 import { eq, and, inArray } from 'drizzle-orm';
 import { OzonClient } from './ozon-client';
@@ -106,14 +106,18 @@ export interface ShopSyncStatus {
  * Ozon状态 → ERP状态映射
  */
 const OZON_TO_ERP_STATUS_MAP: Record<string, string> = {
-  // 等待发货 → 待采购
-  awaiting_deliver: 'pending',
-  awaiting_pack: 'pending',
-  // 已发货 → 已发货
-  delivered: 'shipped',
+  // 等待发运 → 待采购
+  'awaiting-packaging': 'pending',  // 等待打包
+  'awaiting-pack': 'pending',      // 等待打包
+  'awaiting-deliver': 'pending',   // 等待发货
+  'awaiting_deliver': 'pending',   // 等待发货（俄语格式）
+  // 运输中 → 已发货/运输中
+  'delivering': 'shipped_domestic', // 运输中
+  'delivered': 'shipped',          // 已送达
   // 取消
-  cancelled: 'cancelled',
-  // 其他未知状态保持原样
+  'cancelled': 'cancelled',
+  'refunded': 'cancelled',
+  // 其他未知状态默认待采购
 };
 
 /**
@@ -188,20 +192,20 @@ export async function syncOrdersForShop(shop: {
       return result;
     }
 
-    // 获取本地已有的订单
-    const ozonOrderIds = allPostings.map(p => p.order_id);
+    // 获取本地已有的订单（确保order_id类型转换为string）
+    const ozonOrderIds = allPostings.map(p => String(p.order_id));
     const existingOrders = await db
       .select({
-        id: ozonOrders.id,
-        ozonOrderId: ozonOrders.ozonOrderId,
-        orderStatus: ozonOrders.orderStatus,
-        erpStatus: ozonOrders.erpStatus,
+        id: orders.id,
+        ozonOrderId: orders.ozonOrderId,
+        orderStatus: orders.status,
+        erpStatus: orders.erpStatus,
       })
-      .from(ozonOrders)
+      .from(orders)
       .where(
         and(
-          eq(ozonOrders.shopId, shop.id),
-          inArray(ozonOrders.ozonOrderId, ozonOrderIds)
+          eq(orders.shopId, shop.id),
+          inArray(orders.ozonOrderId, ozonOrderIds)
         )
       );
     
@@ -215,7 +219,7 @@ export async function syncOrdersForShop(shop: {
     const existingPostings: Array<{ posting: OzonPosting; localOrder: typeof existingOrders[0] }> = [];
 
     for (const posting of allPostings) {
-      const existing = existingOrderMap.get(posting.order_id);
+      const existing = existingOrderMap.get(String(posting.order_id));
       if (existing) {
         existingPostings.push({ posting, localOrder: existing });
       } else {
@@ -235,23 +239,23 @@ export async function syncOrdersForShop(shop: {
       if (posting.status !== localOrder.orderStatus) {
         const newErpStatus = getErpStatus(posting.status);
         await db
-          .update(ozonOrders)
+          .update(orders)
           .set({
-            orderStatus: posting.status,
+            status: posting.status,
             erpStatus: newErpStatus,
             lastSyncedAt: new Date(),
             updatedAt: new Date(),
           })
-          .where(eq(ozonOrders.id, Number(localOrder.id)));
+          .where(eq(orders.id, localOrder.id));
         result.updatedOrders++;
       } else {
         // 仅更新时间
         await db
-          .update(ozonOrders)
+          .update(orders)
           .set({
             lastSyncedAt: new Date(),
           })
-          .where(eq(ozonOrders.id, Number(localOrder.id)));
+          .where(eq(orders.id, localOrder.id));
       }
     }
 
@@ -339,15 +343,18 @@ async function insertNewOrders(
       return sum + (parseFloat(item.price) || 0) * item.quantity;
     }, 0);
 
-    // 转换发货截止时间（空字符串 → null，避免 PostgreSQL timestamp 报错）
-    let shipmentDeadline: Date | null = null;
+    // 转换发货截止时间（空字符串/无效值 → null，避免 PostgreSQL timestamp 报错）
+    let shipmentDeadline: string | null = null;
     const deadlineStr = posting.shipping_method?.deadline;
-    if (deadlineStr && deadlineStr.trim() !== '') {
+    if (deadlineStr && typeof deadlineStr === 'string' && deadlineStr.trim() !== '' && deadlineStr !== '0001-01-01T00:00:00Z') {
       const parsed = new Date(deadlineStr);
-      if (!isNaN(parsed.getTime())) {
-        shipmentDeadline = parsed;
+      if (!isNaN(parsed.getTime()) && parsed.getFullYear() > 2000) {
+        shipmentDeadline = parsed.toISOString(); // 转换为 ISO 字符串
       }
     }
+    
+    // 确保 shipmentDeadline 是有效值
+    const shipmentDeadlineValue = shipmentDeadline || null;
 
     // 转换订单创建时间
     let ozonCreatedAt: Date | null = null;
@@ -361,7 +368,7 @@ async function insertNewOrders(
     const recipientAddress = posting.address?.address || null;
 
     // 构建原始数据（包含商品列表，供前端展示）
-    const ozonRawData = {
+    const ozonRawData: Record<string, unknown> = {
       posting_number: posting.posting_number,
       order_id: posting.order_id,
       status: posting.status,
@@ -370,41 +377,81 @@ async function insertNewOrders(
         name: p.name,
         quantity: p.quantity,
         price: p.price,
-        offer_id: p.offer_id,
-        product_id: p.product_id,
+        offer_id: p.offer_id ?? null,
+        product_id: p.product_id ?? null,
       })),
     };
 
-    // 插入到 orders 表（新订单默认 erpStatus = 'pending_purchase'）
+    // 转换订单创建时间（Date对象转ISO字符串）
+    const ozonCreatedAtStr = ozonCreatedAt ? ozonCreatedAt.toISOString() : null;
+    
+    // JSON数据序列化为字符串（确保单引号正确转义）
+    const ozonRawDataJson = JSON.stringify(ozonRawData).replace(/'/g, "''");
+
+    // 处理收件人信息（确保NULL而不是空字符串）
+    const recipientNameVal = recipientName ? recipientName : sql`NULL`;
+    const recipientCityVal = recipientCity ? recipientCity : sql`NULL`;
+    const recipientAddressVal = recipientAddress ? recipientAddress : sql`NULL`;
+    const shipmentDeadlineVal = (shipmentDeadlineValue === null || shipmentDeadlineValue === '') ? sql`NULL` : shipmentDeadlineValue;
+    
+    // 插入到 orders 表（新订单根据Ozon状态动态设置erp_status）
+    // 使用Drizzle ORM确保正确的类型转换和参数绑定
     await db
       .insert(orders)
       .values({
-        shopId,
         id: randomUUID(),
         ozonOrderId: String(posting.order_id),
         ozonPostingNumber: posting.posting_number,
+        shopId: shopId,
         status: posting.status,
-        erpStatus: 'pending_purchase',
-        recipientName,
-        recipientCity,
-        recipientAddress,
-        totalPrice: totalPrice.toFixed(2),
+        buyerName: undefined,
+        buyerPhone: undefined,
+        recipientName: recipientName || undefined,
+        recipientPhone: undefined,
+        recipientCity: recipientCity || undefined,
+        recipientAddress: recipientAddress || undefined,
+        totalPrice: String(totalPrice),
+        productsPrice: '0',
+        deliveryPrice: '0',
+        trackingNumber: undefined,
+        shippedAt: undefined,
+        deliveredAt: undefined,
+        isPurchaseBound: false,
+        purchaseBoundAt: undefined,
+        isInspected: false,
+        inspectedAt: undefined,
+        isPacked: false,
+        packedAt: undefined,
+        packageWeight: undefined,
+        isSettled: false,
+        settledAt: undefined,
+        purchasePrice: '0',
+        ozonRawData: ozonRawData,
+        ozonCreatedAt: ozonCreatedAt ? new Date(ozonCreatedAt) : new Date(),
+        ozonUpdatedAt: undefined,
+        erpStatus: getErpStatus(posting.status),
         currency: 'RUB',
-        ozonRawData,
-        ozonCreatedAt,
-        shipmentDeadline,
+        shipmentDeadline: shipmentDeadlineValue ? new Date(shipmentDeadlineValue) : undefined,
+        lastSyncedAt: undefined,
+        purchasePlatform: undefined,
+        purchaseUrl: undefined,
+        purchaseQty: undefined,
+        purchaseTotalAmount: undefined,
+        purchaseTrackingNumber: undefined,
+        purchaseNote: undefined,
+        purchaseStatus: 'none',
       });
 
     newOrdersCount++;
 
     // 为每个 SKU 创建采购需求
     for (const product of posting.products) {
-      const priority = calculatePriority(shipmentDeadline);
+      const priority = calculatePriority(shipmentDeadline ? new Date(shipmentDeadline) : null);
 
       await db
         .insert(purchaseDemands)
         .values({
-          orderId: String(posting.posting_number), // 用 posting_number 标识
+          orderId: String(posting.order_id), // 使用 ozon_order_id（纯数字）作为订单标识
           sku: product.sku,
           productName: product.name,
           quantity: product.quantity,
@@ -527,15 +574,15 @@ export async function getShopSyncStatuses(): Promise<ShopSyncStatus[]> {
 
   const orders = await db
     .select({
-      shopId: ozonOrders.shopId,
+      shopId: orders.shopId,
       shopName: shops.name,
-      lastSyncedAt: sql<Date>`MAX(${ozonOrders.lastSyncedAt})`.as('last_synced_at'),
-      newOrders: sql<number>`COUNT(*) FILTER (WHERE ${ozonOrders.lastSyncedAt} > NOW() - INTERVAL '5 minutes')`.as('new_orders'),
+      lastSyncedAt: sql<Date>`MAX(${orders.lastSyncedAt})`.as('last_synced_at'),
+      newOrders: sql<number>`COUNT(*) FILTER (WHERE ${orders.lastSyncedAt} > NOW() - INTERVAL '5 minutes')`.as('new_orders'),
       updatedOrders: sql<number>`0`.as('updated_orders'),
     })
-    .from(ozonOrders)
-    .leftJoin(shops, eq(ozonOrders.shopId, shops.id))
-    .groupBy(ozonOrders.shopId, shops.name);
+    .from(orders)
+    .leftJoin(shops, eq(orders.shopId, shops.id))
+    .groupBy(orders.shopId, shops.name);
 
   for (const order of orders) {
     statuses.push({

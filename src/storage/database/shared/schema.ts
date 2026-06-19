@@ -78,9 +78,9 @@ export const orders = pgTable(
     deliveryPrice: numeric("delivery_price", { precision: 12, scale: 2 }).notNull().default("0"),
     
     // 物流信息
-    trackingNumber: varchar("tracking_number", { length: 64 }),
-    shippedAt: timestamp("shipped_at", { withTimezone: true }),
-    deliveredAt: timestamp("delivered_at", { withTimezone: true }),
+    trackingNumber: varchar("tracking_number", { length: 64 }).default(null),
+    shippedAt: timestamp("shipped_at", { withTimezone: true }).default(null),
+    deliveredAt: timestamp("delivered_at", { withTimezone: true }).default(null),
     
     // 采购绑定信息
     isPurchaseBound: boolean("is_purchase_bound").default(false).notNull(),
@@ -107,9 +107,9 @@ export const orders = pgTable(
     
     // 时间戳
     ozonCreatedAt: timestamp("ozon_created_at", { withTimezone: true }),
-    ozonUpdatedAt: timestamp("ozon_updated_at", { withTimezone: true }),
+    ozonUpdatedAt: timestamp("ozon_updated_at", { withTimezone: true }).defaultNow(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
     
     // ERP状态（B01-2新增）
     erpStatus: varchar("erp_status", { length: 20 }).default('pending'),
