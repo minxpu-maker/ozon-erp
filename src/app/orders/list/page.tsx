@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Pagination,
   PaginationContent,
@@ -252,37 +253,41 @@ export default function OrdersListPage() {
     const currentTime = Date.now();
     
     return [...orderList].sort((a, b) => {
-      // 按创建时间排序
-      if (sortBy === 'created') {
-        const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-        const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-        return bTime - aTime; // 最新创建的排前面
+      // 对于待采购/全部Tab，按紧急度排序
+      if (activeTab === 'all' || activeTab === 'pending') {
+        const aCountdown = getCountdown(a.shipmentDeadline);
+        const bCountdown = getCountdown(b.shipmentDeadline);
+        
+        // deadline 为空的排最后
+        if (!a.shipmentDeadline && b.shipmentDeadline) return 1;
+        if (a.shipmentDeadline && !b.shipmentDeadline) return -1;
+        
+        // 按紧急度排序：overdue > urgent > warning > normal
+        const levelOrder = { overdue: 0, urgent: 1, warning: 2, normal: 3 };
+        const aLevel = levelOrder[aCountdown.level];
+        const bLevel = levelOrder[bCountdown.level];
+        
+        if (aLevel !== bLevel) {
+          return aLevel - bLevel;
+        }
+        
+        // 同紧急度内按 deadline 升序（越近越前）
+        const aTime = new Date(a.shipmentDeadline!).getTime();
+        const bTime = new Date(b.shipmentDeadline!).getTime();
+        if (aTime !== bTime) return aTime - bTime;
+        
+        // 同deadline内按创建时间倒序（新单优先）
+        const aCreateTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const bCreateTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return bCreateTime - aCreateTime;
       }
       
-      // 按紧急度排序
-      const aCountdown = getCountdown(a.shipmentDeadline);
-      const bCountdown = getCountdown(b.shipmentDeadline);
-      
-      // deadline 为空的排最后
-      if (!a.shipmentDeadline && b.shipmentDeadline) return 1;
-      if (a.shipmentDeadline && !b.shipmentDeadline) return -1;
-      if (!a.shipmentDeadline && !b.shipmentDeadline) return 0;
-      
-      // 按紧急度排序：overdue > urgent > warning > normal
-      const levelOrder = { overdue: 0, urgent: 1, warning: 2, normal: 3 };
-      const aLevel = levelOrder[aCountdown.level];
-      const bLevel = levelOrder[bCountdown.level];
-      
-      if (aLevel !== bLevel) {
-        return aLevel - bLevel;
-      }
-      
-      // 同紧急度内按 deadline 升序（越近越前）
-      const aTime = new Date(a.shipmentDeadline!).getTime();
-      const bTime = new Date(b.shipmentDeadline!).getTime();
-      return aTime - bTime;
+      // 对于已完成Tab（采购中/已采购/待发货/已发货），按创建时间倒序
+      const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return bTime - aTime;
     });
-  }, [orderList, sortBy]);
+  }, [orderList, activeTab]);
 
   // Tab状态计数
   const tabCounts = useMemo(() => {
@@ -594,17 +599,13 @@ export default function OrdersListPage() {
       {/* Orders Cards */}
       <div className="space-y-3">
         {isLoading ? (
-          <div className="text-center py-16 text-muted-foreground">
-            加载中...
-          </div>
+          <OrderSkeleton />
         ) : error ? (
           <div className="text-center py-16 text-red-500">
             数据加载失败
           </div>
         ) : filteredOrders.length === 0 ? (
-          <div className="text-center py-16 text-muted-foreground">
-            暂无订单数据
-          </div>
+          <EmptyState tab={erpStatus} onRefresh={() => ordersMutate()} />
         ) : (
           filteredOrders.map(order => (
             <OrderCard
@@ -667,5 +668,87 @@ export default function OrdersListPage() {
         </div>
       )}
     </AppLayout>
+  );
+}
+
+// 骨架屏组件
+function OrderSkeleton() {
+  return (
+    <>
+      {[1, 2, 3, 4].map(i => (
+        <div
+          key={i}
+          className="bg-white rounded-xl shadow-sm p-4 flex gap-4"
+        >
+          {/* 色条占位 */}
+          <div className="w-1 bg-gray-200 rounded-full" />
+          {/* 倒计时占位 */}
+          <Skeleton className="w-16 h-6 rounded" />
+          {/* 复选框占位 */}
+          <Skeleton className="w-5 h-5 rounded" />
+          {/* 商品信息占位 */}
+          <div className="flex-1 space-y-2">
+            <div className="flex gap-3">
+              <Skeleton className="w-12 h-12 rounded-lg" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-3 w-1/2" />
+              </div>
+            </div>
+            <Skeleton className="h-3 w-1/4" />
+          </div>
+          {/* 金额占位 */}
+          <div className="w-24 space-y-2">
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-6 w-20 rounded" />
+          </div>
+          {/* 按钮占位 */}
+          <Skeleton className="w-20 h-8 rounded" />
+        </div>
+      ))}
+    </>
+  );
+}
+
+// 空状态组件
+function EmptyState({ tab, onRefresh }: { tab: string; onRefresh: () => void }) {
+  const messages: Record<string, { title: string; desc: string }> = {
+    all: { title: '暂无订单', desc: 'Ozon出单后会自动同步到这里' },
+    pending: { title: '没有待采购订单', desc: '去喝杯茶' },
+    purchasing: { title: '没有进行中的采购', desc: '休息一下' },
+    purchased: { title: '暂无已采购订单', desc: '继续努力' },
+    'to-ship': { title: '暂无待发货订单', desc: '打包发货效率很高' },
+    shipped: { title: '暂无已发货订单', desc: '等待买家收货中' },
+  };
+
+  const content = messages[tab] || messages.all;
+
+  return (
+    <div className="flex flex-col items-center justify-center py-16">
+      {/* 空箱子插画 */}
+      <svg
+        className="w-32 h-32 text-gray-200 mb-6"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1}
+          d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+        />
+      </svg>
+      <h3 className="text-lg font-medium text-gray-900 mb-2">{content.title}</h3>
+      <p className="text-sm text-gray-400 mb-6">{content.desc}</p>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={onRefresh}
+        className="text-gray-500"
+      >
+        手动同步
+      </Button>
+    </div>
   );
 }
