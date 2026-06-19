@@ -16,17 +16,21 @@ export async function GET(request: NextRequest) {
       conditions.push(`shop_id = '${shopId.replace(/'/g, "''")}'`);
     }
     if (status && status !== 'all') {
-      const statusMap: Record<string, string> = {
-        pending: 'pending_purchase',
-        purchasing: 'purchasing',
-        purchased: 'purchased',
-        delivering: 'delivering',
-        shipped: 'shipped',
-        cancelled: 'cancelled',
+      // 根据Ozon官方API，只有待发运状态（awaiting_packaging/awaiting_deliver）才映射到待采购
+      // awaiting_packaging - 待打包（已付款等待商家打包）
+      // awaiting_deliver - 待发货（已打包等待物流取货）
+      const statusMap: Record<string, string[]> = {
+        pending: ['awaiting_packaging', 'awaiting_deliver'], // 待采购：只有待发运订单
+        purchasing: ['purchasing'],
+        purchased: ['purchased'],
+        delivering: ['delivering'],
+        shipped: ['shipped'],
+        cancelled: ['cancelled'],
       };
-      const erpStatus = statusMap[status];
-      if (erpStatus) {
-        conditions.push(`erp_status = '${erpStatus}'`);
+      const ozonStatuses = statusMap[status];
+      if (ozonStatuses) {
+        const ozonConditions = ozonStatuses.map(s => `status = '${s}'`).join(' OR ');
+        conditions.push(`(${ozonConditions})`);
       }
     }
     if (orderId) {
@@ -95,7 +99,23 @@ export async function GET(request: NextRequest) {
         id: o.id,
         ozonOrderId: o.ozon_order_id || o.id,
         ozonPostingNumber: o.ozon_posting_number,
-        erpStatus: o.erp_status || 'pending',
+        erpStatus: (() => {
+          // Ozon待发运状态（awaiting-delivery）才映射为待采购
+          const awaitingDeliveryStatuses = ['awaiting-delivery'];
+          // 已取消状态
+          const cancelledStatuses = ['cancelled'];
+          
+          // 如果是待发运状态，ERP状态为待采购
+          if (awaitingDeliveryStatuses.includes(o.status)) {
+            return 'pending';
+          }
+          // 已取消状态
+          if (cancelledStatuses.includes(o.status)) {
+            return 'cancelled';
+          }
+          // 其他状态保持数据库中的状态（如果有的话）
+          return o.erp_status || null;
+        })(),
         shipmentDeadline: o.shipment_deadline,
         buyerName: o.buyer_name,
         recipientName: o.recipient_name,
