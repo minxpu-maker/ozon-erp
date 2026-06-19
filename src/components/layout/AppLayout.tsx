@@ -80,10 +80,11 @@ const navigationGroups: NavGroup[] = [
     ],
   },
   {
-    label: '利润核算',
+    label: '财务中心',
     icon: Calculator,
     items: [
-      { name: '财务统计', href: '/finance', icon: Scale },
+      { name: '利润看板', href: '/finance/profit', icon: BarChart3, disabled: true, badge: '即将上线' },
+      { name: '运费核对', href: '/finance/freight', icon: FileText, disabled: true, badge: '即将上线' },
     ],
   },
   {
