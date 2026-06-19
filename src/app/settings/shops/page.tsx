@@ -21,7 +21,8 @@ const fetcher = (url: string) => fetch(url).then(r => r.json());
 
 export default function ShopsPage() {
   const { data: res, mutate } = useSWR('/api/shops', fetcher);
-  const shops: Shop[] = res?.data ?? [];
+  const shops: Shop[] = res?.shops ?? [];
+  const total = res?.total ?? 0;
 
   const [showDialog, setShowDialog] = useState(false);
   const [editShop, setEditShop] = useState<Shop | null>(null);
