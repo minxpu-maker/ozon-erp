@@ -55,8 +55,9 @@ const statusLabels: Record<string, string> = {
   cancelled: '已取消',
 };
 
-// ERP采购状态映射
+// ERP采购状态映射 - 覆盖所有可能的 erpStatus 值
 const erpStatusLabels: Record<string, string> = {
+  // ERP 自定义状态
   pending: '待采购',
   purchasing: '采购中',
   purchased: '已采购',
@@ -66,10 +67,23 @@ const erpStatusLabels: Record<string, string> = {
   packing: '打包中',
   shipped: '已发货',
   settled: '已结算',
+  // Ozon 原始状态（数据库实际存储值）
+  new: '待采购',
+  pending_purchase: '待采购',
+  awaiting_pack: '待打包',
+  awaiting_packaging: '待打包',
+  awaiting_deliver: '待发货',
+  delivering: '配送中',
+  in_transit: '运输中',
+  verified: '验货通过',
+  packed: '已打包',
+  delivered: '已完成',
+  cancelled: '已取消',
 };
 
 // ERP采购状态颜色
 const erpStatusColors: Record<string, string> = {
+  // ERP 自定义状态
   pending: 'bg-blue-100 text-blue-700 border-blue-200',
   purchasing: 'bg-yellow-100 text-yellow-700 border-yellow-200',
   purchased: 'bg-green-100 text-green-700 border-green-200',
@@ -79,7 +93,26 @@ const erpStatusColors: Record<string, string> = {
   packing: 'bg-purple-100 text-purple-700 border-purple-200',
   shipped: 'bg-gray-100 text-gray-600 border-gray-200',
   settled: 'bg-gray-100 text-gray-500 border-gray-200',
+  // Ozon 原始状态
+  new: 'bg-blue-100 text-blue-700 border-blue-200',
+  pending_purchase: 'bg-blue-100 text-blue-700 border-blue-200',
+  awaiting_pack: 'bg-orange-100 text-orange-700 border-orange-200',
+  awaiting_packaging: 'bg-orange-100 text-orange-700 border-orange-200',
+  awaiting_deliver: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+  delivering: 'bg-blue-100 text-blue-700 border-blue-200',
+  in_transit: 'bg-orange-100 text-orange-700 border-orange-200',
+  verified: 'bg-green-100 text-green-700 border-green-200',
+  packed: 'bg-purple-100 text-purple-700 border-purple-200',
+  delivered: 'bg-green-100 text-green-700 border-green-200',
+  cancelled: 'bg-gray-100 text-gray-500 border-gray-200',
 };
+
+// 需要显示"去采购"按钮的状态
+const PENDING_STATUSES = ['pending', 'pending_purchase', 'new', ''];
+// 需要显示"查看采购"按钮的状态
+const PURCHASING_STATUSES = ['purchasing'];
+// 已处理状态（不显示按钮）
+const PROCESSED_STATUSES = ['purchased', 'shipped_domestic', 'received', 'qc_passed', 'packing', 'shipped', 'settled', 'delivered', 'cancelled'];
 
 // Status color mapping
 const statusColors: Record<string, string> = {
@@ -356,6 +389,10 @@ export default function OrdersListPage() {
 
                   // 计算倒计时显示
                   const getCountdownDisplay = () => {
+                    // 已取消/已完成的订单不显示倒计时
+                    if (order.erpStatus === 'cancelled' || order.erpStatus === 'delivered') {
+                      return <span className="text-muted-foreground text-sm">—</span>;
+                    }
                     if (order.shipmentDeadline) {
                       if (overdue) {
                         return <span className="text-red-700 font-bold text-sm">已超时</span>;
@@ -435,7 +472,7 @@ export default function OrdersListPage() {
                       </TableCell>
                       <TableCell>
                         {/* 操作按钮 */}
-                        {(!order.erpStatus || order.erpStatus === 'pending') ? (
+                        {PENDING_STATUSES.includes(order.erpStatus || '') ? (
                           <Button
                             size="sm"
                             className="h-7 bg-blue-600 hover:bg-blue-700 text-white"
@@ -444,7 +481,7 @@ export default function OrdersListPage() {
                             <ShoppingCart className="w-3 h-3 mr-1" />
                             去采购
                           </Button>
-                        ) : order.erpStatus === 'purchasing' ? (
+                        ) : PURCHASING_STATUSES.includes(order.erpStatus) ? (
                           <Button
                             size="sm"
                             variant="outline"
