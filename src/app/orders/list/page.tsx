@@ -22,7 +22,7 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination';
 import { Badge } from '@/components/ui/badge';
-import { cn, formatCNY } from '@/lib/utils';
+import { cn, formatCNY, getCountdown } from '@/lib/utils';
 import { ShoppingCart, Eye, ArrowUpDown, ArrowUp, ArrowDown, Check, X, ExternalLink } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -268,33 +268,35 @@ export default function OrdersListPage() {
     return new Date(deadline).getTime() < Date.now();
   };
 
-  // 按排序模式排序订单
+  // 按紧急度排序订单
   const sortedOrders = useMemo(() => {
     // eslint-disable-next-line react-hooks/purity
-    const currentTime = new Date().getTime();
+    const currentTime = Date.now();
+    
     return [...orderList].sort((a, b) => {
-      if (sortMode === 'deadline_asc') {
-        // 超时订单置顶，然后按截止时间升序
-        const aTime = a.shipmentDeadline ? new Date(a.shipmentDeadline).getTime() : Infinity;
-        const bTime = b.shipmentDeadline ? new Date(b.shipmentDeadline).getTime() : Infinity;
-        const aOverdue = a.shipmentDeadline ? aTime < currentTime : false;
-        const bOverdue = b.shipmentDeadline ? bTime < currentTime : false;
-        if (aOverdue && !bOverdue) return -1;
-        if (!aOverdue && bOverdue) return 1;
-        return aTime - bTime;
-      } else if (sortMode === 'deadline_desc') {
-        // 按截止时间降序（最晚的排最前）
-        const aTime = a.shipmentDeadline ? new Date(a.shipmentDeadline).getTime() : 0;
-        const bTime = b.shipmentDeadline ? new Date(b.shipmentDeadline).getTime() : 0;
-        return bTime - aTime;
-      } else {
-        // created_desc: 按创建时间降序（最新的排最前）
-        const aTime = new Date(a.createdAt).getTime();
-        const bTime = new Date(b.createdAt).getTime();
-        return bTime - aTime;
+      const aCountdown = getCountdown(a.shipmentDeadline);
+      const bCountdown = getCountdown(b.shipmentDeadline);
+      
+      // deadline 为空的排最后
+      if (!a.shipmentDeadline && b.shipmentDeadline) return 1;
+      if (a.shipmentDeadline && !b.shipmentDeadline) return -1;
+      if (!a.shipmentDeadline && !b.shipmentDeadline) return 0;
+      
+      // 按紧急度排序：overdue > urgent > warning > normal
+      const levelOrder = { overdue: 0, urgent: 1, warning: 2, normal: 3 };
+      const aLevel = levelOrder[aCountdown.level];
+      const bLevel = levelOrder[bCountdown.level];
+      
+      if (aLevel !== bLevel) {
+        return aLevel - bLevel;
       }
+      
+      // 同紧急度内按 deadline 升序（越近越前）
+      const aTime = new Date(a.shipmentDeadline!).getTime();
+      const bTime = new Date(b.shipmentDeadline!).getTime();
+      return aTime - bTime;
     });
-  }, [orderList, sortMode]);
+  }, [orderList]);
 
   // Tab状态计数
   const tabCounts = useMemo(() => {
