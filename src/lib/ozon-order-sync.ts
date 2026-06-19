@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 /**
  * Ozon订单同步服务核心逻辑
  * 
@@ -10,7 +11,7 @@
 
 import { db } from '@/storage/database/client';
 import { ozonOrders, purchaseDemands } from '@/storage/database/shared/fulfillment';
-import { shops } from '@/storage/database/shared/schema';
+import { shops, orders } from '@/storage/database/shared/schema';
 import { eq, and, inArray } from 'drizzle-orm';
 import { OzonClient } from './ozon-client';
 import { decrypt } from './crypto';
@@ -28,8 +29,9 @@ interface OzonPosting {
   posting_number: string;
   status: string;
   in_process_at: string;
-  customer?: {
-    name?: string;
+  address: {
+    recipient_name?: string;
+    city?: string;
     address?: string;
   };
   products: Array<{
@@ -37,6 +39,8 @@ interface OzonPosting {
     name: string;
     quantity: number;
     price: string; // Ozon API 返回的是字符串
+    offer_id?: string; // 商家SKU（本地系统）
+    product_id?: number; // Ozon产品ID
   }>;
   shipping_method?: {
     deadline?: string;
@@ -44,12 +48,14 @@ interface OzonPosting {
 }
 
 /**
- * Ozon API 订单列表响应
+ * Ozon API 订单列表响应（/v3/posting/fbs/list 返回包装在 result 中）
  */
 interface OzonPostingListResponse {
-  postings: OzonPosting[];
-  has_next: boolean;
-  last_id: string;
+  result: {
+    postings: OzonPosting[];
+    has_next: boolean;
+    count?: number;
+  };
 }
 
 /**
@@ -264,25 +270,29 @@ export async function syncOrdersForShop(shop: {
  */
 async function fetchAllPostings(client: OzonClient): Promise<OzonPosting[]> {
   const allPostings: OzonPosting[] = [];
-  let lastId: string | null = null;
   let hasNext = true;
   const maxPages = 20; // 防止无限循环
+  let currentOffset = 0;
+
+  // 默认拉取最近90天的订单
+  const now = new Date();
+  const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
 
   while (hasNext && maxPages > allPostings.length / 50) {
     const body: Record<string, unknown> = {
-      dir: 'asc',
+      dir: 'ASC',
       limit: 50,
+      offset: currentOffset,
+      filter: {
+        since: ninetyDaysAgo.toISOString(),
+        to: now.toISOString(),
+      },
       with: {
         analytics_data: true,
         financial_data: true,
         barcodes: true,
       },
     };
-
-    // 如果有last_id，添加分页参数
-    if (lastId) {
-      body.offset = { order_id: lastId };
-    }
 
     const response = await client.post<OzonPostingListResponse>(
       '/v3/posting/fbs/list',
@@ -293,17 +303,15 @@ async function fetchAllPostings(client: OzonClient): Promise<OzonPosting[]> {
       throw new Error(response.error || '获取Ozon订单列表失败');
     }
 
-    allPostings.push(...response.data.postings);
-    
-    hasNext = response.data.has_next;
-    lastId = response.data.last_id || null;
+    allPostings.push(...response.data.result.postings);
+    hasNext = response.data.result.has_next;
   }
 
   return allPostings;
 }
 
 /**
- * 插入新订单
+ * 插入新订单到 orders 表（与 API 读取的表一致）
  */
 async function insertNewOrders(
   shopId: string,
@@ -313,64 +321,97 @@ async function insertNewOrders(
   let newDemandsCount = 0;
   const now = new Date();
 
-  for (const posting of postings) {
-    // 计算订单总金额
-    const orderAmount = posting.products.reduce((sum, item) => {
-      const price = parseFloat(item.price) || 0;
-      return sum + price * item.quantity;
-    }, 0);
+  // 查询已有的 ozonPostingNumber，避免重复插入
+  const existingPostings = await db
+    .select({ ozonPostingNumber: orders.ozonPostingNumber })
+    .from(orders)
+    .where(eq(orders.shopId, shopId));
+  const existingNumbers = new Set(existingPostings.map(r => r.ozonPostingNumber));
 
-    // 转换发货截止时间
-    let shipmentDeadline: Date | null = null;
-    if (posting.shipping_method?.deadline) {
-      shipmentDeadline = new Date(posting.shipping_method.deadline);
+  for (const posting of postings) {
+    // 跳过已存在的订单
+    if (existingNumbers.has(posting.posting_number)) {
+      continue;
     }
 
-    // 构建itemsJson
-    const itemsJson = posting.products.map(item => ({
-      sku: item.sku,
-      name: item.name,
-      qty: item.quantity,
-      price: parseFloat(item.price) || 0,
-    }));
+    // 计算订单总金额（RUB）
+    const totalPrice = posting.products.reduce((sum, item) => {
+      return sum + (parseFloat(item.price) || 0) * item.quantity;
+    }, 0);
 
-    // 插入订单
-    const [insertedOrder] = await db
-      .insert(ozonOrders)
+    // 转换发货截止时间（空字符串 → null，避免 PostgreSQL timestamp 报错）
+    let shipmentDeadline: Date | null = null;
+    const deadlineStr = posting.shipping_method?.deadline;
+    if (deadlineStr && deadlineStr.trim() !== '') {
+      const parsed = new Date(deadlineStr);
+      if (!isNaN(parsed.getTime())) {
+        shipmentDeadline = parsed;
+      }
+    }
+
+    // 转换订单创建时间
+    let ozonCreatedAt: Date | null = null;
+    if (posting.in_process_at) {
+      ozonCreatedAt = new Date(posting.in_process_at);
+    }
+
+    // 提取收件人信息
+    const recipientName = posting.address?.recipient_name || null;
+    const recipientCity = posting.address?.city || null;
+    const recipientAddress = posting.address?.address || null;
+
+    // 构建原始数据（包含商品列表，供前端展示）
+    const ozonRawData = {
+      posting_number: posting.posting_number,
+      order_id: posting.order_id,
+      status: posting.status,
+      products: posting.products.map(p => ({
+        sku: p.sku,
+        name: p.name,
+        quantity: p.quantity,
+        price: p.price,
+        offer_id: p.offer_id,
+        product_id: p.product_id,
+      })),
+    };
+
+    // 插入到 orders 表（新订单默认 erpStatus = 'pending_purchase'）
+    await db
+      .insert(orders)
       .values({
         shopId,
-        ozonOrderId: posting.order_id,
+        id: randomUUID(),
+        ozonOrderId: String(posting.order_id),
         ozonPostingNumber: posting.posting_number,
-        orderStatus: posting.status,
-        erpStatus: getErpStatus(posting.status),
-        customerName: posting.customer?.name || null,
-        deliveryAddress: posting.customer?.address || null,
-        orderAmount: orderAmount.toFixed(2),
+        status: posting.status,
+        erpStatus: 'pending_purchase',
+        recipientName,
+        recipientCity,
+        recipientAddress,
+        totalPrice: totalPrice.toFixed(2),
         currency: 'RUB',
-        itemsJson,
+        ozonRawData,
+        ozonCreatedAt,
         shipmentDeadline,
-        orderTime: posting.in_process_at ? new Date(posting.in_process_at) : null,
-        lastSyncedAt: now,
-      })
-      .returning({ id: ozonOrders.id });
+      });
 
     newOrdersCount++;
 
-    // 为每个SKU创建采购需求
+    // 为每个 SKU 创建采购需求
     for (const product of posting.products) {
       const priority = calculatePriority(shipmentDeadline);
-      
+
       await db
         .insert(purchaseDemands)
         .values({
-          orderId: String(insertedOrder.id),
+          orderId: String(posting.posting_number), // 用 posting_number 标识
           sku: product.sku,
           productName: product.name,
           quantity: product.quantity,
           priority,
           status: 'pending',
         });
-      
+
       newDemandsCount++;
     }
   }
@@ -402,8 +443,10 @@ export async function syncAllShops(): Promise<BatchSyncResult> {
     .select({
       id: shops.id,
       name: shops.name,
-      clientId: shops.clientId,
+      // 优先使用 ozonClientId/ozonApiKey（加密字段），回退到 clientId/apiKey（明文字段）
+      ozonClientId: sql<string>`COALESCE(${shops.ozonClientId}, ${shops.clientId})`,
       apiKey: shops.apiKey,
+      ozonApiKey: shops.ozonApiKey,
     })
     .from(shops)
     .where(eq(shops.isActive, true));
@@ -415,14 +458,30 @@ export async function syncAllShops(): Promise<BatchSyncResult> {
 
   // 按顺序同步每个店铺（单个失败不影响其他）
   for (const shop of activeShops) {
-    // 解密API Key
+    // ozonClientId: 从 COALESCE 取（始终有值）
+    // apiKey: 优先 ozonApiKey（加密字段），回退到 apiKey（明文字段）
+    const encryptedKey = shop.ozonApiKey as string | null;
+    const plainKey = shop.apiKey as string | null;
+
+    if (!shop.ozonClientId || (!encryptedKey && !plainKey)) {
+      result.errors.push({
+        shopId: shop.id,
+        shopName: shop.name || '未知店铺',
+        error: '缺少 ClientId 或 API Key',
+      });
+      result.failedShops++;
+      continue;
+    }
+
+    // 解密 API Key（优先加密字段，回退明文）
     let decryptedApiKey: string;
     try {
-      decryptedApiKey = decrypt(shop.apiKey);
+      const raw = encryptedKey || plainKey;
+      decryptedApiKey = (raw as string).includes(':') ? decrypt(raw as string) : raw as string;
     } catch {
       result.errors.push({
         shopId: shop.id,
-        shopName: shop.name,
+        shopName: shop.name || '未知店铺',
         error: 'API密钥解密失败',
       });
       result.failedShops++;
@@ -431,8 +490,8 @@ export async function syncAllShops(): Promise<BatchSyncResult> {
 
     const shopResult = await syncOrdersForShop({
       id: shop.id,
-      name: shop.name,
-      clientId: shop.clientId,
+      name: shop.name || '未知店铺',
+      clientId: shop.ozonClientId as string,
       apiKey: decryptedApiKey,
     });
 

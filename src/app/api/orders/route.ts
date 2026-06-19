@@ -54,6 +54,7 @@ export async function GET(request: NextRequest) {
         shipmentDeadline: orders.shipmentDeadline,
         createdAt: orders.createdAt,
         lastSyncedAt: orders.lastSyncedAt,
+        ozonRawData: orders.ozonRawData,
       })
       .from(orders)
       .where(whereClause)
@@ -76,21 +77,33 @@ export async function GET(request: NextRequest) {
           .groupBy(webhookLogs.orderId)
       : [];
     const unreadMap = new Map<string, number>(unreadCounts.map(u => [u.orderId ?? '', Number(u.count)]));
-    const orderList = orderListRaw.map((o: Record<string, unknown>) => ({
-      ...o,
-      unreadMessageCount: unreadMap.get(o.id as string) ?? 0,
-    }));
-
-    // Stats
+    // Stats - 统计所有 Ozon 状态
     const [statsResult] = await db
       .select({
         total: count(),
-        newCount: sql<number>`count(*) filter (where ${orders.erpStatus} = 'new')`,
-        pendingCount: sql<number>`count(*) filter (where ${orders.erpStatus} = 'pending')`,
-        shippingCount: sql<number>`count(*) filter (where ${orders.erpStatus} = 'in_transit' or ${orders.erpStatus} = 'verified')`,
-        overdueCount: sql<number>`count(*) filter (where ${orders.shipmentDeadline} < now() and ${orders.erpStatus} not in ('shipped', 'delivered', 'cancelled'))`,
+        newCount: sql<number>`count(*) filter (where ${orders.erpStatus} in ('new','awaiting_pack','awaiting_packaging'))`,
+        pendingCount: sql<number>`count(*) filter (where ${orders.erpStatus} in ('pending','pending_purchase','awaiting_deliver'))`,
+        shippingCount: sql<number>`count(*) filter (where ${orders.erpStatus} in ('delivering','in_transit','verified','packed','shipped'))`,
+        overdueCount: sql<number>`count(*) filter (where ${orders.shipmentDeadline} < now() and ${orders.erpStatus} not in ('shipped','delivered','cancelled'))`,
       })
       .from(orders);
+
+    // 提取 ozon_raw_data 中的 products，合并 unreadMessageCount
+    const orderList = orderListRaw.map((o: Record<string, unknown>) => {
+      const rawData = o.ozonRawData as Record<string, unknown> | undefined;
+      const rawProducts = rawData?.products as Array<Record<string, unknown>> | undefined;
+      const products = (rawProducts || []).map((p: Record<string, unknown>) => ({
+        name: String(p.name || ''),
+        sku: String(p.sku || ''),
+        quantity: Number(p.quantity || 1),
+        price: String(p.price || '0'),
+      }));
+      return {
+        ...o,
+        products,
+        unreadMessageCount: unreadMap.get(o.id as string) ?? 0,
+      };
+    });
 
     // Unread message count (all orders, regardless of filters)
     const [unreadMsgCountResult] = await db

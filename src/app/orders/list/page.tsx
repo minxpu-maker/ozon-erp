@@ -37,11 +37,15 @@ const fetcher = (url: string) => fetch(url).then(async r => {
   return r.json();
 });
 
-// Status label mapping
+// Status label mapping - 覆盖所有 Ozon 订单状态
 const statusLabels: Record<string, string> = {
   new: '新订单',
   pending: '待采购',
-  purchased: '已采购',
+  pending_purchase: '待采购',
+  awaiting_pack: '待打包',
+  awaiting_packaging: '待打包',
+  awaiting_deliver: '待发货',
+  delivering: '配送中',
   in_transit: '运输中',
   verified: '验货通过',
   packed: '已打包',
@@ -54,7 +58,11 @@ const statusLabels: Record<string, string> = {
 const statusColors: Record<string, string> = {
   new: 'bg-blue-100 text-blue-700 border-blue-200',
   pending: 'bg-red-100 text-red-700 border-red-200',
-  purchased: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+  pending_purchase: 'bg-red-100 text-red-700 border-red-200',
+  awaiting_pack: 'bg-orange-100 text-orange-700 border-orange-200',
+  awaiting_packaging: 'bg-orange-100 text-orange-700 border-orange-200',
+  awaiting_deliver: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+  delivering: 'bg-blue-100 text-blue-700 border-blue-200',
   in_transit: 'bg-orange-100 text-orange-700 border-orange-200',
   verified: 'bg-green-100 text-green-700 border-green-200',
   packed: 'bg-purple-100 text-purple-700 border-purple-200',
