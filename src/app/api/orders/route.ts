@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     const countResult = await pool.query(`SELECT COUNT(*) as total FROM orders ${whereClause}`);
     const total = Number(countResult.rows[0]?.total || 0);
 
-    // Get orders
+    // Get orders with ozon_raw_data for products
     const offset = (page - 1) * pageSize;
     const ordersResult = await pool.query(`
       SELECT 
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
         o.buyer_name, o.recipient_address, o.recipient_city, o.total_price, o.status,
         o.is_inspected, o.is_packed, o.created_at, o.updated_at,
         o.shop_id, o.purchase_price, o.tracking_number, o.is_purchase_bound,
-        s.name as shop_name
+        o.ozon_raw_data, s.name as shop_name
       FROM orders o
       LEFT JOIN shops s ON o.shop_id = s.id
       ${whereClause}
@@ -57,36 +57,60 @@ export async function GET(request: NextRequest) {
     const orders = ordersResult.rows || [];
 
     // Format response
-    const formattedOrders = orders.map((o: any) => ({
-      id: o.id,
-      ozonOrderId: o.ozon_order_id || o.id,
-      ozonPostingNumber: o.ozon_posting_number,
-      erpStatus: o.erp_status,
-      shipmentDeadline: o.shipment_deadline,
-      buyerName: o.buyer_name,
-      recipientName: o.recipient_name,
-      recipientCity: o.recipient_city,
-      totalPrice: o.total_price,
-      orderAmount: o.total_price,
-      status: o.status,
-      isInspected: o.is_inspected,
-      isPacked: o.is_packed,
-      isPurchaseBound: o.is_purchase_bound,
-      createdAt: o.created_at,
-      updatedAt: o.updated_at,
-      lastSyncedAt: o.updated_at,
-      shopId: o.shop_id,
-      shopName: o.shop_name,
-      purchaseInfo: o.is_purchase_bound ? {
-        platform: null,
-        unitPrice: Number(o.purchase_price) || 0,
-        quantity: null,
-        totalAmount: (Number(o.purchase_price) || 0),
-        url: null,
-        trackingNumber: o.tracking_number || null,
-        note: null,
-      } : null,
-    }));
+    const formattedOrders = orders.map((o: any) => {
+      // 解析 ozon_raw_data 中的商品信息
+      let products: any[] = [];
+      try {
+        const rawData = o.ozon_raw_data;
+        if (rawData && typeof rawData === 'object') {
+          // 从 products 数组中提取商品信息
+          const rawProducts = rawData.products || rawData.financial_data?.products || [];
+          if (Array.isArray(rawProducts)) {
+            products = rawProducts.map((p: any) => ({
+              name: p.name || '未知商品',
+              sku: String(p.sku || p.offer_id || ''),
+              quantity: Number(p.quantity) || 1,
+              price: String(p.price || 0),
+              image: p.image_url || null,
+            }));
+          }
+        }
+      } catch (e) {
+        console.error('解析商品信息失败:', e);
+      }
+
+      return {
+        id: o.id,
+        ozonOrderId: o.ozon_order_id || o.id,
+        ozonPostingNumber: o.ozon_posting_number,
+        erpStatus: o.erp_status,
+        shipmentDeadline: o.shipment_deadline,
+        buyerName: o.buyer_name,
+        recipientName: o.recipient_name,
+        recipientCity: o.recipient_city,
+        totalPrice: o.total_price,
+        orderAmount: o.total_price,
+        status: o.status,
+        isInspected: o.is_inspected,
+        isPacked: o.is_packed,
+        isPurchaseBound: o.is_purchase_bound,
+        createdAt: o.created_at,
+        updatedAt: o.updated_at,
+        lastSyncedAt: o.updated_at,
+        shopId: o.shop_id,
+        shopName: o.shop_name,
+        products, // 添加商品数组
+        purchaseInfo: o.is_purchase_bound ? {
+          platform: null,
+          unitPrice: Number(o.purchase_price) || 0,
+          quantity: null,
+          totalAmount: (Number(o.purchase_price) || 0),
+          url: null,
+          trackingNumber: o.tracking_number || null,
+          note: null,
+        } : null,
+      };
+    });
 
     return NextResponse.json({
       success: true,

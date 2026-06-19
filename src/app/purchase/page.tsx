@@ -184,7 +184,8 @@ function aggregateBySku(orders: Order[]): AggregatedSku[] {
   const skuMap = new Map<string, AggregatedSku>();
 
   orders.forEach(order => {
-    order.products.forEach(product => {
+    const products = order.products || [];
+    products.forEach(product => {
       const sku = product.sku || 'unknown';
       const existing = skuMap.get(sku);
       if (existing) {
@@ -528,7 +529,7 @@ export default function PurchasePage() {
         (order.ozonOrderId || '').toLowerCase().includes(q) ||
         (order.ozonPostingNumber || '').toLowerCase().includes(q) ||
         (order.recipientCity || '').toLowerCase().includes(q) ||
-        order.products.some(p => 
+        (order.products || []).some(p => 
           (p.name || '').toLowerCase().includes(q) || 
           (p.sku || '').toLowerCase().includes(q)
         )
