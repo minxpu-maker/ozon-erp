@@ -183,6 +183,12 @@ export default function OrdersListPage() {
   const total = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / 20));
 
+  // Overdue detection
+  const isOverdue = (deadline: string | null) => {
+    if (!deadline || now === null) return false;
+    return new Date(deadline).getTime() < now;
+  };
+
   // 按发货截止时间排序：超时订单置顶，然后按剩余时间升序
   const sortedOrders = useMemo(() => {
     return [...orderList].sort((a, b) => {
@@ -199,12 +205,6 @@ export default function OrdersListPage() {
       return aTime - bTime;
     });
   }, [orderList, now]);
-
-  // Overdue detection
-  const isOverdue = (deadline: string | null) => {
-    if (!deadline || now === null) return false;
-    return new Date(deadline).getTime() < now;
-  };
 
   const formatPrice = (price: number | string | null | undefined) => {
     if (price == null) return '—';
