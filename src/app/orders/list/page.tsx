@@ -54,6 +54,32 @@ const statusLabels: Record<string, string> = {
   cancelled: '已取消',
 };
 
+// ERP采购状态映射
+const erpStatusLabels: Record<string, string> = {
+  pending: '待采购',
+  purchasing: '采购中',
+  purchased: '已采购',
+  shipped_domestic: '运输中',
+  received: '已到货',
+  qc_passed: '验货通过',
+  packing: '打包中',
+  shipped: '已发货',
+  settled: '已结算',
+};
+
+// ERP采购状态颜色
+const erpStatusColors: Record<string, string> = {
+  pending: 'bg-blue-100 text-blue-700 border-blue-200',
+  purchasing: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+  purchased: 'bg-green-100 text-green-700 border-green-200',
+  shipped_domestic: 'bg-orange-100 text-orange-700 border-orange-200',
+  received: 'bg-green-100 text-green-700 border-green-200',
+  qc_passed: 'bg-green-100 text-green-700 border-green-200',
+  packing: 'bg-purple-100 text-purple-700 border-purple-200',
+  shipped: 'bg-gray-100 text-gray-600 border-gray-200',
+  settled: 'bg-gray-100 text-gray-500 border-gray-200',
+};
+
 // Status color mapping
 const statusColors: Record<string, string> = {
   new: 'bg-blue-100 text-blue-700 border-blue-200',
@@ -157,6 +183,23 @@ export default function OrdersListPage() {
   const total = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / 20));
 
+  // 按发货截止时间排序：超时订单置顶，然后按剩余时间升序
+  const sortedOrders = useMemo(() => {
+    return [...orderList].sort((a, b) => {
+      const aOverdue = isOverdue(a.shipmentDeadline);
+      const bOverdue = isOverdue(b.shipmentDeadline);
+      const aTime = a.shipmentDeadline ? new Date(a.shipmentDeadline).getTime() : Infinity;
+      const bTime = b.shipmentDeadline ? new Date(b.shipmentDeadline).getTime() : Infinity;
+
+      // 超时订单置顶
+      if (aOverdue && !bOverdue) return -1;
+      if (!aOverdue && bOverdue) return 1;
+
+      // 按截止时间升序
+      return aTime - bTime;
+    });
+  }, [orderList, now]);
+
   // Overdue detection
   const isOverdue = (deadline: string | null) => {
     if (!deadline || now === null) return false;
@@ -223,7 +266,7 @@ export default function OrdersListPage() {
           <SelectContent>
             <SelectItem value="all">全部门店</SelectItem>
             {shops.map(s => (
-              <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+              <SelectItem key={s.id} value={s.id}>{s.shopName}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -276,8 +319,9 @@ export default function OrdersListPage() {
                 <TableHead>收件人</TableHead>
                 <TableHead>收货城市</TableHead>
                 <TableHead className="text-right">订单金额</TableHead>
-                <TableHead>状态</TableHead>
-                <TableHead>发货时限</TableHead>
+                <TableHead>订单状态</TableHead>
+                <TableHead>采购状态</TableHead>
+                <TableHead>发货倒计时</TableHead>
                 <TableHead>创建时间</TableHead>
                 <TableHead>同步时间</TableHead>
                 <TableHead className="text-center">消息</TableHead>
@@ -286,27 +330,49 @@ export default function OrdersListPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center py-16 text-muted-foreground">
+                  <TableCell colSpan={11} className="text-center py-16 text-muted-foreground">
                     加载中...
                   </TableCell>
                 </TableRow>
               ) : error ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center py-16 text-red-500">
+                  <TableCell colSpan={11} className="text-center py-16 text-red-500">
                     数据加载失败
                   </TableCell>
                 </TableRow>
-              ) : orderList.length === 0 ? (
+              ) : sortedOrders.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center py-16 text-muted-foreground">
+                  <TableCell colSpan={11} className="text-center py-16 text-muted-foreground">
                     暂无订单数据
                   </TableCell>
                 </TableRow>
               ) : (
-                orderList.map(order => {
+                sortedOrders.map(order => {
                   const overdue = isOverdue(order.shipmentDeadline);
                   const hoursLeft = mounted ? getDeadlineHours(order.shipmentDeadline) : null;
                   const shop = shops.find(s => s.id === order.shopId);
+
+                  // 计算倒计时显示
+                  const getCountdownDisplay = () => {
+                    if (order.shipmentDeadline) {
+                      if (overdue) {
+                        return <span className="text-red-700 font-bold text-sm">已超时</span>;
+                      }
+                      if (hoursLeft !== null) {
+                        if (hoursLeft >= 48) {
+                          const days = Math.floor(hoursLeft / 24);
+                          const remainingHours = hoursLeft % 24;
+                          return <span className="text-green-600 text-sm">{days}d {remainingHours}h</span>;
+                        } else if (hoursLeft >= 12) {
+                          return <span className="text-yellow-600 font-medium text-sm">{hoursLeft}h</span>;
+                        } else {
+                          return <span className="text-red-600 font-bold text-sm">{hoursLeft}h</span>;
+                        }
+                      }
+                      return <span className="text-muted-foreground text-sm">{new Date(order.shipmentDeadline).toLocaleDateString('zh-CN')}</span>;
+                    }
+                    return <span className="text-muted-foreground text-sm">—</span>;
+                  };
 
                   return (
                     <TableRow key={order.id} className="group">
@@ -336,26 +402,19 @@ export default function OrdersListPage() {
                         </span>
                       </TableCell>
                       <TableCell>
-                        {order.shipmentDeadline ? (
-                          <div>
-                            {overdue ? (
-                              <span className="text-red-600 text-sm font-medium">已超时</span>
-                            ) : hoursLeft !== null ? (
-                              <span className={cn(
-                                'text-sm',
-                                hoursLeft <= 24 ? 'text-red-600 font-medium' : 'text-muted-foreground'
-                              )}>
-                                {hoursLeft}h
-                              </span>
-                            ) : (
-                              <span className="text-muted-foreground text-sm">
-                                {new Date(order.shipmentDeadline).toLocaleDateString('zh-CN')}
-                              </span>
-                            )}
-                          </div>
+                        {order.erpStatus ? (
+                          <span className={cn(
+                            'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border',
+                            erpStatusColors[order.erpStatus] || 'bg-gray-100 text-gray-600 border-gray-200'
+                          )}>
+                            {erpStatusLabels[order.erpStatus] || order.erpStatus}
+                          </span>
                         ) : (
                           <span className="text-muted-foreground text-sm">—</span>
                         )}
+                      </TableCell>
+                      <TableCell>
+                        {getCountdownDisplay()}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {formatDate(order.createdAt)}
