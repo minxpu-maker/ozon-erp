@@ -70,7 +70,6 @@ export function Sidebar() {
       label: '订单管理',
       icon: ClipboardList,
       items: [
-        { name: '采购管理', href: '/orders' },
         { name: '订单列表', href: '/orders/list' },
       ],
     },
@@ -78,6 +77,8 @@ export function Sidebar() {
       label: '采购中心',
       icon: ShoppingCart,
       items: [
+        { name: '采购工作台', href: '/purchase' },
+        { name: '货源池', href: '/purchase/source-pool', locked: true },
         { name: '供应商管理', href: '/suppliers' },
       ],
     },
