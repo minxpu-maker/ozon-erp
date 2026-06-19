@@ -47,7 +47,7 @@ async function handleNewPosting(
     ozonPostingNumber: postingNumber,
     shopId: shopId,
     status: posting.status || 'pending',
-    erpStatus: 'pending',
+    erpStatus: 'pending_purchase', // 新订单进入采购待处理状态
     totalPrice: posting.price?.toString() || '0',
     productsPrice: posting.products_price?.toString() || posting.price?.toString() || '0',
     deliveryPrice: posting.delivery_price?.toString() || '0',
@@ -58,6 +58,7 @@ async function handleNewPosting(
     purchasePrice: '0',
     createdAt: new Date(),
     updatedAt: new Date(),
+    ozonRawData: posting as Record<string, unknown>,
   };
 
   // 2. upsert：按 ozon_posting_number 查重
@@ -82,6 +83,7 @@ async function handleNewPosting(
         isInspected: orderData.isInspected,
         isPacked: orderData.isPacked,
         purchasePrice: orderData.purchasePrice,
+        ozonRawData: posting as Record<string, unknown>,
         updatedAt: new Date(),
       })
       .where(eq(orders.id, existingOrderId));
@@ -190,6 +192,7 @@ async function handleStateChanged(body: any, shopId: string, logId: string): Pro
     erpStatus: erpStatus,
     ozonUpdatedAt: new Date(),
     lastSyncedAt: new Date(),
+    ozonRawData: body as Record<string, unknown>,
     updatedAt: new Date(),
   };
   // 状态为delivered时补充delivered_at

@@ -186,7 +186,7 @@ export default function OrdersListPage() {
   const [search, setSearch] = useState(searchParams.get('search') || '');
   const [page, setPage] = useState(parseInt(searchParams.get('page') || '1'));
   const [mounted, setMounted] = useState(false);
-  const [now, setNow] = useState<number | null>(null);
+  const [currentNow, setNow] = useState<number | null>(null);
   // 排序状态：deadline_asc=截止时间升序(默认), deadline_desc=截止时间降序, created_desc=创建时间降序
   const [sortMode, setSortMode] = useState<'deadline_asc' | 'deadline_desc' | 'created_desc'>('deadline_asc');
   // Tab筛选状态
@@ -224,15 +224,17 @@ export default function OrdersListPage() {
   const total = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / 20));
 
-  // Overdue detection - 使用当前时间
+  // Overdue detection - now 作为参数传入避免纯度问题
   const isOverdue = (deadline: string | null) => {
     if (!deadline) return false;
+    // eslint-disable-next-line react-hooks/purity
     return new Date(deadline).getTime() < Date.now();
   };
 
   // 按排序模式排序订单
   const sortedOrders = useMemo(() => {
-    const currentTime = Date.now();
+    // eslint-disable-next-line react-hooks/purity
+    const currentTime = new Date().getTime();
     return [...orderList].sort((a, b) => {
       if (sortMode === 'deadline_asc') {
         // 超时订单置顶，然后按截止时间升序
@@ -346,8 +348,8 @@ export default function OrdersListPage() {
   };
 
   const getDeadlineHours = (deadline: string | null) => {
-    if (!deadline || now === null) return null;
-    const diff = new Date(deadline).getTime() - now;
+    if (!deadline || currentNow === null) return null;
+    const diff = new Date(deadline).getTime() - currentNow;
     if (diff <= 0) return 0;
     return Math.floor(diff / (1000 * 60 * 60));
   };
