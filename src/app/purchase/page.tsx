@@ -797,6 +797,15 @@ export default function PurchasePage() {
           return order;
         }));
 
+        // 写入跨页面联动标记（订单列表会监听此标记刷新）
+        if (!isDraft) {
+          localStorage.setItem('erp_purchase_action', JSON.stringify({
+            action: 'purchase_confirmed',
+            orderIds,
+            timestamp: Date.now(),
+          }));
+        }
+
         if (!isDraft) {
           // 成功提交后2秒清空表单
           setTimeout(() => {
@@ -1043,6 +1052,11 @@ export default function PurchasePage() {
                                     <div className="text-xs font-mono text-[#637089] truncate">
                                       {order.ozonPostingNumber}
                                     </div>
+                                    {order.status && order.status !== order.erpStatus && (
+                                      <span className="text-[10px] px-1 py-0.5 bg-gray-200 text-gray-500 rounded">
+                                        {order.status}
+                                      </span>
+                                    )}
                                     <Badge className={`${erpInfo.color} text-[10px]`}>
                                       {erpInfo.label}
                                     </Badge>
@@ -1104,6 +1118,11 @@ export default function PurchasePage() {
                           </div>
                           <div className="text-xs text-[#637089] mt-0.5">
                             {order.shopName || '-'}
+                            {order.status && order.status !== order.erpStatus && (
+                              <span className="ml-2 text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded">
+                                Ozon: {order.status}
+                              </span>
+                            )}
                           </div>
                           <div className="text-sm text-[#152033] mt-1 truncate">
                             {product?.name || '-'}

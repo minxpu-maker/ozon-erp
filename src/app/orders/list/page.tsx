@@ -30,9 +30,15 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
-import { ShoppingCart, Eye, ArrowUpDown, ArrowUp, ArrowDown, Check, X } from 'lucide-react';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { cn, formatCNY } from '@/lib/utils';
+import { ShoppingCart, Eye, ArrowUpDown, ArrowUp, ArrowDown, Check, X, ExternalLink } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const fetcher = (url: string) => fetch(url).then(async r => {
   if (!r.ok) throw new Error('请求失败');
@@ -147,6 +153,16 @@ interface OrdersResponse {
   pageSize: number;
 }
 
+interface PurchaseInfo {
+  platform: string;
+  unitPrice: number;
+  quantity: number;
+  totalAmount: number;
+  url?: string;
+  trackingNumber?: string;
+  note?: string;
+}
+
 interface OrderRecord {
   id: number;
   ozonOrderId: string;
@@ -168,6 +184,7 @@ interface OrderRecord {
   createdAt: string;
   lastSyncedAt: string | null;
   unreadMessageCount?: number;
+  purchaseInfo?: PurchaseInfo | null;
 }
 
 interface Shop {
@@ -197,7 +214,7 @@ export default function OrdersListPage() {
   useEffect(() => setMounted(true), []);
   useEffect(() => { if (mounted) setNow(Date.now()); }, [mounted]);
 
-  // Sync URL params
+  // 监听页面切换，检测采购工作台的数据变化 - 移到 useSWR 之后
   useEffect(() => {
     const params = new URLSearchParams();
     if (shopId !== 'all') params.set('shopId', shopId);
@@ -213,11 +230,43 @@ export default function OrdersListPage() {
   const shops = shopsData?.shops ?? [];
 
   // Orders data
-  const { data, error, isLoading } = useSWR<OrdersResponse>(
+  const { data, error, isLoading, mutate: ordersMutate } = useSWR<OrdersResponse>(
     `/api/orders?shopId=${shopId}&status=${erpStatus}&orderId=${search}&page=${page}&pageSize=20`,
     fetcher,
     { revalidateOnFocus: false }
   );
+
+  // 统一使用 ordersMutate
+  const mutate = ordersMutate;
+
+  // 监听页面切换，检测采购工作台的数据变化
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        const actionData = localStorage.getItem('erp_purchase_action');
+        if (actionData) {
+          try {
+            const { action, timestamp } = JSON.parse(actionData);
+            // 5分钟内的新操作才触发刷新
+            if (action === 'purchase_confirmed' && Date.now() - timestamp < 5 * 60 * 1000) {
+              mutate();
+              localStorage.removeItem('erp_purchase_action');
+            }
+          } catch {
+            localStorage.removeItem('erp_purchase_action');
+          }
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    // 首次加载也检查一次
+    handleVisibilityChange();
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [mutate]);
 
   const orderList: OrderRecord[] = data?.orders ?? [];
   const stats = data?.stats ?? { newCount: 0, pendingCount: 0, shippingCount: 0, overdueCount: 0, unreadMessageCount: 0 };
@@ -641,7 +690,85 @@ export default function OrdersListPage() {
                         </span>
                       </TableCell>
                       <TableCell>
-                        {order.erpStatus ? (
+                        {order.purchaseInfo ? (
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <button className={cn(
+                                'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border cursor-pointer hover:opacity-80 transition-opacity',
+                                erpStatusColors[order.erpStatus] || 'bg-gray-100 text-gray-600 border-gray-200'
+                              )}>
+                                {erpStatusLabels[order.erpStatus] || order.erpStatus}
+                              </button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-72 p-0" align="start">
+                              <div className="px-3 py-2 border-b bg-muted/50">
+                                <p className="font-medium text-sm">采购详情</p>
+                                <p className="text-xs text-muted-foreground">{order.ozonPostingNumber}</p>
+                              </div>
+                              <ScrollArea className="max-h-64">
+                                <div className="p-3 space-y-2">
+                                  {/* 平台 */}
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-xs text-muted-foreground">采购平台</span>
+                                    <span className="text-sm font-medium">
+                                      {order.purchaseInfo.platform === '1688' ? '1688' : order.purchaseInfo.platform === 'pdd' ? '拼多多' : order.purchaseInfo.platform || '—'}
+                                    </span>
+                                  </div>
+                                  {/* 单价 */}
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-xs text-muted-foreground">采购单价</span>
+                                    <span className="text-sm font-medium">
+                                      {order.purchaseInfo.unitPrice ? formatCNY(order.purchaseInfo.unitPrice) : '—'}
+                                    </span>
+                                  </div>
+                                  {/* 数量 */}
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-xs text-muted-foreground">采购数量</span>
+                                    <span className="text-sm font-medium">{order.purchaseInfo.quantity ?? '—'}</span>
+                                  </div>
+                                  {/* 总金额 */}
+                                  <div className="flex items-center justify-between border-t pt-2 mt-2">
+                                    <span className="text-xs text-muted-foreground">采购总额</span>
+                                    <span className="text-sm font-bold text-green-600">
+                                      {order.purchaseInfo.totalAmount ? formatCNY(order.purchaseInfo.totalAmount) : '—'}
+                                    </span>
+                                  </div>
+                                  {/* 1688链接 */}
+                                  {order.purchaseInfo.url && (
+                                    <div className="border-t pt-2 mt-2">
+                                      <span className="text-xs text-muted-foreground block mb-1">采购链接</span>
+                                      <a
+                                        href={order.purchaseInfo.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1 break-all"
+                                      >
+                                        <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                                        {order.purchaseInfo.url.length > 40 
+                                          ? order.purchaseInfo.url.substring(0, 40) + '...' 
+                                          : order.purchaseInfo.url}
+                                      </a>
+                                    </div>
+                                  )}
+                                  {/* 快递单号 */}
+                                  {order.purchaseInfo.trackingNumber && (
+                                    <div className="flex items-center justify-between border-t pt-2 mt-2">
+                                      <span className="text-xs text-muted-foreground">快递单号</span>
+                                      <span className="text-sm font-medium">{order.purchaseInfo.trackingNumber}</span>
+                                    </div>
+                                  )}
+                                  {/* 供应商备注 */}
+                                  {order.purchaseInfo.note && (
+                                    <div className="border-t pt-2 mt-2">
+                                      <span className="text-xs text-muted-foreground block mb-1">供应商备注</span>
+                                      <p className="text-xs">{order.purchaseInfo.note}</p>
+                                    </div>
+                                  )}
+                                </div>
+                              </ScrollArea>
+                            </PopoverContent>
+                          </Popover>
+                        ) : order.erpStatus && order.erpStatus !== 'pending_purchase' && order.erpStatus !== 'new' ? (
                           <span className={cn(
                             'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border',
                             erpStatusColors[order.erpStatus] || 'bg-gray-100 text-gray-600 border-gray-200'

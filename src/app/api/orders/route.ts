@@ -56,6 +56,15 @@ export async function GET(request: NextRequest) {
         createdAt: orders.createdAt,
         lastSyncedAt: orders.lastSyncedAt,
         ozonRawData: orders.ozonRawData,
+        // 采购信息
+        purchasePlatform: orders.purchasePlatform,
+        purchaseUrl: orders.purchaseUrl,
+        purchasePrice: orders.purchasePrice,
+        purchaseQty: orders.purchaseQty,
+        purchaseTotalAmount: orders.purchaseTotalAmount,
+        purchaseTrackingNumber: orders.purchaseTrackingNumber,
+        purchaseNote: orders.purchaseNote,
+        purchaseStatus: orders.purchaseStatus,
       })
       .from(orders)
       .leftJoin(shopsTable, eq(orders.shopId, shopsTable.id))
@@ -90,7 +99,7 @@ export async function GET(request: NextRequest) {
       })
       .from(orders);
 
-    // 提取 ozon_raw_data 中的 products，合并 unreadMessageCount
+    // 提取 ozon_raw_data 中的 products，合并 unreadMessageCount 和采购信息
     const orderList = orderListRaw.map((o: Record<string, unknown>) => {
       const rawData = o.ozonRawData as Record<string, unknown> | undefined;
       const rawProducts = rawData?.products as Array<Record<string, unknown>> | undefined;
@@ -100,9 +109,23 @@ export async function GET(request: NextRequest) {
         quantity: Number(p.quantity || 1),
         price: String(p.price || '0'),
       }));
+      // 采购信息包装
+      const purchaseInfo = o.purchasePlatform
+        ? {
+            platform: o.purchasePlatform,
+            url: o.purchaseUrl,
+            unitPrice: Number(o.purchasePrice) || null,
+            quantity: Number(o.purchaseQty) || null,
+            totalAmount: Number(o.purchaseTotalAmount) || null,
+            trackingNumber: o.purchaseTrackingNumber,
+            note: o.purchaseNote,
+            status: o.purchaseStatus,
+          }
+        : null;
       return {
         ...o,
         products,
+        purchaseInfo,
         unreadMessageCount: unreadMap.get(o.id as string) ?? 0,
       };
     });

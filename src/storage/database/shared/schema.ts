@@ -116,6 +116,15 @@ export const orders = pgTable(
     currency: varchar("currency", { length: 10 }).default('RUB'),
     shipmentDeadline: timestamp("shipment_deadline", { withTimezone: true }),
     lastSyncedAt: timestamp("last_synced_at", { withTimezone: true }),
+    
+    // 采购信息字段（B01阶段新增）
+    purchasePlatform: varchar("purchase_platform", { length: 20 }), // 1688/pdd
+    purchaseUrl: text("purchase_url"), // 采购链接
+    purchaseQty: integer("purchase_qty"), // 采购数量
+    purchaseTotalAmount: numeric("purchase_total_amount", { precision: 10, scale: 2 }), // 采购总金额
+    purchaseTrackingNumber: varchar("purchase_tracking_number", { length: 100 }), // 快递单号
+    purchaseNote: text("purchase_note"), // 供应商备注
+    purchaseStatus: varchar("purchase_status", { length: 20 }).default('none'), // none/draft/confirmed
   },
   (table) => [
     index("orders_ozon_order_id_idx").on(table.ozonOrderId),
