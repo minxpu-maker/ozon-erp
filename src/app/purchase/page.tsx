@@ -217,7 +217,54 @@ export default function PurchasePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [rubToCny, setRubToCny] = useState(0.0923);
   const [notify, setNotify] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+  // 流水线Tab配置
+  type PipelineTab = 'all' | 'pending' | 'purchasing' | 'purchased' | 'received' | 'completed';
+  
+  const [pipelineTab, setPipelineTab] = useState<PipelineTab>('pending');
   const [selectedTab, setSelectedTab] = useState('pending');
+  
+  // 流水线Tab定义
+  const pipelineTabs: { key: PipelineTab; label: string; erpStatus: string[]; emptyMsg: string; hasLink?: boolean }[] = [
+    { key: 'all', label: '全部', erpStatus: [], emptyMsg: '暂无采购任务' },
+    { key: 'pending', label: '待采购', erpStatus: ['pending_purchase'], emptyMsg: '暂无待采购任务，去订单列表看看', hasLink: true },
+    { key: 'purchasing', label: '采购中', erpStatus: ['purchasing'], emptyMsg: '没有进行中的采购，休息一下' },
+    { key: 'purchased', label: '已采购', erpStatus: ['purchased'], emptyMsg: '暂无已采购任务' },
+    { key: 'received', label: '已到货', erpStatus: ['received', 'pending_inspect'], emptyMsg: '暂无到货待验任务' },
+    { key: 'completed', label: '已完成', erpStatus: ['shipped', 'delivered'], emptyMsg: '暂无已完成任务' },
+  ];
+
+  // 统计数据
+  const pipelineStats = useMemo(() => {
+    const stats: Record<PipelineTab, number> = {
+      all: orders.length,
+      pending: 0,
+      purchasing: 0,
+      purchased: 0,
+      received: 0,
+      completed: 0,
+    };
+    
+    orders.forEach(order => {
+      const status = order.erpStatus;
+      if (status === 'pending_purchase') stats.pending++;
+      else if (status === 'purchasing') stats.purchasing++;
+      else if (status === 'purchased') stats.purchased++;
+      else if (status === 'received' || status === 'pending_inspect') stats.received++;
+      else if (status === 'shipped' || status === 'delivered') stats.completed++;
+    });
+    
+    return stats;
+  }, [orders]);
+
+  // 切换流水线Tab
+  const handlePipelineTabChange = (tab: PipelineTab) => {
+    setPipelineTab(tab);
+    // 切换Tab时清空选中状态
+    setSelectedOrder(null);
+    setSelectedSkuOrder(null);
+    setFormData(initialFormData);
+    setFormErrors({});
+  };
 
   // 视图相关
   const [viewMode, setViewMode] = useState<'byProduct' | 'byOrder'>('byProduct');
@@ -456,21 +503,17 @@ export default function PurchasePage() {
     return price * qty;
   }, [formData.unitPrice, formData.quantity]);
 
-  // 过滤和聚合
-  const currentFilter = useMemo(() => {
-    const tabs = [
-      { key: 'pending', filter: 'pending_purchase' },
-      { key: 'inspecting', filter: 'pending_inspect' },
-      { key: 'packing', filter: 'pending_pack' },
-      { key: 'all', filter: '' },
-    ];
-    return tabs.find(t => t.key === selectedTab)?.filter || '';
-  }, [selectedTab]);
+  // 根据流水线Tab筛选订单
+  const pipelineFilter = useMemo(() => {
+    const tab = pipelineTabs.find(t => t.key === pipelineTab);
+    return tab?.erpStatus || [];
+  }, [pipelineTab]);
 
   const filteredOrders = useMemo(() => {
     return orders.filter(order => {
-      if (!currentFilter) return true;
-      return order.erpStatus === currentFilter;
+      // 如果erpStatus为空或不在列表中，排除
+      if (pipelineFilter.length === 0) return true;
+      return pipelineFilter.includes(order.erpStatus);
     }).filter(order => {
       if (!searchQuery) return true;
       const q = searchQuery.toLowerCase();
@@ -484,7 +527,7 @@ export default function PurchasePage() {
         )
       );
     });
-  }, [orders, currentFilter, searchQuery]);
+  }, [orders, pipelineFilter, searchQuery]);
 
   const aggregatedSkus = useMemo(() => aggregateBySku(filteredOrders), [filteredOrders]);
 
@@ -589,15 +632,6 @@ export default function PurchasePage() {
       return a.shipmentDeadline.localeCompare(b.shipmentDeadline);
     });
   }, [filteredOrders]);
-
-  // 统计数据
-  const stats = useMemo(() => ({
-    pending: orders.filter(o => o.erpStatus === 'pending_purchase').length,
-    inspecting: orders.filter(o => o.erpStatus === 'pending_inspect').length,
-    packing: orders.filter(o => o.erpStatus === 'pending_pack').length,
-    shipped: orders.filter(o => o.erpStatus === 'shipped').length,
-    total: orders.length,
-  }), [orders]);
 
   // 选中处理
   const handleViewChange = (mode: 'byProduct' | 'byOrder') => {
@@ -808,54 +842,29 @@ export default function PurchasePage() {
       <div className="flex h-[calc(100vh-140px)]">
         {/* ========== 左栏 - 任务列表 (60%) ========== */}
         <div className="w-3/5 border-r border-[#E6EAF2] flex flex-col overflow-hidden">
-          {/* 统计卡片 */}
-          <div className="p-4 border-b border-[#E6EAF2] bg-white flex-shrink-0">
-            <div className="grid grid-cols-5 gap-2">
-              <div className="bg-orange-50 rounded-lg p-3 flex items-center gap-2">
-                <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <ShoppingCart className="w-4 h-4 text-orange-600" />
-                </div>
-                <div>
-                  <p className="text-xs text-[#637089]">待采购</p>
-                  <p className="text-lg font-bold text-[#152033]">{stats.pending}</p>
-                </div>
-              </div>
-              <div className="bg-blue-50 rounded-lg p-3 flex items-center gap-2">
-                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Eye className="w-4 h-4 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-xs text-[#637089]">待验货</p>
-                  <p className="text-lg font-bold text-[#152033]">{stats.inspecting}</p>
-                </div>
-              </div>
-              <div className="bg-purple-50 rounded-lg p-3 flex items-center gap-2">
-                <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Package className="w-4 h-4 text-purple-600" />
-                </div>
-                <div>
-                  <p className="text-xs text-[#637089]">待打包</p>
-                  <p className="text-lg font-bold text-[#152033]">{stats.packing}</p>
-                </div>
-              </div>
-              <div className="bg-green-50 rounded-lg p-3 flex items-center gap-2">
-                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Truck className="w-4 h-4 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-xs text-[#637089]">已发货</p>
-                  <p className="text-lg font-bold text-[#152033]">{stats.shipped}</p>
-                </div>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-3 flex items-center gap-2">
-                <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Database className="w-4 h-4 text-gray-600" />
-                </div>
-                <div>
-                  <p className="text-xs text-[#637089]">全部</p>
-                  <p className="text-lg font-bold text-[#152033]">{stats.total}</p>
-                </div>
-              </div>
+          {/* 流水线状态Tab栏 */}
+          <div className="px-4 py-3 border-b border-[#E6EAF2] bg-white flex-shrink-0">
+            <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5 w-fit">
+              {pipelineTabs.map(tab => (
+                <button
+                  key={tab.key}
+                  onClick={() => handlePipelineTabChange(tab.key)}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                    pipelineTab === tab.key
+                      ? 'bg-white shadow text-[#2F6BFF]'
+                      : 'text-[#637089] hover:text-[#152033]'
+                  }`}
+                >
+                  {tab.label}
+                  <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                    pipelineTab === tab.key
+                      ? 'bg-blue-100 text-blue-600'
+                      : 'bg-gray-200 text-gray-500'
+                  }`}>
+                    {pipelineStats[tab.key]}
+                  </span>
+                </button>
+              ))}
             </div>
           </div>
 
@@ -874,7 +883,7 @@ export default function PurchasePage() {
                 />
               </div>
 
-              {/* Tab切换 */}
+              {/* 视图切换Tab */}
               <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
                 {[
                   { key: 'pending', label: '待采购' },
@@ -954,8 +963,15 @@ export default function PurchasePage() {
             ) : (viewMode === 'byProduct' ? aggregatedSkus : sortedOrders).length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-[#637089]">
                 <Package className="w-12 h-12 mb-3 text-gray-300" />
-                <p className="text-sm">暂无订单</p>
-                <p className="text-xs text-gray-300 mt-1">点击「同步」获取最新订单</p>
+                <p className="text-sm">{pipelineTabs.find(t => t.key === pipelineTab)?.emptyMsg || '暂无数据'}</p>
+                {pipelineTabs.find(t => t.key === pipelineTab)?.hasLink && (
+                  <button
+                    onClick={() => router.push('/orders')}
+                    className="mt-2 text-sm text-[#2F6BFF] hover:underline"
+                  >
+                    去订单列表看看 →
+                  </button>
+                )}
               </div>
             ) : (
               <div className="divide-y divide-[#E6EAF2]">
