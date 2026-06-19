@@ -100,18 +100,26 @@ export async function GET(request: NextRequest) {
         ozonOrderId: o.ozon_order_id || o.id,
         ozonPostingNumber: o.ozon_posting_number,
         erpStatus: (() => {
-          // Ozon待发运状态（awaiting-delivery）才映射为待采购
-          const awaitingDeliveryStatuses = ['awaiting-delivery'];
+          // Ozon "等待发运" 状态映射为待采购
+          // awaiting-packaging: 等待打包（已付款等待商家打包）
+          // awaiting_deliver: 等待发货（已打包等待物流取货）
+          const awaitingShipStatuses = ['awaiting-packaging', 'awaiting_deliver', 'awaiting-deliver'];
           // 已取消状态
           const cancelledStatuses = ['cancelled'];
+          // 运输中状态
+          const deliveringStatuses = ['delivering', 'delivered'];
           
           // 如果是待发运状态，ERP状态为待采购
-          if (awaitingDeliveryStatuses.includes(o.status)) {
+          if (awaitingShipStatuses.includes(o.status)) {
             return 'pending';
           }
           // 已取消状态
           if (cancelledStatuses.includes(o.status)) {
             return 'cancelled';
+          }
+          // 运输中状态
+          if (deliveringStatuses.includes(o.status)) {
+            return 'shipped_domestic';
           }
           // 其他状态保持数据库中的状态（如果有的话）
           return o.erp_status || null;
