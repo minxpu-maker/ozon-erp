@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -31,6 +32,7 @@ import {
   Loader2,
   Save,
   Trash2,
+  Sparkles,
 } from 'lucide-react';
 
 // ============ 类型定义 ============
@@ -245,6 +247,12 @@ export default function PurchasePage() {
   const [batchItems, setBatchItems] = useState<BatchTrackingItem[]>([]);
   const [batchSubmitting, setBatchSubmitting] = useState(false);
 
+  // URL参数定位相关状态
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const [notFoundMessage, setNotFoundMessage] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
   // 解析批量文本为记录
   const parseBatchText = useCallback((text: string, allOrders: Order[]) => {
     const lines = text.split('\n').filter(line => line.trim());
@@ -381,10 +389,6 @@ export default function PurchasePage() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchOrders();
-  }, [fetchOrders]);
-
   // 同步订单
   const syncOrders = async () => {
     setSyncing(true);
@@ -483,6 +487,100 @@ export default function PurchasePage() {
   }, [orders, currentFilter, searchQuery]);
 
   const aggregatedSkus = useMemo(() => aggregateBySku(filteredOrders), [filteredOrders]);
+
+  // ========== URL参数定位处理 ==========
+  const handleUrlParamsLocation = useCallback(() => {
+    const orderId = searchParams.get('orderId');
+    const orderIds = searchParams.get('orderIds');
+    const action = searchParams.get('action');
+
+    // 如果没有参数，不做任何处理
+    if (!orderId && !orderIds && !action) {
+      return;
+    }
+
+    // 清除URL参数
+    router.replace('/purchase');
+
+    // 单个订单处理
+    if (orderId) {
+      const targetOrder = orders.find(o => o.id === orderId || o.ozonOrderId === orderId || o.ozonPostingNumber === orderId);
+      
+      if (targetOrder) {
+        if (action === 'view') {
+          // 查看采购 - 切换到按订单视图，选中订单
+          setViewMode('byOrder');
+          setSelectedOrder(targetOrder);
+          setSelectedSkuOrder(null);
+          // 回填表单数据
+          if (targetOrder.purchaseInfo) {
+            setFormData({
+              platform: targetOrder.purchaseInfo.platform || 'alibaba',
+              productUrl: targetOrder.purchaseInfo.productUrl || '',
+              unitPrice: targetOrder.purchaseInfo.unitPrice?.toString() || '',
+              quantity: targetOrder.purchaseInfo.quantity?.toString() || '',
+              supplierNote: targetOrder.purchaseInfo.supplierNote || '',
+              trackingNumber: targetOrder.purchaseInfo.trackingNumber || '',
+            });
+          }
+        } else {
+          // 去采购/批量采购 - 切换到按订单视图，选中订单
+          setViewMode('byOrder');
+          setSelectedOrder(targetOrder);
+          setSelectedSkuOrder(null);
+          // 重置表单
+          setFormData({
+            ...initialFormData,
+            quantity: targetOrder.products.reduce((sum, p) => sum + p.quantity, 0).toString(),
+          });
+        }
+        // 高亮选中行
+        setHighlightedId(targetOrder.id);
+        setTimeout(() => setHighlightedId(null), 1500);
+      } else {
+        setNotFoundMessage('未找到对应采购任务，可能已处理或订单不存在');
+        setTimeout(() => setNotFoundMessage(null), 5000);
+      }
+    }
+
+    // 批量订单处理
+    if (orderIds && action === 'batch') {
+      const idList = orderIds.split(',');
+      const targetOrders = orders.filter(o => idList.includes(o.id) || idList.includes(o.ozonOrderId) || idList.includes(o.ozonPostingNumber));
+      
+      if (targetOrders.length > 0) {
+        // 切换到按商品视图（多订单按SKU聚合）
+        setViewMode('byProduct');
+        // 找到第一个SKU对应的聚合项并选中
+        const firstSku = targetOrders[0].products[0]?.sku;
+        if (firstSku) {
+          const targetSku = aggregatedSkus.find(a => a.sku === firstSku);
+          if (targetSku) {
+            setSelectedSkuOrder(targetSku);
+            setSelectedOrder(null);
+            // 重置表单
+            setFormData({
+              ...initialFormData,
+              quantity: targetSku.totalQuantity.toString(),
+            });
+            // 高亮选中行
+            setHighlightedId(`sku-${targetSku.sku}`);
+            setTimeout(() => setHighlightedId(null), 1500);
+          }
+        }
+      } else {
+        setNotFoundMessage('未找到对应采购任务，可能已处理或订单不存在');
+        setTimeout(() => setNotFoundMessage(null), 5000);
+      }
+    }
+  }, [searchParams, router, orders, aggregatedSkus, initialFormData]);
+
+  // 订单加载完成后处理URL参数定位
+  useEffect(() => {
+    if (orders.length > 0) {
+      handleUrlParamsLocation();
+    }
+  }, [handleUrlParamsLocation]);
 
   const sortedOrders = useMemo(() => {
     return [...filteredOrders].sort((a, b) => {
@@ -873,7 +971,7 @@ export default function PurchasePage() {
                         onClick={() => handleSelectSku(skuItem)}
                         className={`p-4 cursor-pointer transition-all ${
                           isSkuSelected
-                            ? 'bg-blue-50 border-l-4 border-l-[#2F6BFF]'
+                            ? `bg-blue-50 border-l-4 border-l-[#2F6BFF] ${highlightedId === `sku-${skuItem.sku}` ? 'animate-pulse-blue' : ''}`
                             : 'hover:bg-gray-50 border-l-4 border-l-transparent'
                         }`}
                       >
@@ -966,7 +1064,7 @@ export default function PurchasePage() {
                       onClick={() => handleSelectOrder(order)}
                       className={`p-4 cursor-pointer transition-all ${
                         isSelected
-                          ? 'bg-blue-50 border-l-4 border-l-[#2F6BFF]'
+                          ? `bg-blue-50 border-l-4 border-l-[#2F6BFF] ${highlightedId === order.id ? 'animate-pulse-blue' : ''}`
                           : 'hover:bg-gray-50 border-l-4 border-l-transparent'
                       }`}
                     >
@@ -1024,6 +1122,13 @@ export default function PurchasePage() {
 
         {/* ========== 右栏 - 详情/表单区 (40%) ========== */}
         <div className="w-2/5 flex flex-col overflow-hidden bg-[#F6F8FB]">
+          {/* 未找到提示 */}
+          {notFoundMessage && (
+            <div className="mx-4 mt-4 px-4 py-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-yellow-600 flex-shrink-0" />
+              <span className="text-sm text-yellow-700">{notFoundMessage}</span>
+            </div>
+          )}
           {batchMode ? (
             <>
               {/* 批量录入模式头部 */}
