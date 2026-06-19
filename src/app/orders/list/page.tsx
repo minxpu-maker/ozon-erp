@@ -217,28 +217,29 @@ export default function OrdersListPage() {
   const total = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / 20));
 
-  // Overdue detection
+  // Overdue detection - 使用当前时间
   const isOverdue = (deadline: string | null) => {
-    if (!deadline || now === null) return false;
-    return new Date(deadline).getTime() < now;
+    if (!deadline) return false;
+    return new Date(deadline).getTime() < Date.now();
   };
 
   // 按发货截止时间排序：超时订单置顶，然后按剩余时间升序
   const sortedOrders = useMemo(() => {
+    const currentTime = Date.now();
     return [...orderList].sort((a, b) => {
-      const aOverdue = isOverdue(a.shipmentDeadline);
-      const bOverdue = isOverdue(b.shipmentDeadline);
       const aTime = a.shipmentDeadline ? new Date(a.shipmentDeadline).getTime() : Infinity;
       const bTime = b.shipmentDeadline ? new Date(b.shipmentDeadline).getTime() : Infinity;
+      const aOverdue = a.shipmentDeadline ? aTime < currentTime : false;
+      const bOverdue = b.shipmentDeadline ? bTime < currentTime : false;
 
       // 超时订单置顶
       if (aOverdue && !bOverdue) return -1;
       if (!aOverdue && bOverdue) return 1;
 
-      // 按截止时间升序
+      // 按截止时间升序（最紧急的排最前）
       return aTime - bTime;
     });
-  }, [orderList, now]);
+  }, [orderList]);
 
   const formatPrice = (price: number | string | null | undefined) => {
     if (price == null) return '—';
