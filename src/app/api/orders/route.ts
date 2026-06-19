@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/storage/database/client';
-import { orders } from '@/storage/database/shared/schema';
+import { orders, shops as shopsTable } from '@/storage/database/shared/schema';
 import { webhookLogs } from '@/db/schema/fulfillment';
 import { eq, and, desc, like, sql, count, inArray } from 'drizzle-orm';
 
@@ -41,6 +41,7 @@ export async function GET(request: NextRequest) {
         ozonOrderId: orders.ozonOrderId,
         ozonPostingNumber: orders.ozonPostingNumber,
         shopId: orders.shopId,
+        shopName: shopsTable.name,
         status: orders.status,
         erpStatus: orders.erpStatus,
         buyerName: orders.buyerName,
@@ -57,6 +58,7 @@ export async function GET(request: NextRequest) {
         ozonRawData: orders.ozonRawData,
       })
       .from(orders)
+      .leftJoin(shopsTable, eq(orders.shopId, shopsTable.id))
       .where(whereClause)
       .orderBy(desc(orders.createdAt))
       .limit(pageSize)

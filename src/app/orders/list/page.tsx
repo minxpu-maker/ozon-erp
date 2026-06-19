@@ -91,6 +91,7 @@ interface OrderRecord {
   ozonOrderId: string;
   ozonPostingNumber: string;
   shopId: string;
+  shopName?: string | null;
   status: string;
   erpStatus: string;
   buyerName: string | null;
@@ -110,7 +111,7 @@ interface OrderRecord {
 
 interface Shop {
   id: string;
-  name: string;
+  shopName: string;
 }
 
 export default function OrdersListPage() {
@@ -315,7 +316,7 @@ export default function OrdersListPage() {
                         </span>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {shop?.name || order.shopId || '—'}
+                        {shop?.shopName || order.shopName || order.shopId || '—'}
                       </TableCell>
                       <TableCell className="text-sm">
                         {order.recipientName || order.buyerName || '—'}
