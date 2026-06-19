@@ -31,7 +31,8 @@ import {
 } from '@/components/ui/pagination';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { ShoppingCart, Eye, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { ShoppingCart, Eye, ArrowUpDown, ArrowUp, ArrowDown, Check, X } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const fetcher = (url: string) => fetch(url).then(async r => {
   if (!r.ok) throw new Error('请求失败');
@@ -188,6 +189,10 @@ export default function OrdersListPage() {
   const [now, setNow] = useState<number | null>(null);
   // 排序状态：deadline_asc=截止时间升序(默认), deadline_desc=截止时间降序, created_desc=创建时间降序
   const [sortMode, setSortMode] = useState<'deadline_asc' | 'deadline_desc' | 'created_desc'>('deadline_asc');
+  // Tab筛选状态
+  const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'purchasing' | 'purchased' | 'pending_ship' | 'shipped'>('all');
+  // 选中订单状态
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
   useEffect(() => setMounted(true), []);
   useEffect(() => { if (mounted) setNow(Date.now()); }, [mounted]);
@@ -251,6 +256,77 @@ export default function OrdersListPage() {
       }
     });
   }, [orderList, sortMode]);
+
+  // Tab状态计数
+  const tabCounts = useMemo(() => {
+    const counts = { all: orderList.length, pending: 0, purchasing: 0, purchased: 0, pending_ship: 0, shipped: 0 };
+    orderList.forEach(order => {
+      const status = order.erpStatus || '';
+      if (PENDING_STATUSES.includes(status)) counts.pending++;
+      else if (status === 'purchasing') counts.purchasing++;
+      else if (status === 'purchased') counts.purchased++;
+      else if (status === 'qc_passed' || status === 'packing') counts.pending_ship++;
+      else if (status === 'shipped') counts.shipped++;
+    });
+    return counts;
+  }, [orderList]);
+
+  // 按Tab筛选订单
+  const filteredOrders = useMemo(() => {
+    if (activeTab === 'all') return sortedOrders;
+    return sortedOrders.filter(order => {
+      const status = order.erpStatus || '';
+      switch (activeTab) {
+        case 'pending': return PENDING_STATUSES.includes(status);
+        case 'purchasing': return status === 'purchasing';
+        case 'purchased': return status === 'purchased';
+        case 'pending_ship': return status === 'qc_passed' || status === 'packing';
+        case 'shipped': return status === 'shipped';
+        default: return true;
+      }
+    });
+  }, [sortedOrders, activeTab]);
+
+  // 全选/取消全选
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredOrders.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredOrders.map(o => o.id)));
+    }
+  };
+
+  // 切换单个订单选中
+  const toggleSelect = (id: number) => {
+    const newSet = new Set(selectedIds);
+    if (newSet.has(id)) {
+      newSet.delete(id);
+    } else {
+      newSet.add(id);
+    }
+    setSelectedIds(newSet);
+  };
+
+  // 批量去采购
+  const handleBatchPurchase = () => {
+    const pendingOrders = filteredOrders.filter(o => selectedIds.has(o.id) && PENDING_STATUSES.includes(o.erpStatus || ''));
+    if (pendingOrders.length > 0) {
+      const ids = pendingOrders.map(o => o.id).join(',');
+      router.push(`/purchase?orderIds=${ids}&action=batch`);
+    }
+  };
+
+  // 批量查看采购
+  const handleBatchView = () => {
+    const purchasingOrders = filteredOrders.filter(o => selectedIds.has(o.id) && o.erpStatus === 'purchasing');
+    if (purchasingOrders.length > 0) {
+      const ids = purchasingOrders.map(o => o.id).join(',');
+      router.push(`/purchase?orderIds=${ids}&action=batch-view`);
+    }
+  };
+
+  // 清空选择
+  const clearSelection = () => setSelectedIds(new Set());
 
   const formatPrice = (price: number | string | null | undefined) => {
     if (price == null) return '—';
@@ -354,12 +430,90 @@ export default function OrdersListPage() {
         </Button>
       </div>
 
+      {/* Tab状态筛选栏 */}
+      <div className="flex items-center gap-1 border-b border-border">
+        {[
+          { key: 'all' as const, label: '全部', count: tabCounts.all },
+          { key: 'pending' as const, label: '待采购', count: tabCounts.pending },
+          { key: 'purchasing' as const, label: '采购中', count: tabCounts.purchasing },
+          { key: 'purchased' as const, label: '已采购', count: tabCounts.purchased },
+          { key: 'pending_ship' as const, label: '待发货', count: tabCounts.pending_ship },
+          { key: 'shipped' as const, label: '已发货', count: tabCounts.shipped },
+        ].map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => { setActiveTab(tab.key); setSelectedIds(new Set()); }}
+            className={cn(
+              'px-4 py-2.5 text-sm font-medium border-b-2 transition-colors flex items-center gap-1.5',
+              activeTab === tab.key
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300'
+            )}
+          >
+            {tab.label}
+            <span className={cn(
+              'text-xs px-1.5 py-0.5 rounded-full',
+              activeTab === tab.key
+                ? 'bg-blue-100 text-blue-700'
+                : 'bg-gray-100 text-gray-600'
+            )}>
+              {tab.count}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* 批量操作栏 */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5">
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium text-blue-700">
+              已选 <span className="font-bold">{selectedIds.size}</span> 单
+            </span>
+            {filteredOrders.some(o => selectedIds.has(o.id) && PENDING_STATUSES.includes(o.erpStatus || '')) && (
+              <Button
+                size="sm"
+                className="h-7 bg-blue-600 hover:bg-blue-700 text-white"
+                onClick={handleBatchPurchase}
+              >
+                <ShoppingCart className="w-3 h-3 mr-1" />
+                批量去采购
+              </Button>
+            )}
+            {filteredOrders.some(o => selectedIds.has(o.id) && o.erpStatus === 'purchasing') && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 border-yellow-400 text-yellow-700 hover:bg-yellow-50"
+                onClick={handleBatchView}
+              >
+                <Eye className="w-3 h-3 mr-1" />
+                批量查看采购
+              </Button>
+            )}
+          </div>
+          <button
+            onClick={clearSelection}
+            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <X className="w-3.5 h-3.5" />
+            取消选择
+          </button>
+        </div>
+      )}
+
       {/* Orders Table */}
       <div className="bg-card rounded-lg border border-border overflow-hidden">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50 hover:bg-muted/50">
+                <TableHead className="w-[40px]">
+                  <Checkbox
+                    checked={filteredOrders.length > 0 && selectedIds.size === filteredOrders.length}
+                    onCheckedChange={toggleSelectAll}
+                  />
+                </TableHead>
                 <TableHead className="w-[160px]">订单号</TableHead>
                 <TableHead>店铺</TableHead>
                 <TableHead>收件人</TableHead>
@@ -403,24 +557,24 @@ export default function OrdersListPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={12} className="text-center py-16 text-muted-foreground">
+                  <TableCell colSpan={13} className="text-center py-16 text-muted-foreground">
                     加载中...
                   </TableCell>
                 </TableRow>
               ) : error ? (
                 <TableRow>
-                  <TableCell colSpan={12} className="text-center py-16 text-red-500">
+                  <TableCell colSpan={13} className="text-center py-16 text-red-500">
                     数据加载失败
                   </TableCell>
                 </TableRow>
-              ) : sortedOrders.length === 0 ? (
+              ) : filteredOrders.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={12} className="text-center py-16 text-muted-foreground">
+                  <TableCell colSpan={13} className="text-center py-16 text-muted-foreground">
                     暂无订单数据
                   </TableCell>
                 </TableRow>
               ) : (
-                sortedOrders.map(order => {
+                filteredOrders.map(order => {
                   const overdue = isOverdue(order.shipmentDeadline);
                   const hoursLeft = mounted ? getDeadlineHours(order.shipmentDeadline) : null;
                   const shop = shops.find(s => s.id === order.shopId);
@@ -452,7 +606,13 @@ export default function OrdersListPage() {
                   };
 
                   return (
-                    <TableRow key={order.id} className="group">
+                    <TableRow key={order.id} className={cn("group", selectedIds.has(order.id) && "bg-blue-50/50")}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedIds.has(order.id)}
+                          onCheckedChange={() => toggleSelect(order.id)}
+                        />
+                      </TableCell>
                       <TableCell>
                         <span className="font-mono text-sm text-blue-600">
                           {order.ozonPostingNumber || order.ozonOrderId || order.id}
