@@ -12,6 +12,11 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
   ShoppingCart,
   Edit,
   Truck,
@@ -19,6 +24,9 @@ import {
   CheckCircle,
   AlertTriangle,
   Minus,
+  X,
+  Copy,
+  ExternalLink,
 } from 'lucide-react';
 
 interface OrderProduct {
@@ -27,6 +35,16 @@ interface OrderProduct {
   quantity: number;
   price: string;
   image?: string | null;
+}
+
+interface PurchaseInfo {
+  platform?: string;
+  purchasePrice?: number;
+  purchaseQuantity?: number;
+  totalAmount?: number;
+  expressNumber?: string;
+  supplier?: string;
+  purchaseUrl?: string;
 }
 
 interface OrderRecord {
@@ -44,6 +62,7 @@ interface OrderRecord {
   orderAmount: number | string | null;
   shipmentDeadline?: string | null;
   products?: OrderProduct[];
+  purchaseInfo?: PurchaseInfo | null;
 }
 
 interface OrderCardProps {
@@ -174,6 +193,185 @@ function ProductRow({ product, index }: { product: OrderProduct; index: number }
   );
 }
 
+// 采购详情Popover组件
+function PurchaseDetailPopover({
+  order,
+  children,
+}: {
+  order: OrderRecord;
+  children: React.ReactNode;
+}) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const purchaseInfo = order.purchaseInfo;
+  const hasPurchaseInfo = !!purchaseInfo;
+
+  // 判断状态是否可以点击查看采购详情
+  const erpStatus = order.erpStatus || 'pending';
+  const clickableStatuses = ['purchasing', 'purchased', 'shipped_domestic', 'received', 'qc_passed', 'packing', 'shipped', 'settled'];
+  const isClickable = clickableStatuses.includes(erpStatus);
+
+  // 复制快递号
+  const copyExpressNumber = async () => {
+    if (purchaseInfo?.expressNumber) {
+      await navigator.clipboard.writeText(purchaseInfo.expressNumber);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  // 跳转到采购工作台
+  const goToPurchase = () => {
+    setOpen(false);
+    router.push(`/purchase?orderId=${order.id}&action=view`);
+  };
+
+  if (!isClickable) {
+    // pending状态不可点击
+    return <>{children}</>;
+  }
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild onClick={(e) => e.stopPropagation()}>
+        <div className="cursor-pointer hover:opacity-80 transition-opacity">
+          {children}
+        </div>
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-72 p-0"
+        side="bottom"
+        align="start"
+        sideOffset={4}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* 标题行 */}
+        <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100">
+          <span className="text-sm font-semibold text-gray-900">采购详情</span>
+          <button
+            onClick={() => setOpen(false)}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* 内容区 */}
+        <div className="p-3">
+          {hasPurchaseInfo ? (
+            <>
+              {/* 采购信息列表 */}
+              <div className="space-y-2">
+                {/* 采购平台 */}
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">采购平台</span>
+                  <span className="text-gray-900">
+                    {purchaseInfo.platform === 'pinduoduo' ? '拼多多' : '1688'}
+                  </span>
+                </div>
+
+                {/* 采购单价 */}
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">采购单价</span>
+                  <span className="text-gray-900 font-medium">
+                    {purchaseInfo.purchasePrice
+                      ? formatCNY(purchaseInfo.purchasePrice)
+                      : '—'}
+                  </span>
+                </div>
+
+                {/* 采购数量 */}
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">采购数量</span>
+                  <span className="text-gray-900">
+                    {purchaseInfo.purchaseQuantity
+                      ? `${purchaseInfo.purchaseQuantity}件`
+                      : '—'}
+                  </span>
+                </div>
+
+                {/* 采购总价 */}
+                <div className="flex justify-between text-sm pt-2 border-t border-gray-100">
+                  <span className="text-gray-400">采购总价</span>
+                  <span className="text-gray-900 font-bold">
+                    {purchaseInfo.totalAmount
+                      ? formatCNY(purchaseInfo.totalAmount)
+                      : '—'}
+                  </span>
+                </div>
+
+                {/* 快递单号 */}
+                {purchaseInfo.expressNumber !== undefined && (
+                  <div className="flex justify-between text-sm pt-2 border-t border-gray-100">
+                    <span className="text-gray-400">快递单号</span>
+                    <span className="text-gray-900">
+                      {purchaseInfo.expressNumber || (
+                        <span className="text-gray-400">待填写</span>
+                      )}
+                    </span>
+                  </div>
+                )}
+
+                {/* 供应商 */}
+                {purchaseInfo.supplier && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-400">供应商</span>
+                    <span className="text-gray-900">{purchaseInfo.supplier}</span>
+                  </div>
+                )}
+
+                {/* 1688链接 */}
+                {purchaseInfo.purchaseUrl && (
+                  <div className="pt-2 border-t border-gray-100">
+                    <span className="text-sm text-gray-400 block mb-1">1688链接</span>
+                    <a
+                      href={purchaseInfo.purchaseUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1 truncate"
+                    >
+                      <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                      <span className="truncate">查看链接</span>
+                    </a>
+                  </div>
+                )}
+              </div>
+
+              {/* 快捷操作 */}
+              <div className="flex gap-2 mt-4 pt-3 border-t border-gray-100">
+                <Button size="sm" variant="outline" className="flex-1" onClick={goToPurchase}>
+                  查看详情
+                </Button>
+                {purchaseInfo.expressNumber && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={copyExpressNumber}
+                  >
+                    <Copy className="w-3 h-3 mr-1" />
+                    {copied ? '已复制' : '复制快递号'}
+                  </Button>
+                )}
+              </div>
+            </>
+          ) : (
+            /* 无采购记录 */
+            <div className="text-center py-4">
+              <p className="text-sm text-gray-400 mb-3">暂无采购记录</p>
+              <Button size="sm" className="w-full" onClick={goToPurchase}>
+                <ShoppingCart className="w-3 h-3 mr-1" />
+                去采购
+              </Button>
+            </div>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 // 操作按钮配置
 interface ActionButton {
   label: string;
@@ -184,11 +382,8 @@ interface ActionButton {
 
 function getActionButton(
   erpStatus: string,
-  isOverdue: boolean,
-  router: ReturnType<typeof useRouter>
+  isOverdue: boolean
 ): ActionButton | null {
-  const orderId = typeof router === 'function' ? '' : '';
-
   // 已完成状态不显示按钮
   if (['shipped', 'settled', 'cancelled'].includes(erpStatus)) {
     return null;
@@ -296,7 +491,7 @@ export function OrderCard({ order, selected, onSelect }: OrderCardProps) {
   };
 
   // 获取操作按钮
-  const actionButton = getActionButton(erpStatus, isOverdue || isUrgent, router);
+  const actionButton = getActionButton(erpStatus, isOverdue || isUrgent);
 
   return (
     <div
@@ -389,7 +584,7 @@ export function OrderCard({ order, selected, onSelect }: OrderCardProps) {
             )}
           </div>
 
-          {/* 中栏 - 金额 + 采购状态 */}
+          {/* 中栏 - 金额 + 采购状态（带Popover） */}
           <div className="w-32 flex flex-col items-center justify-center gap-2">
             {/* Ozon售价 */}
             <div className="text-center">
@@ -398,10 +593,12 @@ export function OrderCard({ order, selected, onSelect }: OrderCardProps) {
                 {order.totalPrice ? formatCNY(Number(order.totalPrice)) : '—'}
               </p>
             </div>
-            {/* 采购状态Badge */}
-            <Badge className={cn('text-xs px-2 py-0.5', statusConfig.className)}>
-              {statusConfig.label}
-            </Badge>
+            {/* 采购状态Badge - 带Popover */}
+            <PurchaseDetailPopover order={order}>
+              <Badge className={cn('text-xs px-2 py-0.5', statusConfig.className)}>
+                {statusConfig.label}
+              </Badge>
+            </PurchaseDetailPopover>
           </div>
 
           {/* 右栏 - 操作按钮 */}
