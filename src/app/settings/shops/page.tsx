@@ -32,6 +32,8 @@ export default function ShopsPage() {
   const [saving, setSaving] = useState(false);
 
   const [testingId, setTestingId] = useState<string | null>(null);
+  const [deleteShop, setDeleteShop] = useState<Shop | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const openAdd = () => {
     setEditShop(null);
@@ -218,6 +220,26 @@ export default function ShopsPage() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!deleteShop) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/shops/${deleteShop.id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        mutate();
+        setDeleteShop(null);
+        alert('店铺已删除');
+      } else {
+        alert(data.error || '删除失败');
+      }
+    } catch {
+      alert('删除失败');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <AppLayout title="店铺管理" subtitle="管理Ozon店铺API密钥，支持多店铺统一管理">
       <div className="bg-white rounded-xl border border-[#E6EAF2] p-6">
@@ -271,6 +293,14 @@ export default function ShopsPage() {
                   onClick={() => openEdit(shop)}
                 >
                   编辑
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-7 text-red-500 border-red-200 hover:bg-red-50 hover:border-red-300"
+                  onClick={() => setDeleteShop(shop)}
+                >
+                  删除
                 </Button>
                 <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                   shop.isActive
@@ -355,6 +385,33 @@ export default function ShopsPage() {
               disabled={saving}
             >
               {saving ? '保存中...' : '保存'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 删除确认 Dialog */}
+      <Dialog open={!!deleteShop} onOpenChange={v => { if (!v) setDeleteShop(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>确认删除</DialogTitle>
+          </DialogHeader>
+          <div className="py-2">
+            <p className="text-sm text-[#637089]">
+              确定要删除店铺 <span className="font-medium text-[#152033]">{deleteShop?.shopName}</span> 吗？
+            </p>
+            <p className="text-xs text-red-500 mt-2">删除后，与该店铺关联的订单数据不会丢失，但将无法继续同步新订单。</p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteShop(null)} disabled={deleting}>
+              取消
+            </Button>
+            <Button
+              className="bg-red-500 hover:bg-red-600"
+              onClick={handleDelete}
+              disabled={deleting}
+            >
+              {deleting ? '删除中...' : '确认删除'}
             </Button>
           </DialogFooter>
         </DialogContent>
