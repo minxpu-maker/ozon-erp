@@ -54,12 +54,18 @@ const navigationGroups: NavGroup[] = [
     ],
   },
   {
-    label: '采购管理',
-    icon: ShoppingCart,
+    label: '订单管理',
+    icon: FileText,
     items: [
       { name: '订单列表', href: '/orders/list', icon: FileText },
-      { name: '采购任务', href: '/purchase', icon: ShoppingCart },
-      { name: '货源池', href: '/purchase/suppliers', icon: ShoppingCart, disabled: true, badge: '即将上线' },
+    ],
+  },
+  {
+    label: '采购中心',
+    icon: ShoppingCart,
+    items: [
+      { name: '采购工作台', href: '/purchase', icon: ShoppingCart },
+      { name: '货源池', href: '/purchase/source-pool', icon: ShoppingCart, disabled: true, badge: '即将上线' },
       { name: '供应商管理', href: '/suppliers', icon: Building2 },
     ],
   },
