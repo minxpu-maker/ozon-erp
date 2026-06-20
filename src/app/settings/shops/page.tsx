@@ -139,18 +139,38 @@ export default function ShopsPage() {
             },
             body: body ? JSON.stringify(body) : '{}',
           });
-          if (ozonRes.ok) return { connected: true };
-          const errText = await ozonRes.text();
-          try {
-            const errData = JSON.parse(errText);
-            if (errData.code || errData.message) {
-              return { connected: false, error: errData.message || `code: ${errData.code}` };
-            }
-          } catch { /* ignore */ }
-          if (ozonRes.status === 0) {
-            return { connected: false, error: 'CORS阻止直调，请安装Chrome插件绕过' };
+          
+          // 读取响应体
+          const responseText = await ozonRes.text();
+          
+          // 尝试解析响应体中的错误信息（即使HTTP状态码是200）
+          if (responseText) {
+            try {
+              const responseData = JSON.parse(responseText);
+              // 检查 Ozon API 错误码：code > 0 表示业务错误
+              // 1 = Api-key is deactivated, 3 = Invalid API key, etc.
+              if (responseData.code && responseData.code > 0) {
+                return { 
+                  connected: false, 
+                  error: responseData.message || `API错误 (code: ${responseData.code})` 
+                };
+              }
+              // 有数据返回才算成功
+              if (responseData.result !== undefined || responseData.items !== undefined) {
+                return { connected: true };
+              }
+            } catch { /* 非JSON，继续 */ }
           }
-          return { connected: false, error: `HTTP ${ozonRes.status}: ${errText.slice(0, 100)}` };
+          
+          // HTTP 状态码非 200
+          if (!ozonRes.ok) {
+            if (ozonRes.status === 0) {
+              return { connected: false, error: 'CORS阻止直调，请安装Chrome插件绕过' };
+            }
+            return { connected: false, error: `HTTP ${ozonRes.status}: ${responseText.slice(0, 100)}` };
+          }
+          
+          return { connected: true };
         } catch (e: unknown) {
           const msg = e instanceof Error ? e.message : '网络错误';
           if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('net::')) {

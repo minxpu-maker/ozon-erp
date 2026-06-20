@@ -6,7 +6,7 @@ import { eq, isNotNull } from 'drizzle-orm';
 interface KeyStatus {
   shopId: string;
   shopName: string;
-  status: 'active' | 'expired' | 'error';
+  status: 'valid' | 'invalid' | 'error';
   message: string;
   checkedAt: string;
 }
@@ -39,7 +39,7 @@ export async function GET() {
       const result: KeyStatus = {
         shopId: shop.id,
         shopName: shop.name,
-        status: 'active',
+        status: 'valid',
         message: '密钥正常',
         checkedAt,
       };
@@ -60,14 +60,47 @@ export async function GET() {
           },
         });
 
-        if (response.ok) {
-          result.status = 'active';
+        const responseText = await response.text();
+        
+        // 检查响应体中的业务错误（即使HTTP状态码是200）
+        let businessError: string | null = null;
+        if (responseText) {
+          try {
+            const data = JSON.parse(responseText);
+            // code > 0 表示业务错误
+            if (data.code && data.code > 0) {
+              businessError = data.message || `API错误 (code: ${data.code})`;
+            }
+            // 检查message中的密钥相关错误
+            if (data.message) {
+              const msgLower = String(data.message).toLowerCase();
+              if (msgLower.includes('deactivated') || 
+                  (msgLower.includes('invalid') && msgLower.includes('key')) ||
+                  msgLower.includes('expired')) {
+                businessError = `API密钥无效: ${data.message}`;
+              }
+            }
+          } catch { /* 非JSON */ }
+        }
+        
+        if (response.ok && !businessError) {
+          result.status = 'valid';
           result.message = '密钥正常';
+        } else if (businessError) {
+          // 密钥相关错误
+          if (businessError.includes('deactivated') || 
+              businessError.includes('invalid') || 
+              businessError.includes('expired')) {
+            result.status = 'invalid';
+            result.message = businessError;
+          } else {
+            result.status = 'error';
+            result.message = businessError;
+          }
         } else if (response.status === 401 || response.status === 403) {
-          result.status = 'expired';
+          result.status = 'invalid';
           result.message = '密钥已过期或被禁用，请重新生成';
         } else {
-          const errorText = await response.text();
           result.status = 'error';
           result.message = `API错误: ${response.status}`;
         }
@@ -83,7 +116,7 @@ export async function GET() {
     results.push(...statuses);
 
     // 返回检测结果
-    const hasExpired = results.some(r => r.status === 'expired');
+    const hasInvalid = results.some(r => r.status === 'invalid');
     const hasError = results.some(r => r.status === 'error');
 
     return NextResponse.json({
@@ -91,11 +124,11 @@ export async function GET() {
       checkedAt,
       summary: {
         total: results.length,
-        active: results.filter(r => r.status === 'active').length,
-        expired: results.filter(r => r.status === 'expired').length,
+        valid: results.filter(r => r.status === 'valid').length,
+        invalid: results.filter(r => r.status === 'invalid').length,
         error: results.filter(r => r.status === 'error').length,
       },
-      hasWarning: hasExpired || hasError,
+      hasWarning: hasInvalid || hasError,
       shops: results,
     });
   } catch (err) {

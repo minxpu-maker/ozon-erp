@@ -82,6 +82,9 @@ export class OzonClient {
       const status = response.status;
       const data = await response.json().catch(() => null);
 
+      // 检查响应体中的业务错误（即使HTTP状态码是200）
+      const businessError = this.extractBusinessError(data);
+      
       // 429 Too Many Requests - 限流，自动退避重试
       if (status === 429 && retryCount < MAX_RETRIES) {
         const delay = RETRY_DELAYS[retryCount] || RETRY_DELAYS[RETRY_DELAYS.length - 1];
@@ -90,11 +93,14 @@ export class OzonClient {
         return this.executeWithRetry<T>(url, method, headers, body, retryCount + 1);
       }
 
+      // 判断成功：HTTP状态码为2xx 且 无业务错误
+      const isSuccess = response.ok && !businessError;
+      
       return {
-        ok: response.ok,
+        ok: isSuccess,
         data: data as T,
         status,
-        error: response.ok ? undefined : this.extractError(data),
+        error: isSuccess ? undefined : (businessError || this.extractError(data)),
       };
     } catch (error) {
       clearTimeout(timeoutId);
@@ -160,6 +166,43 @@ export class OzonClient {
     }
 
     return '未知错误';
+  }
+
+  /**
+   * 提取 Ozon API 业务错误（即使HTTP状态码是200）
+   * Ozon API 错误格式: { code: 1, message: "Api-key is deactivated" }
+   * code > 0 表示业务错误
+   */
+  private extractBusinessError(data: unknown): string | undefined {
+    if (!data || typeof data !== 'object') {
+      return undefined;
+    }
+
+    const obj = data as Record<string, unknown>;
+    
+    // 检查 code 字段（Ozon API 业务错误码）
+    // code: 1 = Api-key is deactivated
+    // code: 3 = Invalid API key
+    // code: 10 = Invalid client_id
+    if (typeof obj.code === 'number' && obj.code > 0) {
+      // 特殊处理常见错误消息
+      if (obj.code === 1 && typeof obj.message === 'string') {
+        return `API密钥已失效: ${obj.message}`;
+      }
+      return `API错误 (code: ${obj.code}): ${obj.message || '未知错误'}`;
+    }
+    
+    // 检查 message 中是否包含密钥相关错误
+    if (typeof obj.message === 'string') {
+      const msgLower = obj.message.toLowerCase();
+      if (msgLower.includes('deactivated') || 
+          msgLower.includes('invalid') && msgLower.includes('key') ||
+          msgLower.includes('expired')) {
+        return `API密钥无效: ${obj.message}`;
+      }
+    }
+
+    return undefined;
   }
 
   /**
