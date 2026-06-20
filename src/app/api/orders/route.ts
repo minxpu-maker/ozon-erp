@@ -62,6 +62,26 @@ export async function GET(request: NextRequest) {
         OR products::text ILIKE '%${safe}%'
       )`);
     }
+    // urgency 筛选：超时/紧急/普通
+    const urgency = searchParams.get('urgency');
+    if (urgency === 'overdue') {
+      conditions.push(`shipment_deadline IS NOT NULL AND shipment_deadline < NOW()`);
+    } else if (urgency === 'urgent') {
+      conditions.push(`shipment_deadline >= NOW() AND shipment_deadline < NOW() + INTERVAL '24 hours'`);
+    } else if (urgency === 'normal') {
+      conditions.push(`(shipment_deadline IS NULL OR shipment_deadline >= NOW() + INTERVAL '24 hours')`);
+    }
+    // timeRange 筛选：今日/3天/7天/30天
+    const timeRange = searchParams.get('timeRange');
+    if (timeRange === 'today') {
+      conditions.push(`created_at >= CURRENT_DATE`);
+    } else if (timeRange === '3d') {
+      conditions.push(`created_at >= NOW() - INTERVAL '3 days'`);
+    } else if (timeRange === '7d') {
+      conditions.push(`created_at >= NOW() - INTERVAL '7 days'`);
+    } else if (timeRange === '30d') {
+      conditions.push(`created_at >= NOW() - INTERVAL '30 days'`);
+    }
     const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
 
     // Count total
