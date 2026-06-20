@@ -367,6 +367,7 @@ function getActionButton(
 export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: OrderCardProps) {
   const router = useRouter();
   const [expandedProducts, setExpandedProducts] = useState(false);
+  const [expandedDetails, setExpandedDetails] = useState(false);
   const { rate } = useExchangeRate();
 
   const products = order.products || [];
@@ -412,7 +413,9 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
             </span>
             <span className={cn(
               'rounded-md px-2 py-0.5 text-xs font-medium border',
-              badgeColors.bg, badgeColors.text, badgeColors.border
+              badgeColors.bg, badgeColors.text, badgeColors.border,
+              'transition-all duration-200 ease-out',
+              'scale-100 opacity-100'
             )}>
               {statusLabel}
             </span>
@@ -580,6 +583,163 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
             </button>
           </div>
         )}
+
+        {/* 展开详情面板 - grid-template-rows 动画 */}
+        <div className="grid transition-[grid-template-rows] duration-300 ease-out"
+          style={{
+            gridTemplateRows: expandedDetails ? '1fr' : '0fr',
+          }}
+        >
+          <div className="overflow-hidden">
+            <div className="bg-gray-50 border-t border-gray-100 px-6 py-5 rounded-b-xl">
+              <div className="grid grid-cols-3 gap-8">
+                {/* 第1列：订单信息 */}
+                <div>
+                  <h4 className="text-xs font-medium text-gray-400 uppercase tracking-widest mb-3">订单信息</h4>
+                  <div className="space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-xs text-gray-400 flex-shrink-0">订单号</span>
+                      <div className="flex items-center gap-1 text-right">
+                        <span className="text-xs text-gray-700 font-mono">
+                          {order.ozonPostingNumber || order.ozonOrderId || order.id}
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigator.clipboard.writeText(String(order.ozonPostingNumber || order.ozonOrderId || order.id));
+                          }}
+                          className="text-gray-300 hover:text-gray-500 transition-colors"
+                        >
+                          <Copy className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-xs text-gray-400 flex-shrink-0">创建时间</span>
+                      <span className="text-xs text-gray-700">
+                        {order.createdAt ? formatDateTime(order.createdAt) : <span className="text-gray-300 italic">暂无</span>}
+                      </span>
+                    </div>
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-xs text-gray-400 flex-shrink-0">商品数量</span>
+                      <span className="text-xs text-gray-700">{totalItems}件 / {totalSkus}SKU</span>
+                    </div>
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-xs text-gray-400 flex-shrink-0">总重量</span>
+                      <span className="text-xs text-gray-700">
+                        {totalWeight > 0 ? formatWeight(totalWeight) : <span className="text-gray-300 italic">暂无</span>}
+                      </span>
+                    </div>
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-xs text-gray-400 flex-shrink-0">Ozon链接</span>
+                      <a
+                        href={products[0]?.productId ? `https://www.ozon.ru/product/${products[0].productId}/` : '#'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-500 hover:text-blue-600 hover:underline underline-offset-2 transition-colors"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        在Ozon查看
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 第2列：收货信息 */}
+                <div>
+                  <h4 className="text-xs font-medium text-gray-400 uppercase tracking-widest mb-3">收货信息</h4>
+                  <div className="space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-xs text-gray-400 flex-shrink-0">收货城市</span>
+                      <span className="text-xs text-gray-700">
+                        {order.recipientCity || <span className="text-gray-300 italic">暂无</span>}
+                      </span>
+                    </div>
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-xs text-gray-400 flex-shrink-0">发货截止</span>
+                      <span className="text-xs text-gray-700">
+                        {order.shipmentDeadline ? (
+                          <span className="text-red-500 font-medium">{formatDateTime(order.shipmentDeadline)}</span>
+                        ) : <span className="text-gray-300 italic">暂无</span>}
+                      </span>
+                    </div>
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-xs text-gray-400 flex-shrink-0">配送方式</span>
+                      <span className="text-xs text-gray-700">
+                        {(order as any).deliveryType || <span className="text-gray-300 italic">暂无</span>}
+                      </span>
+                    </div>
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-xs text-gray-400 flex-shrink-0">快递单号</span>
+                      <span className="text-xs text-gray-700 font-mono">
+                        {(order as any).trackingNumber || <span className="text-gray-300 italic">暂无</span>}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 第3列：支付信息 */}
+                <div>
+                  <h4 className="text-xs font-medium text-gray-400 uppercase tracking-widest mb-3">支付信息</h4>
+                  <div className="space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-xs text-gray-400 flex-shrink-0">商品总价</span>
+                      <span className="text-xs text-gray-700 font-medium">
+                        {order.totalPrice ? formatRUB(Number(order.totalPrice)) : <span className="text-gray-300 italic">暂无</span>}
+                      </span>
+                    </div>
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-xs text-gray-400 flex-shrink-0">买家实付</span>
+                      <span className="text-xs text-gray-700">
+                        {order.orderAmount ? formatRUB(Number(order.orderAmount)) : <span className="text-gray-300 italic">暂无</span>}
+                      </span>
+                    </div>
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-xs text-gray-400 flex-shrink-0">折扣金额</span>
+                      <span className="text-xs text-emerald-600">
+                        {(order as any).discountAmount ? `-${formatRUB(Number((order as any).discountAmount))}` : <span className="text-gray-300 italic">无</span>}
+                      </span>
+                    </div>
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-xs text-gray-400 flex-shrink-0">人民币</span>
+                      <span className="text-xs text-gray-400">
+                        {order.totalPrice ? formatCNYFromRUB(Number(order.totalPrice)) : <span className="text-gray-300 italic">暂无</span>}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 底部：展开/收起按钮 */}
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setExpandedDetails(false);
+                  }}
+                  className="w-full flex items-center justify-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors py-1"
+                >
+                  <span>收起详情</span>
+                  <ChevronUp className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 底部展开详情按钮 */}
+        <div className="px-5 pb-4">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setExpandedDetails(!expandedDetails);
+            }}
+            className="w-full flex items-center justify-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors py-1"
+          >
+            <span>{expandedDetails ? '收起详情' : '查看详情'}</span>
+            {expandedDetails ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </button>
+        </div>
       </div>
     </div>
   );
