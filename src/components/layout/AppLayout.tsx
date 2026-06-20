@@ -34,7 +34,7 @@ interface NavItem {
   href: string;
   icon: LucideIcon;
   badge?: string;
-  badgeColor?: 'blue' | 'amber' | 'purple';
+  badgeColor?: 'red' | 'yellow' | 'orange' | 'blue' | 'amber' | 'purple';
   badgeCountKey?: string;
   disabled?: boolean;
   group?: string;
@@ -84,16 +84,16 @@ function useBadgeCounts() {
     { refreshInterval: 30000 }
   );
 
-  // 采购工作台角标 - pending_purchase 状态
+  // 采购工作台角标 - purchasing 状态
   const { data: purchaseData } = useSWR(
-    '/api/purchase?status=pending_purchase&pageSize=1',
+    '/api/purchase?status=purchasing&pageSize=1',
     fetcher,
     { refreshInterval: 30000 }
   );
 
-  // 打包发货角标 - pending_packaging 状态
+  // 打包发货角标 - packing 状态
   const { data: packagingData } = useSWR(
-    '/api/orders?erpStatus=pending_packaging&pageSize=1',
+    '/api/orders?erpStatus=packing&pageSize=1',
     fetcher,
     { refreshInterval: 30000 }
   );
@@ -149,14 +149,14 @@ const navigationGroups: NavGroup[] = [
     label: '订单管理',
     icon: FileText,
     items: [
-      { name: '订单列表', href: '/orders/list', icon: FileText, badgeColor: 'blue', badgeCountKey: 'ordersAwaitingDeliver' },
+      { name: '订单列表', href: '/orders/list', icon: FileText, badgeColor: 'red', badgeCountKey: 'ordersAwaitingDeliver' },
     ],
   },
   {
     label: '采购中心',
     icon: ShoppingCart,
     items: [
-      { name: '采购工作台', href: '/purchase', icon: ShoppingCart, badgeColor: 'amber', badgeCountKey: 'purchasePending' },
+      { name: '采购工作台', href: '/purchase', icon: ShoppingCart, badgeColor: 'yellow', badgeCountKey: 'purchasePending' },
       { name: '货源池', href: '/purchase/source-pool', icon: ShoppingCart, disabled: true, badge: '即将上线' },
       { name: '供应商管理', href: '/suppliers', icon: Building2 },
     ],
@@ -166,7 +166,7 @@ const navigationGroups: NavGroup[] = [
     icon: Package,
     items: [
       { name: '入库验货', href: '/logistics', icon: Truck },
-      { name: '打包发货', href: '/packaging', icon: Package, badgeColor: 'purple', badgeCountKey: 'ordersPendingPackaging' },
+      { name: '打包发货', href: '/packaging', icon: Package, badgeColor: 'orange', badgeCountKey: 'ordersPendingPackaging' },
       { name: '库存管理', href: '/inventory', icon: Database },
       { name: '仓库管理', href: '/wms', icon: Building2, disabled: true, badge: '即将上线' },
     ],
@@ -267,7 +267,10 @@ export function AppLayout({ children, title, subtitle, actions }: AppLayoutProps
 
                 // 获取角标数字
                 const badgeDisplay = item.badgeCountKey ? getBadgeDisplay(item.badgeCountKey) : null;
-                const badgeColorClass = item.badgeColor === 'blue' ? 'bg-blue-500'
+                const badgeColorClass = item.badgeColor === 'red' ? 'bg-red-500'
+                  : item.badgeColor === 'yellow' ? 'bg-yellow-500'
+                  : item.badgeColor === 'orange' ? 'bg-orange-500'
+                  : item.badgeColor === 'blue' ? 'bg-blue-500'
                   : item.badgeColor === 'amber' ? 'bg-amber-500'
                   : item.badgeColor === 'purple' ? 'bg-purple-500'
                   : 'bg-gray-500';
