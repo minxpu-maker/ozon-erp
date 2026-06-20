@@ -9,7 +9,7 @@ import { OrderCard, OrderRecord } from "./OrderCard";
 import EmptyState from "./EmptyState";
 import { OrderCardSkeletonList } from "./OrderCardSkeleton";
 import { getOrderStatusLabel } from "@/lib/utils";
-import { PIPELINE_TABS, TabConfig, OrderStatus } from "./PipelineTabs";
+import { PIPELINE_TABS, TabConfig, OrderStatus, default as PipelineTabs } from "./PipelineTabs";
 import { cn } from "@/lib/utils";
 
 // 在模块顶层计算now，避免每次渲染重新计算
@@ -194,58 +194,23 @@ export default function OrderPipeline({ orders, onSync, isLoading, error, onRetr
     return counts;
   }, [typedOrders]);
 
-  // Tab栏
+  // Tab栏 - 使用新的卡片+箭头布局
   const renderTabs = () => (
-    <div className="bg-white border-b border-gray-200">
-      <div className="flex px-4">
-        {PIPELINE_TABS.map((tab: TabConfig) => {
-          const isActive = activeTab === tab.key;
-          const count = tabCounts[tab.key] || 0;
-          const handleTabClick = () => {
-            if (tab.disabled) return;
-            if (tab.key !== activeTab) {
-              setPrevTab(activeTab);
-              setTabAnimating(true);
-              setTimeout(() => {
-                setActiveTab(tab.key as OrderStatus);
-                setSelectedIds(new Set());
-                setTimeout(() => setTabAnimating(false), 50);
-              }, 150);
-            }
-          };
-          
-          return (
-            <button
-              key={tab.key}
-              onClick={handleTabClick}
-              className={cn(
-                "relative px-4 py-3 text-sm font-medium transition-colors",
-                tab.disabled ? "text-gray-400 cursor-not-allowed" : "",
-                !tab.disabled && isActive ? tab.textColor : "",
-                !tab.disabled && !isActive ? "text-gray-500 hover:text-gray-700" : ""
-              )}
-              disabled={tab.disabled}
-              title={tab.disabled ? tab.disabledReason : undefined}
-            >
-              <span className="flex items-center gap-1.5">
-                {tab.label}
-                {count > 0 && (
-                  <span className={`
-                    text-xs px-2 py-0.5 rounded-full
-                    ${isActive ? tab.bgLight : "bg-gray-100 text-gray-600"}
-                  `}>
-                    {count}
-                  </span>
-                )}
-              </span>
-              {isActive && (
-                <div className={`absolute bottom-0 left-2 right-2 h-0.5 ${tab.color === "amber" ? "bg-amber-500" : tab.color === "blue" ? "bg-blue-600" : tab.color === "purple" ? "bg-purple-500" : tab.color === "teal" ? "bg-teal-500" : "bg-gray-400"}`} />
-              )}
-            </button>
-          );
-        })}
-      </div>
-    </div>
+    <PipelineTabs
+      orders={typedOrders}
+      activeTab={activeTab}
+      onTabChange={(tab) => {
+        if (tab !== activeTab) {
+          setPrevTab(activeTab);
+          setTabAnimating(true);
+          setTimeout(() => {
+            setActiveTab(tab);
+            setSelectedIds(new Set());
+            setTimeout(() => setTabAnimating(false), 50);
+          }, 150);
+        }
+      }}
+    />
   );
 
 

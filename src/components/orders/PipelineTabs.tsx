@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 export type OrderStatus = 
@@ -14,33 +15,137 @@ export interface TabConfig {
   key: OrderStatus | 'all';
   label: string;
   color: string;       // 主题色
-  bgLight: string;    // 浅色背景
-  textColor: string;  // 文字色
+  bgLight: string;     // 浅色背景
+  textColor: string;   // 文字色
+  borderColor: string; // 边框色
   disabled?: boolean;
   disabledReason?: string;
 }
 
 export const PIPELINE_TABS: TabConfig[] = [
-  { key: 'awaiting_packaging', label: '等待备货', color: 'amber', bgLight: 'bg-amber-50', textColor: 'text-amber-700' },
-  { key: 'awaiting_deliver', label: '待采购', color: 'blue', bgLight: 'bg-blue-50', textColor: 'text-blue-700' },
-  { key: 'delivering', label: '运输中', color: 'purple', bgLight: 'bg-purple-50', textColor: 'text-purple-700' },
-  { key: 'disputed', label: '具争议', color: 'red', bgLight: 'bg-red-50', textColor: 'text-red-700', disabled: true, disabledReason: '功能开发中' },
-  { key: 'delivered', label: '已签收', color: 'teal', bgLight: 'bg-teal-50', textColor: 'text-teal-700' },
-  { key: 'cancelled', label: '已取消', color: 'gray', bgLight: 'bg-gray-50', textColor: 'text-gray-700' },
-  { key: 'all', label: '全部', color: 'default', bgLight: 'bg-gray-50', textColor: 'text-gray-700' },
+  { key: 'awaiting_packaging', label: '等待备货', color: 'amber', bgLight: 'bg-amber-50', textColor: 'text-amber-600', borderColor: 'border-amber-400' },
+  { key: 'awaiting_deliver', label: '待采购', color: 'blue', bgLight: 'bg-blue-50', textColor: 'text-blue-600', borderColor: 'border-blue-400' },
+  { key: 'delivering', label: '运输中', color: 'purple', bgLight: 'bg-purple-50', textColor: 'text-purple-600', borderColor: 'border-purple-400' },
+  { key: 'disputed', label: '具争议', color: 'gray', bgLight: 'bg-gray-50', textColor: 'text-gray-400', borderColor: 'border-gray-200', disabled: true, disabledReason: '功能开发中' },
+  { key: 'delivered', label: '已签收', color: 'teal', bgLight: 'bg-teal-50', textColor: 'text-teal-600', borderColor: 'border-teal-400' },
+  { key: 'cancelled', label: '已取消', color: 'gray', bgLight: 'bg-gray-50', textColor: 'text-gray-500', borderColor: 'border-gray-400' },
+  { key: 'all', label: '全部', color: 'default', bgLight: 'bg-blue-50', textColor: 'text-blue-600', borderColor: 'border-blue-400' },
 ];
 
-export function getTabColorClass(color: string, type: 'border' | 'bg' | 'text') {
-  const colorMap: Record<string, Record<string, string>> = {
-    amber: { border: 'border-amber-500', bg: 'bg-amber-500', text: 'text-amber-600' },
-    blue: { border: 'border-blue-600', bg: 'bg-blue-600', text: 'text-blue-600' },
-    purple: { border: 'border-purple-500', bg: 'bg-purple-500', text: 'text-purple-600' },
-    red: { border: 'border-red-500', bg: 'bg-red-500', text: 'text-red-600' },
-    teal: { border: 'border-teal-500', bg: 'bg-teal-500', text: 'text-teal-600' },
-    gray: { border: 'border-gray-400', bg: 'bg-gray-500', text: 'text-gray-600' },
-    default: { border: 'border-blue-600', bg: 'bg-blue-600', text: 'text-blue-600' },
-  };
-  return colorMap[color]?.[type] || colorMap.default[type];
+// 数字动画 Hook
+function useCountUp(target: number, duration: number = 300) {
+  const [display, setDisplay] = useState(target);
+  const prevRef = useRef(target);
+  const frameRef = useRef<number | undefined>(undefined);
+
+  useEffect(() => {
+    const start = prevRef.current;
+    const diff = target - start;
+    
+    if (diff === 0) return;
+    
+    const startTime = performance.now();
+    
+    const animate = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      // ease-out 缓动
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+      const current = Math.round(start + diff * easeOut);
+      
+      setDisplay(current);
+      
+      if (progress < 1) {
+        frameRef.current = requestAnimationFrame(animate);
+      } else {
+        prevRef.current = target;
+      }
+    };
+    
+    frameRef.current = requestAnimationFrame(animate);
+    
+    return () => {
+      if (frameRef.current) {
+        cancelAnimationFrame(frameRef.current);
+      }
+    };
+  }, [target, duration]);
+
+  return display;
+}
+
+interface TabCardProps {
+  tab: TabConfig;
+  count: number;
+  isActive: boolean;
+  onClick: () => void;
+}
+
+function TabCard({ tab, count, isActive, onClick }: TabCardProps) {
+  const animatedCount = useCountUp(count);
+  const isDisabled = tab.disabled;
+
+  return (
+    <button
+      onClick={() => !isDisabled && onClick()}
+      disabled={isDisabled}
+      title={isDisabled ? tab.disabledReason : undefined}
+      className={cn(
+        'min-w-[100px] rounded-xl px-4 py-3 text-center transition-all duration-150 flex-shrink-0',
+        'border bg-white shadow-sm',
+        // 默认态
+        !isActive && !isDisabled && [
+          'border-gray-200',
+          'hover:shadow-md hover:-translate-y-0.5',
+        ],
+        // 选中态
+        isActive && !isDisabled && [
+          'shadow-md -translate-y-0.5',
+          tab.borderColor,
+          tab.bgLight,
+        ],
+        // 禁用态
+        isDisabled && 'opacity-30 cursor-not-allowed border-gray-200',
+        // 数字为0
+        count === 0 && !isActive && 'opacity-40',
+      )}
+    >
+      <div className={cn(
+        'text-sm font-medium mb-1',
+        isActive ? tab.textColor : 'text-gray-600',
+        isDisabled && 'text-gray-400',
+      )}>
+        {tab.label}
+      </div>
+      <div className={cn(
+        'text-2xl font-bold transition-colors duration-150',
+        isActive ? tab.textColor : 'text-gray-900',
+        isDisabled && 'text-gray-400',
+      )}>
+        {animatedCount}
+      </div>
+    </button>
+  );
+}
+
+// 箭头组件
+function Arrow({ isActive, color }: { isActive: boolean; color?: string }) {
+  return (
+    <svg
+      className={cn(
+        'w-4 h-4 flex-shrink-0 transition-colors duration-150',
+        isActive ? `text-${color}-400` : 'text-gray-300'
+      )}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M9 18l6-6-6-6" />
+    </svg>
+  );
 }
 
 import { OrderRecord } from './OrderCard';
@@ -62,49 +167,38 @@ export default function PipelineTabs({ orders, activeTab, onTabChange }: Pipelin
     }
   });
 
-  return (
-    <div className="flex items-center gap-1 border-b border-gray-200">
-      {PIPELINE_TABS.map(tab => {
-        const isActive = activeTab === tab.key;
-        const isDisabled = tab.disabled;
-        const count = counts[tab.key] ?? 0;
+  const activeTabConfig = PIPELINE_TABS.find(t => t.key === activeTab);
 
-        return (
-          <button
-            key={tab.key}
-            onClick={() => !isDisabled && onTabChange(tab.key)}
-            disabled={isDisabled}
-            title={isDisabled ? tab.disabledReason : undefined}
-            className={cn(
-              'relative px-4 py-2.5 text-sm font-medium transition-all duration-200 flex items-center gap-1.5 group',
-              isDisabled && 'cursor-not-allowed opacity-50',
-              !isDisabled && !isActive && 'text-gray-500 hover:text-gray-700 hover:bg-gray-50',
-              isActive && !isDisabled && cn(
-                getTabColorClass(tab.color, 'text'),
-                'font-semibold'
-              )
-            )}
-          >
-            {tab.label}
-            <span className={cn(
-              'text-xs px-2 py-0.5 rounded-full transition-colors',
-              isActive
-                ? cn(tab.bgLight, getTabColorClass(tab.color, 'text'))
-                : 'bg-gray-100 text-gray-600'
-            )}>
-              {count}
-            </span>
-            
-            {/* 底部高亮条 */}
-            {isActive && !isDisabled && (
-              <span className={cn(
-                'absolute bottom-0 left-0 right-0 h-0.5',
-                getTabColorClass(tab.color, 'bg')
-              )} />
-            )}
-          </button>
-        );
-      })}
+  return (
+    <div className="relative">
+      {/* 左侧渐隐遮罩 */}
+      <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
+      
+      {/* 右侧渐隐遮罩 */}
+      <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
+      
+      {/* 滚动容器 */}
+      <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent pb-1">
+        <div className="flex items-center px-4">
+          {PIPELINE_TABS.map((tab, index) => (
+            <div key={tab.key} className="flex items-center">
+              <TabCard
+                tab={tab}
+                count={counts[tab.key] ?? 0}
+                isActive={activeTab === tab.key}
+                onClick={() => onTabChange(tab.key)}
+              />
+              {/* 箭头：最后一个不显示 */}
+              {index < PIPELINE_TABS.length - 1 && (
+                <Arrow
+                  isActive={activeTab === tab.key}
+                  color={activeTabConfig?.color}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
