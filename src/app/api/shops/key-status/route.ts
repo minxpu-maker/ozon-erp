@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/storage/database/client';
 import { shops } from '@/storage/database/shared/schema';
-import { eq, isNotNull } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
+import { decrypt } from '@/lib/crypto';
 
 interface KeyStatus {
   shopId: string;
@@ -20,19 +21,23 @@ export async function GET() {
   const checkedAt = new Date().toISOString();
 
   try {
-    // 获取所有配置了Ozon API的店铺
+    // 获取所有活跃店铺的凭证
     const allShops = await db
       .select({
         id: shops.id,
         name: shops.name,
         ozonClientId: shops.ozonClientId,
         ozonApiKey: shops.ozonApiKey,
+        clientId: shops.clientId,
+        apiKey: shops.apiKey,
       })
       .from(shops)
-      .where(eq(shops.platform, 'ozon'));
+      .where(eq(shops.isActive, true));
 
-    // 只检测有API密钥的店铺
-    const shopsWithKeys = allShops.filter(s => s.ozonApiKey && s.ozonClientId);
+    // 只检测有API密钥的店铺（兼容两种字段命名）
+    const shopsWithKeys = allShops.filter(s => 
+      (s.ozonClientId && s.ozonApiKey) || (s.clientId && s.apiKey)
+    );
 
     // 并行检测所有店铺的密钥状态
     const statusPromises = shopsWithKeys.map(async (shop) => {
@@ -44,20 +49,39 @@ export async function GET() {
         checkedAt,
       };
 
-      if (!shop.ozonClientId || !shop.ozonApiKey) {
+      // 获取实际使用的凭证（优先使用 ozon* 字段，回退到 client/api 字段）
+      // 注意：API Key 存储时是加密的，需要解密
+      const rawClientId = shop.ozonClientId || shop.clientId;
+      let rawApiKey = shop.ozonApiKey || shop.apiKey;
+      
+      // 解密 API Key（加密格式含冒号）
+      if (rawApiKey && rawApiKey.includes(':')) {
+        try {
+          rawApiKey = decrypt(rawApiKey);
+        } catch {
+          // 解密失败，尝试作为明文使用
+        }
+      }
+
+      const actualClientId = rawClientId;
+      const actualApiKey = rawApiKey;
+
+      if (!actualClientId || !actualApiKey) {
         result.status = 'error';
         result.message = '缺少API密钥配置';
         return result;
       }
 
       try {
-        // 调用Ozon API检测密钥状态
-        const response = await fetch('https://api-seller.ozon.ru/v1/company/info', {
-          method: 'GET',
+        // 调用Ozon API检测密钥状态（使用确实存在的endpoint）
+        const response = await fetch('https://api-seller.ozon.ru/v3/product/list', {
+          method: 'POST',
           headers: {
-            'Client-Id': shop.ozonClientId,
-            'Api-Key': shop.ozonApiKey,
+            'Client-Id': actualClientId,
+            'Api-Key': actualApiKey,
+            'Content-Type': 'application/json',
           },
+          body: JSON.stringify({ filter: { category_id: 0 }, limit: 1 }),
         });
 
         const responseText = await response.text();
