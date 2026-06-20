@@ -339,7 +339,6 @@ async function fetchAllPostings(client: OzonClient): Promise<OzonPosting[]> {
       if (first.customer) console.log('[DEBUG] customer:', JSON.stringify(first.customer));
       if (first.addressee) console.log('[DEBUG] addressee:', JSON.stringify(first.addressee));
       if (first.products?.[0]) console.log('[DEBUG] first product:', JSON.stringify(first.products[0]));
-      if (first.financial_data) console.log('[DEBUG] financial_data:', JSON.stringify(first.financial_data));
     }
   }
 

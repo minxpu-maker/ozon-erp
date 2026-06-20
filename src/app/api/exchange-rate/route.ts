@@ -1,89 +1,58 @@
 import { NextResponse } from 'next/server';
 
-// 汇率缓存（5分钟）
+// 缓存汇率数据，避免频繁请求
 let cachedRate: { rate: number; timestamp: number } | null = null;
-const CACHE_TTL = 5 * 60 * 1000; // 5分钟
-
-interface ExchangeRateResponse {
-  result: string;
-  base_code: string;
-  rates: Record<string, number>;
-  time_last_update_utc: string;
-}
+const CACHE_DURATION = 60 * 60 * 1000; // 1小时缓存
 
 /**
- * 获取实时汇率（卢布兑人民币）
+ * 获取实时卢布兑人民币汇率
  */
-async function getExchangeRate(): Promise<number> {
+async function getRUBToCNYRate(): Promise<number> {
   // 检查缓存
-  if (cachedRate && Date.now() - cachedRate.timestamp < CACHE_TTL) {
+  if (cachedRate && Date.now() - cachedRate.timestamp < CACHE_DURATION) {
     return cachedRate.rate;
   }
 
   try {
-    // 使用免费的汇率API
-    const response = await fetch('https://open.er-api.com/v6/latest/RUB', {
-      headers: {
-        'Accept': 'application/json',
-      },
-    });
+    // 使用 exchangerate-api.com 的免费 API
+    const response = await fetch(
+      'https://api.exchangerate-api.com/v4/latest/RUB',
+      { next: { revalidate: 3600 } } // Next.js 缓存1小时
+    );
 
     if (!response.ok) {
-      throw new Error(`汇率API请求失败: ${response.status}`);
+      throw new Error('Failed to fetch exchange rate');
     }
 
-    const data: ExchangeRateResponse = await response.json();
+    const data = await response.json();
+    const rate = data.rates?.CNY;
 
-    if (data.result !== 'success' || !data.rates?.CNY) {
-      throw new Error('汇率数据格式错误');
+    if (rate && rate > 0) {
+      cachedRate = { rate, timestamp: Date.now() };
+      return rate;
     }
-
-    const rate = data.rates.CNY;
-
-    // 更新缓存
-    cachedRate = {
-      rate,
-      timestamp: Date.now(),
-    };
-
-    console.log(`[汇率] 获取实时汇率成功: 1 RUB = ${rate} CNY`);
-    return rate;
   } catch (error) {
-    console.error('[汇率] 获取实时汇率失败:', error);
-
-    // 如果有缓存，使用缓存值
-    if (cachedRate) {
-      console.log('[汇率] 使用缓存汇率:', cachedRate.rate);
-      return cachedRate.rate;
-    }
-
-    // 否则返回一个备用值
-    console.log('[汇率] 使用备用汇率: 0.09');
-    return 0.09;
+    console.error('[ExchangeRate] Failed to fetch rate:', error);
   }
+
+  // 降级：返回默认汇率
+  return 0.078;
 }
 
 export async function GET() {
   try {
-    const rate = await getExchangeRate();
+    const rate = await getRUBToCNYRate();
 
     return NextResponse.json({
       success: true,
-      data: {
-        from: 'RUB',
-        to: 'CNY',
-        rate,
-        description: '1 卢布 = ' + rate.toFixed(4) + ' 人民币',
-        source: 'exchangerate-api.com',
-        cached: cachedRate ? Date.now() - cachedRate.timestamp < CACHE_TTL : false,
-      },
+      rate: rate,
+      currency: 'RUB/CNY',
+      updatedAt: new Date().toISOString(),
     });
   } catch (error) {
+    console.error('[ExchangeRate] Error:', error);
     return NextResponse.json(
-      {
-        success: false,
-        error: '获取汇率失败',
-      },
+      { success: false, error: 'Failed to get exchange rate' },
       { status: 500 }
     );
   }

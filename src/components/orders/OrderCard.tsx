@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { cn, getCountdown, formatCNY, formatRUB, formatCNYFromRUB, formatWeight, formatDateTime } from '@/lib/utils';
+import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -522,6 +523,9 @@ export function OrderCard({ order, selected, onSelect }: OrderCardProps) {
   const countdown = getCountdown(order.shipmentDeadline);
   const isEmpty = !order.shipmentDeadline;
 
+  // 获取实时汇率
+  const { rate, loading: rateLoading } = useExchangeRate();
+
   // 获取商品列表
   const products = order.products || [];
   const visibleProducts = expandedProducts ? products : products.slice(0, 2);
@@ -651,6 +655,18 @@ export function OrderCard({ order, selected, onSelect }: OrderCardProps) {
               <p className="text-xs text-gray-400">
                 ≈{order.totalPrice ? formatCNYFromRUB(Number(order.totalPrice)) : '¥0.00'}
               </p>
+            </div>
+            {/* 买家实付金额 */}
+            <div className="text-center">
+              <p className="text-xs text-gray-400 mb-0.5">买家实付</p>
+              <p className="text-base font-bold text-gray-900">
+                {order.orderAmount ? formatRUB(Number(order.orderAmount)) : '—'}
+              </p>
+              {order.orderAmount && rate && (
+                <p className="text-xs text-green-600 font-medium">
+                  ≈¥{(Number(order.orderAmount) * rate).toFixed(2)}
+                </p>
+              )}
             </div>
             {/* 采购状态Badge - 带Popover */}
             <PurchaseDetailPopover order={order}>
