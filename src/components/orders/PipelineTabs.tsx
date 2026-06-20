@@ -91,15 +91,15 @@ function TabCard({ tab, count, isActive, onClick }: TabCardProps) {
       disabled={isDisabled}
       title={isDisabled ? tab.disabledReason : undefined}
       className={cn(
-        'w-[130px] rounded-xl border-2 px-4 py-3.5 text-center transition-all duration-200 flex-shrink-0',
-        'hover:-translate-y-0.5 hover:shadow-md',
+        'min-w-[140px] flex-1 rounded-xl border-2 px-5 py-2.5 text-center transition-all duration-200 flex-shrink-0',
+        'hover:-translate-y-0.5 hover:shadow-lg',
         // 默认态
         !isActive && !isDisabled && [
           'border-gray-200 bg-white text-gray-600',
         ],
         // 选中态
         isActive && !isDisabled && [
-          'shadow-md -translate-y-px',
+          'shadow-lg -translate-y-px',
           tab.borderColor,
           tab.bgLight,
         ],

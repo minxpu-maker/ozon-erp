@@ -522,7 +522,7 @@ export function OrderCard({ order, selected, onSelect }: OrderCardProps) {
   return (
     <div
       className={cn(
-        'rounded-xl shadow-sm transition-all duration-200 ease-in-out',
+        'rounded-xl shadow-sm transition-all duration-200 ease-in-out border border-gray-200 overflow-hidden',
         'hover:shadow-md hover:-translate-y-0.5',
         selected ? 'bg-gray-50' : 'bg-white',
         selected && 'ring-2 ring-blue-500'

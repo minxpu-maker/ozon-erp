@@ -64,7 +64,7 @@ export function SummaryBar({ orders, currentTab, totalCount }: SummaryBarProps) 
   const { overdueCount, urgentCount } = calculateStats(orders);
 
   return (
-    <div className="bg-white rounded-xl px-4 py-2.5 flex items-center justify-between">
+    <div className="bg-gray-50 rounded-xl px-4 py-2 flex items-center justify-between border border-gray-200">
       <StatItem
         label="超时"
         value={overdueCount}

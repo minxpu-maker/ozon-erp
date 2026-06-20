@@ -305,76 +305,79 @@ export default function OrderToolbar({
 
   return (
     <div className="bg-white border-b border-gray-100">
-      {/* 第一行：搜索框 + 筛选下拉 + 视图切换 */}
-      <div className="flex items-center gap-2 px-4 py-2.5">
-        {/* 搜索框 */}
-        <div className="relative w-64 group">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-400" />
-          <input
-            type="text"
-            value={localKeyword}
-            onChange={e => setLocalKeyword(e.target.value)}
-            placeholder="搜索订单号、SKU、商品名…"
-            className="w-full pl-9 pr-8 py-1.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all group-hover:border-gray-300"
+      {/* 圆角容器包裹搜索筛选栏 */}
+      <div className="mx-4 my-3 rounded-xl bg-white border border-gray-200 p-3">
+        {/* 第一行：搜索框 + 筛选下拉 + 视图切换 */}
+        <div className="flex items-center gap-3">
+          {/* 搜索框 */}
+          <div className="relative w-64 group">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-400" />
+            <input
+              type="text"
+              value={localKeyword}
+              onChange={e => setLocalKeyword(e.target.value)}
+              placeholder="搜索订单号、SKU、商品名…"
+              className="w-full pl-9 pr-8 py-1.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all group-hover:border-gray-300"
+            />
+            {localKeyword && (
+              <button
+                onClick={() => { setLocalKeyword(''); onFiltersChange({ ...filters, keyword: '' }); }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+
+          {/* 筛选下拉 */}
+          <DropdownSelect
+            value={filters.urgency}
+            options={URGENCY_OPTIONS}
+            onChange={value => onFiltersChange({ ...filters, urgency: value as ToolbarFilters['urgency'] })}
+            placeholder="紧急度"
+            colorClass={filters.urgency !== 'all' ? URGENCY_TAG_COLORS[filters.urgency]?.text : undefined}
           />
-          {localKeyword && (
+
+          <DropdownSelect
+            value={filters.timeRange}
+            options={TIME_RANGE_OPTIONS}
+            onChange={value => onFiltersChange({ ...filters, timeRange: value as ToolbarFilters['timeRange'] })}
+            placeholder="时间范围"
+            colorClass={filters.timeRange !== 'all' ? 'text-blue-600' : undefined}
+          />
+
+          <ShopMultiSelect
+            selectedShops={filters.shops}
+            onChange={shops => onFiltersChange({ ...filters, shops })}
+            availableShops={availableShops}
+          />
+
+          {/* 视图切换 */}
+          <div className="ml-auto flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
             <button
-              onClick={() => { setLocalKeyword(''); onFiltersChange({ ...filters, keyword: '' }); }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              onClick={() => onViewModeChange('card')}
+              className={`p-1.5 rounded-md transition-all ${viewMode === 'card' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+              title="卡片视图"
             >
-              <X className="w-4 h-4" />
+              <LayoutGrid className="w-4 h-4" />
             </button>
-          )}
+            <button
+              onClick={() => onViewModeChange('list')}
+              className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+              title="列表视图"
+            >
+              <List className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
-        {/* 筛选下拉 */}
-        <DropdownSelect
-          value={filters.urgency}
-          options={URGENCY_OPTIONS}
-          onChange={value => onFiltersChange({ ...filters, urgency: value as ToolbarFilters['urgency'] })}
-          placeholder="紧急度"
-          colorClass={filters.urgency !== 'all' ? URGENCY_TAG_COLORS[filters.urgency]?.text : undefined}
-        />
-
-        <DropdownSelect
-          value={filters.timeRange}
-          options={TIME_RANGE_OPTIONS}
-          onChange={value => onFiltersChange({ ...filters, timeRange: value as ToolbarFilters['timeRange'] })}
-          placeholder="时间范围"
-          colorClass={filters.timeRange !== 'all' ? 'text-blue-600' : undefined}
-        />
-
-        <ShopMultiSelect
-          selectedShops={filters.shops}
-          onChange={shops => onFiltersChange({ ...filters, shops })}
+        {/* 第二行：已选条件Tag区 */}
+        <ActiveFiltersTag
+          filters={filters}
           availableShops={availableShops}
+          onClear={handleClearFilter}
         />
-
-        {/* 视图切换 */}
-        <div className="ml-auto flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
-          <button
-            onClick={() => onViewModeChange('card')}
-            className={`p-1.5 rounded-md transition-all ${viewMode === 'card' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
-            title="卡片视图"
-          >
-            <LayoutGrid className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => onViewModeChange('list')}
-            className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
-            title="列表视图"
-          >
-            <List className="w-4 h-4" />
-          </button>
-        </div>
       </div>
-
-      {/* 第二行：已选条件Tag区 */}
-      <ActiveFiltersTag
-        filters={filters}
-        availableShops={availableShops}
-        onClear={handleClearFilter}
-      />
     </div>
   );
 }
