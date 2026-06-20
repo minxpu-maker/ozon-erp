@@ -3,7 +3,7 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import useSWR from 'swr';
 import OrderPipeline from "@/components/orders/OrderPipeline";
-import { Toaster } from "sonner";
+import { Toaster, toast } from "sonner";
 import { useState } from "react";
 
 const fetcher = (url: string) => fetch(url).then(async (r) => {
@@ -79,9 +79,14 @@ export default function OrdersListPage() {
         // 重新获取订单列表
         await mutate();
         setLastSyncedAt(new Date());
+        toast.success("同步成功");
+      } else {
+        const data = await res.json().catch(() => ({}));
+        toast.error(data.message || "同步失败");
       }
     } catch (err) {
       console.error("同步失败:", err);
+      toast.error("网络错误，同步失败");
     }
   };
 
