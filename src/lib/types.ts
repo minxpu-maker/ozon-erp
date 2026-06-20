@@ -16,6 +16,7 @@ export interface OrderRecord {
   buyerPhone: string | null;
   recipientName: string | null;
   recipientPhone: string | null;
+  recipientCity: string | null;
   address: string | null;
   city: string | null;
   region: string | null;
@@ -34,6 +35,9 @@ export interface OrderRecord {
   updatedAt: string;
   shipmentDeadline: string | null;
   isDeleted: boolean;
+  isInspected: boolean;
+  isPacked: boolean;
+  isPurchaseBound: boolean;
   purchaseStatus: string | null;
   purchasePrice: number | null;
   trackingNumber: string | null;

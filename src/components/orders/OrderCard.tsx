@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { cn, getCountdown, formatCNY, formatRUB, formatCNYFromRUB } from '@/lib/utils';
+import { cn, getCountdown, formatCNY, formatRUB, formatCNYFromRUB, formatWeight, formatDateTime } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -68,7 +68,12 @@ export interface OrderRecord {
   products?: OrderProduct[];
   purchaseInfo?: PurchaseInfo | null;
   createdAt?: string;
+  updatedAt?: string;
   lastSyncedAt?: string;
+  weight?: number | null;
+  isInspected?: boolean;
+  isPacked?: boolean;
+  isPurchaseBound?: boolean;
 }
 
 export interface OrderCardProps {
@@ -697,103 +702,86 @@ export function OrderCard({ order, selected, onSelect }: OrderCardProps) {
         >
           <div className="px-4 pb-4">
             <div className="bg-gray-50 rounded-b-xl p-4 border-t border-gray-100">
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-3 gap-6">
                 {/* 左列 - 买家信息 */}
                 <div className="space-y-2">
-                  <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide">买家信息</h4>
+                  <h4 className="text-xs font-medium text-gray-400 uppercase tracking-wide">买家信息</h4>
                   <div className="space-y-1.5">
-                    {order.recipientName || order.buyerName ? (
-                      <>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <p className="text-sm text-gray-700 truncate cursor-help">
-                              {order.recipientName || order.buyerName}
-                            </p>
-                          </TooltipTrigger>
-                          <TooltipContent side="bottom">
-                            <p className="max-w-xs">{order.recipientName || order.buyerName}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                        {order.recipientCity && (
-                          <p className="text-xs text-gray-500">{order.recipientCity}</p>
-                        )}
-                      </>
-                    ) : (
-                      <p className="text-sm text-gray-400">买家信息缺失</p>
-                    )}
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs text-gray-400">收件人:</span>
+                      <span className={order.recipientName || order.buyerName ? 'text-sm text-gray-900' : 'text-sm text-gray-400'}>
+                        {order.recipientName || order.buyerName || '暂无数据'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs text-gray-400">收货城市:</span>
+                      <span className={order.recipientCity ? 'text-sm text-gray-900' : 'text-sm text-gray-400'}>
+                        {order.recipientCity || '暂无数据'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs text-gray-400">包裹重量:</span>
+                      <span className="text-sm text-gray-900">
+                        {formatWeight(order.weight)}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
                 {/* 中列 - 时间信息 */}
-                <div className="space-y-2 border-l border-gray-200 pl-4">
-                  <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide">时间信息</h4>
+                <div className="space-y-2">
+                  <h4 className="text-xs font-medium text-gray-400 uppercase tracking-wide">时间信息</h4>
                   <div className="space-y-1.5">
-                    {order.createdAt && (
-                      <div>
-                        <p className="text-xs text-gray-400">创建时间</p>
-                        <p className="text-sm text-gray-700">
-                          {new Date(order.createdAt).toLocaleString('zh-CN', {
-                            year: 'numeric',
-                            month: '2-digit',
-                            day: '2-digit',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </p>
-                      </div>
-                    )}
-                    {order.lastSyncedAt && (
-                      <div>
-                        <p className="text-xs text-gray-400">同步时间</p>
-                        <p className="text-sm text-gray-700">
-                          {new Date(order.lastSyncedAt).toLocaleString('zh-CN', {
-                            year: 'numeric',
-                            month: '2-digit',
-                            day: '2-digit',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </p>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs text-gray-400">创建:</span>
+                      <span className="text-sm text-gray-900">{formatDateTime(order.createdAt)}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs text-gray-400">更新:</span>
+                      <span className="text-sm text-gray-900">{formatDateTime(order.updatedAt)}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs text-gray-400">发货截止:</span>
+                      <span className={order.shipmentDeadline ? 'text-sm text-gray-900' : 'text-sm text-gray-400'}>
+                        {formatDateTime(order.shipmentDeadline)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 右列 - 订单摘要 */}
+                <div className="space-y-2">
+                  <h4 className="text-xs font-medium text-gray-400 uppercase tracking-wide">订单摘要</h4>
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs text-gray-400">订单号:</span>
+                      <span className="text-xs font-mono text-gray-900">{order.ozonPostingNumber}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-400">状态:</span>
+                      <OzonStatusTag status={order.status} />
+                    </div>
+                    <div className="flex items-center gap-3 mt-2">
+                      <span className={order.isInspected ? 'text-green-600' : 'text-gray-300'}>
+                        {order.isInspected ? '✓' : '✗'}验
+                      </span>
+                      <span className={order.isPacked ? 'text-green-600' : 'text-gray-300'}>
+                        {order.isPacked ? '✓' : '✗'}包
+                      </span>
+                      <span className={order.isPurchaseBound ? 'text-green-600' : 'text-gray-300'}>
+                        {order.isPurchaseBound ? '✓' : '✗'}采
+                      </span>
+                    </div>
                     <a
-                      href={`https://www.ozon.ru.com/seller/products/${order.ozonPostingNumber}`}
+                      href={`https://seller.ozon.ru/app/posts/${order.ozonPostingNumber}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-xs text-blue-500 hover:text-blue-600 hover:underline"
+                      className="inline-flex items-center gap-1 text-xs text-blue-500 hover:text-blue-600 hover:underline mt-1"
                       onClick={(e) => e.stopPropagation()}
                     >
                       在Ozon查看
                       <ExternalLink className="w-3 h-3" />
                     </a>
-                  </div>
-                </div>
-
-                {/* 右列 - 订单摘要 */}
-                <div className="space-y-2 border-l border-gray-200 pl-4">
-                  <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide">订单摘要</h4>
-                  <div className="space-y-1.5">
-                    <div>
-                      <p className="text-xs text-gray-400">订单金额</p>
-                      <p className="text-sm font-semibold text-gray-900">
-                        {order.totalPrice ? formatRUB(Number(order.totalPrice)) : '—'}
-                      </p>
-                      <p className="text-xs text-gray-400">
-                        ≈{order.totalPrice ? formatCNYFromRUB(Number(order.totalPrice)) : '¥0.00'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-400">商品数</p>
-                      <p className="text-sm text-gray-700">
-                        {products.length > 0 
-                          ? `${totalSkus}个SKU · ${totalItems}件商品` 
-                          : '—'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-400">Ozon状态</p>
-                      <p className="text-sm text-gray-700">{ozonStatusConfig.label}</p>
-                    </div>
                   </div>
                 </div>
               </div>

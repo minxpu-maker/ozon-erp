@@ -115,3 +115,31 @@ export function getOrderStatusColor(status: string): OrderStatusColor {
   };
   return colorMap[status] || { bg: 'bg-red-50', text: 'text-red-600', border: 'border-red-200' };
 }
+
+/**
+ * 格式化包裹重量
+ * weight 单位为克(g)，< 1000g 显示 "XXXg"，>= 1000g 显示 "X.Xkg"
+ */
+export function formatWeight(weight: number | null | undefined): string {
+  if (!weight || weight <= 0) return '暂无数据';
+  if (weight < 1000) return `${weight}g`;
+  return `${(weight / 1000).toFixed(1)}kg`;
+}
+
+/**
+ * 格式化日期时间
+ * 格式：MM-DD HH:mm，如 "06-20 10:31"
+ */
+export function formatDateTime(dateStr: string | Date | null | undefined): string {
+  if (!dateStr) return '—';
+  try {
+    const date = new Date(dateStr);
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${month}-${day} ${hours}:${minutes}`;
+  } catch {
+    return '—';
+  }
+}
