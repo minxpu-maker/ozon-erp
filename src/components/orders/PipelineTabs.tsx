@@ -188,7 +188,7 @@ export default function PipelineTabs({ orders, activeTab, onTabChange }: Pipelin
   const allTab = PIPELINE_TABS.find(t => t.key === 'all');
 
   return (
-    <div className="relative flex justify-center px-4">
+    <div className="relative flex justify-center px-4 py-3 bg-gray-50 rounded-xl">
       {/* 滚动容器 */}
       <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent pb-1">
         <div className="flex items-center justify-center">
