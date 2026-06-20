@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { toast } from "sonner";
-import OrderToolbar, { ToolbarFilters, Shop } from "./OrderToolbar";
-import { SummaryBar } from "./SummaryBar";
-import BatchActionBar from "./BatchActionBar";
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { useSWRConfig } from 'swr';
+import { toast } from 'sonner';
+import OrderToolbar, { ToolbarFilters, Shop } from './OrderToolbar';
+import { SummaryBar } from './SummaryBar';
+import BatchActionBar from './BatchActionBar';
 import { OrderCard, OrderRecord } from "./OrderCard";
 import EmptyState from "./EmptyState";
 import { OrderCardSkeletonList } from "./OrderCardSkeleton";
@@ -34,6 +35,7 @@ interface OrderPipelineProps {
 }
 
 export default function OrderPipeline({ orders, onSync, isLoading, error, onRetry, lastSyncedAt }: OrderPipelineProps) {
+  const { mutate } = useSWRConfig();
   const [activeTab, setActiveTab] = useState<OrderStatus | "all">("awaiting_deliver");
   const [selectedIds, setSelectedIds] = useState<Set<string | number>>(new Set());
   const [filters, setFilters] = useState<ToolbarFilters>(INITIAL_FILTERS);
@@ -42,6 +44,11 @@ export default function OrderPipeline({ orders, onSync, isLoading, error, onRetr
   const [prevTab, setPrevTab] = useState(activeTab);
   const [tabAnimating, setTabAnimating] = useState(false);
   const [viewMode, setViewMode] = useState<"card" | "list">("card");
+  
+  // 分页状态
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(20);
+  const listRef = useRef<HTMLDivElement>(null);
 
   // 模拟店铺数据
   const availableShops: Shop[] = [
@@ -126,6 +133,25 @@ export default function OrderPipeline({ orders, onSync, isLoading, error, onRetr
     });
   };
 
+  // 全选/取消全选
+  const toggleSelectAll = () => {
+    if (paginatedOrders.every((o) => selectedIds.has(o.ozonPostingNumber))) {
+      // 取消全选
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        paginatedOrders.forEach((o) => next.delete(o.ozonPostingNumber));
+        return next;
+      });
+    } else {
+      // 全选当前页
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        paginatedOrders.forEach((o) => next.add(o.ozonPostingNumber));
+        return next;
+      });
+    }
+  };
+
   const selectedCount = selectedIds.size;
   const selectedOrderIds = useMemo(() => {
     return Array.from(selectedIds).map(id => String(id));
@@ -206,6 +232,35 @@ export default function OrderPipeline({ orders, onSync, isLoading, error, onRetr
       toast.error("批量标记发货功能开发中");
     }
   };
+
+  // 批量打印（占位）
+  const handleBatchPrint = async () => {
+    toast.info("批量打印功能开发中");
+  };
+
+  // 翻页处理
+  const handlePageChange = useCallback((page: number) => {
+    setCurrentPage(page);
+    // 滚动到列表顶部
+    listRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+    // 触发数据重新获取
+    if (onSync) {
+      onSync();
+    }
+  }, [onSync]);
+
+  // 重置页码（当Tab或筛选条件变化时）
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, filters]);
+
+  // 计算分页
+  const totalPages = Math.ceil(filteredOrders.length / pageSize);
+  const paginatedOrders = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    const end = start + pageSize;
+    return filteredOrders.slice(start, end);
+  }, [filteredOrders, currentPage, pageSize]);
 
   // 计算Tab订单数（基于Tab过滤，不含筛选条件，用于Tab栏显示）
   const tabCounts = useMemo(() => {
@@ -327,11 +382,13 @@ export default function OrderPipeline({ orders, onSync, isLoading, error, onRetr
         </div>
       )}
       
-      <div className={cn(
-        "flex-1 overflow-y-auto px-4 py-3 pb-20 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent",
-        "transition-opacity duration-150",
-        tabAnimating ? "opacity-0" : "opacity-100"
-      )}>
+      <div 
+        ref={listRef}
+        className={cn(
+          "flex-1 overflow-y-auto px-4 py-3 pb-20 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent",
+          "transition-opacity duration-150",
+          tabAnimating ? "opacity-0" : "opacity-100"
+        )}>
         {/* 加载态骨架屏 */}
         {isLoading ? (
           <OrderCardSkeletonList count={5} />
@@ -339,7 +396,7 @@ export default function OrderPipeline({ orders, onSync, isLoading, error, onRetr
           <EmptyState tabName={getOrderStatusLabel(activeTab)} keyword={filters.keyword} />
         ) : (
           <div className="flex flex-col gap-3">
-            {filteredOrders.map((order: OrderRecord) => (
+            {paginatedOrders.map((order: OrderRecord) => (
               <OrderCard
                 key={order.ozonPostingNumber}
                 order={order}
@@ -350,16 +407,24 @@ export default function OrderPipeline({ orders, onSync, isLoading, error, onRetr
           </div>
         )}
       </div>
-      {selectedCount > 0 && (
-        <div className="h-14" /> // 占位，保持布局
-      )}
+      
       <BatchActionBar
-        selectedCount={selectedCount}
-        selectedIds={selectedIds}
-        orders={filteredOrders}
+        selectedIds={new Set(Array.from(selectedIds).map(String))}
+        orders={paginatedOrders}
+        currentTab={activeTab}
+        totalCount={filteredOrders.length}
+        pagination={{
+          page: currentPage,
+          pageSize: pageSize,
+          totalPages: totalPages || 1,
+        }}
+        onToggleSelect={(id: string | number) => toggleSelect(id)}
+        onToggleSelectAll={toggleSelectAll}
         onClearSelection={handleClearSelection}
+        onPageChange={handlePageChange}
         onBatchPurchase={handleBatchPurchase}
-        onBatchShip={handleBatchShip}
+        onBatchMarkPacking={handleBatchShip}
+        onBatchPrint={handleBatchPrint}
       />
     </div>
   );

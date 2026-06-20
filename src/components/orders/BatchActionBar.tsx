@@ -1,105 +1,158 @@
 'use client';
 
-import { useMemo } from 'react';
-import { Package, Truck, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { OrderRecord } from './OrderCard';
 
 interface BatchActionBarProps {
-  selectedCount: number;
-  selectedIds: Set<string | number>;
-  orders: Array<{ ozonPostingNumber: string; erpStatus: string }>;
+  selectedIds: Set<string>;
+  orders: OrderRecord[];
+  currentTab: string;
+  totalCount: number;
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalPages: number;
+  };
+  onToggleSelect: (id: string) => void;
+  onToggleSelectAll: () => void;
   onClearSelection: () => void;
+  onPageChange: (page: number) => void;
   onBatchPurchase: () => void;
-  onBatchShip: () => void;
+  onBatchMarkPacking: () => void;
+  onBatchPrint: () => void;
 }
 
 export default function BatchActionBar({
-  selectedCount,
   selectedIds,
   orders,
+  currentTab,
+  totalCount,
+  pagination,
+  onToggleSelect,
+  onToggleSelectAll,
   onClearSelection,
+  onPageChange,
   onBatchPurchase,
-  onBatchShip,
+  onBatchMarkPacking,
+  onBatchPrint,
 }: BatchActionBarProps) {
-  // 检查是否有 pending_purchase 订单被选中
-  const canBatchPurchase = useMemo(() => {
-    return Array.from(selectedIds).some(id => {
-      const order = orders.find(o => o.ozonPostingNumber === String(id));
-      return order?.erpStatus === 'pending_purchase';
-    });
-  }, [selectedIds, orders]);
+  const { page, totalPages } = pagination;
+  const selectedCount = selectedIds.size;
+  const allSelected = orders.length > 0 && orders.every((o) => selectedIds.has(o.ozonPostingNumber));
+  const indeterminate = selectedCount > 0 && !allSelected;
 
-  // 检查是否有 pending_packaging 订单被选中
-  const canBatchShip = useMemo(() => {
-    return Array.from(selectedIds).some(id => {
-      const order = orders.find(o => o.ozonPostingNumber === String(id));
-      return order?.erpStatus === 'pending_packaging';
-    });
-  }, [selectedIds, orders]);
-
-  // 隐藏时不在视口内
-  const isHidden = selectedCount === 0;
+  // 根据当前Tab显示对应的操作按钮
+  const showBatchPurchase = currentTab === 'awaiting_deliver';
+  const showBatchMarkPacking = currentTab === 'delivering';
+  const showBatchPrint = currentTab === 'delivering' || currentTab === 'delivered';
 
   return (
-    <div
-      className={`
-        fixed bottom-0 left-0 right-0 z-50
-        bg-white shadow-[0_-4px_20px_rgba(0,0,0,0.1)]
-        rounded-t-xl
-        px-6 py-3
-        transition-transform duration-200 ease-out
-        ${isHidden ? 'translate-y-full pointer-events-none' : 'translate-y-0 pointer-events-auto'}
-      `}
-    >
-      <div className="flex items-center justify-between max-w-screen-2xl mx-auto">
-        {/* 左侧：已选信息 */}
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-gray-600">
-            已选 <span className="font-bold text-blue-600">{selectedCount}</span> 单
-          </span>
+    <div className="bg-white border-t border-gray-100 px-6 py-3 flex justify-between items-center sticky bottom-0 z-10">
+      {/* 左区：批量操作 */}
+      <div className="flex items-center gap-4">
+        {selectedCount === 0 ? (
+          <span className="text-sm text-gray-400">选择订单进行批量操作</span>
+        ) : (
+          <>
+            <div className="flex items-center gap-2">
+              <div 
+                className={cn(
+                  "w-4 h-4 rounded border flex items-center justify-center cursor-pointer transition-colors",
+                  allSelected ? "bg-blue-600 border-blue-600" : indeterminate ? "bg-blue-600 border-blue-600" : "bg-white border-gray-300 hover:border-blue-400"
+                )}
+                onClick={onToggleSelectAll}
+              >
+                {allSelected && (
+                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+                {indeterminate && (
+                  <div className="w-2 h-0.5 bg-white rounded" />
+                )}
+              </div>
+              <span className="text-sm font-medium text-blue-600">
+                已选{selectedCount}项
+              </span>
+            </div>
+
+            {/* 批量采购 - 仅待采购Tab */}
+            {showBatchPurchase && (
+              <button
+                onClick={onBatchPurchase}
+                className="flex items-center gap-1.5 bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+              >
+                <span>批量采购</span>
+              </button>
+            )}
+
+            {/* 标记打包 - 仅运输中Tab */}
+            {showBatchMarkPacking && (
+              <button
+                onClick={onBatchMarkPacking}
+                className="flex items-center gap-1.5 bg-amber-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors"
+              >
+                <span>标记打包</span>
+              </button>
+            )}
+
+            {/* 批量打印 - 仅运输中/已签收Tab */}
+            {showBatchPrint && (
+              <button
+                onClick={onBatchPrint}
+                className="flex items-center gap-1.5 bg-white border text-gray-700 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+              >
+                <span>批量打印</span>
+              </button>
+            )}
+
+            <button
+              onClick={onClearSelection}
+              className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              取消选择
+            </button>
+          </>
+        )}
+      </div>
+
+      {/* 右区：分页器 */}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => onPageChange(page - 1)}
+          disabled={page <= 1}
+          className={cn(
+            'w-8 h-8 rounded-lg border flex items-center justify-center transition-colors',
+            page <= 1
+              ? 'border-gray-200 text-gray-300 cursor-not-allowed'
+              : 'border-gray-200 text-gray-600 hover:bg-gray-100'
+          )}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+
+        <div className="flex items-center gap-1 text-sm">
+          <span className="text-blue-600 font-medium">{page}</span>
+          <span className="text-gray-400">/</span>
+          <span className="text-gray-600">{totalPages || 1}</span>
         </div>
 
-        {/* 右侧：批量操作按钮 */}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onBatchPurchase}
-            disabled={!canBatchPurchase}
-            title={!canBatchPurchase ? '请选择待采购状态的订单' : '批量创建采购任务'}
-            className={`
-              flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-medium transition-colors
-              ${canBatchPurchase
-                ? 'bg-blue-500 text-white hover:bg-blue-600'
-                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-              }
-            `}
-          >
-            <Package className="w-4 h-4" />
-            批量采购
-          </button>
-
-          <button
-            onClick={onBatchShip}
-            disabled={!canBatchShip}
-            title={!canBatchShip ? '请选择待发货状态的订单' : '批量标记发货'}
-            className={`
-              flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-medium transition-colors
-              ${canBatchShip
-                ? 'border border-amber-500 text-amber-600 hover:bg-amber-50'
-                : 'border border-gray-200 text-gray-400 cursor-not-allowed'
-              }
-            `}
-          >
-            <Truck className="w-4 h-4" />
-            批量标记发货
-          </button>
-
-          <button
-            onClick={onClearSelection}
-            className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors"
-          >
-            <X className="w-4 h-4" />
-            取消选择
-          </button>
-        </div>
+        <button
+          onClick={() => onPageChange(page + 1)}
+          disabled={page >= totalPages}
+          className={cn(
+            'w-8 h-8 rounded-lg border flex items-center justify-center transition-colors',
+            page >= totalPages
+              ? 'border-gray-200 text-gray-300 cursor-not-allowed'
+              : 'border-gray-200 text-gray-600 hover:bg-gray-100'
+          )}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
       </div>
     </div>
   );
