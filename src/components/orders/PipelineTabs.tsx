@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export type OrderStatus = 
@@ -31,6 +32,17 @@ export const PIPELINE_TABS: TabConfig[] = [
   { key: 'cancelled', label: '已取消', color: 'gray', bgLight: 'bg-gray-50', textColor: 'text-gray-700', borderColor: 'border-gray-400' },
   { key: 'all', label: '全部', color: 'slate', bgLight: 'bg-slate-50', textColor: 'text-slate-700', borderColor: 'border-slate-400' },
 ];
+
+// 颜色映射
+const colorMap: Record<string, { active: string; inactive: string }> = {
+  amber: { active: 'text-amber-400', inactive: 'text-gray-300' },
+  blue: { active: 'text-blue-400', inactive: 'text-gray-300' },
+  purple: { active: 'text-purple-400', inactive: 'text-gray-300' },
+  red: { active: 'text-red-400', inactive: 'text-gray-300' },
+  teal: { active: 'text-teal-400', inactive: 'text-gray-300' },
+  gray: { active: 'text-gray-400', inactive: 'text-gray-300' },
+  slate: { active: 'text-slate-400', inactive: 'text-gray-300' },
+};
 
 // 数字动画 Hook
 function useCountUp(target: number, duration: number = 300) {
@@ -84,6 +96,15 @@ interface TabCardProps {
 function TabCard({ tab, count, isActive, onClick }: TabCardProps) {
   const animatedCount = useCountUp(count);
   const isDisabled = tab.disabled;
+  const prevActiveRef = useRef(isActive);
+
+  // 选中时触发微弹动画
+  useEffect(() => {
+    if (isActive && !prevActiveRef.current) {
+      prevActiveRef.current = isActive;
+    }
+    prevActiveRef.current = isActive;
+  }, [isActive]);
 
   return (
     <button
@@ -92,32 +113,33 @@ function TabCard({ tab, count, isActive, onClick }: TabCardProps) {
       title={isDisabled ? tab.disabledReason : undefined}
       className={cn(
         'min-w-[140px] w-[140px] rounded-lg border-2 px-5 py-2.5 text-center transition-all duration-200',
-        'hover:shadow-md',
         // 默认态
         !isActive && !isDisabled && [
           'border-gray-200 bg-white text-gray-600',
+          'hover:border-gray-300 hover:bg-gray-50',
         ],
-        // 选中态 - 不使用translate-y，避免上边框被裁剪
+        // 选中态 - 从灰色背景中浮出
         isActive && !isDisabled && [
-          'shadow-xl',
+          'shadow-sm',
           tab.borderColor,
           tab.bgLight,
+          'tab-bounce', // 微弹动画
         ],
         // 禁用态
         isDisabled && 'opacity-30 cursor-not-allowed border-gray-200',
-        // 数字为0
+        // 数字为0且未选中
         count === 0 && !isActive && 'opacity-40',
       )}
     >
       <div className={cn(
-        'text-xs font-medium',
+        'text-xs font-medium tracking-wide',
         isActive ? tab.textColor : 'text-gray-500',
         isDisabled && 'text-gray-400',
       )}>
         {tab.label}
       </div>
       <div className={cn(
-        'text-2xl font-bold mt-0.5 transition-colors duration-150',
+        'text-2xl font-bold tracking-tight mt-0.5 transition-colors duration-150',
         isActive ? tab.textColor : 'text-gray-400',
         isDisabled && 'text-gray-400',
       )}>
@@ -127,37 +149,18 @@ function TabCard({ tab, count, isActive, onClick }: TabCardProps) {
   );
 }
 
-// 箭头颜色映射
-const arrowColors: Record<string, { active: string; inactive: string }> = {
-  amber: { active: 'text-amber-400', inactive: 'text-gray-300' },
-  blue: { active: 'text-blue-400', inactive: 'text-gray-300' },
-  purple: { active: 'text-purple-400', inactive: 'text-gray-300' },
-  red: { active: 'text-red-400', inactive: 'text-gray-300' },
-  teal: { active: 'text-teal-400', inactive: 'text-gray-300' },
-  gray: { active: 'text-gray-400', inactive: 'text-gray-300' },
-  slate: { active: 'text-slate-400', inactive: 'text-gray-300' },
-};
-
-// 箭头组件
+// 箭头组件 - 使用 ChevronRight
 function Arrow({ isHighlighted, color }: { isHighlighted: boolean; color?: string }) {
   const colorKey = color || 'gray';
-  const colors = arrowColors[colorKey] || arrowColors.gray;
+  const colors = colorMap[colorKey] || colorMap.gray;
   
   return (
-    <svg
+    <ChevronRight
       className={cn(
-        'w-4 h-4 flex-shrink-0 transition-colors duration-150 mx-1',
+        'w-4 h-4 flex-shrink-0 transition-colors duration-150 mx-1.5',
         isHighlighted ? colors.active : colors.inactive
       )}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M9 18l6-6-6-6" />
-    </svg>
+    />
   );
 }
 
@@ -187,15 +190,46 @@ export default function PipelineTabs({ orders, activeTab, onTabChange }: Pipelin
   const pipelineTabs = PIPELINE_TABS.filter(t => t.key !== 'all');
   const allTab = PIPELINE_TABS.find(t => t.key === 'all');
 
+  // 横向滚动状态
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [showLeftShadow, setShowLeftShadow] = useState(false);
+  const [showRightShadow, setShowRightShadow] = useState(false);
+
+  const checkScroll = useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    
+    const { scrollLeft, scrollWidth, clientWidth } = container;
+    setShowLeftShadow(scrollLeft > 0);
+    setShowRightShadow(scrollLeft + clientWidth < scrollWidth - 1);
+  }, []);
+
+  useEffect(() => {
+    checkScroll();
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.addEventListener('scroll', checkScroll);
+      window.addEventListener('resize', checkScroll);
+    }
+    return () => {
+      if (container) {
+        container.removeEventListener('scroll', checkScroll);
+      }
+      window.removeEventListener('resize', checkScroll);
+    };
+  }, [checkScroll]);
+
   return (
-    <div className="w-full px-4 py-3 bg-gray-100 rounded-xl">
-      <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent pb-1">
+    <div className="relative w-full px-5 py-4 bg-gray-100 rounded-xl">
+      {/* 横向滚动容器 */}
+      <div 
+        ref={scrollContainerRef}
+        className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent"
+      >
         <div className="flex items-center justify-center min-w-max mx-auto">
           {/* 流水线Tab（等待备货→待采购→运输中→具争议→已签收→已取消）+ 箭头 */}
           {pipelineTabs.map((tab, index) => {
             const isHighlighted = activeTab === tab.key || activeIndex === index + 1;
-            const isPrevHighlighted = activeTab === tab.key;
-            const isNextHighlighted = activeTab === pipelineTabs[index + 1]?.key || (activeIndex === index + 1 && index < pipelineTabs.length - 1);
             
             return (
               <div key={tab.key} className="flex items-center">
@@ -230,6 +264,22 @@ export default function PipelineTabs({ orders, activeTab, onTabChange }: Pipelin
           )}
         </div>
       </div>
+
+      {/* 左渐变遮罩 */}
+      <div 
+        className={cn(
+          'absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-gray-100 to-transparent pointer-events-none z-10 transition-opacity duration-200',
+          showLeftShadow ? 'opacity-100' : 'opacity-0'
+        )} 
+      />
+      
+      {/* 右渐变遮罩 */}
+      <div 
+        className={cn(
+          'absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-gray-100 to-transparent pointer-events-none z-10 transition-opacity duration-200',
+          showRightShadow ? 'opacity-100' : 'opacity-0'
+        )} 
+      />
     </div>
   );
 }
