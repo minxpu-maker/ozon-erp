@@ -2,8 +2,9 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { ChevronDown, Bell, User } from 'lucide-react';
+import { ChevronDown, Bell, User, Camera } from 'lucide-react';
 import { useShop } from './ShopContext';
+import { GlobalSearchTrigger } from './GlobalSearch';
 
 // 面包屑页面名映射
 const PAGE_NAME_MAP: Record<string, string> = {
@@ -85,13 +86,22 @@ export function TopBar() {
         <Breadcrumb />
       </div>
 
-      {/* 中间偏左：店铺切换器 */}
+      {/* 中间：全局搜索 */}
       <div className="flex-1 flex justify-center">
-        <ShopSwitcher />
+        <GlobalSearchTrigger />
       </div>
 
-      {/* 右侧：通知 + 用户头像 */}
+      {/* 右侧：扫码入口 + 通知 + 用户头像 */}
       <div className="flex items-center gap-3 ml-auto">
+        {/* 扫码入口 */}
+        <Link
+          href="/logistics"
+          className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors"
+          title="扫码查物流"
+        >
+          <Camera className="w-5 h-5 text-gray-500" />
+        </Link>
+
         {/* 通知铃铛 */}
         <button
           className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
