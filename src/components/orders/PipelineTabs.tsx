@@ -91,7 +91,7 @@ function TabCard({ tab, count, isActive, onClick }: TabCardProps) {
       disabled={isDisabled}
       title={isDisabled ? tab.disabledReason : undefined}
       className={cn(
-        'min-w-[100px] rounded-lg border-2 px-4 py-2.5 text-center transition-all duration-200 flex-shrink-0',
+        'w-[130px] rounded-xl border-2 px-4 py-3.5 text-center transition-all duration-200 flex-shrink-0',
         'hover:-translate-y-0.5 hover:shadow-md',
         // 默认态
         !isActive && !isDisabled && [
@@ -117,7 +117,7 @@ function TabCard({ tab, count, isActive, onClick }: TabCardProps) {
         {tab.label}
       </div>
       <div className={cn(
-        'text-lg font-bold mt-0.5 transition-colors duration-150',
+        'text-2xl font-bold mt-1 transition-colors duration-150',
         isActive ? tab.textColor : 'text-gray-900',
         isDisabled && 'text-gray-400',
       )}>
@@ -188,16 +188,10 @@ export default function PipelineTabs({ orders, activeTab, onTabChange }: Pipelin
   const allTab = PIPELINE_TABS.find(t => t.key === 'all');
 
   return (
-    <div className="relative">
-      {/* 左侧渐隐遮罩 */}
-      <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
-      
-      {/* 右侧渐隐遮罩 */}
-      <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
-      
+    <div className="relative flex justify-center">
       {/* 滚动容器 */}
       <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent pb-1">
-        <div className="flex items-center px-4">
+        <div className="flex items-center justify-center px-4">
           {/* 流水线Tab（等待备货→待采购→运输中→具争议→已签收→已取消）+ 箭头 */}
           {pipelineTabs.map((tab, index) => {
             const isHighlighted = activeTab === tab.key || activeIndex === index + 1;
