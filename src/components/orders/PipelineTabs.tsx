@@ -188,10 +188,10 @@ export default function PipelineTabs({ orders, activeTab, onTabChange }: Pipelin
   const allTab = PIPELINE_TABS.find(t => t.key === 'all');
 
   return (
-    <div className="relative flex justify-center">
+    <div className="relative flex justify-center px-4">
       {/* 滚动容器 */}
       <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent pb-1">
-        <div className="flex items-center justify-center px-4">
+        <div className="flex items-center justify-center">
           {/* 流水线Tab（等待备货→待采购→运输中→具争议→已签收→已取消）+ 箭头 */}
           {pipelineTabs.map((tab, index) => {
             const isHighlighted = activeTab === tab.key || activeIndex === index + 1;
