@@ -1,5 +1,6 @@
 "use client";
 
+import { cn } from "@/lib/utils";
 import { OrderRecord } from "@/components/orders/OrderCard";
 
 interface SummaryBarProps {
@@ -11,24 +12,47 @@ interface SummaryBarProps {
 interface StatItemProps {
   label: string;
   value: number;
-  color: "red" | "amber" | "blue" | "gray";
+  color: "red" | "amber" | "gray" | "dark";
   pulse?: boolean;
+  isFirst?: boolean;
 }
 
-function StatItem({ label, value, color, pulse }: StatItemProps) {
+function StatItem({ label, value, color, pulse, isFirst }: StatItemProps) {
   const colorClasses = {
-    red: "text-red-500",
-    amber: "text-amber-500",
-    blue: "text-blue-600",
-    gray: "text-gray-400",
+    red: {
+      number: "text-red-500",
+      label: "text-red-400",
+    },
+    amber: {
+      number: "text-amber-500",
+      label: "text-amber-400",
+    },
+    gray: {
+      number: "text-gray-400",
+      label: "text-gray-500",
+    },
+    dark: {
+      number: "text-gray-700",
+      label: "text-gray-500",
+    },
   };
 
+  const colors = colorClasses[color];
+
   return (
-    <div className="flex items-center gap-1.5">
-      <span className={`text-2xl font-bold ${colorClasses[color]} ${pulse ? "animate-pulse" : ""}`}>
+    <div className={cn("flex items-center", !isFirst && "pl-8")}>
+      {/* 数字 */}
+      <span className={cn(
+        "text-2xl font-bold tracking-tight",
+        colors.number,
+        pulse ? "animate-pulse" : ""
+      )}>
         {value}
       </span>
-      <span className="text-xs text-gray-500">{label}</span>
+      {/* 标签 */}
+      <span className={cn("text-xs ml-1.5", colors.label)}>
+        {label}
+      </span>
     </div>
   );
 }
@@ -64,20 +88,36 @@ export function SummaryBar({ orders, currentTab, totalCount }: SummaryBarProps) 
   const { overdueCount, urgentCount } = calculateStats(orders);
 
   return (
-    <div className="rounded-xl bg-gray-100 px-5 py-2.5 flex items-center gap-6">
+    <div className="mx-4 rounded-xl bg-white border border-gray-100 px-5 py-3 flex items-center gap-0 shadow-sm">
+      {/* 超时 */}
       <StatItem
         label="超时"
         value={overdueCount}
         color={overdueCount > 0 ? "red" : "gray"}
         pulse={overdueCount > 0}
+        isFirst
       />
+      
+      {/* 分隔线 */}
+      <div className="h-8 w-px bg-gray-200 mx-8" />
+      
+      {/* 紧急 */}
       <StatItem
         label="紧急"
         value={urgentCount}
         color={urgentCount > 0 ? "amber" : "gray"}
         pulse={urgentCount > 0}
       />
-      <StatItem label="共" value={totalCount} color="blue" />
+      
+      {/* 分隔线 */}
+      <div className="h-8 w-px bg-gray-200 mx-8" />
+      
+      {/* 总数 */}
+      <StatItem
+        label="共"
+        value={totalCount}
+        color="dark"
+      />
     </div>
   );
 }

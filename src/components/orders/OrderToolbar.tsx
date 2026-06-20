@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { Search, ChevronDown, LayoutGrid, List, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, ChevronDown, LayoutGrid, List, X, Zap, Clock, RefreshCw, Building2 } from 'lucide-react';
 
 // 筛选状态类型
 export interface ToolbarFilters {
@@ -50,19 +50,21 @@ const URGENCY_TAG_COLORS: Record<string, { bg: string; text: string }> = {
   normal: { bg: 'bg-gray-50', text: 'text-gray-600' },
 };
 
-// 下拉选择组件
+// 下拉选择组件 - 带图标
 function DropdownSelect({
   value,
   options,
   onChange,
   placeholder,
   colorClass,
+  icon,
 }: {
   value: string;
   options: { value: string; label: string }[];
   onChange: (value: string) => void;
   placeholder: string;
   colorClass?: string;
+  icon?: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -74,8 +76,9 @@ function DropdownSelect({
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-sm hover:border-gray-300 transition-colors ${colorClass || 'text-gray-700'}`}
+        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-50 border border-gray-200 text-sm hover:border-gray-300 transition-colors focus-visible:border-blue-400 focus-visible:ring-2 focus-visible:ring-blue-100 ${colorClass || 'text-gray-700'}`}
       >
+        {icon}
         <span>{displayLabel}</span>
         <ChevronDown className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
@@ -102,7 +105,7 @@ function DropdownSelect({
   );
 }
 
-// 店铺多选组件
+// 店铺多选组件 - 带图标
 function ShopMultiSelect({
   selectedShops,
   onChange,
@@ -131,18 +134,14 @@ function ShopMultiSelect({
     onChange(newShops.length === 0 ? ['all'] : newShops);
   };
 
-  const getSelectedShopNames = () => {
-    if (selectedShops.includes('all')) return [];
-    return selectedShops.map(id => availableShops.find(s => s.id === id)?.name || id);
-  };
-
   return (
     <div className="relative">
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-sm hover:border-gray-300 transition-colors ${selectedShops.includes('all') ? 'text-gray-700' : 'text-blue-600'}`}
+        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-50 border border-gray-200 text-sm hover:border-gray-300 transition-colors focus-visible:border-blue-400 focus-visible:ring-2 focus-visible:ring-blue-100 ${selectedShops.includes('all') ? 'text-gray-700' : 'text-blue-600'}`}
       >
+        <Building2 className="w-4 h-4 text-gray-400" />
         <span>{selectedLabel}</span>
         <ChevronDown className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
@@ -237,7 +236,7 @@ function ActiveFiltersTag({
   };
 
   return (
-    <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 border-t border-gray-100">
+    <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 border-t border-gray-100 mt-2">
       <div className="flex items-center gap-2 flex-wrap">
         {tags.map(tag => (
           <span
@@ -311,10 +310,10 @@ export default function OrderToolbar({
   const hasActiveFilters = filters.urgency !== 'all' || filters.timeRange !== 'all' || !filters.shops.includes('all');
 
   return (
-    <div className="bg-white">
-      {/* 圆角容器包裹搜索筛选栏 */}
-      <div className="mx-4 my-3 rounded-xl bg-white border-2 border-gray-200 p-3 shadow-sm">
-        {/* 第一行：搜索框 + 筛选下拉 + 视图切换 */}
+    <div className="sticky top-0 z-[var(--z-sticky,20)] bg-slate-50">
+      {/* 圆角白色容器包裹搜索筛选栏 */}
+      <div className="mx-4 my-3 rounded-xl bg-white border border-gray-100 p-4 shadow-sm">
+        {/* 第一行：搜索框 + 筛选下拉 + 同步按钮 + 视图切换 */}
         <div className="flex items-center gap-3">
           {/* 搜索框 */}
           <div className="relative w-80 flex-shrink-0 flex items-center">
@@ -324,44 +323,36 @@ export default function OrderToolbar({
               value={localKeyword}
               onChange={e => setLocalKeyword(e.target.value)}
               placeholder="搜索订单号、SKU、商品名…"
-              className="w-full pl-9 pr-20 py-1.5 rounded-lg bg-gray-50 text-sm focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all"
+              className="w-full pl-9 pr-20 py-2.5 rounded-lg bg-slate-50 border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:border-blue-400 transition-all"
             />
             {onSync && (
               <button
                 onClick={onSync}
                 disabled={syncing}
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg text-xs px-2 py-1 text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white text-sm font-medium px-4 py-2 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
               >
-                {syncing ? (
-                  <svg className="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                ) : (
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                )}
-                <span>同步</span>
+                <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} />
+                <span>{syncing ? '同步中' : '同步'}</span>
               </button>
             )}
             {localKeyword && !syncing && (
               <button
                 onClick={() => { setLocalKeyword(''); onFiltersChange({ ...filters, keyword: '' }); }}
-                className="absolute right-16 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-24 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
               >
                 <X className="w-4 h-4" />
               </button>
             )}
           </div>
 
-          {/* 筛选下拉 */}
+          {/* 筛选下拉 - 带图标 */}
           <DropdownSelect
             value={filters.urgency}
             options={URGENCY_OPTIONS}
             onChange={value => onFiltersChange({ ...filters, urgency: value as ToolbarFilters['urgency'] })}
             placeholder="紧急度"
             colorClass={filters.urgency !== 'all' ? URGENCY_TAG_COLORS[filters.urgency]?.text : undefined}
+            icon={<Zap className="w-4 h-4 text-gray-400 mr-1.5" />}
           />
 
           <DropdownSelect
@@ -370,6 +361,7 @@ export default function OrderToolbar({
             onChange={value => onFiltersChange({ ...filters, timeRange: value as ToolbarFilters['timeRange'] })}
             placeholder="时间范围"
             colorClass={filters.timeRange !== 'all' ? 'text-blue-600' : undefined}
+            icon={<Clock className="w-4 h-4 text-gray-400 mr-1.5" />}
           />
 
           <ShopMultiSelect
@@ -379,17 +371,17 @@ export default function OrderToolbar({
           />
 
           {/* 视图切换 */}
-          <div className="ml-auto flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
+          <div className="ml-auto flex items-center gap-1 bg-slate-50 rounded-lg p-1">
             <button
               onClick={() => onViewModeChange('card')}
-              className={`p-1.5 rounded-md transition-all ${viewMode === 'card' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+              className={`p-1.5 rounded-md transition-all ${viewMode === 'card' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-400 hover:text-gray-600'}`}
               title="卡片视图"
             >
               <LayoutGrid className="w-4 h-4" />
             </button>
             <button
               onClick={() => onViewModeChange('list')}
-              className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+              className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-400 hover:text-gray-600'}`}
               title="列表视图"
             >
               <List className="w-4 h-4" />
