@@ -373,18 +373,23 @@ async function insertNewOrders(
     const recipientCity = posting.address?.city || null;
     const recipientAddress = posting.address?.address || null;
 
-    // 构建原始数据（包含商品列表，供前端展示）
+    // 构建原始数据（包含商品列表和收件人信息，供前端展示）
     const ozonRawData: Record<string, unknown> = {
       posting_number: posting.posting_number,
       order_id: posting.order_id,
       status: posting.status,
-      products: posting.products.map(p => ({
+      shipment_deadline: shipmentDeadline,
+      recipient_city: recipientCity,
+      recipient_name: recipientName,
+      recipient_address: recipientAddress,
+      products: posting.products.map((p: any) => ({
         sku: p.sku,
         name: p.name,
         quantity: p.quantity,
         price: p.price,
         offer_id: p.offer_id ?? null,
         product_id: p.product_id ?? null,
+        weight: p.item_services_marketing_data?.weight ?? null,
       })),
     };
 

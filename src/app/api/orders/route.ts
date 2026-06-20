@@ -145,13 +145,14 @@ export async function GET(request: NextRequest) {
 
     // Format response
     const formattedOrders = orders.map((o: any) => {
-      // 解析 ozon_raw_data 中的商品信息
+      // 解析 ozon_raw_data 中的商品信息和收件人信息
       let products: any[] = [];
+      let rawDataObj: any = {};
       try {
-        const rawData = o.ozon_raw_data;
-        if (rawData && typeof rawData === 'object') {
+        rawDataObj = (typeof o.ozon_raw_data === 'string') ? JSON.parse(o.ozon_raw_data) : o.ozon_raw_data;
+        if (rawDataObj && typeof rawDataObj === 'object') {
           // 从 products 数组中提取商品信息
-          const rawProducts = rawData.products || rawData.financial_data?.products || [];
+          const rawProducts = rawDataObj.products || rawDataObj.financial_data?.products || [];
           if (Array.isArray(rawProducts)) {
             products = rawProducts.map((p: any) => {
               // 尝试从不同位置获取商品重量
@@ -219,10 +220,10 @@ export async function GET(request: NextRequest) {
           // 其他状态保持数据库中的状态（如果有的话）
           return o.erp_status || null;
         })(),
-        shipmentDeadline: o.shipment_deadline,
+        shipmentDeadline: o.shipment_deadline || rawDataObj.shipment_deadline || null,
         buyerName: o.buyer_name,
-        recipientName: o.recipient_name,
-        recipientCity: o.recipient_city,
+        recipientName: o.recipient_name || rawDataObj.recipient_name || null,
+        recipientCity: o.recipient_city || rawDataObj.recipient_city || null,
         totalPrice: o.total_price,
         orderAmount: o.total_price,
         status: o.status,
