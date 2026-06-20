@@ -59,7 +59,7 @@ interface Shop {
 
 export default function OrdersListPage() {
   // 获取订单数据
-  const { data, error, isLoading } = useSWR<OrdersResponse>(
+  const { data, error, isLoading, mutate } = useSWR<OrdersResponse>(
     "/api/orders?pageSize=100",
     fetcher,
     { revalidateOnFocus: false }
@@ -67,9 +67,22 @@ export default function OrdersListPage() {
 
   const orders = data?.orders ?? [];
 
+  // 同步订单
+  const handleSync = async () => {
+    try {
+      const res = await fetch("/api/orders/sync", { method: "POST" });
+      if (res.ok) {
+        // 重新获取订单列表
+        await mutate();
+      }
+    } catch (err) {
+      console.error("同步失败:", err);
+    }
+  };
+
   return (
     <AppLayout title="订单列表" subtitle="管理来自 Ozon 的 FBS 订单">
-      <OrderPipeline orders={orders} />
+      <OrderPipeline orders={orders} onSync={handleSync} />
     </AppLayout>
   );
 }
