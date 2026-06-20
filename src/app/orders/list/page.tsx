@@ -103,8 +103,8 @@ const erpStatusColors: Record<string, string> = {
   cancelled: 'bg-gray-100 text-gray-500 border-gray-200',
 };
 
-// 需要显示"去采购"按钮的状态
-const PENDING_STATUSES = ['pending', 'pending_purchase', 'new', ''];
+// 需要显示"去采购"按钮的状态 - 只有已准备发运的订单才能采购
+const PENDING_STATUSES = ['pending_purchase'];
 // 需要显示"查看采购"按钮的状态
 const PURCHASING_STATUSES = ['purchasing'];
 // 已处理状态（不显示按钮）
