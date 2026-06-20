@@ -75,12 +75,12 @@ export const orders = pgTable(
     // 金额信息
     totalPrice: numeric("total_price", { precision: 12, scale: 2 }).notNull().default("0"),
     productsPrice: numeric("products_price", { precision: 12, scale: 2 }).notNull().default("0"),
-    deliveryPrice: numeric("delivery_price", { precision: 12, scale: 2 }).notNull().default("0"),
+    deliveryPrice: numeric("delivery_price", { precision: 12, scale: 2 }).default("0").notNull(),
     
     // 物流信息
-    trackingNumber: varchar("tracking_number", { length: 64 }).default(null),
-    shippedAt: timestamp("shipped_at", { withTimezone: true }).default(null),
-    deliveredAt: timestamp("delivered_at", { withTimezone: true }).default(null),
+    trackingNumber: varchar("tracking_number", { length: 64 }),
+    shippedAt: timestamp("shipped_at", { withTimezone: true }),
+    deliveredAt: timestamp("delivered_at", { withTimezone: true }),
     
     // 采购绑定信息
     isPurchaseBound: boolean("is_purchase_bound").default(false).notNull(),

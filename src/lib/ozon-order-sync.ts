@@ -572,7 +572,7 @@ export async function syncAllShops(): Promise<BatchSyncResult> {
 export async function getShopSyncStatuses(): Promise<ShopSyncStatus[]> {
   const statuses: ShopSyncStatus[] = [];
 
-  const orders = await db
+  const shopOrderStats = await db
     .select({
       shopId: orders.shopId,
       shopName: shops.name,
@@ -584,7 +584,7 @@ export async function getShopSyncStatuses(): Promise<ShopSyncStatus[]> {
     .leftJoin(shops, eq(orders.shopId, shops.id))
     .groupBy(orders.shopId, shops.name);
 
-  for (const order of orders) {
+  for (const order of shopOrderStats) {
     statuses.push({
       shopId: order.shopId,
       shopName: order.shopName || 'Unknown',

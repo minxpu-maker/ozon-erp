@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import useSWR from 'swr';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -11,10 +11,19 @@ interface Shop {
   id: string;
   shopName: string;
   ozonClientId: string;
+  ozonApiKey?: string;
   apiKey: string;
   isActive: boolean;
   lastSyncedAt: string | null;
   createdAt: string;
+  platform?: string;
+}
+
+interface KeyStatus {
+  shopId: string;
+  shopName: string;
+  status: 'valid' | 'invalid' | 'checking' | 'error';
+  error?: string;
 }
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
@@ -23,6 +32,22 @@ export default function ShopsPage() {
   const { data: res, mutate } = useSWR('/api/shops', fetcher);
   const shops: Shop[] = res?.shops ?? [];
   const total = res?.total ?? 0;
+
+  // 密钥状态检测
+  const { data: keyStatusData } = useSWR(
+    shops.length > 0 ? '/api/shops/key-status' : null,
+    fetcher,
+    { refreshInterval: 60000 } // 每分钟检测一次
+  );
+  const keyStatuses: KeyStatus[] = keyStatusData?.statuses ?? [];
+  const keyStatusMap: Record<string, KeyStatus> = keyStatuses.reduce((acc, k) => {
+    acc[k.shopId] = k;
+    return acc;
+  }, {} as Record<string, KeyStatus>);
+  
+  // 统计密钥失效的店铺
+  const invalidShops = keyStatuses.filter(k => k.status === 'invalid');
+  const hasInvalidKeys = invalidShops.length > 0;
 
   const [showDialog, setShowDialog] = useState(false);
   const [editShop, setEditShop] = useState<Shop | null>(null);
@@ -242,6 +267,38 @@ export default function ShopsPage() {
 
   return (
     <AppLayout title="店铺管理" subtitle="管理Ozon店铺API密钥，支持多店铺统一管理">
+      {/* 密钥失效警告 */}
+      {hasInvalidKeys && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4">
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+              <span className="text-red-500 text-lg">⚠️</span>
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-red-700 text-sm">API密钥已失效</h3>
+              <p className="text-xs text-red-600 mt-1">
+                以下 {invalidShops.length} 个店铺的API密钥已过期或被禁用，订单同步将无法进行：
+              </p>
+              <div className="mt-2 space-y-1">
+                {invalidShops.map(shop => (
+                  <div key={shop.shopId} className="flex items-center gap-2 text-xs">
+                    <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded">
+                      {shop.shopName}
+                    </span>
+                    {shop.error && (
+                      <span className="text-red-500/70">{shop.error}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-red-600 mt-2">
+                请前往 <a href="https://seller.ozon.ru/settings/api-keys" target="_blank" rel="noopener noreferrer" className="underline font-medium">Ozon Seller后台</a> 重新生成API密钥，然后点击「编辑」更新。
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white rounded-xl border border-[#E6EAF2] p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -261,7 +318,26 @@ export default function ShopsPage() {
                   OZ
                 </div>
                 <div>
-                  <p className="font-medium text-[#152033] text-sm">{shop.shopName}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-[#152033] text-sm">{shop.shopName}</p>
+                    {/* 密钥状态徽章 */}
+                    {shop.ozonApiKey && (
+                      <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
+                        keyStatusMap[shop.id]?.status === 'valid'
+                          ? 'bg-green-100 text-green-700'
+                          : keyStatusMap[shop.id]?.status === 'invalid'
+                          ? 'bg-red-100 text-red-700'
+                          : keyStatusMap[shop.id]?.status === 'checking'
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'bg-gray-100 text-gray-500'
+                      }`}>
+                        {keyStatusMap[shop.id]?.status === 'valid' ? '✓ 正常' : 
+                         keyStatusMap[shop.id]?.status === 'invalid' ? '✗ 已失效' : 
+                         keyStatusMap[shop.id]?.status === 'checking' ? '检测中...' : 
+                         '? 未知'}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-[#637089]">
                     Ozon · Client-Id: {shop.ozonClientId}
                   </p>
