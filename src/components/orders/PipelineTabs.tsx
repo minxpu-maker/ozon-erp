@@ -110,15 +110,15 @@ function TabCard({ tab, count, isActive, onClick }: TabCardProps) {
       )}
     >
       <div className={cn(
-        'text-sm font-medium',
-        isActive ? tab.textColor : 'text-gray-600',
+        'text-xs font-medium',
+        isActive ? tab.textColor : 'text-gray-500',
         isDisabled && 'text-gray-400',
       )}>
         {tab.label}
       </div>
       <div className={cn(
-        'text-2xl font-bold mt-1 transition-colors duration-150',
-        isActive ? tab.textColor : 'text-gray-900',
+        'text-2xl font-bold mt-0.5 transition-colors duration-150',
+        isActive ? tab.textColor : 'text-gray-400',
         isDisabled && 'text-gray-400',
       )}>
         {animatedCount}
@@ -188,7 +188,7 @@ export default function PipelineTabs({ orders, activeTab, onTabChange }: Pipelin
   const allTab = PIPELINE_TABS.find(t => t.key === 'all');
 
   return (
-    <div className="w-full px-4 py-3 bg-gray-50 rounded-xl">
+    <div className="w-full px-4 py-3 bg-gray-100 rounded-xl">
       <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent pb-1">
         <div className="flex items-center justify-center min-w-max mx-auto">
           {/* 流水线Tab（等待备货→待采购→运输中→具争议→已签收→已取消）+ 箭头 */}

@@ -17,18 +17,18 @@ interface StatItemProps {
 
 function StatItem({ label, value, color, pulse }: StatItemProps) {
   const colorClasses = {
-    red: "text-red-600",
-    amber: "text-amber-600",
+    red: "text-red-500",
+    amber: "text-amber-500",
     blue: "text-blue-600",
-    gray: "text-gray-500",
+    gray: "text-gray-400",
   };
 
   return (
     <div className="flex items-center gap-1.5">
-      <span className={`text-lg font-bold ${colorClasses[color]} ${pulse ? "animate-pulse" : ""}`}>
+      <span className={`text-2xl font-bold ${colorClasses[color]} ${pulse ? "animate-pulse" : ""}`}>
         {value}
       </span>
-      <span className="text-sm text-gray-500">{label}</span>
+      <span className="text-xs text-gray-500">{label}</span>
     </div>
   );
 }
@@ -64,7 +64,7 @@ export function SummaryBar({ orders, currentTab, totalCount }: SummaryBarProps) 
   const { overdueCount, urgentCount } = calculateStats(orders);
 
   return (
-    <div className="bg-gray-50 rounded-xl px-4 py-2 flex items-center justify-between border border-gray-200">
+    <div className="rounded-xl bg-gray-100 px-5 py-2.5 flex items-center gap-6">
       <StatItem
         label="超时"
         value={overdueCount}

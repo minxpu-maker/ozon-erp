@@ -395,7 +395,7 @@ export function AppLayout({ children, title, subtitle, actions }: AppLayoutProps
         )}
 
         {/* 页面内容 */}
-        <div className="flex-1 p-6 overflow-auto">
+        <div className="flex-1 p-6 overflow-auto bg-slate-50">
           {children}
         </div>
       </main>

@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/popover';
 import {
   ShoppingCart,
+  ShoppingBag,
   Edit,
   Truck,
   MapPin,
@@ -151,11 +152,11 @@ function ProductImage({ product }: { product: OrderProduct }) {
   const [isHovering, setIsHovering] = useState(false);
   const imageUrl = product.image;
 
-  // 无图或加载失败：显示📦占位图
+  // 无图或加载失败：显示精致占位图
   if (!imageUrl || hasError) {
     return (
       <div className="w-24 h-24 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-        <span className="text-4xl text-gray-300">📦</span>
+        <ShoppingBag className="w-10 h-10 text-gray-300" />
       </div>
     );
   }
@@ -163,8 +164,8 @@ function ProductImage({ product }: { product: OrderProduct }) {
   // 加载中：显示 skeleton shimmer
   if (isLoading) {
     return (
-      <div className="w-24 h-24 rounded-lg bg-gray-200 flex items-center justify-center flex-shrink-0 animate-pulse">
-        <div className="w-12 h-12 bg-gray-300 rounded" />
+      <div className="w-24 h-24 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0 animate-pulse">
+        <div className="w-12 h-12 bg-gray-200 rounded" />
       </div>
     );
   }
@@ -574,10 +575,9 @@ export function OrderCard({ order, selected, onSelect }: OrderCardProps) {
   return (
     <div
       className={cn(
-        'rounded-xl shadow-sm transition-all duration-200 ease-in-out border border-gray-200 overflow-hidden',
-        'hover:shadow-md hover:-translate-y-0.5',
-        selected ? 'bg-gray-50' : 'bg-white',
-        selected && 'ring-2 ring-blue-500'
+        'rounded-xl shadow-sm bg-white border border-gray-100 overflow-hidden',
+        'hover:shadow-md hover:border-gray-200 transition-all duration-200',
+        selected ? 'ring-2 ring-blue-400 shadow-md' : ''
       )}
       onClick={() => onSelect?.(order.id)}
     >
@@ -649,21 +649,21 @@ export function OrderCard({ order, selected, onSelect }: OrderCardProps) {
             {/* Ozon售价 */}
             <div className="text-center">
               <p className="text-xs text-gray-400 mb-0.5">Ozon售价</p>
-              <p className="text-base font-bold text-gray-900">
+              <p className="text-2xl font-bold text-gray-900 leading-none">
                 {order.totalPrice ? formatRUB(Number(order.totalPrice)) : '—'}
               </p>
-              <p className="text-xs text-gray-400">
+              <p className="text-sm text-gray-400 mt-1">
                 ≈ {order.totalPrice ? formatCNYFromRUB(Number(order.totalPrice)) : '0.00'}
               </p>
             </div>
             {/* 买家实付金额 */}
             <div className="text-center">
               <p className="text-xs text-gray-400 mb-0.5">买家实付</p>
-              <p className="text-base font-bold text-gray-900">
+              <p className="text-lg font-bold text-gray-800 leading-tight">
                 {order.orderAmount ? formatRUB(Number(order.orderAmount)) : '—'}
               </p>
               {order.orderAmount && rate && (
-                <p className="text-xs text-green-600 font-medium">
+                <p className="text-xs text-green-600 font-medium mt-0.5">
                   ≈ {(Number(order.orderAmount) * rate).toFixed(2)} CNY
                 </p>
               )}
