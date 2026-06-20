@@ -153,13 +153,22 @@ export async function GET(request: NextRequest) {
           // 从 products 数组中提取商品信息
           const rawProducts = rawData.products || rawData.financial_data?.products || [];
           if (Array.isArray(rawProducts)) {
-            products = rawProducts.map((p: any) => ({
-              name: p.name || '未知商品',
-              sku: String(p.sku || p.offer_id || ''),
-              quantity: Number(p.quantity) || 1,
-              price: String(p.price || 0),
-              image: p.image_url || null,
-            }));
+            products = rawProducts.map((p: any) => {
+              // 尝试从不同位置获取商品重量
+              // 1. financial_data.products[].item_services_marketing_data.weight (Ozon俄罗斯)
+              // 2. direct weight field
+              const weightData = p.item_services_marketing_data?.weight || p.weight || null;
+              
+              return {
+                name: p.name || '未知商品',
+                sku: String(p.sku || p.offer_id || ''),
+                quantity: Number(p.quantity) || 1,
+                price: String(p.price || 0),
+                image: p.image_url || null,
+                weight: weightData ? Number(weightData) / 1000 : null, // 转换为kg
+                productId: p.product_id || null,
+              };
+            });
           }
         }
       } catch (e) {

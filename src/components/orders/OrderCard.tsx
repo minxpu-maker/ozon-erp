@@ -40,6 +40,7 @@ interface OrderProduct {
   price: string;
   image?: string | null;
   productId?: string | number; // Ozon商品ID，用于跳转链接
+  weight?: number | null; // 商品重量(kg)
 }
 
 interface PurchaseInfo {
@@ -697,7 +698,13 @@ export function OrderCard({ order, selected, onSelect }: OrderCardProps) {
           </span>
           <span className="text-gray-300">·</span>
           <span className="text-gray-500">
-            {formatWeight(order.weight)}
+            {(() => {
+              // 计算所有商品总重量
+              const totalWeight = products.reduce((sum: number, p: OrderProduct) => {
+                return sum + ((p.weight || 0) * (p.quantity || 1));
+              }, 0);
+              return formatWeight(totalWeight > 0 ? totalWeight : null);
+            })()}
           </span>
           <span className="text-gray-300">·</span>
           <span className={cn(
