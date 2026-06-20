@@ -653,7 +653,7 @@ export function OrderCard({ order, selected, onSelect }: OrderCardProps) {
                 {order.totalPrice ? formatRUB(Number(order.totalPrice)) : '—'}
               </p>
               <p className="text-xs text-gray-400">
-                ≈{order.totalPrice ? formatCNYFromRUB(Number(order.totalPrice)) : '¥0.00'}
+                ≈ {order.totalPrice ? formatCNYFromRUB(Number(order.totalPrice)) : '0.00'}
               </p>
             </div>
             {/* 买家实付金额 */}
@@ -664,7 +664,7 @@ export function OrderCard({ order, selected, onSelect }: OrderCardProps) {
               </p>
               {order.orderAmount && rate && (
                 <p className="text-xs text-green-600 font-medium">
-                  ≈¥{(Number(order.orderAmount) * rate).toFixed(2)}
+                  ≈ {(Number(order.orderAmount) * rate).toFixed(2)} CNY
                 </p>
               )}
             </div>

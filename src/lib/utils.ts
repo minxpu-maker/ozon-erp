@@ -10,8 +10,8 @@ export function cn(...inputs: ClassValue[]) {
  */
 export function formatCNY(amount: number | string): string {
   const num = typeof amount === 'string' ? parseFloat(amount) : amount;
-  if (isNaN(num)) return '¥0.00';
-  return `¥${num.toFixed(2)}`;
+  if (isNaN(num)) return 'CNY 0.00';
+  return `CNY ${num.toFixed(2)}`;
 }
 
 /**
@@ -30,9 +30,9 @@ const RUB_TO_CNY_RATE = 0.07; // 1 RUB ≈ 0.07 CNY
 
 export function formatCNYFromRUB(amount: number | string): string {
   const num = typeof amount === 'string' ? parseFloat(amount) : amount;
-  if (isNaN(num)) return '¥0.00';
+  if (isNaN(num)) return 'CNY 0.00';
   const cny = num * RUB_TO_CNY_RATE;
-  return `¥${cny.toFixed(2)}`;
+  return `CNY ${cny.toFixed(2)}`;
 }
 
 /**
