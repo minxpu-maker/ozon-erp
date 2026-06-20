@@ -422,6 +422,7 @@ export default function OrderPipeline({ orders, onSync, isLoading, error, onRetr
                 order={order}
                 selected={selectedIds.has(order.ozonPostingNumber)}
                 onSelect={toggleSelect}
+                currentTab={activeTab}
               />
             ))}
           </div>
