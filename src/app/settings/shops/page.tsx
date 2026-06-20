@@ -39,14 +39,15 @@ export default function ShopsPage() {
     fetcher,
     { refreshInterval: 60000 } // 每分钟检测一次
   );
-  const keyStatuses: KeyStatus[] = keyStatusData?.statuses ?? [];
+  // API返回的是 shops 数组，statuses 兼容处理
+  const keyStatuses: KeyStatus[] = keyStatusData?.shops ?? keyStatusData?.statuses ?? [];
   const keyStatusMap: Record<string, KeyStatus> = keyStatuses.reduce((acc, k) => {
     acc[k.shopId] = k;
     return acc;
   }, {} as Record<string, KeyStatus>);
   
-  // 统计密钥失效的店铺
-  const invalidShops = keyStatuses.filter(k => k.status === 'invalid');
+  // 统计密钥失效的店铺（包括 invalid 和 error 状态）
+  const invalidShops = keyStatuses.filter(k => k.status === 'invalid' || k.status === 'error');
   const hasInvalidKeys = invalidShops.length > 0;
 
   const [showDialog, setShowDialog] = useState(false);
@@ -325,14 +326,14 @@ export default function ShopsPage() {
                       <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
                         keyStatusMap[shop.id]?.status === 'valid'
                           ? 'bg-green-100 text-green-700'
-                          : keyStatusMap[shop.id]?.status === 'invalid'
+                          : (keyStatusMap[shop.id]?.status === 'invalid' || keyStatusMap[shop.id]?.status === 'error')
                           ? 'bg-red-100 text-red-700'
                           : keyStatusMap[shop.id]?.status === 'checking'
                           ? 'bg-blue-100 text-blue-700'
                           : 'bg-gray-100 text-gray-500'
                       }`}>
                         {keyStatusMap[shop.id]?.status === 'valid' ? '✓ 正常' : 
-                         keyStatusMap[shop.id]?.status === 'invalid' ? '✗ 已失效' : 
+                         (keyStatusMap[shop.id]?.status === 'invalid' || keyStatusMap[shop.id]?.status === 'error') ? '✗ 已失效' : 
                          keyStatusMap[shop.id]?.status === 'checking' ? '检测中...' : 
                          '? 未知'}
                       </span>
