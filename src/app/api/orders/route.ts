@@ -128,9 +128,9 @@ export async function GET(request: NextRequest) {
           if (awaitingDeliverStatuses.includes(o.status)) {
             return 'pending_purchase';
           }
-          // 等待打包 → 待处理
+          // 等待打包 → 待打包
           if (awaitingPackagingStatuses.includes(o.status)) {
-            return 'pending';
+            return 'pending_packaging';
           }
           // 已取消
           if (cancelledStatuses.includes(o.status)) {

@@ -114,6 +114,7 @@ const OZON_TO_ERP_STATUS_MAP: Record<string, string> = {
   'awaiting_deliver': 'pending_purchase',
   // 等待打包 → 等待打包（不算待采购）
   'awaiting-packaging': 'pending_packaging',
+  'awaiting_packaging': 'pending_packaging',
   'awaiting-pack': 'pending_packaging',
   // 运输中 → 运输中
   'delivering': 'shipped_domestic',

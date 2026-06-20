@@ -351,11 +351,11 @@ export default function OrdersListPage() {
     }
   };
 
-  // 批量查看采购
+  // 批量查看运输中
   const handleBatchView = () => {
-    const purchasingOrders = filteredOrders.filter(o => selectedIds.has(String(o.id)) && o.erpStatus === 'purchasing');
-    if (purchasingOrders.length > 0) {
-      const ids = purchasingOrders.map(o => o.id).join(',');
+    const transitOrders = filteredOrders.filter(o => selectedIds.has(String(o.id)) && o.erpStatus === 'shipped_domestic');
+    if (transitOrders.length > 0) {
+      const ids = transitOrders.map(o => o.id).join(',');
       router.push(`/purchase?orderIds=${ids}&action=batch-view`);
     }
   };
@@ -537,7 +537,7 @@ export default function OrdersListPage() {
             {/* 批量去采购按钮 */}
             {(() => {
               const pendingCount = filteredOrders.filter(o => selectedIds.has(String(o.id)) && PENDING_STATUSES.includes(o.erpStatus || '')).length;
-              const purchasingCount = filteredOrders.filter(o => selectedIds.has(String(o.id)) && o.erpStatus === 'purchasing').length;
+              const transitCount = filteredOrders.filter(o => selectedIds.has(String(o.id)) && o.erpStatus === 'shipped_domestic').length;
               
               return (
                 <>
@@ -562,8 +562,8 @@ export default function OrdersListPage() {
                     </Button>
                   )}
                   
-                  {/* 批量查看采购按钮 */}
-                  {purchasingCount > 0 && (
+                  {/* 批量查看运输中按钮 */}
+                  {transitCount > 0 && (
                     <Button
                       size="sm"
                       variant="outline"
@@ -573,12 +573,12 @@ export default function OrdersListPage() {
                           alert('单次最多处理20单，请减少选择');
                           return;
                         }
-                        const ids = filteredOrders.filter(o => selectedIds.has(String(o.id)) && o.erpStatus === 'purchasing').map(o => o.id).join(',');
+                        const ids = filteredOrders.filter(o => selectedIds.has(String(o.id)) && o.erpStatus === 'shipped_domestic').map(o => o.id).join(',');
                         router.push(`/purchase?orderIds=${ids}&action=batch-view`);
                       }}
                     >
                       <Eye className="w-3.5 h-3.5 mr-1.5" />
-                      批量查看采购
+                      批量查看运输
                     </Button>
                   )}
                 </>

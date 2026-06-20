@@ -401,7 +401,7 @@ export default function PurchasePage() {
   // 判断是否为已采购状态
   const isAlreadyPurchased = useMemo(() => {
     if (selectedOrder) {
-      return ['purchasing', 'purchased', 'pending_inspect', 'pending_pack', 'shipped'].includes(selectedOrder.erpStatus);
+      return ['shipped_domestic', 'purchased', 'pending_inspect', 'pending_pack', 'shipped'].includes(selectedOrder.erpStatus);
     }
     return false;
   }, [selectedOrder]);
@@ -796,7 +796,7 @@ export default function PurchasePage() {
           if (orderIds.includes(order.id)) {
             return {
               ...order,
-              erpStatus: isDraft ? order.erpStatus : 'purchasing',
+              erpStatus: isDraft ? order.erpStatus : 'shipped_domestic',
               purchaseInfo: {
                 platform: formData.platform,
                 productUrl: formData.productUrl,
