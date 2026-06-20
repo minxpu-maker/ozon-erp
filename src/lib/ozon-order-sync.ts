@@ -394,12 +394,15 @@ async function insertNewOrders(
     const recipientAddressVal = recipientAddress ? recipientAddress : sql`NULL`;
     const shipmentDeadlineVal = (shipmentDeadlineValue === null || shipmentDeadlineValue === '') ? sql`NULL` : shipmentDeadlineValue;
     
+    // 生成订单UUID
+    const orderUuid = randomUUID();
+    
     // 插入到 orders 表（新订单根据Ozon状态动态设置erp_status）
     // 使用Drizzle ORM确保正确的类型转换和参数绑定
     await db
       .insert(orders)
       .values({
-        id: randomUUID(),
+        id: orderUuid,
         ozonOrderId: String(posting.order_id),
         ozonPostingNumber: posting.posting_number,
         shopId: shopId,
@@ -444,22 +447,21 @@ async function insertNewOrders(
 
     newOrdersCount++;
 
-    // 为每个 SKU 创建采购需求
+    // 为每个 SKU 创建采购需求（使用订单UUID作为orderId）
     for (const product of posting.products) {
       const priority = calculatePriority(shipmentDeadline ? new Date(shipmentDeadline) : null);
 
-      await db
-        .insert(purchaseDemands)
-        .values({
-          orderId: String(posting.order_id), // 使用 ozon_order_id（纯数字）作为订单标识
-          sku: product.sku,
-          productName: product.name,
-          quantity: product.quantity,
-          priority,
-          status: 'pending',
-        });
+      try {
+        await db.execute(sql`
+          INSERT INTO purchase_demands (order_id, sku, product_name, quantity, priority, status)
+          VALUES (${orderUuid}, ${product.sku}, ${product.name}, ${product.quantity}, ${priority}, 'pending')
+        `);
 
-      newDemandsCount++;
+        newDemandsCount++;
+      } catch (demandError) {
+        // 记录错误但不中断，继续处理
+        console.error(`[OrderSync] 插入采购需求失败 (订单 ${posting.orderId}, SKU ${product.sku}):`, demandError);
+      }
     }
   }
 
