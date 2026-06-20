@@ -221,10 +221,7 @@ body {
   transform: scale(0.8);
 }
 
-/* Toast通知从右滑入 */
-.transition-toast {
-  animation: slideInRight 300ms ease-out forwards;
-}
+/* Toast通知滑入/滑出动画 */
 @keyframes slideInRight {
   from {
     transform: translateX(100%);
@@ -234,6 +231,82 @@ body {
     transform: translateX(0);
     opacity: 1;
   }
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-8px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes countUp {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Toast通知从右滑入 */
+.transition-toast {
+  animation: slideInRight 300ms ease-out forwards;
+}
+
+.animate-slideInRight {
+  animation: slideInRight 300ms ease-out forwards;
+}
+
+.animate-slideOutRight {
+  animation: slideOutRight 200ms ease-in forwards;
+}
+
+.animate-slideDown {
+  animation: slideDown 200ms ease-out forwards;
+}
+
+.animate-countUp {
+  animation: countUp 300ms ease-out forwards;
+}
+
+/* 卡片列表入场动画 - staggered */
+.animate-stagger-in > * {
+  animation: slideDown 300ms ease-out forwards;
+  opacity: 0;
+}
+
+.animate-stagger-in > *:nth-child(1) { animation-delay: 0ms; }
+.animate-stagger-in > *:nth-child(2) { animation-delay: 50ms; }
+.animate-stagger-in > *:nth-child(3) { animation-delay: 100ms; }
+.animate-stagger-in > *:nth-child(4) { animation-delay: 150ms; }
+.animate-stagger-in > *:nth-child(5) { animation-delay: 200ms; }
+.animate-stagger-in > *:nth-child(n+6) { animation-delay: 250ms; }
+
+/* 弹窗/遮罩淡入 */
+.animate-fadeIn {
+  animation: fadeIn 200ms ease-out forwards;
+}
+
+.animate-fadeOut {
+  animation: fadeOut 200ms ease-in forwards;
 }
 
 /* 全局交互状态 */

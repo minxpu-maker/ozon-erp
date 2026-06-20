@@ -262,6 +262,63 @@ export default function OrderPipeline({ orders, onSync, isLoading, error, onRetr
     return filteredOrders.slice(start, end);
   }, [filteredOrders, currentPage, pageSize]);
 
+  // 全局快捷键注册
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // 检查是否在输入框中
+      const target = e.target as HTMLElement;
+      const isInputFocused = target.tagName === 'INPUT' || 
+                            target.tagName === 'TEXTAREA' || 
+                            target.isContentEditable;
+
+      // Cmd/Ctrl + K - 唤起全局搜索
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('open-global-search'));
+        return;
+      }
+
+      // Esc - 关闭弹窗/取消选中
+      if (e.key === 'Escape') {
+        if (selectedIds.size > 0) {
+          setSelectedIds(new Set());
+        }
+        return;
+      }
+
+      // 数字键 1-7 切换 Tab（无输入框focus时）
+      if (!isInputFocused && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        const num = parseInt(e.key);
+        if (num >= 1 && num <= 7) {
+          e.preventDefault();
+          const index = num - 1;
+          if (index < PIPELINE_TABS.length) {
+            const tab = PIPELINE_TABS[index];
+            if (tab && !tab.disabled) {
+              setPrevTab(activeTab);
+              setTabAnimating(true);
+              setTimeout(() => {
+                setActiveTab(tab.key as OrderStatus);
+                setSelectedIds(new Set());
+                setTimeout(() => setTabAnimating(false), 50);
+              }, 150);
+            }
+          }
+        }
+      }
+
+      // Cmd/Ctrl + A - 全选当前页
+      if ((e.metaKey || e.ctrlKey) && e.key === 'a' && !isInputFocused) {
+        e.preventDefault();
+        const allIds = new Set(paginatedOrders.map((o: OrderRecord) => o.id));
+        setSelectedIds(allIds);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeTab, selectedIds, paginatedOrders]);
+
   // 计算Tab订单数（基于Tab过滤，不含筛选条件，用于Tab栏显示）
   const tabCounts = useMemo(() => {
     const counts: Record<string, number> = {};
