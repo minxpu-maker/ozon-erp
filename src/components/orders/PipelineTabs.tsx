@@ -91,7 +91,7 @@ function TabCard({ tab, count, isActive, onClick }: TabCardProps) {
       disabled={isDisabled}
       title={isDisabled ? tab.disabledReason : undefined}
       className={cn(
-        'min-w-[140px] flex-1 rounded-xl border-2 px-5 py-2.5 text-center transition-all duration-200 flex-shrink-0',
+        'min-w-[140px] w-[140px] rounded-xl border-2 px-5 py-2.5 text-center transition-all duration-200',
         'hover:-translate-y-0.5 hover:shadow-lg',
         // 默认态
         !isActive && !isDisabled && [
@@ -190,7 +190,7 @@ export default function PipelineTabs({ orders, activeTab, onTabChange }: Pipelin
   return (
     <div className="relative flex justify-center px-4 py-3 bg-gray-50 rounded-xl">
       {/* 滚动容器 */}
-      <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent pb-1">
+      <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent pb-1 min-w-0">
         <div className="flex items-center justify-center">
           {/* 流水线Tab（等待备货→待采购→运输中→具争议→已签收→已取消）+ 箭头 */}
           {pipelineTabs.map((tab, index) => {
