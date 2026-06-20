@@ -151,8 +151,8 @@ function ProductImage({ product }: { product: OrderProduct }) {
   // 无图或加载失败：显示📦占位图
   if (!imageUrl || hasError) {
     return (
-      <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-        <span className="text-2xl text-gray-300">📦</span>
+      <div className="w-24 h-24 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+        <span className="text-4xl text-gray-300">📦</span>
       </div>
     );
   }
@@ -160,8 +160,8 @@ function ProductImage({ product }: { product: OrderProduct }) {
   // 加载中：显示 skeleton shimmer
   if (isLoading) {
     return (
-      <div className="w-16 h-16 rounded-lg bg-gray-200 flex items-center justify-center flex-shrink-0 animate-pulse">
-        <div className="w-8 h-8 bg-gray-300 rounded" />
+      <div className="w-24 h-24 rounded-lg bg-gray-200 flex items-center justify-center flex-shrink-0 animate-pulse">
+        <div className="w-12 h-12 bg-gray-300 rounded" />
       </div>
     );
   }
@@ -171,7 +171,7 @@ function ProductImage({ product }: { product: OrderProduct }) {
       <img
         src={imageUrl}
         alt={product.name || product.sku}
-        className="w-16 h-16 rounded-lg object-cover flex-shrink-0 cursor-pointer transition-transform duration-200 hover:scale-110"
+        className="w-24 h-24 rounded-lg object-cover flex-shrink-0 cursor-pointer transition-transform duration-200 hover:scale-110"
         onLoad={() => setIsLoading(false)}
         onError={() => {
           setHasError(true);
