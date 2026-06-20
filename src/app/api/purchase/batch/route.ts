@@ -5,23 +5,86 @@ import { eq, inArray } from 'drizzle-orm';
 
 /**
  * POST /api/purchase/batch
- * 批量采购录入：批量绑定快递单号
- * Body: {
- *   items: Array<{
+ * 批量采购：支持两种格式
+ * 
+ * 格式1（批量创建采购任务）:
+ * { orderIds: string[] }
+ * - 用于从订单列表批量创建采购任务
+ * - 为每个订单创建 pending_purchase 状态的采购任务
+ * 
+ * 格式2（批量录入快递单号）:
+ * { items: Array<{
  *     orderId: string,       // 订单ID
  *     expressNo: string,     // 快递单号
- *     purchasePrice: number,// 采购价
+ *     purchasePrice: number, // 采购价
  *     purchasePlatform?: string, // 采购平台
  *     supplierName?: string,    // 供应商名称
  *     purchaseUrl?: string,     // 采购链接
- *   }>
- * }
+ *   }> }
+ * - 用于批量绑定快递单号
  */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { items } = body;
+    const { orderIds, items } = body;
 
+    // 格式1: 批量创建采购任务
+    if (orderIds && Array.isArray(orderIds) && orderIds.length > 0) {
+      const results = [];
+      const errors = [];
+
+      for (const orderId of orderIds) {
+        try {
+          // 查找订单
+          const [order] = await db
+            .select()
+            .from(orders)
+            .where(eq(orders.id, orderId))
+            .limit(1);
+
+          if (!order) {
+            errors.push({ orderId, error: '订单不存在' });
+            continue;
+          }
+
+          // 检查订单状态是否为 pending_purchase
+          if (order.erpStatus !== 'pending_purchase') {
+            errors.push({ orderId, error: `订单状态不是待采购(${order.erpStatus})` });
+            continue;
+          }
+
+          // 创建采购任务
+          const [task] = await db.insert(purchaseTasks).values({
+            order_id: orderId,
+            order_item_id: '',
+            status: 'pending_purchase',
+            sku_id: null,
+            sku_code: '',
+            quantity: 1,
+            source_type: null,
+            source_url: null,
+            source_price: null,
+            purchase_amount: null,
+            shipping_fee: null,
+            domestic_tracking_number: null,
+            purchased_at: null,
+          }).returning();
+
+          results.push({ orderId, success: true, taskId: task.id });
+        } catch (err) {
+          console.error(`创建采购任务失败 ${orderId}:`, err);
+          errors.push({ orderId, error: '创建失败' });
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        created: results.length,
+        errors: errors.map(e => e.error)
+      });
+    }
+
+    // 格式2: 批量录入快递单号（原有逻辑）
     if (!Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ success: false, error: '缺少批量录入数据' }, { status: 400 });
     }
