@@ -91,7 +91,7 @@ function TabCard({ tab, count, isActive, onClick }: TabCardProps) {
       disabled={isDisabled}
       title={isDisabled ? tab.disabledReason : undefined}
       className={cn(
-        'min-w-[180px] flex-1 rounded-xl border-2 px-6 py-3 text-center transition-all duration-200 flex-shrink-0',
+        'min-w-[140px] flex-1 rounded-xl border-2 px-5 py-2.5 text-center transition-all duration-200 flex-shrink-0',
         'hover:-translate-y-0.5 hover:shadow-lg',
         // 默认态
         !isActive && !isDisabled && [
