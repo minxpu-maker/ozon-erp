@@ -86,7 +86,7 @@ export default function OrdersListPage() {
   };
 
   return (
-    <AppLayout title="订单列表" subtitle="管理来自 Ozon 的 FBS 订单">
+    <AppLayout>
       <OrderPipeline
         orders={orders}
         onSync={handleSync}

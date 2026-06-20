@@ -361,10 +361,8 @@ export default function OrderPipeline({ orders, onSync, isLoading, error, onRetr
   return (
     <div className="flex flex-col h-full bg-gray-50">
       {/* Layer 1: 标题行 */}
-      <div className="px-4 py-3 bg-white border-b border-gray-100 flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-900">订单管理</h1>
+      <div className="px-4 py-3 bg-white border-b border-gray-100 flex items-center justify-end">
         <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-400">{getSyncTimeLabel(lastSyncedAt)}</span>
           <button
             onClick={handleSync}
             disabled={syncing}
