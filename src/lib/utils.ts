@@ -107,11 +107,11 @@ export interface OrderStatusColor {
 
 export function getOrderStatusColor(status: string): OrderStatusColor {
   const colorMap: Record<string, OrderStatusColor> = {
-    awaiting_packaging: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
-    awaiting_deliver: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },
-    delivering: { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200' },
-    delivered: { bg: 'bg-teal-50', text: 'text-teal-700', border: 'border-teal-200' },
-    cancelled: { bg: 'bg-gray-50', text: 'text-gray-600', border: 'border-gray-200' },
+    awaiting_packaging: { bg: 'bg-amber-50', text: 'text-amber-600', border: 'border-amber-200' },
+    awaiting_deliver: { bg: 'bg-blue-50', text: 'text-blue-600', border: 'border-blue-200' },
+    delivering: { bg: 'bg-purple-50', text: 'text-purple-600', border: 'border-purple-200' },
+    delivered: { bg: 'bg-teal-50', text: 'text-teal-600', border: 'border-teal-200' },
+    cancelled: { bg: 'bg-gray-50', text: 'text-gray-500', border: 'border-gray-200' },
   };
-  return colorMap[status] || { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' };
+  return colorMap[status] || { bg: 'bg-red-50', text: 'text-red-600', border: 'border-red-200' };
 }

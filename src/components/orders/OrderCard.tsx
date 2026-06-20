@@ -7,6 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { PurchaseStatusBadge } from './PurchaseStatusBadge';
+import { OzonStatusTag } from './OzonStatusTag';
 import {
   Tooltip,
   TooltipContent,
@@ -571,11 +572,12 @@ export function OrderCard({ order, selected, onSelect }: OrderCardProps) {
 
           {/* 左栏 - 商品信息 */}
           <div className="flex-1 min-w-0">
-            {/* 订单号 */}
+            {/* 订单号 + Ozon状态 */}
             <div className="flex items-center gap-2 mb-2">
               <span className="font-mono text-sm text-blue-600 font-medium">
                 {order.ozonPostingNumber || order.ozonOrderId || order.id}
               </span>
+              <OzonStatusTag status={order.status} />
             </div>
 
             {/* 商品列表 */}
