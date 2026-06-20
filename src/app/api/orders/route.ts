@@ -17,11 +17,11 @@ export async function GET(request: NextRequest) {
       conditions.push(`shop_id = '${shopId.replace(/'/g, "''")}'`);
     }
     if (status && status !== 'all') {
-      // 根据Ozon官方API：
+      // 根据Ozon官方API严格映射：
       // - awaiting_deliver（已准备发运）→ 待采购
       // - awaiting_packaging（等待打包）→ 待打包
       const statusMap: Record<string, string[]> = {
-        pending: ['awaiting_deliver', 'awaiting-deliver'], // 待采购：只有已准备发运的订单
+        pending_purchase: ['awaiting_deliver', 'awaiting-deliver'], // 待采购：只有已准备发运
         pending_packaging: ['awaiting_packaging', 'awaiting-packaging'], // 待打包
         purchasing: ['purchasing'],
         purchased: ['purchased'],
@@ -36,10 +36,10 @@ export async function GET(request: NextRequest) {
       }
     }
     if (erpStatus && erpStatus !== 'all') {
-      // erpStatus筛选：pending_purchase=已准备发运，pending=等待打包
+      // erpStatus筛选：直接映射到Ozon状态
       const erpStatusMap: Record<string, string[]> = {
-        pending_purchase: ['awaiting_deliver', 'awaiting-deliver'],
-        pending: ['awaiting_packaging', 'awaiting-packaging'],
+        pending_purchase: ['awaiting_deliver', 'awaiting-deliver'], // 已准备发运
+        pending_packaging: ['awaiting_packaging', 'awaiting-packaging'], // 等待打包
         cancelled: ['cancelled'],
         shipped_domestic: ['delivering', 'delivered'],
       };

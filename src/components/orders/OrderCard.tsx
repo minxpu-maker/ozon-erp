@@ -104,9 +104,11 @@ const levelColors = {
   },
 };
 
-// 采购状态映射
+// 采购状态映射 - 根据Ozon官方API严格定义
 const erpStatusMap: Record<string, { label: string; className: string }> = {
-  pending: { label: '待采购', className: 'bg-blue-100 text-blue-700' },
+  pending_purchase: { label: '待采购', className: 'bg-blue-100 text-blue-700' },  // 已准备发运
+  pending_packaging: { label: '待打包', className: 'bg-orange-100 text-orange-700' },  // 等待打包
+  pending: { label: '待处理', className: 'bg-gray-100 text-gray-600' },  // 未知/旧状态
   purchasing: { label: '采购中', className: 'bg-amber-100 text-amber-700' },
   purchased: { label: '已采购', className: 'bg-green-100 text-green-700' },
   shipped_domestic: { label: '运输中', className: 'bg-purple-100 text-purple-700' },

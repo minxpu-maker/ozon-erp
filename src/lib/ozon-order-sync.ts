@@ -104,27 +104,32 @@ export interface ShopSyncStatus {
 
 /**
  * Ozon状态 → ERP状态映射
+ * 根据Ozon官方API严格映射：
+ * - awaiting_deliver（已准备发运）→ pending_purchase（待采购）
+ * - awaiting_packaging（等待打包）→ pending_packaging（等待打包，不算待采购）
  */
 const OZON_TO_ERP_STATUS_MAP: Record<string, string> = {
-  // 等待发运 → 待采购
-  'awaiting-packaging': 'pending',  // 等待打包
-  'awaiting-pack': 'pending',      // 等待打包
-  'awaiting-deliver': 'pending_purchase',   // 已准备发运 → 待采购
-  'awaiting_deliver': 'pending_purchase',   // 已准备发运（俄语格式）→ 待采购
-  // 运输中 → 已发货/运输中
-  'delivering': 'shipped_domestic', // 运输中
-  'delivered': 'shipped',          // 已送达
+  // 已准备发运 → 待采购
+  'awaiting-deliver': 'pending_purchase',
+  'awaiting_deliver': 'pending_purchase',
+  // 等待打包 → 等待打包（不算待采购）
+  'awaiting-packaging': 'pending_packaging',
+  'awaiting-pack': 'pending_packaging',
+  // 运输中 → 运输中
+  'delivering': 'shipped_domestic',
+  'delivered': 'shipped',
   // 取消
   'cancelled': 'cancelled',
   'refunded': 'cancelled',
-  // 其他未知状态默认待采购
 };
 
 /**
  * 获取ERP状态
+ * @param ozonStatus Ozon原始状态
+ * @returns ERP状态，未知状态返回 null
  */
-function getErpStatus(ozonStatus: string): string {
-  return OZON_TO_ERP_STATUS_MAP[ozonStatus] || 'pending';
+function getErpStatus(ozonStatus: string): string | null {
+  return OZON_TO_ERP_STATUS_MAP[ozonStatus] || null;
 }
 
 // ============================================================================

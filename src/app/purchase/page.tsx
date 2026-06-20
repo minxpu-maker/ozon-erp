@@ -101,10 +101,11 @@ interface BatchTrackingItem {
   orderSearchQuery: string;
 }
 
-// 状态映射 - 与订单列表保持一致
+// 状态映射 - 根据Ozon官方API严格定义
 const erpStatusMap: Record<string, { label: string; color: string }> = {
-  pending: { label: '待采购', color: 'bg-blue-100 text-blue-700' },
-  pending_purchase: { label: '待采购', color: 'bg-blue-100 text-blue-700' },
+  pending_purchase: { label: '待采购', color: 'bg-blue-100 text-blue-700' },  // 已准备发运
+  pending_packaging: { label: '待打包', color: 'bg-orange-100 text-orange-700' },  // 等待打包
+  pending: { label: '待处理', color: 'bg-gray-100 text-gray-600' },  // 未知状态
   purchasing: { label: '采购中', color: 'bg-amber-100 text-amber-700' },
   purchased: { label: '已采购', color: 'bg-green-100 text-green-700' },
   shipped_domestic: { label: '运输中', color: 'bg-purple-100 text-purple-700' },

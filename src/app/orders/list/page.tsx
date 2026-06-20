@@ -54,7 +54,8 @@ const statusLabels: Record<string, string> = {
 // ERP采购状态映射 - 覆盖所有可能的 erpStatus 值
 const erpStatusLabels: Record<string, string> = {
   // ERP 自定义状态
-  pending: '待采购',
+  pending_purchase: '待采购',    // 已准备发运
+  pending_packaging: '待打包',    // 等待打包
   purchasing: '采购中',
   purchased: '已采购',
   shipped_domestic: '运输中',
@@ -63,9 +64,9 @@ const erpStatusLabels: Record<string, string> = {
   packing: '打包中',
   shipped: '已发货',
   settled: '已结算',
-  // Ozon 原始状态（数据库实际存储值）
+  // Ozon 原始状态（兼容）
   new: '待采购',
-  pending_purchase: '待采购',
+  pending: '待处理',
   awaiting_pack: '待打包',
   awaiting_packaging: '待打包',
   awaiting_deliver: '待发货',
@@ -80,7 +81,8 @@ const erpStatusLabels: Record<string, string> = {
 // ERP采购状态颜色
 const erpStatusColors: Record<string, string> = {
   // ERP 自定义状态
-  pending: 'bg-blue-100 text-blue-700 border-blue-200',
+  pending_purchase: 'bg-blue-100 text-blue-700 border-blue-200', // 待采购
+  pending_packaging: 'bg-orange-100 text-orange-700 border-orange-200', // 待打包
   purchasing: 'bg-yellow-100 text-yellow-700 border-yellow-200',
   purchased: 'bg-green-100 text-green-700 border-green-200',
   shipped_domestic: 'bg-orange-100 text-orange-700 border-orange-200',
@@ -91,7 +93,7 @@ const erpStatusColors: Record<string, string> = {
   settled: 'bg-gray-100 text-gray-500 border-gray-200',
   // Ozon 原始状态
   new: 'bg-blue-100 text-blue-700 border-blue-200',
-  pending_purchase: 'bg-blue-100 text-blue-700 border-blue-200',
+  pending: 'bg-gray-100 text-gray-600 border-gray-200',
   awaiting_pack: 'bg-orange-100 text-orange-700 border-orange-200',
   awaiting_packaging: 'bg-orange-100 text-orange-700 border-orange-200',
   awaiting_deliver: 'bg-yellow-100 text-yellow-700 border-yellow-200',
