@@ -67,6 +67,7 @@ function DropdownSelect({
   const [open, setOpen] = useState(false);
 
   const selectedLabel = options.find(o => o.value === value)?.label || placeholder;
+  const displayLabel = value === 'all' ? placeholder : selectedLabel;
 
   return (
     <div className="relative">
@@ -75,7 +76,7 @@ function DropdownSelect({
         onClick={() => setOpen(!open)}
         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 bg-white text-sm hover:border-gray-300 transition-colors ${colorClass || 'text-gray-700'}`}
       >
-        <span>{selectedLabel}</span>
+        <span>{displayLabel}</span>
         <ChevronDown className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
