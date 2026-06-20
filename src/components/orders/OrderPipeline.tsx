@@ -6,7 +6,8 @@ import { toast } from 'sonner';
 import OrderToolbar, { ToolbarFilters, Shop } from './OrderToolbar';
 import { SummaryBar } from './SummaryBar';
 import BatchActionBar from './BatchActionBar';
-import { OrderCard, OrderRecord } from "./OrderCard";
+import { OrderCard, type OrderRecord } from "./OrderCard";
+import { OrderListView } from "./OrderListView";
 import EmptyState from "./EmptyState";
 import { OrderCardSkeletonList } from "./OrderCardSkeleton";
 import { getOrderStatusLabel } from "@/lib/utils";
@@ -451,6 +452,13 @@ export default function OrderPipeline({ orders, onSync, isLoading, error, onRetr
           <OrderCardSkeletonList count={5} />
         ) : filteredOrders.length === 0 ? (
           <EmptyState tabName={getOrderStatusLabel(activeTab)} keyword={filters.keyword} />
+        ) : viewMode === 'list' ? (
+          <OrderListView
+            orders={paginatedOrders as unknown as OrderRecord[]}
+            selectedIds={new Set(Array.from(selectedIds).map(String))}
+            onToggleSelect={toggleSelect}
+            onToggleSelectAll={toggleSelectAll}
+          />
         ) : (
           <div className="flex flex-col gap-3">
             {paginatedOrders.map((order: OrderRecord) => (
