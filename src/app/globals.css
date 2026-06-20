@@ -92,6 +92,48 @@
   --sidebar-accent-foreground: #152033;
   --sidebar-border: #E6EAF2;
   --sidebar-ring: #2F6BFF;
+
+  /* ========== 设计系统 Token ========== */
+  /* 圆角体系 */
+  --radius-lg: 12px;      /* 外层容器 */
+  --radius-md: 8px;       /* 内部元素 */
+  --radius-sm: 6px;       /* Badge/Tag */
+
+  /* 阴影体系 */
+  --shadow-rest: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-hover: 0 4px 6px rgba(0,0,0,0.07);
+  --shadow-float: 0 8px 16px rgba(0,0,0,0.1);
+
+  /* 动效时长 */
+  --duration-fast: 150ms;
+  --duration-normal: 200ms;
+  --duration-slow: 300ms;
+
+  /* 背景色 */
+  --bg-page: #f8fafc;      /* 页面灰底 */
+  --bg-card: #ffffff;       /* 卡片白底 */
+  --bg-hover: #f9fafb;      /* 悬停背景 */
+  --bg-muted: #f3f4f6;       /* 灰底区域 */
+  --bg-input: #f8fafc;      /* 输入框背景 */
+
+  /* 边框色 */
+  --border-default: #f3f4f6;
+  --border-strong: #e5e7eb;
+  --border-focus: #60a5fa;
+
+  /* 文字色 */
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --text-muted: #9ca3af;
+  --text-placeholder: #d1d5db;
+
+  /* 侧边栏 */
+  --sidebar-width: 220px;
+
+  /* z-index层级 */
+  --z-sticky: 20;
+  --z-toast: 40;
+  --z-modal: 50;
 }
 
 .dark {
@@ -141,6 +183,61 @@
 
 body {
   @apply font-sans;
+}
+
+/* ============================================
+   自定义滚动条样式
+   ============================================ */
+
+/* Chrome, Safari, Edge */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #d1d5db;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #9ca3af;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db transparent;
+}
+
+/* ============================================
+   设计系统工具类
+   ============================================ */
+
+/* 圆角工具类 */
+.radius-lg {
+  border-radius: var(--radius-lg);
+}
+.radius-md {
+  border-radius: var(--radius-md);
+}
+.radius-sm {
+  border-radius: var(--radius-sm);
+}
+
+/* 阴影工具类 */
+.shadow-rest {
+  box-shadow: var(--shadow-rest);
+}
+.shadow-hover {
+  box-shadow: var(--shadow-hover);
+}
+.shadow-float {
+  box-shadow: var(--shadow-float);
 }
 
 /* 高亮闪烁动画 */

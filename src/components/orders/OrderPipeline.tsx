@@ -359,8 +359,9 @@ export default function OrderPipeline({ orders, onSync, isLoading, error, onRetr
   );
 
   return (
-    <div className="flex flex-col h-full bg-gray-100">
+    <div className="flex flex-col h-full bg-gray-100 rounded-xl">
       {renderTabs()}
+      <div className="mb-4" /> {/* Tab行→搜索栏间距 */}
       <OrderToolbar
         filters={filters}
         onFiltersChange={setFilters}
@@ -370,6 +371,7 @@ export default function OrderPipeline({ orders, onSync, isLoading, error, onRetr
         onSync={handleSync}
         syncing={syncing}
       />
+      <div className="mb-4" /> {/* 搜索栏→摘要行间距 */}
       {renderSummary()}
       
       {/* 错误态横幅 */}
@@ -392,6 +394,7 @@ export default function OrderPipeline({ orders, onSync, isLoading, error, onRetr
         </div>
       )}
       
+      <div className="mb-4" />
       <div 
         ref={listRef}
         className={cn(
