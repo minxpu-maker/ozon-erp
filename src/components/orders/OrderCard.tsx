@@ -145,12 +145,13 @@ const ozonStatusMap: Record<string, { label: string; isAbnormal: boolean }> = {
 function ProductImage({ product }: { product: OrderProduct }) {
   const [hasError, setHasError] = useState(false);
   const [isLoading, setIsLoading] = useState(!!product.image);
+  const [isHovering, setIsHovering] = useState(false);
   const imageUrl = product.image;
 
   // 无图或加载失败：显示📦占位图
   if (!imageUrl || hasError) {
     return (
-      <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+      <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
         <span className="text-2xl text-gray-300">📦</span>
       </div>
     );
@@ -159,23 +160,37 @@ function ProductImage({ product }: { product: OrderProduct }) {
   // 加载中：显示 skeleton shimmer
   if (isLoading) {
     return (
-      <div className="w-12 h-12 rounded-lg bg-gray-200 flex items-center justify-center flex-shrink-0 animate-pulse">
-        <div className="w-6 h-6 bg-gray-300 rounded" />
+      <div className="w-16 h-16 rounded-lg bg-gray-200 flex items-center justify-center flex-shrink-0 animate-pulse">
+        <div className="w-8 h-8 bg-gray-300 rounded" />
       </div>
     );
   }
 
   return (
-    <img
-      src={imageUrl}
-      alt={product.name || product.sku}
-      className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
-      onLoad={() => setIsLoading(false)}
-      onError={() => {
-        setHasError(true);
-        setIsLoading(false);
-      }}
-    />
+    <div className="relative">
+      <img
+        src={imageUrl}
+        alt={product.name || product.sku}
+        className="w-16 h-16 rounded-lg object-cover flex-shrink-0 cursor-pointer transition-transform duration-200 hover:scale-110"
+        onLoad={() => setIsLoading(false)}
+        onError={() => {
+          setHasError(true);
+          setIsLoading(false);
+        }}
+        onMouseEnter={() => setIsHovering(true)}
+        onMouseLeave={() => setIsHovering(false)}
+      />
+      {/* 悬停放大预览 */}
+      {isHovering && (
+        <div className="absolute left-full ml-2 top-0 z-50 pointer-events-none">
+          <img
+            src={imageUrl}
+            alt={product.name || product.sku}
+            className="w-64 h-64 rounded-lg object-cover border border-gray-200 shadow-lg"
+          />
+        </div>
+      )}
+    </div>
   );
 }
 
