@@ -675,17 +675,6 @@ export function OrderCard({ order, selected, onSelect }: OrderCardProps) {
           )}>
             截止 {formatDateTime(order.shipmentDeadline)}
           </span>
-          <Badge
-            variant="outline"
-            className={cn(
-              'text-xs px-1.5 py-0',
-              ozonStatusConfig.isAbnormal
-                ? 'border-red-200 text-red-600 bg-red-50'
-                : 'border-gray-200 text-gray-500'
-            )}
-          >
-            {ozonStatusConfig.label}
-          </Badge>
           <span className="ml-auto">
             {expandedProducts ? (
               <ChevronUp className="w-3.5 h-3.5 text-gray-400 transition-transform duration-200" />
