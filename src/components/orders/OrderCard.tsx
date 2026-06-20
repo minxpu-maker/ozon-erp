@@ -605,7 +605,7 @@ export function OrderCard({ order, selected, onSelect }: OrderCardProps) {
             {/* 订单号 + Ozon状态 */}
             <div className="flex items-center gap-2 mb-2">
               <span className="font-mono text-sm text-blue-600 font-medium">
-                {order.ozonPostingNumber || order.ozonOrderId || order.id}
+                # {order.ozonPostingNumber || order.ozonOrderId || order.id}
               </span>
               <OzonStatusTag status={order.status} />
             </div>
@@ -648,23 +648,23 @@ export function OrderCard({ order, selected, onSelect }: OrderCardProps) {
           <div className="w-32 flex flex-col items-center justify-center gap-2">
             {/* Ozon售价 */}
             <div className="text-center">
-              <p className="text-xs text-gray-400 mb-0.5">Ozon售价</p>
-              <p className="text-2xl font-bold text-gray-900 leading-none">
+              <p className="text-xs text-gray-400 mb-1">Ozon售价</p>
+              <p className="text-2xl font-bold text-gray-900 tracking-tight leading-none">
                 {order.totalPrice ? formatRUB(Number(order.totalPrice)) : '—'}
               </p>
               <p className="text-sm text-gray-400 mt-1">
-                ≈ {order.totalPrice ? formatCNYFromRUB(Number(order.totalPrice)) : '0.00'}
+                ≈ ¥ {order.totalPrice ? (Number(order.totalPrice) * (rate || 0.0699)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
               </p>
             </div>
             {/* 买家实付金额 */}
             <div className="text-center">
-              <p className="text-xs text-gray-400 mb-0.5">买家实付</p>
-              <p className="text-lg font-bold text-gray-800 leading-tight">
+              <p className="text-xs text-gray-400 mb-1">买家实付</p>
+              <p className="text-2xl font-bold text-gray-900 tracking-tight leading-tight">
                 {order.orderAmount ? formatRUB(Number(order.orderAmount)) : '—'}
               </p>
               {order.orderAmount && rate && (
-                <p className="text-xs text-green-600 font-medium mt-0.5">
-                  ≈ {(Number(order.orderAmount) * rate).toFixed(2)} CNY
+                <p className="text-sm text-gray-400 mt-0.5">
+                  ≈ ¥ {(Number(order.orderAmount) * rate).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
               )}
             </div>
