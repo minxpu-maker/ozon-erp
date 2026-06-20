@@ -22,6 +22,8 @@ interface OrderToolbarProps {
   availableShops: Shop[];
   viewMode: 'card' | 'list';
   onViewModeChange: (mode: 'card' | 'list') => void;
+  onSync?: () => void;
+  syncing?: boolean;
 }
 
 // 紧急度选项
@@ -265,6 +267,8 @@ export default function OrderToolbar({
   availableShops,
   viewMode,
   onViewModeChange,
+  onSync,
+  syncing,
 }: OrderToolbarProps) {
   const [localKeyword, setLocalKeyword] = useState(filters.keyword);
 
@@ -310,19 +314,38 @@ export default function OrderToolbar({
         {/* 第一行：搜索框 + 筛选下拉 + 视图切换 */}
         <div className="flex items-center gap-3">
           {/* 搜索框 */}
-          <div className="relative w-80 flex-shrink-0">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <div className="relative w-80 flex-shrink-0 flex items-center">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 z-10" />
             <input
               type="text"
               value={localKeyword}
               onChange={e => setLocalKeyword(e.target.value)}
               placeholder="搜索订单号、SKU、商品名…"
-              className="w-full pl-9 pr-8 py-1.5 rounded-lg bg-gray-50 text-sm focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all"
+              className="w-full pl-9 pr-20 py-1.5 rounded-lg bg-gray-50 text-sm focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all"
             />
-            {localKeyword && (
+            {onSync && (
+              <button
+                onClick={onSync}
+                disabled={syncing}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg text-xs px-2 py-1 text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+              >
+                {syncing ? (
+                  <svg className="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                ) : (
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                )}
+                <span>同步</span>
+              </button>
+            )}
+            {localKeyword && !syncing && (
               <button
                 onClick={() => { setLocalKeyword(''); onFiltersChange({ ...filters, keyword: '' }); }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-16 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
               >
                 <X className="w-4 h-4" />
               </button>
