@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { cn, getCountdown, formatCNY } from '@/lib/utils';
+import { cn, getCountdown, formatCNY, formatRUB, formatCNYFromRUB } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -604,7 +604,10 @@ export function OrderCard({ order, selected, onSelect }: OrderCardProps) {
             <div className="text-center">
               <p className="text-xs text-gray-400 mb-0.5">Ozon售价</p>
               <p className="text-base font-bold text-gray-900">
-                {order.totalPrice ? formatCNY(Number(order.totalPrice)) : '—'}
+                {order.totalPrice ? formatRUB(Number(order.totalPrice)) : '—'}
+              </p>
+              <p className="text-xs text-gray-400">
+                ≈{order.totalPrice ? formatCNYFromRUB(Number(order.totalPrice)) : '¥0.00'}
               </p>
             </div>
             {/* 采购状态Badge - 带Popover */}
@@ -759,7 +762,10 @@ export function OrderCard({ order, selected, onSelect }: OrderCardProps) {
                     <div>
                       <p className="text-xs text-gray-400">订单金额</p>
                       <p className="text-sm font-semibold text-gray-900">
-                        {order.totalPrice ? formatCNY(Number(order.totalPrice)) : '—'}
+                        {order.totalPrice ? formatRUB(Number(order.totalPrice)) : '—'}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        ≈{order.totalPrice ? formatCNYFromRUB(Number(order.totalPrice)) : '¥0.00'}
                       </p>
                     </div>
                     <div>

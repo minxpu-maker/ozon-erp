@@ -15,6 +15,27 @@ export function formatCNY(amount: number | string): string {
 }
 
 /**
+ * 格式化俄罗斯卢布金额
+ */
+export function formatRUB(amount: number | string): string {
+  const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+  if (isNaN(num)) return '₽0.00';
+  return `₽${num.toFixed(2)}`;
+}
+
+/**
+ * 卢布转人民币估算（临时硬编码汇率，后续接入实时汇率）
+ */
+const RUB_TO_CNY_RATE = 0.07; // 1 RUB ≈ 0.07 CNY
+
+export function formatCNYFromRUB(amount: number | string): string {
+  const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+  if (isNaN(num)) return '¥0.00';
+  const cny = num * RUB_TO_CNY_RATE;
+  return `¥${cny.toFixed(2)}`;
+}
+
+/**
  * 发货倒计时计算
  */
 export type CountdownLevel = 'overdue' | 'urgent' | 'warning' | 'normal';
