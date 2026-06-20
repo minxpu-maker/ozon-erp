@@ -648,7 +648,7 @@ export function OrderCard({ order, selected, onSelect }: OrderCardProps) {
 
         {/* 底部：订单号 + 店铺名 + Ozon原始状态 + 展开箭头 */}
         <div 
-          className="px-4 pb-3 flex items-center gap-3 text-xs cursor-pointer select-none"
+          className="px-4 pb-3 flex items-center gap-3 text-xs cursor-pointer select-none flex-wrap"
           onClick={(e) => {
             e.stopPropagation();
             setExpandedProducts((prev) => !prev);
@@ -660,6 +660,21 @@ export function OrderCard({ order, selected, onSelect }: OrderCardProps) {
           <span className="text-gray-300">·</span>
           <span className="text-gray-500">{order.shopName || '未知店铺'}</span>
           <span className="text-gray-300">·</span>
+          <span className={order.recipientCity ? 'text-gray-600' : 'text-gray-400'}>
+            {order.recipientCity || '无城市'}
+          </span>
+          <span className="text-gray-300">·</span>
+          <span className="text-gray-500">
+            {formatWeight(order.weight)}
+          </span>
+          <span className="text-gray-300">·</span>
+          <span className={cn(
+            countdown.level === 'overdue' || countdown.level === 'urgent' ? 'text-red-500 font-medium' :
+            countdown.level === 'warning' ? 'text-amber-500 font-medium' :
+            'text-gray-500'
+          )}>
+            截止 {formatDateTime(order.shipmentDeadline)}
+          </span>
           <Badge
             variant="outline"
             className={cn(
@@ -701,18 +716,6 @@ export function OrderCard({ order, selected, onSelect }: OrderCardProps) {
                         {order.recipientName || order.buyerName || '暂无数据'}
                       </span>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs text-gray-400">收货城市:</span>
-                      <span className={order.recipientCity ? 'text-sm text-gray-900' : 'text-sm text-gray-400'}>
-                        {order.recipientCity || '暂无数据'}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs text-gray-400">包裹重量:</span>
-                      <span className="text-sm text-gray-900">
-                        {formatWeight(order.weight)}
-                      </span>
-                    </div>
                   </div>
                 </div>
 
@@ -727,12 +730,6 @@ export function OrderCard({ order, selected, onSelect }: OrderCardProps) {
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs text-gray-400">更新:</span>
                       <span className="text-sm text-gray-900">{formatDateTime(order.updatedAt)}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs text-gray-400">发货截止:</span>
-                      <span className={order.shipmentDeadline ? 'text-sm text-gray-900' : 'text-sm text-gray-400'}>
-                        {formatDateTime(order.shipmentDeadline)}
-                      </span>
                     </div>
                   </div>
                 </div>
