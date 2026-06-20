@@ -28,6 +28,7 @@ import { ShoppingCart, Eye, ArrowUpDown, ArrowUp, ArrowDown, Check, X, ExternalL
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { OrderCard, OrderRecord } from '@/components/orders/OrderCard';
+import PipelineTabs, { OrderStatus, PIPELINE_TABS, getOrderTabKey } from '@/components/orders/PipelineTabs';
 
 const fetcher = (url: string) => fetch(url).then(async r => {
   if (!r.ok) throw new Error('请求失败');
@@ -173,8 +174,8 @@ export default function OrdersListPage() {
   const [currentNow, setNow] = useState<number | null>(null);
   // 排序状态：deadline_asc=截止时间升序(默认), deadline_desc=截止时间降序, created_desc=创建时间降序
   const [sortMode, setSortMode] = useState<'deadline_asc' | 'deadline_desc' | 'created_desc'>('deadline_asc');
-  // Tab筛选状态
-  const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'shipped_domestic' | 'purchased' | 'pending_ship' | 'shipped'>('all');
+  // Tab筛选状态 - 基于order_status(Ozon外部状态)
+  const [activeTab, setActiveTab] = useState<OrderStatus | 'all'>('awaiting_deliver');
   // 选中订单状态
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   // 排序方式
@@ -256,7 +257,7 @@ export default function OrdersListPage() {
     
     return [...orderList].sort((a, b) => {
       // 对于待采购/全部Tab，按紧急度排序
-      if (activeTab === 'all' || activeTab === 'pending') {
+      if (activeTab === 'all' || activeTab === 'awaiting_deliver') {
         const aCountdown = getCountdown(a.shipmentDeadline);
         const bCountdown = getCountdown(b.shipmentDeadline);
         
@@ -291,31 +292,39 @@ export default function OrdersListPage() {
     });
   }, [orderList, activeTab]);
 
-  // Tab状态计数
+  // Tab状态计数 - 基于order.status(Ozon外部状态)
   const tabCounts = useMemo(() => {
-    const counts = { all: orderList.length, pending: 0, shipped_domestic: 0, purchased: 0, pending_ship: 0, shipped: 0 };
+    const counts = { 
+      all: orderList.length, 
+      awaiting_packaging: 0, 
+      awaiting_deliver: 0, 
+      delivering: 0, 
+      disputed: 0, 
+      delivered: 0, 
+      cancelled: 0 
+    };
     orderList.forEach(order => {
-      const status = order.erpStatus || '';
-      if (PENDING_STATUSES.includes(status)) counts.pending++;
-      else if (status === 'shipped_domestic') counts.shipped_domestic++;
-      else if (status === 'purchased') counts.purchased++;
-      else if (status === 'qc_passed' || status === 'packing') counts.pending_ship++;
-      else if (status === 'shipped') counts.shipped++;
+      const status = order.status || '';
+      if (status === 'awaiting_packaging' || status === 'awaiting-packaging') counts.awaiting_packaging++;
+      else if (status === 'awaiting_deliver' || status === 'awaiting-deliver') counts.awaiting_deliver++;
+      else if (status === 'delivering') counts.delivering++;
+      else if (status === 'delivered') counts.delivered++;
+      else if (status === 'cancelled') counts.cancelled++;
     });
     return counts;
   }, [orderList]);
 
-  // 按Tab筛选订单
+  // 按Tab筛选订单 - 基于order.status(Ozon外部状态)
   const filteredOrders = useMemo(() => {
     if (activeTab === 'all') return sortedOrders;
     return sortedOrders.filter(order => {
-      const status = order.erpStatus || '';
+      const status = order.status || '';
       switch (activeTab) {
-        case 'pending': return PENDING_STATUSES.includes(status);
-        case 'shipped_domestic': return status === 'shipped_domestic';
-        case 'purchased': return status === 'purchased';
-        case 'pending_ship': return status === 'qc_passed' || status === 'packing';
-        case 'shipped': return status === 'shipped';
+        case 'awaiting_packaging': return status === 'awaiting_packaging' || status === 'awaiting-packaging';
+        case 'awaiting_deliver': return status === 'awaiting_deliver' || status === 'awaiting-deliver';
+        case 'delivering': return status === 'delivering';
+        case 'delivered': return status === 'delivered';
+        case 'cancelled': return status === 'cancelled';
         default: return true;
       }
     });
@@ -465,38 +474,12 @@ export default function OrdersListPage() {
         </Button>
       </div>
 
-      {/* Tab状态筛选栏 */}
-      <div className="flex items-center gap-1 border-b border-border">
-        {[
-          { key: 'all' as const, label: '全部', count: tabCounts.all },
-          { key: 'pending' as const, label: '待采购', count: tabCounts.pending },
-          { key: 'shipped_domestic' as const, label: '运输中', count: tabCounts.shipped_domestic ?? 0 },
-          { key: 'purchased' as const, label: '已采购', count: tabCounts.purchased },
-          { key: 'pending_ship' as const, label: '待发货', count: tabCounts.pending_ship },
-          { key: 'shipped' as const, label: '已发货', count: tabCounts.shipped },
-        ].map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => { setActiveTab(tab.key); setSelectedIds(new Set()); }}
-            className={cn(
-              'px-4 py-2.5 text-sm font-medium border-b-2 transition-colors flex items-center gap-1.5',
-              activeTab === tab.key
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-muted-foreground hover:text-foreground hover:border-gray-300'
-            )}
-          >
-            {tab.label}
-            <span className={cn(
-              'text-xs px-1.5 py-0.5 rounded-full',
-              activeTab === tab.key
-                ? 'bg-blue-100 text-blue-700'
-                : 'bg-gray-100 text-gray-600'
-            )}>
-              {tab.count}
-            </span>
-          </button>
-        ))}
-      </div>
+      {/* Tab状态筛选栏 - 基于order.status(Ozon外部状态) */}
+      <PipelineTabs
+        activeTab={activeTab}
+        onTabChange={(tab) => { setActiveTab(tab); setSelectedIds(new Set()); }}
+        counts={tabCounts}
+      />
 
       {/* 全选控件 + 排序 */}
       <div className="flex items-center justify-between py-2 px-1">
