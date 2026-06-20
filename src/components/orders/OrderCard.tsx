@@ -39,6 +39,7 @@ interface OrderProduct {
   quantity: number;
   price: string;
   image?: string | null;
+  productId?: string | number; // Ozon商品ID，用于跳转链接
 }
 
 interface PurchaseInfo {
@@ -199,6 +200,13 @@ function ProductRow({ product, index }: { product: OrderProduct; index: number }
   const displayName = product.name || '商品信息缺失';
   const isLongName = displayName.length > 30;
 
+  // 构建Ozon商品链接
+  const productUrl = product.productId
+    ? `https://www.ozon.ru/product/${product.productId}/`
+    : product.sku
+      ? `https://www.ozon.ru/search/?text=${encodeURIComponent(product.sku)}`
+      : null;
+
   return (
     <div className="flex items-center gap-3">
       {/* 商品图片 */}
@@ -210,18 +218,42 @@ function ProductRow({ product, index }: { product: OrderProduct; index: number }
         {isLongName ? (
           <Tooltip>
             <TooltipTrigger asChild>
-              <p className="text-sm font-medium text-gray-900 truncate cursor-help">
-                {displayName}
-              </p>
+              {productUrl ? (
+                <a
+                  href={productUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm font-medium text-blue-600 truncate cursor-pointer hover:text-blue-700 hover:underline block"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {displayName}
+                </a>
+              ) : (
+                <p className="text-sm font-medium text-gray-900 truncate cursor-help">
+                  {displayName}
+                </p>
+              )}
             </TooltipTrigger>
             <TooltipContent side="bottom" className="max-w-xs">
               <p>{displayName}</p>
             </TooltipContent>
           </Tooltip>
         ) : (
-          <p className="text-sm font-medium text-gray-900 truncate">
-            {displayName}
-          </p>
+          productUrl ? (
+            <a
+              href={productUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm font-medium text-blue-600 truncate cursor-pointer hover:text-blue-700 hover:underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {displayName}
+            </a>
+          ) : (
+            <p className="text-sm font-medium text-gray-900 truncate">
+              {displayName}
+            </p>
+          )
         )}
         {/* SKU + 数量 */}
         <div className="flex items-center gap-1 text-xs text-gray-400 mt-0.5">
