@@ -45,12 +45,12 @@ function calculateStats(orders: OrderRecord[]) {
 
     const deadline = new Date(order.shipmentDeadline);
 
-    // 逾期：已过截止时间
+    // 超时：已过截止时间
     if (deadline < now) {
       overdueCount++;
     }
 
-    // 紧急：距今小于24小时但还未逾期
+    // 紧急：距今小于24小时但还未超时
     const timeDiff = deadline.getTime() - now.getTime();
     if (timeDiff >= 0 && timeDiff < twentyFourHours) {
       urgentCount++;
@@ -66,7 +66,7 @@ export function SummaryBar({ orders, currentTab, totalCount }: SummaryBarProps) 
   return (
     <div className="bg-white rounded-xl px-4 py-2.5 flex items-center justify-between">
       <StatItem
-        label="逾期"
+        label="超时"
         value={overdueCount}
         color={overdueCount > 0 ? "red" : "gray"}
         pulse={overdueCount > 0}
