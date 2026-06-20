@@ -106,7 +106,7 @@ const erpStatusMap: Record<string, { label: string; color: string }> = {
   pending_purchase: { label: '待采购', color: 'bg-blue-100 text-blue-700' },  // 已准备发运
   pending_packaging: { label: '待打包', color: 'bg-orange-100 text-orange-700' },  // 等待打包
   pending: { label: '待处理', color: 'bg-gray-100 text-gray-600' },  // 未知状态
-  purchasing: { label: '采购中', color: 'bg-amber-100 text-amber-700' },
+  purchasing: { label: '采购中(旧)', color: 'bg-amber-100 text-amber-700' },  // 旧状态
   purchased: { label: '已采购', color: 'bg-green-100 text-green-700' },
   shipped_domestic: { label: '运输中', color: 'bg-purple-100 text-purple-700' },
   received: { label: '已到货', color: 'bg-teal-100 text-teal-700' },
@@ -236,7 +236,7 @@ export default function PurchasePage() {
   const pipelineTabs: { key: PipelineTab; label: string; erpStatus: string[]; emptyMsg: string; hasLink?: boolean }[] = [
     { key: 'all', label: '全部', erpStatus: [], emptyMsg: '暂无采购任务' },
     { key: 'pending', label: '待采购', erpStatus: ['pending_purchase'], emptyMsg: '暂无待采购任务，去订单列表看看', hasLink: true },
-    { key: 'purchasing', label: '采购中', erpStatus: ['purchasing'], emptyMsg: '没有进行中的采购，休息一下' },
+    { key: 'purchasing', label: '运输中', erpStatus: ['shipped_domestic'], emptyMsg: '暂无运输中订单' },
     { key: 'purchased', label: '已采购', erpStatus: ['purchased'], emptyMsg: '暂无已采购任务' },
     { key: 'received', label: '已到货', erpStatus: ['received', 'pending_inspect'], emptyMsg: '暂无到货待验任务' },
     { key: 'completed', label: '已完成', erpStatus: ['shipped', 'delivered'], emptyMsg: '暂无已完成任务' },
@@ -256,7 +256,7 @@ export default function PurchasePage() {
     orders.forEach(order => {
       const status = order.erpStatus;
       if (status === 'pending_purchase') stats.pending++;
-      else if (status === 'purchasing') stats.purchasing++;
+      else if (status === 'shipped_domestic') stats.purchasing++;
       else if (status === 'purchased') stats.purchased++;
       else if (status === 'received' || status === 'pending_inspect') stats.received++;
       else if (status === 'shipped' || status === 'delivered') stats.completed++;

@@ -56,7 +56,7 @@ const erpStatusLabels: Record<string, string> = {
   // ERP 自定义状态
   pending_purchase: '待采购',    // 已准备发运
   pending_packaging: '待打包',    // 等待打包
-  purchasing: '采购中',
+  purchasing: '运输中(采购)',
   purchased: '已采购',
   shipped_domestic: '运输中',
   received: '已到货',
@@ -107,8 +107,8 @@ const erpStatusColors: Record<string, string> = {
 
 // 需要显示"去采购"按钮的状态 - 只有已准备发运的订单才能采购
 const PENDING_STATUSES = ['pending_purchase'];
-// 需要显示"查看采购"按钮的状态
-const PURCHASING_STATUSES = ['purchasing'];
+// 需要显示"查看采购"按钮的状态 - 运输中(采购)
+const PURCHASING_STATUSES = ['shipped_domestic'];
 // 已处理状态（不显示按钮）
 const PROCESSED_STATUSES = ['purchased', 'shipped_domestic', 'received', 'qc_passed', 'packing', 'shipped', 'settled', 'delivered', 'cancelled'];
 
@@ -174,7 +174,7 @@ export default function OrdersListPage() {
   // 排序状态：deadline_asc=截止时间升序(默认), deadline_desc=截止时间降序, created_desc=创建时间降序
   const [sortMode, setSortMode] = useState<'deadline_asc' | 'deadline_desc' | 'created_desc'>('deadline_asc');
   // Tab筛选状态
-  const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'purchasing' | 'purchased' | 'pending_ship' | 'shipped'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'shipped_domestic' | 'purchased' | 'pending_ship' | 'shipped'>('all');
   // 选中订单状态
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   // 排序方式
@@ -293,11 +293,11 @@ export default function OrdersListPage() {
 
   // Tab状态计数
   const tabCounts = useMemo(() => {
-    const counts = { all: orderList.length, pending: 0, purchasing: 0, purchased: 0, pending_ship: 0, shipped: 0 };
+    const counts = { all: orderList.length, pending: 0, shipped_domestic: 0, purchased: 0, pending_ship: 0, shipped: 0 };
     orderList.forEach(order => {
       const status = order.erpStatus || '';
       if (PENDING_STATUSES.includes(status)) counts.pending++;
-      else if (status === 'purchasing') counts.purchasing++;
+      else if (status === 'shipped_domestic') counts.shipped_domestic++;
       else if (status === 'purchased') counts.purchased++;
       else if (status === 'qc_passed' || status === 'packing') counts.pending_ship++;
       else if (status === 'shipped') counts.shipped++;
@@ -312,7 +312,7 @@ export default function OrdersListPage() {
       const status = order.erpStatus || '';
       switch (activeTab) {
         case 'pending': return PENDING_STATUSES.includes(status);
-        case 'purchasing': return status === 'purchasing';
+        case 'shipped_domestic': return status === 'shipped_domestic';
         case 'purchased': return status === 'purchased';
         case 'pending_ship': return status === 'qc_passed' || status === 'packing';
         case 'shipped': return status === 'shipped';
@@ -470,7 +470,7 @@ export default function OrdersListPage() {
         {[
           { key: 'all' as const, label: '全部', count: tabCounts.all },
           { key: 'pending' as const, label: '待采购', count: tabCounts.pending },
-          { key: 'purchasing' as const, label: '采购中', count: tabCounts.purchasing },
+          { key: 'shipped_domestic' as const, label: '运输中', count: tabCounts.shipped_domestic ?? 0 },
           { key: 'purchased' as const, label: '已采购', count: tabCounts.purchased },
           { key: 'pending_ship' as const, label: '待发货', count: tabCounts.pending_ship },
           { key: 'shipped' as const, label: '已发货', count: tabCounts.shipped },
