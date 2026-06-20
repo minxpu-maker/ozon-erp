@@ -147,19 +147,27 @@ export default function ShopsPage() {
           if (responseText) {
             try {
               const responseData = JSON.parse(responseText);
+              
               // 检查 Ozon API 错误码：code > 0 表示业务错误
               // 1 = Api-key is deactivated, 3 = Invalid API key, etc.
-              if (responseData.code && responseData.code > 0) {
+              if (responseData && typeof responseData.code === 'number' && responseData.code > 0) {
                 return { 
                   connected: false, 
                   error: responseData.message || `API错误 (code: ${responseData.code})` 
                 };
               }
               // 有数据返回才算成功
-              if (responseData.result !== undefined || responseData.items !== undefined) {
+              if (responseData && (responseData.result !== undefined || responseData.items !== undefined)) {
                 return { connected: true };
               }
-            } catch { /* 非JSON，继续 */ }
+            } catch { 
+              // JSON 解析失败，可能是 CORS 错误或非 JSON 响应
+              if (responseText.toLowerCase().includes('cors') || 
+                  responseText.toLowerCase().includes('access-control') ||
+                  responseText.includes('<html')) {
+                return { connected: false, error: 'CORS阻止直调，请安装Chrome插件绕过' };
+              }
+            }
           }
           
           // HTTP 状态码非 200
@@ -170,7 +178,8 @@ export default function ShopsPage() {
             return { connected: false, error: `HTTP ${ozonRes.status}: ${responseText.slice(0, 100)}` };
           }
           
-          return { connected: true };
+          // 无法确定结果，视为失败
+          return { connected: false, error: '无法解析响应，请检查网络连接' };
         } catch (e: unknown) {
           const msg = e instanceof Error ? e.message : '网络错误';
           if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('net::')) {
