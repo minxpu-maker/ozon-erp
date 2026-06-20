@@ -6,6 +6,7 @@ import { cn, getCountdown, formatCNY, formatRUB, formatCNYFromRUB } from '@/lib/
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { PurchaseStatusBadge } from './PurchaseStatusBadge';
 import {
   Tooltip,
   TooltipContent,
@@ -625,9 +626,7 @@ export function OrderCard({ order, selected, onSelect }: OrderCardProps) {
             </div>
             {/* 采购状态Badge - 带Popover */}
             <PurchaseDetailPopover order={order}>
-              <Badge className={cn('text-xs px-2 py-0.5', statusConfig.className)}>
-                {statusConfig.label}
-              </Badge>
+              <PurchaseStatusBadge status={order.status} />
             </PurchaseDetailPopover>
           </div>
 

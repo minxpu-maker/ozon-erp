@@ -81,3 +81,37 @@ export function getCountdown(deadline: Date | string | null | undefined): Countd
 
   return { text: `${Math.floor(diffHours)}h`, level: 'normal' };
 }
+
+/**
+ * Ozon订单状态 → 中文显示名
+ */
+export function getOrderStatusLabel(status: string): string {
+  const statusMap: Record<string, string> = {
+    awaiting_packaging: '等待备货',
+    awaiting_deliver: '待采购',
+    delivering: '运输中',
+    delivered: '已签收',
+    cancelled: '已取消',
+  };
+  return statusMap[status] || '未知';
+}
+
+/**
+ * Ozon订单状态 → 颜色配置
+ */
+export interface OrderStatusColor {
+  bg: string;
+  text: string;
+  border: string;
+}
+
+export function getOrderStatusColor(status: string): OrderStatusColor {
+  const colorMap: Record<string, OrderStatusColor> = {
+    awaiting_packaging: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
+    awaiting_deliver: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },
+    delivering: { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200' },
+    delivered: { bg: 'bg-teal-50', text: 'text-teal-700', border: 'border-teal-200' },
+    cancelled: { bg: 'bg-gray-50', text: 'text-gray-600', border: 'border-gray-200' },
+  };
+  return colorMap[status] || { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' };
+}
