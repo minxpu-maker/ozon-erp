@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
-import OrderToolbar, { ToolbarFilters } from "./OrderToolbar";
+import OrderToolbar, { ToolbarFilters, Shop } from "./OrderToolbar";
 import { SummaryBar } from "./SummaryBar";
 import BatchActionBar from "./BatchActionBar";
 import { OrderCard, OrderRecord } from "./OrderCard";
@@ -41,6 +41,14 @@ export default function OrderPipeline({ orders, onSync, isLoading, error, onRetr
   const [syncStatus, setSyncStatus] = useState<"idle" | "success" | "error">("idle");
   const [prevTab, setPrevTab] = useState(activeTab);
   const [tabAnimating, setTabAnimating] = useState(false);
+  const [viewMode, setViewMode] = useState<"card" | "list">("card");
+
+  // 模拟店铺数据
+  const availableShops: Shop[] = [
+    { id: "shop1", name: "店铺A" },
+    { id: "shop2", name: "店铺B" },
+    { id: "shop3", name: "tiantain" },
+  ];
 
   // 将订单转换为 OrderRecord 类型
   const typedOrders = useMemo(() => orders as OrderRecord[], [orders]);
@@ -293,8 +301,9 @@ export default function OrderPipeline({ orders, onSync, isLoading, error, onRetr
       <OrderToolbar
         filters={filters}
         onFiltersChange={setFilters}
-        selectedOrderIds={selectedOrderIds}
-        onNewPurchase={handleNewPurchase}
+        availableShops={availableShops}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
       />
       {renderSummary()}
       
