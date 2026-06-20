@@ -74,7 +74,7 @@ export default function OrdersListPage() {
   // 同步订单
   const handleSync = async () => {
     try {
-      const res = await fetch("/api/orders/sync", { method: "POST" });
+      const res = await fetch("/api/sync/orders", { method: "POST" });
       if (res.ok) {
         // 重新获取订单列表
         await mutate();

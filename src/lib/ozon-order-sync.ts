@@ -29,21 +29,26 @@ interface OzonPosting {
   posting_number: string;
   status: string;
   in_process_at: string;
-  address: {
-    recipient_name?: string;
-    city?: string;
-    address?: string;
-  };
+  // 收件人信息（直接字段，非嵌套）
+  recipient_name?: string;
+  recipient_city?: string;
+  recipient_address?: string | null;
+  // 发货截止时间
+  shipment_deadline?: string;
+  // 备用的新API格式字段
   customer?: {
     name?: string;
-    phone?: string;
-    email?: string;
     address?: {
       city?: string;
-      address_line?: string;
+      address_tail?: string;
     };
   };
-  shipping_edit_date?: string; // 发货截止时间
+  addressee?: {
+    name?: string;
+    phone?: string;
+  };
+  // 备用的新API格式发货日期
+  shipment_date?: string;
   products: Array<{
     sku: string;
     name: string;
@@ -51,15 +56,8 @@ interface OzonPosting {
     price: string; // Ozon API 返回的是字符串
     offer_id?: string; // 商家SKU（本地系统）
     product_id?: number; // Ozon产品ID
-    quantity_type?: {
-      weight?: number; // 声明重量（千克）
-      is_gtd_matching?: boolean;
-      is_chain_matching?: boolean;
-    };
+    weight?: number | null; // 声明重量（千克）
   }>;
-  shipping_method?: {
-    deadline?: string;
-  };
 }
 
 /**
@@ -316,6 +314,7 @@ async function fetchAllPostings(client: OzonClient): Promise<OzonPosting[]> {
         analytics_data: true,
         financial_data: true,
         barcodes: true,
+        customer_data: true,
       },
     };
 
@@ -330,6 +329,18 @@ async function fetchAllPostings(client: OzonClient): Promise<OzonPosting[]> {
 
     allPostings.push(...response.data.result.postings);
     hasNext = response.data.result.has_next;
+    
+    // 调试：打印第一个订单的字段
+    if (allPostings.length > 0 && currentOffset === 0) {
+      const first = allPostings[0];
+      console.log('[DEBUG] First posting keys:', Object.keys(first).join(', '));
+      console.log('[DEBUG] First posting:', JSON.stringify(first).substring(0, 500));
+      // 打印关键对象
+      if (first.customer) console.log('[DEBUG] customer:', JSON.stringify(first.customer));
+      if (first.addressee) console.log('[DEBUG] addressee:', JSON.stringify(first.addressee));
+      if (first.products?.[0]) console.log('[DEBUG] first product:', JSON.stringify(first.products[0]));
+      if (first.financial_data) console.log('[DEBUG] financial_data:', JSON.stringify(first.financial_data));
+    }
   }
 
   return allPostings;
@@ -364,9 +375,9 @@ async function insertNewOrders(
       return sum + (parseFloat(item.price) || 0) * item.quantity;
     }, 0);
 
-    // 转换发货截止时间（优先使用shipping_edit_date，备用shipping_method.deadline）
+    // 转换发货截止时间（直接使用posting.shipment_deadline）
     let shipmentDeadline: string | null = null;
-    const deadlineSource = posting.shipping_edit_date || posting.shipping_method?.deadline;
+    const deadlineSource = posting.shipment_date;
     if (deadlineSource && typeof deadlineSource === 'string' && deadlineSource.trim() !== '' && deadlineSource !== '0001-01-01T00:00:00Z') {
       const parsed = new Date(deadlineSource);
       if (!isNaN(parsed.getTime()) && parsed.getFullYear() > 2000) {
@@ -383,10 +394,12 @@ async function insertNewOrders(
       ozonCreatedAt = new Date(posting.in_process_at);
     }
 
-    // 提取收件人信息（优先使用customer字段，备用address字段）
-    const recipientName = posting.customer?.name || posting.address?.recipient_name || null;
-    const recipientCity = posting.customer?.address?.city || posting.address?.city || null;
-    const recipientAddress = posting.customer?.address?.address_line || posting.address?.address || null;
+    // 提取收件人信息（支持多种API格式）
+    // 格式1: customer.address.city (较新API)
+    // 格式2: recipient_city (某些版本)
+    const recipientName = posting.customer?.name || (posting as any).recipient_name || null;
+    const recipientCity = posting.customer?.address?.city || (posting as any).recipient_city || null;
+    const recipientAddress = posting.customer?.address?.address_tail || (posting as any).recipient_address || null;
 
     // 构建原始数据（包含商品列表和收件人信息，供前端展示）
     const ozonRawData: Record<string, unknown> = {
@@ -404,7 +417,7 @@ async function insertNewOrders(
         price: p.price,
         offer_id: p.offer_id ?? null,
         product_id: p.product_id ?? null,
-        weight: p.quantity_type?.weight ?? null, // 使用quantity_type.weight获取声明重量
+        weight: p.weight ?? null, // 直接使用weight字段
       })),
     };
 
