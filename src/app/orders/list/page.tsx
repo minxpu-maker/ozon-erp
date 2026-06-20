@@ -3,6 +3,7 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import useSWR from 'swr';
 import OrderPipeline from "@/components/orders/OrderPipeline";
+import { Toaster } from "sonner";
 
 const fetcher = (url: string) => fetch(url).then(async (r) => {
   if (!r.ok) throw new Error("请求失败");
@@ -82,7 +83,14 @@ export default function OrdersListPage() {
 
   return (
     <AppLayout title="订单列表" subtitle="管理来自 Ozon 的 FBS 订单">
-      <OrderPipeline orders={orders} onSync={handleSync} />
+      <OrderPipeline
+        orders={orders}
+        onSync={handleSync}
+        isLoading={isLoading}
+        error={error ? "数据加载失败" : null}
+        onRetry={() => mutate()}
+      />
+      <Toaster position="top-right" richColors />
     </AppLayout>
   );
 }

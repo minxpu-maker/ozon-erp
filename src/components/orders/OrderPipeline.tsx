@@ -1,13 +1,16 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { toast } from "sonner";
 import OrderToolbar, { ToolbarFilters } from "./OrderToolbar";
 import { SummaryBar } from "./SummaryBar";
 import BatchActionBar from "./BatchActionBar";
 import { OrderCard, OrderRecord } from "./OrderCard";
 import EmptyState from "./EmptyState";
+import { OrderCardSkeletonList } from "./OrderCardSkeleton";
 import { getOrderStatusLabel } from "@/lib/utils";
 import { PIPELINE_TABS, TabConfig, OrderStatus } from "./PipelineTabs";
+import { cn } from "@/lib/utils";
 
 // 在模块顶层计算now，避免每次渲染重新计算
 const NOW = Date.now();
@@ -24,13 +27,18 @@ interface OrderPipelineProps {
   // 使用 unknown[] 避免类型不匹配，然后内部转换
   orders: unknown[];
   onSync?: () => Promise<void>;
+  isLoading?: boolean;
+  error?: string | null;
+  onRetry?: () => void;
 }
 
-export default function OrderPipeline({ orders, onSync }: OrderPipelineProps) {
+export default function OrderPipeline({ orders, onSync, isLoading, error, onRetry }: OrderPipelineProps) {
   const [activeTab, setActiveTab] = useState<OrderStatus | "all">("awaiting_deliver");
   const [selectedIds, setSelectedIds] = useState<Set<string | number>>(new Set());
   const [filters, setFilters] = useState<ToolbarFilters>(INITIAL_FILTERS);
   const [syncing, setSyncing] = useState(false);
+  const [prevTab, setPrevTab] = useState(activeTab);
+  const [tabAnimating, setTabAnimating] = useState(false);
 
   // 将订单转换为 OrderRecord 类型
   const typedOrders = useMemo(() => orders as OrderRecord[], [orders]);
@@ -144,15 +152,13 @@ export default function OrderPipeline({ orders, onSync }: OrderPipelineProps) {
         body: JSON.stringify({ orderIds: selectedOrderIds }),
       });
       if (res.ok) {
-        // 成功后清空选中并刷新
         setSelectedIds(new Set());
-        // TODO: 刷新订单列表
+        toast.success("批量采购成功");
       } else {
         throw new Error("批量采购失败");
       }
     } catch {
-      // API 未就绪时提示
-      alert("批量采购功能开发中");
+      toast.error("批量采购功能开发中");
     }
   };
 
@@ -165,15 +171,13 @@ export default function OrderPipeline({ orders, onSync }: OrderPipelineProps) {
         body: JSON.stringify({ orderIds: selectedOrderIds, status: "shipped" }),
       });
       if (res.ok) {
-        // 成功后清空选中并刷新
         setSelectedIds(new Set());
-        // TODO: 刷新订单列表
+        toast.success("批量标记发货成功");
       } else {
         throw new Error("批量标记发货失败");
       }
     } catch {
-      // API 未就绪时提示
-      alert("批量标记发货功能开发中");
+      toast.error("批量标记发货功能开发中");
     }
   };
 
@@ -197,23 +201,29 @@ export default function OrderPipeline({ orders, onSync }: OrderPipelineProps) {
         {PIPELINE_TABS.map((tab: TabConfig) => {
           const isActive = activeTab === tab.key;
           const count = tabCounts[tab.key] || 0;
+          const handleTabClick = () => {
+            if (tab.disabled) return;
+            if (tab.key !== activeTab) {
+              setPrevTab(activeTab);
+              setTabAnimating(true);
+              setTimeout(() => {
+                setActiveTab(tab.key as OrderStatus);
+                setSelectedIds(new Set());
+                setTimeout(() => setTabAnimating(false), 50);
+              }, 150);
+            }
+          };
           
           return (
             <button
               key={tab.key}
-              onClick={() => {
-                if (!tab.disabled) {
-                  setActiveTab(tab.key as OrderStatus);
-                  // Tab切换时清空选中
-                  setSelectedIds(new Set());
-                }
-              }}
-              className={`
-                relative px-4 py-3 text-sm font-medium transition-colors
-                ${tab.disabled ? "text-gray-400 cursor-not-allowed" : ""}
-                ${!tab.disabled && isActive ? tab.textColor : ""}
-                ${!tab.disabled && !isActive ? "text-gray-500 hover:text-gray-700" : ""}
-              `}
+              onClick={handleTabClick}
+              className={cn(
+                "relative px-4 py-3 text-sm font-medium transition-colors",
+                tab.disabled ? "text-gray-400 cursor-not-allowed" : "",
+                !tab.disabled && isActive ? tab.textColor : "",
+                !tab.disabled && !isActive ? "text-gray-500 hover:text-gray-700" : ""
+              )}
               disabled={tab.disabled}
               title={tab.disabled ? tab.disabledReason : undefined}
             >
@@ -256,9 +266,37 @@ export default function OrderPipeline({ orders, onSync }: OrderPipelineProps) {
         onNewPurchase={handleNewPurchase}
       />
       {renderSummary()}
-      <div className="flex-1 overflow-y-auto px-4 py-3 pb-20 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-        {filteredOrders.length === 0 ? (
-          <EmptyState tabName={getOrderStatusLabel(activeTab)} />
+      
+      {/* 错误态横幅 */}
+      {error && (
+        <div className="mx-4 mt-3 px-4 py-3 bg-red-50 border border-red-200 rounded-lg flex items-center justify-between animate-fade-in">
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="text-sm text-red-700">{error}</span>
+          </div>
+          {onRetry && (
+            <button
+              onClick={onRetry}
+              className="text-sm text-red-600 hover:text-red-800 font-medium transition-colors"
+            >
+              重试
+            </button>
+          )}
+        </div>
+      )}
+      
+      <div className={cn(
+        "flex-1 overflow-y-auto px-4 py-3 pb-20 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent",
+        "transition-opacity duration-150",
+        tabAnimating ? "opacity-0" : "opacity-100"
+      )}>
+        {/* 加载态骨架屏 */}
+        {isLoading ? (
+          <OrderCardSkeletonList count={5} />
+        ) : filteredOrders.length === 0 ? (
+          <EmptyState tabName={getOrderStatusLabel(activeTab)} keyword={filters.keyword} />
         ) : (
           <div className="flex flex-col gap-3">
             {filteredOrders.map((order: OrderRecord) => (

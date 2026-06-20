@@ -158,3 +158,138 @@ body {
 .animate-pulse-blue {
   animation: pulse-blue 0.5s ease-in-out 2;
 }
+
+/* ========================================
+   全局过渡动画规范 (E1)
+   ======================================== */
+
+/* 卡片hover抬升 */
+.transition-card-hover {
+  transition: transform 200ms ease-out, box-shadow 200ms ease-out;
+}
+.transition-card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Tab切换列表淡入 */
+.transition-fade-in {
+  animation: fadeIn 150ms ease-in forwards;
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 底部工具栏滑入 */
+.transition-slide-up {
+  transition: transform 200ms ease-out;
+}
+.transition-slide-up.show {
+  transform: translateY(0);
+}
+.transition-slide-up.hide {
+  transform: translateY(100%);
+}
+
+/* 下拉展开 */
+.transition-dropdown {
+  transition: transform 150ms ease-out, opacity 150ms ease-out;
+  transform-origin: top;
+}
+.transition-dropdown.show {
+  transform: scale(1);
+  opacity: 1;
+}
+.transition-dropdown.hide {
+  transform: scale(0.95);
+  opacity: 0;
+}
+
+/* 角标数字变化 */
+.transition-badge {
+  transition: transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.transition-badge.pop {
+  transform: scale(1);
+}
+.transition-badge.shrink {
+  transform: scale(0.8);
+}
+
+/* Toast通知从右滑入 */
+.transition-toast {
+  animation: slideInRight 300ms ease-out forwards;
+}
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* 全局交互状态 */
+.transition-interactive {
+  transition: background-color 150ms ease-out, border-color 150ms ease-out, color 150ms ease-out;
+}
+
+/* 按钮hover态 */
+.btn-hover:hover:not(:disabled) {
+  @apply bg-gray-100;
+}
+.btn-hover:focus-visible {
+  @apply ring-2 ring-blue-400 ring-offset-1;
+}
+
+/* 禁用态 */
+.disabled-state {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+/* ========================================
+   骨架屏 Shimmer 动画
+   ======================================== */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 0%,
+    #e0e0e0 20%,
+    #f0f0f0 40%,
+    #f0f0f0 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+/* ========================================
+   错误态横幅
+   ======================================== */
+.error-banner {
+  @apply fixed top-14 left-0 right-0 z-50 bg-red-50 border-b border-red-200 px-4 py-2 flex items-center justify-between;
+}
+
+.error-banner button {
+  @apply px-3 py-1 bg-red-100 text-red-700 rounded text-sm hover:bg-red-200 transition-colors;
+}
+
+/* 网络断开横幅 */
+.network-banner {
+  @apply fixed top-14 left-0 right-0 z-50 bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center justify-center text-amber-700 text-sm;
+}
