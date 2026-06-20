@@ -36,6 +36,7 @@ interface NavItem {
   badge?: string;
   badgeColor?: 'red' | 'yellow' | 'orange' | 'blue' | 'amber' | 'purple';
   badgeCountKey?: string;
+  badgeUrgencyKey?: string;
   disabled?: boolean;
   group?: string;
 }
@@ -49,16 +50,39 @@ interface NavGroup {
 
 // 角标数量 key 配置
 const BADGE_CONFIG = {
-  '/orders/list': { key: 'ordersAwaitingDeliver', color: 'blue' as const },
-  '/purchase': { key: 'purchasePending', color: 'amber' as const },
-  '/packaging': { key: 'ordersPendingPackaging', color: 'purple' as const },
+  '/orders/list': { key: 'ordersAwaitingDeliver', urgencyKey: 'ordersAwaitingDeliverUrgency' },
+  '/purchase': { key: 'purchasePending', urgencyKey: 'purchasePendingUrgency' },
+  '/packaging': { key: 'ordersPendingPackaging', urgencyKey: 'ordersPendingPackagingUrgency' },
 };
 
 // 全局角标数量 state
 let globalBadgeCounts: Record<string, number> = {};
 let globalBadgeErrors: Record<string, boolean> = {};
+let globalBadgeUrgency: Record<string, { overdue: number; urgent: number; normal: number }> = {};
 let setGlobalBadgeCounts: React.Dispatch<React.SetStateAction<Record<string, number>>> | null = null;
 let setGlobalBadgeErrors: React.Dispatch<React.SetStateAction<Record<string, boolean>>> | null = null;
+let setGlobalBadgeUrgency: React.Dispatch<React.SetStateAction<Record<string, { overdue: number; urgent: number; normal: number }>>> | null = null;
+
+// 角标颜色类型
+type BadgeColorType = 'red' | 'orange' | 'blue' | null;
+
+// 根据紧急度获取角标颜色
+function getBadgeColor(key: string): BadgeColorType {
+  if (globalBadgeErrors[key]) return null;
+  const urgency = globalBadgeUrgency[key];
+  if (!urgency) {
+    // 降级方案：没有urgencyBreakdown时使用总数判断
+    const count = globalBadgeCounts[key];
+    if (count === undefined || count === 0) return null;
+    return 'blue';
+  }
+  const { overdue, urgent, normal } = urgency;
+  const total = overdue + urgent + normal;
+  if (total === 0) return null;
+  if (overdue > 0) return 'red';
+  if (urgent > 0) return 'orange';
+  return 'blue';
+}
 
 // 获取角标数字显示
 function getBadgeDisplay(key: string): string | null {
@@ -77,9 +101,9 @@ const fetcher = (url: string) => fetch(url).then(async (r) => {
 
 // 角标数量获取 Hook
 function useBadgeCounts() {
-  // 订单列表角标 - awaiting_deliver 状态
+  // 订单列表角标 - awaiting_deliver 状态（带紧急度分类）
   const { data: ordersData } = useSWR(
-    '/api/orders?status=awaiting_deliver&pageSize=1',
+    '/api/orders?status=awaiting_deliver&pageSize=1&includeUrgencyBreakdown=true',
     fetcher,
     { refreshInterval: 30000 }
   );
@@ -93,7 +117,7 @@ function useBadgeCounts() {
 
   // 打包发货角标 - packing 状态
   const { data: packagingData } = useSWR(
-    '/api/orders?erpStatus=packing&pageSize=1',
+    '/api/orders?erpStatus=packing&pageSize=1&includeUrgencyBreakdown=true',
     fetcher,
     { refreshInterval: 30000 }
   );
@@ -102,10 +126,15 @@ function useBadgeCounts() {
   useEffect(() => {
     const newCounts: Record<string, number> = {};
     const newErrors: Record<string, boolean> = {};
+    const newUrgency: Record<string, { overdue: number; urgent: number; normal: number }> = {};
 
     // 订单列表
     if (ordersData?.pagination?.total !== undefined) {
       newCounts.ordersAwaitingDeliver = ordersData.pagination.total;
+      // 收集紧急度分类
+      if (ordersData.urgencyBreakdown) {
+        newUrgency.ordersAwaitingDeliverUrgency = ordersData.urgencyBreakdown;
+      }
     } else if (ordersData?.success === false) {
       newErrors.ordersAwaitingDeliver = true;
     }
@@ -120,18 +149,26 @@ function useBadgeCounts() {
     // 打包发货
     if (packagingData?.pagination?.total !== undefined) {
       newCounts.ordersPendingPackaging = packagingData.pagination.total;
+      // 收集紧急度分类
+      if (packagingData.urgencyBreakdown) {
+        newUrgency.ordersPendingPackagingUrgency = packagingData.urgencyBreakdown;
+      }
     } else if (packagingData?.success === false) {
       newErrors.ordersPendingPackaging = true;
     }
 
     globalBadgeCounts = { ...globalBadgeCounts, ...newCounts };
     globalBadgeErrors = { ...globalBadgeErrors, ...newErrors };
+    globalBadgeUrgency = { ...globalBadgeUrgency, ...newUrgency };
 
     if (setGlobalBadgeCounts) {
       setGlobalBadgeCounts(prev => ({ ...prev, ...newCounts }));
     }
     if (setGlobalBadgeErrors) {
       setGlobalBadgeErrors(prev => ({ ...prev, ...newErrors }));
+    }
+    if (setGlobalBadgeUrgency) {
+      setGlobalBadgeUrgency(prev => ({ ...prev, ...newUrgency }));
     }
   }, [ordersData, purchaseData, packagingData]);
 }
@@ -149,14 +186,14 @@ const navigationGroups: NavGroup[] = [
     label: '订单管理',
     icon: FileText,
     items: [
-      { name: '订单列表', href: '/orders/list', icon: FileText, badgeColor: 'red', badgeCountKey: 'ordersAwaitingDeliver' },
+      { name: '订单列表', href: '/orders/list', icon: FileText, badgeCountKey: 'ordersAwaitingDeliver', badgeUrgencyKey: 'ordersAwaitingDeliverUrgency' },
     ],
   },
   {
     label: '采购中心',
     icon: ShoppingCart,
     items: [
-      { name: '采购工作台', href: '/purchase', icon: ShoppingCart, badgeColor: 'yellow', badgeCountKey: 'purchasePending' },
+      { name: '采购工作台', href: '/purchase', icon: ShoppingCart, badgeCountKey: 'purchasePending', badgeUrgencyKey: 'purchasePendingUrgency' },
       { name: '货源池', href: '/purchase/source-pool', icon: ShoppingCart, disabled: true, badge: '即将上线' },
       { name: '供应商管理', href: '/suppliers', icon: Building2 },
     ],
@@ -166,7 +203,7 @@ const navigationGroups: NavGroup[] = [
     icon: Package,
     items: [
       { name: '入库验货', href: '/logistics', icon: Truck },
-      { name: '打包发货', href: '/packaging', icon: Package, badgeColor: 'orange', badgeCountKey: 'ordersPendingPackaging' },
+      { name: '打包发货', href: '/packaging', icon: Package, badgeCountKey: 'ordersPendingPackaging', badgeUrgencyKey: 'ordersPendingPackagingUrgency' },
       { name: '库存管理', href: '/inventory', icon: Database },
       { name: '仓库管理', href: '/wms', icon: Building2, disabled: true, badge: '即将上线' },
     ],
@@ -225,11 +262,13 @@ export function AppLayout({ children, title, subtitle, actions }: AppLayoutProps
   const [collapsed, setCollapsed] = useState(false);
   const [badgeCounts, setBadgeCounts] = useState<Record<string, number>>({});
   const [badgeErrors, setBadgeErrors] = useState<Record<string, boolean>>({});
+  const [badgeUrgency, setBadgeUrgency] = useState<Record<string, { overdue: number; urgent: number; normal: number }>>({});
 
   // 设置全局引用
   useEffect(() => {
     setGlobalBadgeCounts = setBadgeCounts;
     setGlobalBadgeErrors = setBadgeErrors;
+    setGlobalBadgeUrgency = setBadgeUrgency;
   }, []);
 
   // 加载角标数量
@@ -267,12 +306,12 @@ export function AppLayout({ children, title, subtitle, actions }: AppLayoutProps
 
                 // 获取角标数字
                 const badgeDisplay = item.badgeCountKey ? getBadgeDisplay(item.badgeCountKey) : null;
-                const badgeColorClass = item.badgeColor === 'red' ? 'bg-red-500'
-                  : item.badgeColor === 'yellow' ? 'bg-yellow-500'
-                  : item.badgeColor === 'orange' ? 'bg-orange-500'
-                  : item.badgeColor === 'blue' ? 'bg-blue-500'
-                  : item.badgeColor === 'amber' ? 'bg-amber-500'
-                  : item.badgeColor === 'purple' ? 'bg-purple-500'
+                // 动态计算角标颜色
+                const urgencyKey = item.badgeUrgencyKey;
+                const computedColor = urgencyKey ? getBadgeColor(urgencyKey) : null;
+                const badgeColorClass = computedColor === 'red' ? 'bg-red-500'
+                  : computedColor === 'orange' ? 'bg-amber-500'
+                  : computedColor === 'blue' ? 'bg-blue-500'
                   : 'bg-gray-500';
 
                 if (item.disabled) {

@@ -11,6 +11,8 @@ export async function GET(request: NextRequest) {
     const erpStatus = searchParams.get('erpStatus');
     const orderId = searchParams.get('orderId');
     const keyword = searchParams.get('keyword');
+    // 是否返回紧急度分类计数
+    const includeUrgencyBreakdown = searchParams.get('includeUrgencyBreakdown') === 'true';
 
     // Build WHERE clause
     const conditions: string[] = [];
@@ -87,6 +89,42 @@ export async function GET(request: NextRequest) {
     // Count total
     const countResult = await pool.query(`SELECT COUNT(*) as total FROM orders ${whereClause}`);
     const total = Number(countResult.rows[0]?.total || 0);
+
+    // 紧急度分类计数（仅当请求 includeUrgencyBreakdown=true 时返回）
+    let urgencyBreakdown = null;
+    if (includeUrgencyBreakdown) {
+      // 先去掉 urgency 筛选条件，单独计算各类别
+      const urgencyConditions = conditions.filter(c => 
+        !c.includes('shipment_deadline') && !c.includes('urgency')
+      );
+      const urgencyWhereClause = urgencyConditions.length > 0 
+        ? 'WHERE ' + urgencyConditions.join(' AND ') 
+        : '';
+      
+      // overdue: shipment_deadline IS NOT NULL AND shipment_deadline < NOW()
+      const overdueResult = await pool.query(`
+        SELECT COUNT(*) as count FROM orders ${urgencyWhereClause}
+        ${urgencyWhereClause ? 'AND' : 'WHERE'} shipment_deadline IS NOT NULL AND shipment_deadline < NOW()
+      `);
+      
+      // urgent: shipment_deadline >= NOW() AND shipment_deadline < NOW() + INTERVAL '48 hours'
+      const urgentResult = await pool.query(`
+        SELECT COUNT(*) as count FROM orders ${urgencyWhereClause}
+        ${urgencyWhereClause ? 'AND' : 'WHERE'} shipment_deadline >= NOW() AND shipment_deadline < NOW() + INTERVAL '48 hours'
+      `);
+      
+      // normal: 其他情况
+      const normalResult = await pool.query(`
+        SELECT COUNT(*) as count FROM orders ${urgencyWhereClause}
+        ${urgencyWhereClause ? 'AND' : 'WHERE'} (shipment_deadline IS NULL OR shipment_deadline >= NOW() + INTERVAL '48 hours')
+      `);
+      
+      urgencyBreakdown = {
+        overdue: Number(overdueResult.rows[0]?.count || 0),
+        urgent: Number(urgentResult.rows[0]?.count || 0),
+        normal: Number(normalResult.rows[0]?.count || 0),
+      };
+    }
 
     // Get orders with ozon_raw_data for products
     const offset = (page - 1) * pageSize;
@@ -210,6 +248,7 @@ export async function GET(request: NextRequest) {
         total,
         totalPages: Math.ceil(total / pageSize),
       },
+      ...(urgencyBreakdown && { urgencyBreakdown }),
     });
   } catch (error) {
     console.error('Orders API error:', error);
