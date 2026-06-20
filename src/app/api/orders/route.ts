@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
     const erpStatus = searchParams.get('erpStatus');
     const orderId = searchParams.get('orderId');
+    const keyword = searchParams.get('keyword');
 
     // Build WHERE clause
     const conditions: string[] = [];
@@ -52,6 +53,14 @@ export async function GET(request: NextRequest) {
     if (orderId) {
       const safe = orderId.replace(/'/g, "''");
       conditions.push(`(ozon_posting_number ILIKE '%${safe}%' OR buyer_name ILIKE '%${safe}%')`);
+    }
+    if (keyword) {
+      // keyword搜索：订单号 + products JSON中的sku和name
+      const safe = keyword.replace(/'/g, "''");
+      conditions.push(`(
+        ozon_posting_number ILIKE '%${safe}%'
+        OR products::text ILIKE '%${safe}%'
+      )`);
     }
     const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
 

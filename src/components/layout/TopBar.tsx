@@ -1,10 +1,11 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { ChevronDown, Bell, User, Camera } from 'lucide-react';
 import { useShop } from './ShopContext';
-import { GlobalSearchTrigger } from './GlobalSearch';
+import { GlobalSearchTrigger, GlobalSearchModal } from './GlobalSearch';
 
 // 面包屑页面名映射
 const PAGE_NAME_MAP: Record<string, string> = {
@@ -79,45 +80,86 @@ function ShopSwitcher() {
 
 // TopBar主组件
 export function TopBar() {
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  // 全局 Cmd+K / Ctrl+K 监听
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  // 监听自定义事件（来自GlobalSearchModal内部的全局快捷键）
+  useEffect(() => {
+    const handler = () => setSearchOpen(true);
+    window.addEventListener('open-global-search', handler);
+    return () => window.removeEventListener('open-global-search', handler);
+  }, []);
+
+  // 防止背景滚动
+  useEffect(() => {
+    if (searchOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [searchOpen]);
+
   return (
-    <div className="h-14 bg-white border-b border-gray-100 flex items-center px-6">
-      {/* 左侧：面包屑 */}
-      <div className="flex-1">
-        <Breadcrumb />
+    <>
+      <div className="h-14 bg-white border-b border-gray-100 flex items-center px-6">
+        {/* 左侧：面包屑 */}
+        <div className="flex-1">
+          <Breadcrumb />
+        </div>
+
+        {/* 中间：全局搜索 */}
+        <div className="flex-1 flex justify-center">
+          <GlobalSearchTrigger onClick={() => setSearchOpen(true)} />
+        </div>
+
+        {/* 右侧：扫码入口 + 通知 + 用户头像 */}
+        <div className="flex items-center gap-3 ml-auto">
+          {/* 扫码入口 */}
+          <Link
+            href="/logistics"
+            className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors"
+            title="扫码查物流"
+          >
+            <Camera className="w-5 h-5 text-gray-500" />
+          </Link>
+
+          {/* 通知铃铛 */}
+          <button
+            className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+            title="通知"
+          >
+            <Bell className="w-5 h-5 text-gray-500" />
+          </button>
+
+          {/* 用户头像 */}
+          <button
+            className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300 transition-colors"
+            title="用户"
+          >
+            <User className="w-4 h-4 text-gray-500" />
+          </button>
+        </div>
       </div>
 
-      {/* 中间：全局搜索 */}
-      <div className="flex-1 flex justify-center">
-        <GlobalSearchTrigger />
-      </div>
-
-      {/* 右侧：扫码入口 + 通知 + 用户头像 */}
-      <div className="flex items-center gap-3 ml-auto">
-        {/* 扫码入口 */}
-        <Link
-          href="/logistics"
-          className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors"
-          title="扫码查物流"
-        >
-          <Camera className="w-5 h-5 text-gray-500" />
-        </Link>
-
-        {/* 通知铃铛 */}
-        <button
-          className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
-          title="通知"
-        >
-          <Bell className="w-5 h-5 text-gray-500" />
-        </button>
-
-        {/* 用户头像 */}
-        <button
-          className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300 transition-colors"
-          title="用户"
-        >
-          <User className="w-4 h-4 text-gray-500" />
-        </button>
-      </div>
-    </div>
+      {/* 搜索弹窗 */}
+      <GlobalSearchModal 
+        open={searchOpen} 
+        onClose={() => setSearchOpen(false)} 
+      />
+    </>
   );
 }
