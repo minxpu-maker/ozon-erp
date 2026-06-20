@@ -546,35 +546,8 @@ export function OrderCard({ order, selected, onSelect }: OrderCardProps) {
       />
 
       <div className="flex flex-col">
-        {/* 顶部：复选框 + 倒计时 + 商品信息 + 金额 + 操作 */}
+        {/* 顶部：商品信息 + 金额 + 操作 */}
         <div className="flex items-center gap-3 p-4">
-          {/* 复选框 */}
-          <Checkbox
-            checked={selected}
-            onCheckedChange={() => onSelect?.(order.id)}
-            onClick={(e) => e.stopPropagation()}
-          />
-
-          {/* 倒计时显示 */}
-          <div className="flex items-center gap-1.5 min-w-[80px]">
-            <span
-              className={cn(
-                'w-2 h-2 rounded-full',
-                colors.dot
-              )}
-            />
-            <span
-              className={cn(
-                'text-sm font-bold',
-                colors.text,
-                isOverdue && 'font-bold',
-                isEmpty && 'text-gray-400 font-normal'
-              )}
-            >
-              {countdown.text}
-            </span>
-          </div>
-
           {/* 左栏 - 商品信息 */}
           <div className="flex-1 min-w-0">
             {/* 订单号 + Ozon状态 */}
