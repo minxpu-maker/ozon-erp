@@ -4,6 +4,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import useSWR from 'swr';
 import OrderPipeline from "@/components/orders/OrderPipeline";
 import { Toaster } from "sonner";
+import { useState } from "react";
 
 const fetcher = (url: string) => fetch(url).then(async (r) => {
   if (!r.ok) throw new Error("请求失败");
@@ -59,6 +60,8 @@ interface Shop {
 }
 
 export default function OrdersListPage() {
+  const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
+
   // 获取订单数据
   const { data, error, isLoading, mutate } = useSWR<OrdersResponse>(
     "/api/orders?pageSize=100",
@@ -75,6 +78,7 @@ export default function OrdersListPage() {
       if (res.ok) {
         // 重新获取订单列表
         await mutate();
+        setLastSyncedAt(new Date());
       }
     } catch (err) {
       console.error("同步失败:", err);
@@ -89,6 +93,7 @@ export default function OrdersListPage() {
         isLoading={isLoading}
         error={error ? "数据加载失败" : null}
         onRetry={() => mutate()}
+        lastSyncedAt={lastSyncedAt}
       />
       <Toaster position="top-right" richColors />
     </AppLayout>

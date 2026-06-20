@@ -30,13 +30,15 @@ interface OrderPipelineProps {
   isLoading?: boolean;
   error?: string | null;
   onRetry?: () => void;
+  lastSyncedAt?: Date | null;
 }
 
-export default function OrderPipeline({ orders, onSync, isLoading, error, onRetry }: OrderPipelineProps) {
+export default function OrderPipeline({ orders, onSync, isLoading, error, onRetry, lastSyncedAt }: OrderPipelineProps) {
   const [activeTab, setActiveTab] = useState<OrderStatus | "all">("awaiting_deliver");
   const [selectedIds, setSelectedIds] = useState<Set<string | number>>(new Set());
   const [filters, setFilters] = useState<ToolbarFilters>(INITIAL_FILTERS);
   const [syncing, setSyncing] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<"idle" | "success" | "error">("idle");
   const [prevTab, setPrevTab] = useState(activeTab);
   const [tabAnimating, setTabAnimating] = useState(false);
 
@@ -121,12 +123,18 @@ export default function OrderPipeline({ orders, onSync, isLoading, error, onRetr
     return Array.from(selectedIds).map(id => String(id));
   }, [selectedIds]);
 
-  // 同步订单
+  // 同步订单 - 4态逻辑
   const handleSync = async () => {
     if (!onSync || syncing) return;
     setSyncing(true);
+    setSyncStatus("idle");
     try {
       await onSync();
+      setSyncStatus("success");
+      // 2秒后恢复默认状态
+      setTimeout(() => setSyncStatus("idle"), 2000);
+    } catch {
+      setSyncStatus("error");
     } finally {
       setSyncing(false);
     }
@@ -136,6 +144,16 @@ export default function OrderPipeline({ orders, onSync, isLoading, error, onRetr
   const handleNewPurchase = () => {
     const ids = selectedOrderIds.join(",");
     window.location.href = `/purchase?from=orders&ids=${ids}`;
+  };
+
+  // 计算"X分钟前"
+  const getSyncTimeLabel = (date: Date | null | undefined) => {
+    if (!date) return "未同步";
+    const diffMs = NOW - date.getTime();
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    if (diffMinutes < 1) return "刚刚";
+    if (diffMinutes === 1) return "1分钟前";
+    return `${diffMinutes}分钟前`;
   };
 
   // 清空选择
@@ -221,12 +239,60 @@ export default function OrderPipeline({ orders, onSync, isLoading, error, onRetr
 
   return (
     <div className="flex flex-col h-full bg-gray-50">
+      {/* Layer 1: 标题行 */}
+      <div className="px-4 py-3 bg-white border-b border-gray-100 flex items-center justify-between">
+        <h1 className="text-xl font-bold text-gray-900">订单管理</h1>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-gray-400">{getSyncTimeLabel(lastSyncedAt)}</span>
+          <button
+            onClick={handleSync}
+            disabled={syncing}
+            className={cn(
+              "flex items-center gap-1.5 text-sm font-medium transition-all duration-200",
+              syncStatus === "success" && "text-green-600",
+              syncStatus === "error" && "text-red-500",
+              syncStatus === "idle" && !syncing && "text-blue-500 hover:text-blue-700",
+              syncing && "text-gray-400 cursor-not-allowed"
+            )}
+          >
+            {syncing ? (
+              <>
+                <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                同步中...
+              </>
+            ) : syncStatus === "success" ? (
+              <>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                已同步
+              </>
+            ) : syncStatus === "error" ? (
+              <>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                同步失败
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                立即同步
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
       {renderTabs()}
       <OrderToolbar
         filters={filters}
         onFiltersChange={setFilters}
-        onSync={handleSync}
-        syncing={syncing}
         selectedOrderIds={selectedOrderIds}
         onNewPurchase={handleNewPurchase}
       />

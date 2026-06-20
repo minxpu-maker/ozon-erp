@@ -19,8 +19,6 @@ export interface Shop {
 interface OrderToolbarProps {
   filters: ToolbarFilters;
   onFiltersChange: (filters: ToolbarFilters) => void;
-  onSync: () => void;
-  syncing: boolean;
   selectedOrderIds: string[];
   onNewPurchase: () => void;
 }
@@ -180,8 +178,6 @@ function ShopMultiSelect({
 export default function OrderToolbar({
   filters,
   onFiltersChange,
-  onSync,
-  syncing,
   selectedOrderIds,
   onNewPurchase,
 }: OrderToolbarProps) {
@@ -240,15 +236,6 @@ export default function OrderToolbar({
 
       {/* 右侧按钮组 */}
       <div className="ml-auto flex items-center gap-2">
-        <button
-          onClick={onSync}
-          disabled={syncing}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-sm text-gray-700 hover:border-gray-300 transition-colors disabled:opacity-50"
-        >
-          <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
-          <span>{syncing ? '同步中…' : '同步'}</span>
-        </button>
-
         <button
           onClick={onNewPurchase}
           disabled={selectedOrderIds.length === 0}
