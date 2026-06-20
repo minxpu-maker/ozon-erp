@@ -114,9 +114,11 @@ function ShopMultiSelect({
 }) {
   const [open, setOpen] = useState(false);
 
-  const selectedLabel = selectedShops.length === 0 || selectedShops.includes('all')
-    ? '全部'
-    : `已选${selectedShops.length}`;
+  const selectedLabel = selectedShops.includes('all')
+    ? '店铺'
+    : selectedShops.length === 0
+      ? '店铺'
+      : `已选${selectedShops.length}`;
 
   const toggleShop = (shopId: string) => {
     if (shopId === 'all') {
