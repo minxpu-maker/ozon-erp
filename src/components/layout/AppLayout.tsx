@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import useSWR from 'swr';
 import {
   LayoutDashboard,
   BarChart2,
@@ -33,6 +34,8 @@ interface NavItem {
   href: string;
   icon: LucideIcon;
   badge?: string;
+  badgeColor?: 'blue' | 'amber' | 'purple';
+  badgeCountKey?: string;
   disabled?: boolean;
   group?: string;
 }
@@ -42,6 +45,95 @@ interface NavGroup {
   icon: LucideIcon;
   items: NavItem[];
   disabled?: boolean;
+}
+
+// 角标数量 key 配置
+const BADGE_CONFIG = {
+  '/orders/list': { key: 'ordersAwaitingDeliver', color: 'blue' as const },
+  '/purchase': { key: 'purchasePending', color: 'amber' as const },
+  '/packaging': { key: 'ordersPendingPackaging', color: 'purple' as const },
+};
+
+// 全局角标数量 state
+let globalBadgeCounts: Record<string, number> = {};
+let globalBadgeErrors: Record<string, boolean> = {};
+let setGlobalBadgeCounts: React.Dispatch<React.SetStateAction<Record<string, number>>> | null = null;
+let setGlobalBadgeErrors: React.Dispatch<React.SetStateAction<Record<string, boolean>>> | null = null;
+
+// 获取角标数字显示
+function getBadgeDisplay(key: string): string | null {
+  if (globalBadgeErrors[key]) return '-';
+  const count = globalBadgeCounts[key];
+  if (count === undefined || count === 0) return null;
+  if (count > 99) return '99+';
+  return String(count);
+}
+
+// fetcher for SWR
+const fetcher = (url: string) => fetch(url).then(async (r) => {
+  if (!r.ok) throw new Error('请求失败');
+  return r.json();
+});
+
+// 角标数量获取 Hook
+function useBadgeCounts() {
+  // 订单列表角标 - awaiting_deliver 状态
+  const { data: ordersData } = useSWR(
+    '/api/orders?status=awaiting_deliver&pageSize=1',
+    fetcher,
+    { refreshInterval: 30000 }
+  );
+
+  // 采购工作台角标 - pending_purchase 状态
+  const { data: purchaseData } = useSWR(
+    '/api/purchase?status=pending_purchase&pageSize=1',
+    fetcher,
+    { refreshInterval: 30000 }
+  );
+
+  // 打包发货角标 - pending_packaging 状态
+  const { data: packagingData } = useSWR(
+    '/api/orders?erpStatus=pending_packaging&pageSize=1',
+    fetcher,
+    { refreshInterval: 30000 }
+  );
+
+  // 更新全局角标数量
+  useEffect(() => {
+    const newCounts: Record<string, number> = {};
+    const newErrors: Record<string, boolean> = {};
+
+    // 订单列表
+    if (ordersData?.pagination?.total !== undefined) {
+      newCounts.ordersAwaitingDeliver = ordersData.pagination.total;
+    } else if (ordersData?.success === false) {
+      newErrors.ordersAwaitingDeliver = true;
+    }
+
+    // 采购工作台
+    if (purchaseData?.total !== undefined) {
+      newCounts.purchasePending = purchaseData.total;
+    } else if (purchaseData?.success === false) {
+      newErrors.purchasePending = true;
+    }
+
+    // 打包发货
+    if (packagingData?.pagination?.total !== undefined) {
+      newCounts.ordersPendingPackaging = packagingData.pagination.total;
+    } else if (packagingData?.success === false) {
+      newErrors.ordersPendingPackaging = true;
+    }
+
+    globalBadgeCounts = { ...globalBadgeCounts, ...newCounts };
+    globalBadgeErrors = { ...globalBadgeErrors, ...newErrors };
+
+    if (setGlobalBadgeCounts) {
+      setGlobalBadgeCounts(prev => ({ ...prev, ...newCounts }));
+    }
+    if (setGlobalBadgeErrors) {
+      setGlobalBadgeErrors(prev => ({ ...prev, ...newErrors }));
+    }
+  }, [ordersData, purchaseData, packagingData]);
 }
 
 // 完整导航配置 - 合并新功能到旧导航
@@ -57,14 +149,14 @@ const navigationGroups: NavGroup[] = [
     label: '订单管理',
     icon: FileText,
     items: [
-      { name: '订单列表', href: '/orders/list', icon: FileText },
+      { name: '订单列表', href: '/orders/list', icon: FileText, badgeColor: 'blue', badgeCountKey: 'ordersAwaitingDeliver' },
     ],
   },
   {
     label: '采购中心',
     icon: ShoppingCart,
     items: [
-      { name: '采购工作台', href: '/purchase', icon: ShoppingCart },
+      { name: '采购工作台', href: '/purchase', icon: ShoppingCart, badgeColor: 'amber', badgeCountKey: 'purchasePending' },
       { name: '货源池', href: '/purchase/source-pool', icon: ShoppingCart, disabled: true, badge: '即将上线' },
       { name: '供应商管理', href: '/suppliers', icon: Building2 },
     ],
@@ -74,7 +166,7 @@ const navigationGroups: NavGroup[] = [
     icon: Package,
     items: [
       { name: '入库验货', href: '/logistics', icon: Truck },
-      { name: '打包发货', href: '/packaging', icon: Package },
+      { name: '打包发货', href: '/packaging', icon: Package, badgeColor: 'purple', badgeCountKey: 'ordersPendingPackaging' },
       { name: '库存管理', href: '/inventory', icon: Database },
       { name: '仓库管理', href: '/wms', icon: Building2, disabled: true, badge: '即将上线' },
     ],
@@ -131,6 +223,17 @@ interface AppLayoutProps {
 export function AppLayout({ children, title, subtitle, actions }: AppLayoutProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const [badgeCounts, setBadgeCounts] = useState<Record<string, number>>({});
+  const [badgeErrors, setBadgeErrors] = useState<Record<string, boolean>>({});
+
+  // 设置全局引用
+  useEffect(() => {
+    setGlobalBadgeCounts = setBadgeCounts;
+    setGlobalBadgeErrors = setBadgeErrors;
+  }, []);
+
+  // 加载角标数量
+  useBadgeCounts();
 
   return (
     <div className="flex min-h-screen bg-[#F6F8FB]" suppressHydrationWarning>
@@ -161,6 +264,13 @@ export function AppLayout({ children, title, subtitle, actions }: AppLayoutProps
               {group.items.map((item) => {
                 const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
                 const Icon = item.icon;
+
+                // 获取角标数字
+                const badgeDisplay = item.badgeCountKey ? getBadgeDisplay(item.badgeCountKey) : null;
+                const badgeColorClass = item.badgeColor === 'blue' ? 'bg-blue-500'
+                  : item.badgeColor === 'amber' ? 'bg-amber-500'
+                  : item.badgeColor === 'purple' ? 'bg-purple-500'
+                  : 'bg-gray-500';
 
                 if (item.disabled) {
                   return (
@@ -201,6 +311,11 @@ export function AppLayout({ children, title, subtitle, actions }: AppLayoutProps
                         {item.badge && (
                           <span className="text-[10px] bg-[#F6F8FB] text-[#637089] px-1.5 py-0.5 rounded">
                             {item.badge}
+                          </span>
+                        )}
+                        {badgeDisplay && (
+                          <span className={`ml-auto min-w-[18px] h-[18px] ${badgeColorClass} rounded-full flex items-center justify-center text-[10px] font-bold text-white`}>
+                            {badgeDisplay}
                           </span>
                         )}
                       </>
