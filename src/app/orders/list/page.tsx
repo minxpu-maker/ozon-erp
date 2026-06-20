@@ -29,6 +29,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { OrderCard, OrderRecord } from '@/components/orders/OrderCard';
 import PipelineTabs, { OrderStatus, PIPELINE_TABS, getOrderTabKey } from '@/components/orders/PipelineTabs';
+import { SummaryBar } from '@/components/orders/SummaryBar';
 
 const fetcher = (url: string) => fetch(url).then(async r => {
   if (!r.ok) throw new Error('请求失败');
@@ -479,6 +480,13 @@ export default function OrdersListPage() {
         activeTab={activeTab}
         onTabChange={(tab) => { setActiveTab(tab); setSelectedIds(new Set()); }}
         counts={tabCounts}
+      />
+
+      {/* 摘要行 - 逾期/紧急/总数 */}
+      <SummaryBar
+        orders={filteredOrders}
+        currentTab={activeTab}
+        totalCount={filteredOrders.length}
       />
 
       {/* 全选控件 + 排序 */}
