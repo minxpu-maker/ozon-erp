@@ -34,6 +34,16 @@ interface OzonPosting {
     city?: string;
     address?: string;
   };
+  customer?: {
+    name?: string;
+    phone?: string;
+    email?: string;
+    address?: {
+      city?: string;
+      address_line?: string;
+    };
+  };
+  shipping_edit_date?: string; // 发货截止时间
   products: Array<{
     sku: string;
     name: string;
@@ -41,6 +51,11 @@ interface OzonPosting {
     price: string; // Ozon API 返回的是字符串
     offer_id?: string; // 商家SKU（本地系统）
     product_id?: number; // Ozon产品ID
+    quantity_type?: {
+      weight?: number; // 声明重量（千克）
+      is_gtd_matching?: boolean;
+      is_chain_matching?: boolean;
+    };
   }>;
   shipping_method?: {
     deadline?: string;
@@ -349,11 +364,11 @@ async function insertNewOrders(
       return sum + (parseFloat(item.price) || 0) * item.quantity;
     }, 0);
 
-    // 转换发货截止时间（空字符串/无效值 → null，避免 PostgreSQL timestamp 报错）
+    // 转换发货截止时间（优先使用shipping_edit_date，备用shipping_method.deadline）
     let shipmentDeadline: string | null = null;
-    const deadlineStr = posting.shipping_method?.deadline;
-    if (deadlineStr && typeof deadlineStr === 'string' && deadlineStr.trim() !== '' && deadlineStr !== '0001-01-01T00:00:00Z') {
-      const parsed = new Date(deadlineStr);
+    const deadlineSource = posting.shipping_edit_date || posting.shipping_method?.deadline;
+    if (deadlineSource && typeof deadlineSource === 'string' && deadlineSource.trim() !== '' && deadlineSource !== '0001-01-01T00:00:00Z') {
+      const parsed = new Date(deadlineSource);
       if (!isNaN(parsed.getTime()) && parsed.getFullYear() > 2000) {
         shipmentDeadline = parsed.toISOString(); // 转换为 ISO 字符串
       }
@@ -368,10 +383,10 @@ async function insertNewOrders(
       ozonCreatedAt = new Date(posting.in_process_at);
     }
 
-    // 提取收件人信息
-    const recipientName = posting.address?.recipient_name || null;
-    const recipientCity = posting.address?.city || null;
-    const recipientAddress = posting.address?.address || null;
+    // 提取收件人信息（优先使用customer字段，备用address字段）
+    const recipientName = posting.customer?.name || posting.address?.recipient_name || null;
+    const recipientCity = posting.customer?.address?.city || posting.address?.city || null;
+    const recipientAddress = posting.customer?.address?.address_line || posting.address?.address || null;
 
     // 构建原始数据（包含商品列表和收件人信息，供前端展示）
     const ozonRawData: Record<string, unknown> = {
@@ -389,7 +404,7 @@ async function insertNewOrders(
         price: p.price,
         offer_id: p.offer_id ?? null,
         product_id: p.product_id ?? null,
-        weight: p.item_services_marketing_data?.weight ?? null,
+        weight: p.quantity_type?.weight ?? null, // 使用quantity_type.weight获取声明重量
       })),
     };
 
