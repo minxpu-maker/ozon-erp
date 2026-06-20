@@ -304,20 +304,20 @@ export default function OrderToolbar({
   const hasActiveFilters = filters.urgency !== 'all' || filters.timeRange !== 'all' || !filters.shops.includes('all');
 
   return (
-    <div className="bg-white border-b border-gray-100">
+    <div className="bg-white">
       {/* 圆角容器包裹搜索筛选栏 */}
-      <div className="mx-4 my-3 rounded-xl bg-white border border-gray-200 p-3">
+      <div className="mx-4 my-3 rounded-xl bg-white border-2 border-gray-200 p-3 shadow-sm">
         {/* 第一行：搜索框 + 筛选下拉 + 视图切换 */}
         <div className="flex items-center gap-3">
           {/* 搜索框 */}
-          <div className="relative w-64 group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-400" />
+          <div className="relative w-80 flex-shrink-0">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
               value={localKeyword}
               onChange={e => setLocalKeyword(e.target.value)}
               placeholder="搜索订单号、SKU、商品名…"
-              className="w-full pl-9 pr-8 py-1.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all group-hover:border-gray-300"
+              className="w-full pl-9 pr-8 py-1.5 rounded-lg bg-gray-50 text-sm focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all"
             />
             {localKeyword && (
               <button
