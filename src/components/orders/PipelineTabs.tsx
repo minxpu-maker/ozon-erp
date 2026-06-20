@@ -24,7 +24,7 @@ export interface TabConfig {
 
 export const PIPELINE_TABS: TabConfig[] = [
   { key: 'awaiting_packaging', label: '等待备货', color: 'amber', bgLight: 'bg-amber-50', textColor: 'text-amber-700', borderColor: 'border-amber-400' },
-  { key: 'awaiting_deliver', label: '待采购', color: 'blue', bgLight: 'bg-blue-50', textColor: 'text-blue-700', borderColor: 'border-blue-400' },
+  { key: 'awaiting_deliver', label: '等待发运', color: 'blue', bgLight: 'bg-blue-50', textColor: 'text-blue-700', borderColor: 'border-blue-400' },
   { key: 'delivering', label: '运输中', color: 'purple', bgLight: 'bg-purple-50', textColor: 'text-purple-700', borderColor: 'border-purple-400' },
   { key: 'disputed', label: '具争议', color: 'red', bgLight: 'bg-red-50', textColor: 'text-red-700', borderColor: 'border-red-400', disabled: true, disabledReason: '功能开发中' },
   { key: 'delivered', label: '已签收', color: 'teal', bgLight: 'bg-teal-50', textColor: 'text-teal-700', borderColor: 'border-teal-400' },
