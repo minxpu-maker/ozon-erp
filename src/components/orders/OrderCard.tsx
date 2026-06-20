@@ -137,14 +137,23 @@ const ozonStatusMap: Record<string, { label: string; isAbnormal: boolean }> = {
 // 商品图片占位组件
 function ProductImage({ product }: { product: OrderProduct }) {
   const [hasError, setHasError] = useState(false);
+  const [isLoading, setIsLoading] = useState(!!product.image);
   const imageUrl = product.image;
 
+  // 无图或加载失败：显示📦占位图
   if (!imageUrl || hasError) {
-    // 无图占位：显示SKU首字母
-    const initial = product.sku?.charAt(0)?.toUpperCase() || '?';
     return (
       <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-        <span className="text-lg text-gray-400 font-bold">{initial}</span>
+        <span className="text-2xl text-gray-300">📦</span>
+      </div>
+    );
+  }
+
+  // 加载中：显示 skeleton shimmer
+  if (isLoading) {
+    return (
+      <div className="w-12 h-12 rounded-lg bg-gray-200 flex items-center justify-center flex-shrink-0 animate-pulse">
+        <div className="w-6 h-6 bg-gray-300 rounded" />
       </div>
     );
   }
@@ -154,7 +163,11 @@ function ProductImage({ product }: { product: OrderProduct }) {
       src={imageUrl}
       alt={product.name || product.sku}
       className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
-      onError={() => setHasError(true)}
+      onLoad={() => setIsLoading(false)}
+      onError={() => {
+        setHasError(true);
+        setIsLoading(false);
+      }}
     />
   );
 }
