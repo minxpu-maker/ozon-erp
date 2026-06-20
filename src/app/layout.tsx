@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Inspector } from 'react-dev-inspector';
+import { RootProviders } from '@/components/layout/RootProviders';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -67,7 +68,9 @@ export default function RootLayout({
     <html lang="zh-CN" suppressHydrationWarning>
       <body className="antialiased" suppressHydrationWarning>
         {isDev && <Inspector />}
-        <div suppressHydrationWarning>{children}</div>
+        <RootProviders>
+          <div suppressHydrationWarning>{children}</div>
+        </RootProviders>
       </body>
     </html>
   );
