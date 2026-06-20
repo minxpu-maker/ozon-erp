@@ -23,13 +23,13 @@ export interface TabConfig {
 }
 
 export const PIPELINE_TABS: TabConfig[] = [
-  { key: 'awaiting_packaging', label: '等待备货', color: 'amber', bgLight: 'bg-amber-50', textColor: 'text-amber-600', borderColor: 'border-amber-400' },
-  { key: 'awaiting_deliver', label: '待采购', color: 'blue', bgLight: 'bg-blue-50', textColor: 'text-blue-600', borderColor: 'border-blue-400' },
-  { key: 'delivering', label: '运输中', color: 'purple', bgLight: 'bg-purple-50', textColor: 'text-purple-600', borderColor: 'border-purple-400' },
-  { key: 'disputed', label: '具争议', color: 'gray', bgLight: 'bg-gray-50', textColor: 'text-gray-400', borderColor: 'border-gray-200', disabled: true, disabledReason: '功能开发中' },
-  { key: 'delivered', label: '已签收', color: 'teal', bgLight: 'bg-teal-50', textColor: 'text-teal-600', borderColor: 'border-teal-400' },
-  { key: 'cancelled', label: '已取消', color: 'gray', bgLight: 'bg-gray-50', textColor: 'text-gray-500', borderColor: 'border-gray-400' },
-  { key: 'all', label: '全部', color: 'default', bgLight: 'bg-blue-50', textColor: 'text-blue-600', borderColor: 'border-blue-400' },
+  { key: 'awaiting_packaging', label: '等待备货', color: 'amber', bgLight: 'bg-amber-50', textColor: 'text-amber-700', borderColor: 'border-amber-400' },
+  { key: 'awaiting_deliver', label: '待采购', color: 'blue', bgLight: 'bg-blue-50', textColor: 'text-blue-700', borderColor: 'border-blue-400' },
+  { key: 'delivering', label: '运输中', color: 'purple', bgLight: 'bg-purple-50', textColor: 'text-purple-700', borderColor: 'border-purple-400' },
+  { key: 'disputed', label: '具争议', color: 'red', bgLight: 'bg-red-50', textColor: 'text-red-700', borderColor: 'border-red-400', disabled: true, disabledReason: '功能开发中' },
+  { key: 'delivered', label: '已签收', color: 'teal', bgLight: 'bg-teal-50', textColor: 'text-teal-700', borderColor: 'border-teal-400' },
+  { key: 'cancelled', label: '已取消', color: 'gray', bgLight: 'bg-gray-50', textColor: 'text-gray-700', borderColor: 'border-gray-400' },
+  { key: 'all', label: '全部', color: 'slate', bgLight: 'bg-slate-50', textColor: 'text-slate-700', borderColor: 'border-slate-400' },
 ];
 
 // 数字动画 Hook
@@ -91,16 +91,15 @@ function TabCard({ tab, count, isActive, onClick }: TabCardProps) {
       disabled={isDisabled}
       title={isDisabled ? tab.disabledReason : undefined}
       className={cn(
-        'min-w-[100px] rounded-xl px-4 py-3 text-center transition-all duration-150 flex-shrink-0',
-        'border bg-white shadow-sm',
+        'min-w-[100px] rounded-lg border-2 px-4 py-2.5 text-center transition-all duration-200 flex-shrink-0',
+        'hover:-translate-y-0.5 hover:shadow-md',
         // 默认态
         !isActive && !isDisabled && [
-          'border-gray-200',
-          'hover:shadow-md hover:-translate-y-0.5',
+          'border-gray-200 bg-white text-gray-600',
         ],
         // 选中态
         isActive && !isDisabled && [
-          'shadow-md -translate-y-0.5',
+          'shadow-md -translate-y-px',
           tab.borderColor,
           tab.bgLight,
         ],
@@ -111,14 +110,14 @@ function TabCard({ tab, count, isActive, onClick }: TabCardProps) {
       )}
     >
       <div className={cn(
-        'text-sm font-medium mb-1',
+        'text-sm font-medium',
         isActive ? tab.textColor : 'text-gray-600',
         isDisabled && 'text-gray-400',
       )}>
         {tab.label}
       </div>
       <div className={cn(
-        'text-2xl font-bold transition-colors duration-150',
+        'text-lg font-bold mt-0.5 transition-colors duration-150',
         isActive ? tab.textColor : 'text-gray-900',
         isDisabled && 'text-gray-400',
       )}>
@@ -128,13 +127,27 @@ function TabCard({ tab, count, isActive, onClick }: TabCardProps) {
   );
 }
 
+// 箭头颜色映射
+const arrowColors: Record<string, { active: string; inactive: string }> = {
+  amber: { active: 'text-amber-400', inactive: 'text-gray-300' },
+  blue: { active: 'text-blue-400', inactive: 'text-gray-300' },
+  purple: { active: 'text-purple-400', inactive: 'text-gray-300' },
+  red: { active: 'text-red-400', inactive: 'text-gray-300' },
+  teal: { active: 'text-teal-400', inactive: 'text-gray-300' },
+  gray: { active: 'text-gray-400', inactive: 'text-gray-300' },
+  slate: { active: 'text-slate-400', inactive: 'text-gray-300' },
+};
+
 // 箭头组件
-function Arrow({ isActive, color }: { isActive: boolean; color?: string }) {
+function Arrow({ isHighlighted, color }: { isHighlighted: boolean; color?: string }) {
+  const colorKey = color || 'gray';
+  const colors = arrowColors[colorKey] || arrowColors.gray;
+  
   return (
     <svg
       className={cn(
-        'w-4 h-4 flex-shrink-0 transition-colors duration-150',
-        isActive ? `text-${color}-400` : 'text-gray-300'
+        'w-4 h-4 flex-shrink-0 transition-colors duration-150 mx-1',
+        isHighlighted ? colors.active : colors.inactive
       )}
       viewBox="0 0 24 24"
       fill="none"
@@ -168,6 +181,11 @@ export default function PipelineTabs({ orders, activeTab, onTabChange }: Pipelin
   });
 
   const activeTabConfig = PIPELINE_TABS.find(t => t.key === activeTab);
+  const activeIndex = PIPELINE_TABS.findIndex(t => t.key === activeTab);
+  
+  // 流水线Tab（不含"全部"）和"全部"Tab分开
+  const pipelineTabs = PIPELINE_TABS.filter(t => t.key !== 'all');
+  const allTab = PIPELINE_TABS.find(t => t.key === 'all');
 
   return (
     <div className="relative">
@@ -180,23 +198,43 @@ export default function PipelineTabs({ orders, activeTab, onTabChange }: Pipelin
       {/* 滚动容器 */}
       <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent pb-1">
         <div className="flex items-center px-4">
-          {PIPELINE_TABS.map((tab, index) => (
-            <div key={tab.key} className="flex items-center">
-              <TabCard
-                tab={tab}
-                count={counts[tab.key] ?? 0}
-                isActive={activeTab === tab.key}
-                onClick={() => onTabChange(tab.key)}
-              />
-              {/* 箭头：最后一个不显示 */}
-              {index < PIPELINE_TABS.length - 1 && (
-                <Arrow
+          {/* 流水线Tab（等待备货→待采购→运输中→具争议→已签收→已取消）+ 箭头 */}
+          {pipelineTabs.map((tab, index) => {
+            const isHighlighted = activeTab === tab.key || activeIndex === index + 1;
+            const isPrevHighlighted = activeTab === tab.key;
+            const isNextHighlighted = activeTab === pipelineTabs[index + 1]?.key || (activeIndex === index + 1 && index < pipelineTabs.length - 1);
+            
+            return (
+              <div key={tab.key} className="flex items-center">
+                <TabCard
+                  tab={tab}
+                  count={counts[tab.key] ?? 0}
                   isActive={activeTab === tab.key}
-                  color={activeTabConfig?.color}
+                  onClick={() => onTabChange(tab.key)}
                 />
-              )}
-            </div>
-          ))}
+                {/* 箭头：流水线Tab之间显示箭头 */}
+                {index < pipelineTabs.length - 1 && (
+                  <Arrow
+                    isHighlighted={isHighlighted}
+                    color={activeTabConfig?.color}
+                  />
+                )}
+              </div>
+            );
+          })}
+          
+          {/* 分隔线 */}
+          <div className="h-8 w-px bg-gray-200 mx-2 flex-shrink-0" />
+          
+          {/* "全部"Tab（无箭头） */}
+          {allTab && (
+            <TabCard
+              tab={allTab}
+              count={counts[allTab.key] ?? 0}
+              isActive={activeTab === allTab.key}
+              onClick={() => onTabChange(allTab.key)}
+            />
+          )}
         </div>
       </div>
     </div>
