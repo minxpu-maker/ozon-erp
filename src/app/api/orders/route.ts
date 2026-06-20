@@ -8,6 +8,7 @@ export async function GET(request: NextRequest) {
     const pageSize = Math.min(100, Math.max(1, parseInt(searchParams.get('pageSize') || '20')));
     const shopId = searchParams.get('shopId');
     const status = searchParams.get('status');
+    const erpStatus = searchParams.get('erpStatus');
     const orderId = searchParams.get('orderId');
 
     // Build WHERE clause
@@ -29,6 +30,20 @@ export async function GET(request: NextRequest) {
         cancelled: ['cancelled'],
       };
       const ozonStatuses = statusMap[status];
+      if (ozonStatuses) {
+        const ozonConditions = ozonStatuses.map(s => `status = '${s}'`).join(' OR ');
+        conditions.push(`(${ozonConditions})`);
+      }
+    }
+    if (erpStatus && erpStatus !== 'all') {
+      // erpStatus筛选：pending_purchase=已准备发运，pending=等待打包
+      const erpStatusMap: Record<string, string[]> = {
+        pending_purchase: ['awaiting_deliver', 'awaiting-deliver'],
+        pending: ['awaiting_packaging', 'awaiting-packaging'],
+        cancelled: ['cancelled'],
+        shipped_domestic: ['delivering', 'delivered'],
+      };
+      const ozonStatuses = erpStatusMap[erpStatus];
       if (ozonStatuses) {
         const ozonConditions = ozonStatuses.map(s => `status = '${s}'`).join(' OR ');
         conditions.push(`(${ozonConditions})`);
@@ -101,24 +116,27 @@ export async function GET(request: NextRequest) {
         ozonOrderId: o.ozon_order_id || o.id,
         ozonPostingNumber: o.ozon_posting_number,
         erpStatus: (() => {
-          // Ozon "等待发运" 状态映射为待采购
-          // awaiting-packaging: 等待打包（已付款等待商家打包）
-          // awaiting_deliver: 等待发货（已打包等待物流取货）
-          const awaitingShipStatuses = ['awaiting-packaging', 'awaiting_deliver', 'awaiting-deliver'];
-          // 已取消状态
+          // 根据Ozon官方API：
+          // awaiting_deliver（已准备发运）→ 待采购 pending_purchase
+          // awaiting-packaging（等待打包）→ 待处理 pending
+          const awaitingDeliverStatuses = ['awaiting_deliver', 'awaiting-deliver'];
+          const awaitingPackagingStatuses = ['awaiting-packaging'];
           const cancelledStatuses = ['cancelled'];
-          // 运输中状态
           const deliveringStatuses = ['delivering', 'delivered'];
           
-          // 如果是待发运状态，ERP状态为待采购
-          if (awaitingShipStatuses.includes(o.status)) {
+          // 已准备发运 → 待采购
+          if (awaitingDeliverStatuses.includes(o.status)) {
+            return 'pending_purchase';
+          }
+          // 等待打包 → 待处理
+          if (awaitingPackagingStatuses.includes(o.status)) {
             return 'pending';
           }
-          // 已取消状态
+          // 已取消
           if (cancelledStatuses.includes(o.status)) {
             return 'cancelled';
           }
-          // 运输中状态
+          // 运输中
           if (deliveringStatuses.includes(o.status)) {
             return 'shipped_domestic';
           }
