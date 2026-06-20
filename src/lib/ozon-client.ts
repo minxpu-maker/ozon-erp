@@ -85,6 +85,9 @@ export class OzonClient {
       // 检查响应体中的业务错误（即使HTTP状态码是200）
       const businessError = this.extractBusinessError(data);
       
+      // 调试日志
+      console.log('[OzonClient] Response:', { status, ok: response.ok, businessError, data });
+      
       // 429 Too Many Requests - 限流，自动退避重试
       if (status === 429 && retryCount < MAX_RETRIES) {
         const delay = RETRY_DELAYS[retryCount] || RETRY_DELAYS[RETRY_DELAYS.length - 1];

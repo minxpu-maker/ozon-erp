@@ -126,81 +126,73 @@ export default function ShopsPage() {
       if (!credData.success) return { connected: false, error: credData.error || '获取凭证失败' };
       const { ozonClientId, ozonApiKey } = credData.data;
 
-      // 2. 浏览器直调 Ozon API（POST + JSON body，无 CORS preflight 问题）
-      const ozonApiCall = async (path: string, body: Record<string, unknown> | null)
-        : Promise<{ connected: boolean; error?: string }> => {
+      // 2. 浏览器直调 Ozon API
+      const ozonRes = await fetch('https://api-seller.ozon.ru/v3/product/list', {
+        method: 'POST',
+        headers: {
+          'Client-Id': ozonClientId,
+          'Api-Key': ozonApiKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ filter: { category_id: 0 }, limit: 1 }),
+      });
+      
+      const responseText = await ozonRes.text();
+      
+      // 尝试解析 JSON
+      let responseData: { code?: number; message?: string; result?: unknown; items?: unknown[] } | null = null;
+      if (responseText) {
         try {
-          const ozonRes = await fetch(`https://api-seller.ozon.ru${path}`, {
-            method: 'POST',
-            headers: {
-              'Client-Id': ozonClientId,
-              'Api-Key': ozonApiKey,
-              'Content-Type': 'application/json',
-            },
-            body: body ? JSON.stringify(body) : '{}',
-          });
-          
-          // 读取响应体
-          const responseText = await ozonRes.text();
-          
-          // 尝试解析响应体中的错误信息（即使HTTP状态码是200）
-          if (responseText) {
-            try {
-              const responseData = JSON.parse(responseText);
-              
-              // 检查 Ozon API 错误码：code > 0 表示业务错误
-              // 1 = Api-key is deactivated, 3 = Invalid API key, etc.
-              if (responseData && typeof responseData.code === 'number' && responseData.code > 0) {
-                return { 
-                  connected: false, 
-                  error: responseData.message || `API错误 (code: ${responseData.code})` 
-                };
-              }
-              // 有数据返回才算成功
-              if (responseData && (responseData.result !== undefined || responseData.items !== undefined)) {
-                return { connected: true };
-              }
-            } catch { 
-              // JSON 解析失败，可能是 CORS 错误或非 JSON 响应
-              if (responseText.toLowerCase().includes('cors') || 
-                  responseText.toLowerCase().includes('access-control') ||
-                  responseText.includes('<html')) {
-                return { connected: false, error: 'CORS阻止直调，请安装Chrome插件绕过' };
-              }
-            }
-          }
-          
-          // HTTP 状态码非 200
-          if (!ozonRes.ok) {
-            if (ozonRes.status === 0) {
-              return { connected: false, error: 'CORS阻止直调，请安装Chrome插件绕过' };
-            }
-            return { connected: false, error: `HTTP ${ozonRes.status}: ${responseText.slice(0, 100)}` };
-          }
-          
-          // 无法确定结果，视为失败
-          return { connected: false, error: '无法解析响应，请检查网络连接' };
-        } catch (e: unknown) {
-          const msg = e instanceof Error ? e.message : '网络错误';
-          if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('net::')) {
-            return { connected: false, error: 'CORS阻止直调，请安装Chrome插件绕过' };
-          }
-          return { connected: false, error: msg };
+          responseData = JSON.parse(responseText);
+        } catch {
+          // JSON 解析失败
         }
+      }
+      
+      // 优先检查 HTTP 状态码
+      if (!ozonRes.ok) {
+        return { 
+          connected: false, 
+          error: `HTTP ${ozonRes.status}: ${responseText?.slice(0, 100) || '无响应'}` 
+        };
+      }
+      
+      // 检查 Ozon API 业务错误（code > 0 表示错误）
+      if (responseData && typeof responseData.code === 'number' && responseData.code > 0) {
+        return { 
+          connected: false, 
+          error: responseData.message || `API错误 (code: ${responseData.code})` 
+        };
+      }
+      
+      // 检查响应体是否包含成功数据
+      if (responseData && (responseData.result !== undefined || responseData.items !== undefined)) {
+        return { connected: true };
+      }
+      
+      // 响应体为空或格式异常，视为失败
+      return { 
+        connected: false, 
+        error: responseData?.message || '响应格式异常，无法确定连接状态' 
       };
-
-      // 优先试 POST /v3/product/list（Ozon 官方 v3 商品列表接口）
-      const result = await ozonApiCall('/v3/product/list', { filter: { category_id: 0 }, limit: 1 });
-      return result;
-    } catch {
-      return { connected: false, error: '浏览器直调失败' };
+      
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : '未知错误';
+      if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('net::') || msg.includes('CORS')) {
+        return { connected: false, error: 'CORS阻止直调，请安装Chrome插件绕过' };
+      }
+      return { connected: false, error: msg };
     }
-    };
+  };
 
   const testViaServer = async (shopId: string): Promise<{ connected: boolean; error?: string }> => {
     const res = await fetch(`/api/shops/${shopId}/test-connection`, { method: 'POST' });
     const data = await res.json();
-    return data;
+    // 确保返回正确的格式
+    if (data.connected === true) {
+      return { connected: true };
+    }
+    return { connected: false, error: data.error || '服务端连接失败' };
   };
 
   // 通过 Chrome 插件桥接（备用）
