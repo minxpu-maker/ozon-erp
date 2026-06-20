@@ -359,7 +359,7 @@ export default function OrderPipeline({ orders, onSync, isLoading, error, onRetr
   );
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
+    <div className="flex flex-col h-full bg-gray-100">
       {renderTabs()}
       <OrderToolbar
         filters={filters}
