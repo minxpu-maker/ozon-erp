@@ -43,13 +43,25 @@ export function getTabColorClass(color: string, type: 'border' | 'bg' | 'text') 
   return colorMap[color]?.[type] || colorMap.default[type];
 }
 
-interface PipelineTabsProps {
+import { OrderRecord } from './OrderCard';
+
+type PipelineTabsProps = {
+  orders: OrderRecord[];
   activeTab: OrderStatus | 'all';
   onTabChange: (tab: OrderStatus | 'all') => void;
-  counts: Record<OrderStatus | 'all', number>;
 }
 
-export default function PipelineTabs({ activeTab, onTabChange, counts }: PipelineTabsProps) {
+export default function PipelineTabs({ orders, activeTab, onTabChange }: PipelineTabsProps) {
+  // 计算每个Tab的订单数
+  const counts: Record<string, number> = {};
+  PIPELINE_TABS.forEach(tab => {
+    if (tab.key === 'all') {
+      counts[tab.key] = orders.length;
+    } else {
+      counts[tab.key] = orders.filter(o => o.status === tab.key).length;
+    }
+  });
+
   return (
     <div className="flex items-center gap-1 border-b border-gray-200">
       {PIPELINE_TABS.map(tab => {
