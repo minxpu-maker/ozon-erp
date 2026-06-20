@@ -16,11 +16,12 @@ export async function GET(request: NextRequest) {
       conditions.push(`shop_id = '${shopId.replace(/'/g, "''")}'`);
     }
     if (status && status !== 'all') {
-      // 根据Ozon官方API，只有待发运状态（awaiting_packaging/awaiting_deliver）才映射到待采购
-      // awaiting_packaging - 待打包（已付款等待商家打包）
-      // awaiting_deliver - 待发货（已打包等待物流取货）
+      // 根据Ozon官方API：
+      // - awaiting_deliver（已准备发运）→ 待采购
+      // - awaiting_packaging（等待打包）→ 待打包
       const statusMap: Record<string, string[]> = {
-        pending: ['awaiting-packaging', 'awaiting_packaging', 'awaiting-deliver', 'awaiting_deliver'], // 待采购：所有等待发运状态
+        pending: ['awaiting_deliver', 'awaiting-deliver'], // 待采购：只有已准备发运的订单
+        pending_packaging: ['awaiting_packaging', 'awaiting-packaging'], // 待打包
         purchasing: ['purchasing'],
         purchased: ['purchased'],
         delivering: ['delivering'],

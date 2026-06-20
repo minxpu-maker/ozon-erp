@@ -447,20 +447,24 @@ async function insertNewOrders(
 
     newOrdersCount++;
 
-    // 为每个 SKU 创建采购需求（使用订单UUID作为orderId）
-    for (const product of posting.products) {
-      const priority = calculatePriority(shipmentDeadline ? new Date(shipmentDeadline) : null);
+    // 根据Ozon官方API，只有"已准备发运"状态（awaiting_deliver）才创建采购需求
+    // awaiting_packaging（等待打包）状态不需要创建采购需求
+    const awaitingDeliverStatuses = ['awaiting_deliver', 'awaiting-deliver'];
+    if (awaitingDeliverStatuses.includes(posting.status)) {
+      for (const product of posting.products) {
+        const priority = calculatePriority(shipmentDeadline ? new Date(shipmentDeadline) : null);
 
-      try {
-        await db.execute(sql`
-          INSERT INTO purchase_demands (order_id, sku, product_name, quantity, priority, status)
-          VALUES (${orderUuid}, ${product.sku}, ${product.name}, ${product.quantity}, ${priority}, 'pending')
-        `);
+        try {
+          await db.execute(sql`
+            INSERT INTO purchase_demands (order_id, sku, product_name, quantity, priority, status)
+            VALUES (${orderUuid}, ${product.sku}, ${product.name}, ${product.quantity}, ${priority}, 'pending')
+          `);
 
-        newDemandsCount++;
-      } catch (demandError) {
-        // 记录错误但不中断，继续处理
-        console.error(`[OrderSync] 插入采购需求失败 (订单 ${posting.orderId}, SKU ${product.sku}):`, demandError);
+          newDemandsCount++;
+        } catch (demandError) {
+          // 记录错误但不中断，继续处理
+          console.error(`[OrderSync] 插入采购需求失败 (订单 ${posting.order_id}, SKU ${product.sku}):`, demandError);
+        }
       }
     }
   }
