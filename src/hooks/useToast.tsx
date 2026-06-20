@@ -117,7 +117,9 @@ function ToastItem({
 
   return (
     <div
-      className={`relative overflow-hidden rounded-lg shadow-lg border px-4 py-3 max-w-sm animate-slideInRight ${typeStyles[toast.type]}`}
+      className={`relative overflow-hidden rounded-lg shadow-lg border px-4 py-3 max-w-sm ${
+        isExiting ? "animate-slideOutRight" : "animate-slideInRight"
+      } ${typeStyles[toast.type]}`}
       style={{ minWidth: "280px" }}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}

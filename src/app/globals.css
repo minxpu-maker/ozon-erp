@@ -279,6 +279,10 @@ body {
   animation: slideOutRight 200ms ease-in forwards;
 }
 
+.animate-slideOutRight {
+  animation: slideOutRight 200ms ease-in forwards;
+}
+
 .animate-slideDown {
   animation: slideDown 200ms ease-out forwards;
 }
