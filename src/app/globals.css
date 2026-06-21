@@ -481,3 +481,102 @@ body {
 .network-banner {
   @apply fixed top-14 left-0 right-0 z-50 bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center justify-center text-amber-700 text-sm;
 }
+
+/* ========================================
+   SyncToast 动画
+   ======================================== */
+@keyframes slideDown {
+  0% { transform: translateY(-100%); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slideUp {
+  0% { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(-100%); opacity: 0; }
+}
+
+@keyframes slideRight {
+  0% { transform: translateX(0); opacity: 1; }
+  100% { transform: translateX(100%); opacity: 0; }
+}
+
+@keyframes iconPop {
+  0% { transform: scale(0); }
+  70% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes indeterminate {
+  0% { transform: translateX(-100%); }
+  50% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+@keyframes number-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.animate-slideDown {
+  animation: slideDown 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slideUp {
+  animation: slideUp 0.2s ease-out forwards;
+}
+
+.animate-slideRight {
+  animation: slideRight 0.15s ease-out forwards;
+}
+
+.animate-iconPop {
+  animation: iconPop 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  animation-delay: 0.15s;
+  opacity: 0;
+}
+
+.animate-shimmer-line {
+  animation: shimmer 2s linear infinite;
+}
+
+.animate-indeterminate {
+  animation: indeterminate 1.5s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+.animate-number-pulse {
+  animation: number-pulse 0.2s ease-out;
+  animation-delay: 0.3s;
+}
+
+/* reduced motion 支持 */
+@media (prefers-reduced-motion: reduce) {
+  .animate-slideDown,
+  .animate-slideUp,
+  .animate-slideRight,
+  .animate-iconPop,
+  .animate-shimmer-line,
+  .animate-indeterminate,
+  .animate-pulse-glow,
+  .animate-number-pulse {
+    animation: none !important;
+  }
+  
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
