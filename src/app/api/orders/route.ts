@@ -398,6 +398,15 @@ export async function GET(request: NextRequest) {
         'refunded': '已退款',
       };
 
+      // 从已有products数组计算总价（卢布），然后转换为人民币
+      const totalRub = products.reduce((sum: number, p: any) => {
+        const price = parseFloat(p.price) || 0;
+        const qty = parseInt(p.quantity) || 1;
+        return sum + price * qty;
+      }, 0);
+      // 汇率：1 卢布 ≈ 0.08 人民币
+      const totalInCNY = Math.round(totalRub * 0.08 * 100) / 100;
+      
       return {
         id: o.id,
         ozonOrderId: o.ozon_order_id || o.id,
@@ -434,10 +443,9 @@ export async function GET(request: NextRequest) {
         buyerName: o.buyer_name,
         recipientName: o.recipient_name || rawDataObj.recipient_name || null,
         recipientCity: o.recipient_city || rawDataObj.recipient_city || null,
-        // 金额转换为人民币（卢布 * 0.08）
-        totalPrice: Math.round((o.total_price || 0) * 0.08 * 100) / 100,
-        totalPriceRub: o.total_price, // 保留原卢布金额
-        orderAmount: Math.round((o.total_price || 0) * 0.08 * 100) / 100,
+        totalPrice: totalInCNY,
+        totalPriceRub: totalRub,
+        orderAmount: totalInCNY,
         status: o.status,
         ozonStatus: ozonStatusMap[o.status] || o.status,
         isInspected: o.is_inspected,
