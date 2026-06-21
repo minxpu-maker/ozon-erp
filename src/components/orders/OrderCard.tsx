@@ -438,7 +438,7 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
         </div>
 
         {/* 商品区 */}
-        <div className="px-5 pt-3">
+        <div className="px-5 pt-3 pb-3 flex-1">
           {products.length > 0 ? (
             <>
               {/* 1个商品：完整显示 */}
@@ -540,16 +540,38 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
                   共{totalSkus}个SKU · {totalItems}件商品
                 </div>
               )}
+
+              {/* 去采购按钮 - 在商品区末尾 */}
+              {actionButton && (
+                <div className="mt-4 flex justify-end">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleAction();
+                    }}
+                    className={cn(
+                      'rounded-lg text-white text-sm font-medium px-4 py-2',
+                      'transition-colors duration-150',
+                      'active:scale-[0.98] active:bg-blue-700',
+                      'bg-blue-500 hover:bg-blue-600'
+                    )}
+                  >
+                    <span className="flex items-center justify-center gap-1.5">
+                      {actionButton.icon}
+                      <span>{actionButton.label}</span>
+                    </span>
+                  </button>
+                </div>
+              )}
             </>
           ) : (
             <p className="text-sm text-gray-400 py-4">商品信息缺失</p>
           )}
         </div>
 
-        {/* 价格区 + 操作按钮（同一行） */}
-        <div className="px-5 flex items-center justify-between">
-          {/* 左侧：总价（多商品显示）或空占位（单商品时按钮右对齐） */}
-          {products.length > 1 ? (
+        {/* 价格区（仅多商品时显示总价，单商品时隐藏） */}
+        <div className="px-5 pb-3">
+          {products.length > 1 && (
             <div className="flex items-baseline">
               <span className="text-2xl font-bold tracking-tight text-gray-900">
                 {formatRUB(Number(order.totalPrice || 0))}
@@ -560,28 +582,6 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
                 </span>
               )}
             </div>
-          ) : (
-            <div />
-          )}
-          {/* 操作按钮 */}
-          {actionButton && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleAction();
-              }}
-              className={cn(
-                'rounded-lg text-white text-sm font-medium px-4 py-2',
-                'transition-colors duration-150',
-                'active:scale-[0.98] active:bg-blue-700',
-                'bg-blue-500 hover:bg-blue-600'
-              )}
-            >
-              <span className="flex items-center justify-center gap-1.5">
-                {actionButton.icon}
-                <span>{actionButton.label}</span>
-              </span>
-            </button>
           )}
         </div>
 
