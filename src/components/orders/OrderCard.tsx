@@ -800,7 +800,7 @@ function SingleProductRow({ product }: { product: OrderProduct }) {
             <p className="text-sm text-gray-700 line-clamp-2 leading-snug">{displayName}</p>
           )
         )}
-        {/* SKU + 复制按钮 + 数量 */}
+        {/* SKU + 复制按钮 */}
         <div className="flex items-center gap-1 mt-2">
           <span className="text-base text-gray-400">SKU·</span>
           <span className="text-base font-mono text-gray-700 font-medium">{product.sku || '—'}</span>
@@ -816,7 +816,10 @@ function SingleProductRow({ product }: { product: OrderProduct }) {
           >
             <Copy className="w-3.5 h-3.5" />
           </button>
-          <span className="text-base text-gray-400 ml-2">数量·</span>
+        </div>
+        {/* 数量 */}
+        <div className="flex items-center gap-1 mt-1">
+          <span className="text-base text-gray-400">数量·</span>
           <span className="text-base font-medium text-gray-700">×{product.quantity}</span>
         </div>
       </div>
