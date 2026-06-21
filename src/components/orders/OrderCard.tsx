@@ -802,6 +802,7 @@ function SingleProductRow({ product }: { product: OrderProduct }) {
         )}
         {/* SKU + 复制按钮 + 数量 */}
         <div className="flex items-center gap-1 mt-2">
+          <span className="text-base text-gray-400">SKU·</span>
           <span className="text-base font-mono text-gray-700 font-medium">{product.sku || '—'}</span>
           <button
             onClick={(e) => {
@@ -815,7 +816,7 @@ function SingleProductRow({ product }: { product: OrderProduct }) {
           >
             <Copy className="w-3.5 h-3.5" />
           </button>
-          <span className="text-gray-400">·</span>
+          <span className="text-base text-gray-400 ml-2">数量·</span>
           <span className="text-base font-medium text-gray-700">×{product.quantity}</span>
         </div>
       </div>
