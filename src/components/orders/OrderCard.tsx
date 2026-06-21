@@ -408,8 +408,8 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
         <div className="flex items-center justify-between px-5 pt-4 pb-2">
           {/* 左侧：订单号 + 状态Badge */}
           <div className="flex items-center gap-2">
-            <span className="text-sm font-mono font-medium text-gray-700">
-              # {order.ozonPostingNumber || order.ozonOrderId || order.id}
+            <span className="text-sm font-mono font-medium text-blue-500 hover:text-blue-600 cursor-pointer">
+              {order.ozonPostingNumber || order.ozonOrderId || order.id}
             </span>
             <span className={cn(
               'rounded-md px-2 py-0.5 text-xs font-medium border',
@@ -514,23 +514,45 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
           )}
         </div>
 
-        {/* 价格区 */}
-        <div className="px-5 py-3 mt-2">
-          <div className="flex items-baseline">
-            {/* Ozon售价 */}
-            <span className="text-2xl font-bold tracking-tight text-gray-900">
-              {order.totalPrice ? formatRUB(Number(order.totalPrice)) : '—'}
-            </span>
-            {/* 人民币换算 */}
-            <span className="text-sm text-gray-400 ml-2">
-              ≈{order.totalPrice ? formatCNYFromRUB(Number(order.totalPrice)) : '¥ 0.00'}
-            </span>
-          </div>
-          {/* 买家实付 */}
-          {order.orderAmount && order.orderAmount !== order.totalPrice && (
-            <div className="text-xs text-gray-400 mt-0.5">
-              买家实付 {formatRUB(Number(order.orderAmount))}
+        {/* 价格区 + 操作按钮（同一行） */}
+        <div className="px-5 py-3 mt-2 flex items-center justify-between">
+          <div>
+            <div className="flex items-baseline">
+              {/* Ozon售价 */}
+              <span className="text-2xl font-bold tracking-tight text-gray-900">
+                {order.totalPrice ? formatRUB(Number(order.totalPrice)) : '—'}
+              </span>
+              {/* 人民币换算 */}
+              <span className="text-sm text-gray-400 ml-2">
+                ≈{order.totalPrice ? formatCNYFromRUB(Number(order.totalPrice)) : '¥ 0.00'}
+              </span>
             </div>
+            {/* 买家实付 */}
+            {order.orderAmount && order.orderAmount !== order.totalPrice && (
+              <div className="text-xs text-gray-400 mt-0.5">
+                买家实付 {formatRUB(Number(order.orderAmount))}
+              </div>
+            )}
+          </div>
+          {/* 操作按钮 */}
+          {actionButton && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleAction();
+              }}
+              className={cn(
+                'rounded-lg text-white text-sm font-medium px-4 py-2',
+                'transition-colors duration-150',
+                'active:scale-[0.98] active:bg-blue-700',
+                'bg-blue-500 hover:bg-blue-600'
+              )}
+            >
+              <span className="flex items-center justify-center gap-1.5">
+                {actionButton.icon}
+                <span>{actionButton.label}</span>
+              </span>
+            </button>
           )}
         </div>
 
@@ -560,29 +582,6 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
             <span className="text-gray-600">截止 {formatDateTime(order.shipmentDeadline)}</span>
           )}
         </div>
-
-        {/* 操作区 */}
-        {actionButton && (
-          <div className="px-5 pb-4 border-t border-gray-100 pt-3 mt-2">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleAction();
-              }}
-              className={cn(
-                'rounded-lg text-white text-sm font-medium px-4 py-2',
-                'transition-colors duration-150',
-                'active:scale-[0.98] active:bg-blue-700',
-                'bg-blue-500 hover:bg-blue-600'
-              )}
-            >
-              <span className="flex items-center justify-center gap-1.5">
-                {actionButton.icon}
-                <span>{actionButton.label}</span>
-              </span>
-            </button>
-          </div>
-        )}
 
         {/* 展开详情面板 - grid-template-rows 动画 */}
         <div className="grid transition-[grid-template-rows] duration-300 ease-out"
@@ -766,7 +765,7 @@ function SingleProductRow({ product }: { product: OrderProduct }) {
                   href={productUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-gray-700 line-clamp-2 leading-snug hover:text-blue-600"
+                  className="text-sm text-blue-600 line-clamp-2 leading-snug hover:text-blue-700 transition-colors cursor-pointer"
                   onClick={(e) => e.stopPropagation()}
                 >
                   {displayName}
