@@ -438,7 +438,7 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
         </div>
 
         {/* 商品区 */}
-        <div className="px-5">
+        <div className="px-5 pt-3">
           {products.length > 0 ? (
             <>
               {/* 1个商品：完整显示 */}
@@ -468,7 +468,7 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
               {/* 2-3个商品：展开查看详情 */}
               {products.length >= 2 && products.length <= 3 && (
                 <button
-                  className="text-xs text-blue-500 hover:text-blue-600 mt-2"
+                  className="text-xs text-blue-500 hover:text-blue-600 mt-1"
                   onClick={(e) => {
                     e.stopPropagation();
                     setExpandedProducts(!expandedProducts);
@@ -547,7 +547,7 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
         </div>
 
         {/* 价格区 + 操作按钮（同一行） */}
-        <div className="px-5 py-1 flex items-center justify-between">
+        <div className="px-5 flex items-center justify-between">
           {/* 左侧：总价（多商品显示）或空占位（单商品时按钮右对齐） */}
           {products.length > 1 ? (
             <div className="flex items-baseline">
