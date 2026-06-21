@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useSWRConfig } from 'swr';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/useToast';
 import OrderToolbar, { ToolbarFilters, Shop } from './OrderToolbar';
 import { SummaryBar } from './SummaryBar';
 import { ErrorState } from "./ErrorState";

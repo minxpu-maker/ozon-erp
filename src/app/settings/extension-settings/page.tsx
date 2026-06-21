@@ -34,7 +34,7 @@ import {
   DialogFooter,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { toast, Toaster } from 'sonner';
+import { toast, ToastProvider, ToastContainer } from '@/hooks/useToast';
 
 interface ApiKey {
   id: number;

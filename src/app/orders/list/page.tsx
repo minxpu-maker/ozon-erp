@@ -3,7 +3,7 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import useSWR from 'swr';
 import OrderPipeline from "@/components/orders/OrderPipeline";
-import { Toaster, toast } from "sonner";
+import { toast } from "@/hooks/useToast";
 import { useState } from "react";
 
 const fetcher = (url: string) => fetch(url).then(async (r) => {
@@ -124,7 +124,7 @@ export default function OrdersListPage() {
         onRetry={() => mutate()}
         lastSyncedAt={lastSyncedAt}
       />
-      <Toaster position="top-right" richColors />
+      <Toast position="top-center" />
     </AppLayout>
   );
 }
