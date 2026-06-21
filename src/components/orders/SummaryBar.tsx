@@ -40,17 +40,17 @@ function StatItem({ label, value, color, pulse, isFirst }: StatItemProps) {
   const colors = colorClasses[color];
 
   return (
-    <div className={cn("flex items-center", !isFirst && "pl-8")}>
+    <div className={cn("flex flex-col items-center", !isFirst && "pl-8")}>
       {/* 数字 */}
       <span className={cn(
-        "text-2xl font-bold tracking-tight",
+        "text-2xl font-bold tracking-tight leading-none",
         colors.number,
         pulse ? "animate-pulse" : ""
       )}>
         {value}
       </span>
       {/* 标签 */}
-      <span className={cn("text-xs ml-1.5", colors.label)}>
+      <span className={cn("text-xs mt-0.5", colors.label)}>
         {label}
       </span>
     </div>
