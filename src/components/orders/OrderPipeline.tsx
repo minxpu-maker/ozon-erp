@@ -125,9 +125,17 @@ export default function OrderPipeline({ orders, onSync, isLoading, error, onRetr
       });
     }
 
-    // Step 5: 按店铺过滤（多选OR关系）
+    // Step 5: 按店铺过滤（多选OR关系）- 使用店铺名称匹配
     if (!filters.shops.includes("all") && filters.shops.length > 0) {
-      result = result.filter((o) => filters.shops.includes(o.shopId || ""));
+      // 获取选中店铺的名称列表
+      const selectedShopNames = filters.shops
+        .map(id => availableShops.find(s => s.id === id)?.name)
+        .filter(Boolean) as string[];
+      
+      result = result.filter((o) => {
+        // 匹配店铺名称
+        return selectedShopNames.includes(o.shopName || '');
+      });
     }
 
     return result;

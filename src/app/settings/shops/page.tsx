@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import useSWR from 'swr';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { useShopContext } from '@/components/layout/ShopContext';
+import { useShop, useShop as useShopContext } from '@/components/layout/ShopContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -33,6 +33,7 @@ export default function ShopsPage() {
   const { data: res, mutate } = useSWR('/api/shops', fetcher);
   const shops: Shop[] = res?.shops ?? [];
   const total = res?.total ?? 0;
+  const { refreshShops } = useShop();
 
   // 密钥状态检测
   const { data: keyStatusData } = useSWR(
