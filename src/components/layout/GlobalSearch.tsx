@@ -143,7 +143,7 @@ export function GlobalSearchModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh]">
+    <div className="fixed inset-0 z-[var(--z-modal,50)] flex items-start justify-center pt-[15vh]">
       {/* 背景遮罩 */}
       <div 
         className="absolute inset-0 bg-black/30" 

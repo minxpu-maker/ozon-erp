@@ -5,7 +5,9 @@ import { useSWRConfig } from 'swr';
 import { toast } from 'sonner';
 import OrderToolbar, { ToolbarFilters, Shop } from './OrderToolbar';
 import { SummaryBar } from './SummaryBar';
-import BatchActionBar from './BatchActionBar';
+import { ErrorState } from "./ErrorState";
+import { PaginationBar } from "./PaginationBar";
+import BatchActionBar from "./BatchActionBar";
 import { OrderCard, type OrderRecord } from "./OrderCard";
 import { OrderListView } from "./OrderListView";
 import EmptyState from "./EmptyState";
@@ -374,24 +376,12 @@ export default function OrderPipeline({ orders, onSync, isLoading, error, onRetr
       <div className="mb-4" /> {/* 搜索栏→摘要行间距 */}
       {renderSummary()}
       
-      {/* 错误态横幅 */}
+      {/* 错误态显示 */}
       {error && (
-        <div className="mx-4 mt-3 px-4 py-3 bg-red-50 border border-red-200 rounded-lg flex items-center justify-between animate-fade-in">
-          <div className="flex items-center gap-2">
-            <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span className="text-sm text-red-700">{error}</span>
-          </div>
-          {onRetry && (
-            <button
-              onClick={onRetry}
-              className="text-sm text-red-600 hover:text-red-800 font-medium transition-colors"
-            >
-              重试
-            </button>
-          )}
-        </div>
+        <ErrorState
+          message={error}
+          onRetry={onRetry}
+        />
       )}
       
       <div className="mb-4" />
@@ -429,24 +419,17 @@ export default function OrderPipeline({ orders, onSync, isLoading, error, onRetr
         )}
       </div>
       
-      <BatchActionBar
-        selectedIds={new Set(Array.from(selectedIds).map(String))}
-        orders={paginatedOrders}
-        currentTab={activeTab}
-        totalCount={filteredOrders.length}
-        pagination={{
-          page: currentPage,
-          pageSize: pageSize,
-          totalPages: totalPages || 1,
-        }}
-        onToggleSelect={(id: string | number) => toggleSelect(id)}
-        onToggleSelectAll={toggleSelectAll}
-        onClearSelection={handleClearSelection}
-        onPageChange={handlePageChange}
-        onBatchPurchase={handleBatchPurchase}
-        onBatchMarkPacking={handleBatchShip}
-        onBatchPrint={handleBatchPrint}
-      />
+      {/* 底部：分页栏 */}
+      {!error && (
+        <PaginationBar
+          page={currentPage}
+          pageSize={pageSize}
+          total={filteredOrders.length}
+          totalPages={totalPages || 1}
+          onPageChange={handlePageChange}
+          onPageSizeChange={(size: number) => setCurrentPage(1)}
+        />
+      )}
     </div>
   );
 }
