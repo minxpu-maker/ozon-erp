@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react';
 
-import { AppLayout } from '@/components/layout/AppLayout';import { Package, RefreshCw, Scale, Printer, CheckCircle, FileText, AlertCircle, Box } from 'lucide-react';
+import { AppLayout } from '@/components/layout/AppLayout';
+import { formatCNYValue } from '@/lib/utils';
+import { Package, RefreshCw, Scale, Printer, CheckCircle, FileText, AlertCircle, Box } from 'lucide-react';
 
 export default function PackagingPage() {
   const [orders, setOrders] = useState<any[]>([]);
@@ -231,7 +233,7 @@ return (
                <td className="px-4 py-3 text-sm text-[#152033]">{item.ozon_posting_number}</td>
                <td className="px-4 py-3"><span className="px-2 py-1 bg-[#2F6BFF]/10 text-[#2F6BFF] rounded text-xs">TIANTAN</span></td>
                <td className="px-4 py-3 text-sm text-[#152033]">{item.buyer_name}</td>
-               <td className="px-4 py-3 text-sm text-[#152033]">¥{(parseFloat(item.total_price || 0) * 0.08).toFixed(2)}</td>
+               <td className="px-4 py-3 text-sm text-[#152033]">{formatCNYValue(item.total_price || 0)}</td>
                <td className="px-4 py-3">
                  <div className="flex items-center gap-2">
                    {(() => {

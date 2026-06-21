@@ -434,8 +434,10 @@ export async function GET(request: NextRequest) {
         buyerName: o.buyer_name,
         recipientName: o.recipient_name || rawDataObj.recipient_name || null,
         recipientCity: o.recipient_city || rawDataObj.recipient_city || null,
-        totalPrice: o.total_price,
-        orderAmount: o.total_price,
+        // 金额转换为人民币（卢布 * 0.08）
+        totalPrice: Math.round((o.total_price || 0) * 0.08 * 100) / 100,
+        totalPriceRub: o.total_price, // 保留原卢布金额
+        orderAmount: Math.round((o.total_price || 0) * 0.08 * 100) / 100,
         status: o.status,
         ozonStatus: ozonStatusMap[o.status] || o.status,
         isInspected: o.is_inspected,
