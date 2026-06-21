@@ -1,49 +1,43 @@
 'use client';
 
-import { Toaster } from 'sonner';
+import { toast as sonnerToast, Toaster } from 'sonner';
 
 // Re-export sonner components
-export { Toaster as ToastContainer };
+export { Toaster };
 
-// Simple toast function
-export function toast(options: { title?: string; description?: string; type?: 'success' | 'error' | 'warning' | 'info' } | string) {
+// Simple toast function - compatible with code that expects toast() call
+export function toast(options: { title?: string; description?: string; type?: 'success' | 'error' | 'warning' | 'info'; duration?: number } | string) {
   if (typeof options === 'string') {
-    return { type: 'success' as const, message: options };
+    sonnerToast.success(options);
+    return;
   }
-  return options;
+  
+  const { title, description, type = 'success', duration } = options;
+  const config = { duration: duration || 4000 };
+  
+  switch (type) {
+    case 'error':
+      sonnerToast.error(title || description || 'Error', config);
+      break;
+    case 'warning':
+      sonnerToast.warning(title || description || 'Warning', config);
+      break;
+    case 'info':
+      sonnerToast.info(title || description || 'Info', config);
+      break;
+    default:
+      sonnerToast.success(title || description || 'Success', config);
+  }
 }
 
-// Re-export sonner's toast
-export { toast as sonnerToast } from 'sonner';
+// Legacy compatibility
+export { sonnerToast as toast };
 
-// useToast hook - just use the Toaster component
-export function useToast() {
-  return {};
-}
-
-// ToastProvider - uses sonner's Toaster
-export function ToastProvider({ children }: { children: React.ReactNode }) {
-  return children;
-}
-
-// Viewport
-export function ToastViewport() {
-  return null;
-}
-
-// Toast components
-export function Toast(props: any) {
-  return props.children;
-}
-
-export function ToastClose(props: any) {
-  return props.children;
-}
-
-export function ToastDescription(props: any) {
-  return props.children;
-}
-
-export function ToastTitle(props: any) {
-  return props.children;
-}
+// Empty stubs for components that may be imported but not used
+export function useToast() { return {}; }
+export function ToastProvider({ children }: { children: React.ReactNode }) { return children; }
+export function ToastViewport() { return null; }
+export function Toast(props: any) { return props.children; }
+export function ToastClose() { return null; }
+export function ToastDescription() { return null; }
+export function ToastTitle() { return null; }

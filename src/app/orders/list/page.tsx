@@ -124,7 +124,5 @@ export default function OrdersListPage() {
         onRetry={() => mutate()}
         lastSyncedAt={lastSyncedAt}
       />
-      <Toast position="top-center" />
-    </AppLayout>
   );
 }
