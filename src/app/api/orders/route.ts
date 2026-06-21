@@ -456,7 +456,7 @@ export async function GET(request: NextRequest) {
         updatedAt: o.updated_at,
         lastSyncedAt: o.updated_at,
         shopId: o.shop_id,
-        shopName: o.shop_name,
+        shopName: (row as any).shop_name || o.shop_name,
         products, // 添加商品数组
         purchaseInfo: o.is_purchase_bound ? {
           platform: null,
