@@ -53,12 +53,16 @@ export default function OrderPipeline({ orders, onSync, isLoading, error, onRetr
   const [pageSize] = useState(20);
   const listRef = useRef<HTMLDivElement>(null);
 
-  // 模拟店铺数据
-  const availableShops: Shop[] = [
-    { id: "shop1", name: "店铺A" },
-    { id: "shop2", name: "店铺B" },
-    { id: "shop3", name: "tiantain" },
-  ];
+  // 从订单数据中动态提取店铺列表
+  const availableShops: Shop[] = useMemo(() => {
+    const shopMap = new Map<string, Shop>();
+    typedOrders.forEach(order => {
+      if (order.shopId && order.shopName && !shopMap.has(order.shopId)) {
+        shopMap.set(order.shopId, { id: order.shopId, name: order.shopName });
+      }
+    });
+    return Array.from(shopMap.values());
+  }, [typedOrders]);
 
   // 将订单转换为 OrderRecord 类型
   const typedOrders = useMemo(() => orders as OrderRecord[], [orders]);
