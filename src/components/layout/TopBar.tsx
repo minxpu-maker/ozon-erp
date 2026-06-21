@@ -162,8 +162,7 @@ export function TopBar() {
         onClose={() => setSearchOpen(false)} 
       />
 
-      {/* 通知弹窗 */}
-      /* Toast 通知已在 RootProviders 中全局提供 */
+      {/* 通知弹窗：Toast 通知已在 RootProviders 中全局提供 */}
     </>
   );
 }
