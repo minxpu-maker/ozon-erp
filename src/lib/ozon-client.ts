@@ -258,38 +258,54 @@ export class OzonClient {
   }
 
   /**
-   * 获取订单完整详情（包含图片和product_id）
-   * POST /v2/posting/fbs/get
+   * 获取订单商品图片（通过offer_id查询商品信息获取图片）
+   * POST /v3/product/info/list
    * @param postingNumber - Ozon货件号
-   * @returns 包含图片URL和product_id的映射 { offer_id: { imageUrl, productId } }
+   * @param offerIds - 商品SKU列表（从订单products中提取offer_id）
+   * @returns 包含图片URL的映射 { offer_id: { imageUrl, productId } }
    */
-  async getPostingDetails(postingNumber: string): Promise<Record<string, { imageUrl?: string; productId?: number }>> {
+  async getPostingDetails(postingNumber: string, offerIds: string[] = []): Promise<Record<string, { imageUrl?: string; productId?: number }>> {
     try {
+      // 如果没有offer_ids，直接返回空
+      if (offerIds.length === 0) {
+        console.log(`[OzonClient] getPostingDetails: no offer IDs for ${postingNumber}`);
+        return {};
+      }
+
+      // 调用商品信息API获取图片（使用v3版本，响应格式更清晰）
       const response = await this.post<{
         result?: {
-          products?: Array<{
-            offer_id: string;
+          items?: Array<{
             product_id: number;
-            name: string;
-            quantity: number;
-            price: string;
-            images?: Array<{ url: string }>;
+            offer_id: string;
+            name?: string;
+            images?: string[];
           }>;
         };
-      }>('/v2/posting/fbs/get', {
-        posting_number: postingNumber,
+      }>('/v3/product/info/list', {
+        offer_id: offerIds,
       });
 
-      if (response.ok && response.data?.result?.products) {
+      // Ozon v3/product/info/list API 响应格式是 { items: [...] }
+      if (response.ok && response.data?.items) {
         const productMap: Record<string, { imageUrl?: string; productId?: number }> = {};
-        for (const p of response.data.result.products) {
-          productMap[p.offer_id] = {
-            imageUrl: p.images && p.images.length > 0 ? p.images[0].url : undefined,
-            productId: p.product_id,
-          };
+        for (const p of response.data.items) {
+          // 使用offer_id作为key
+          if (p.images && p.images.length > 0) {
+            productMap[p.offer_id] = {
+              imageUrl: p.images[0], // 取第一张图（主图）
+              productId: p.product_id,
+            };
+          } else {
+            productMap[p.offer_id] = {
+              productId: p.product_id,
+            };
+          }
         }
+        console.log(`[OzonClient] getPostingDetails: got ${Object.keys(productMap).length}/${offerIds.length} products for ${postingNumber}`);
         return productMap;
       }
+      console.log(`[OzonClient] getPostingDetails: no result for ${postingNumber}`);
       return {};
     } catch (error) {
       console.error('[OzonClient] 获取订单详情失败:', error);

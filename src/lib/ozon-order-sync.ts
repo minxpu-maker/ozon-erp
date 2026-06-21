@@ -216,9 +216,16 @@ export async function syncOrdersForShop(shop: {
     const productImagesMap: Record<string, ProductInfo> = {};
     for (const posting of allPostings) {
       try {
-        const details = await client.getPostingDetails(posting.posting_number);
-        for (const [offerId, info] of Object.entries(details)) {
-          productImagesMap[`${posting.posting_number}:${offerId}`] = info;
+        // 从订单products中提取offer_ids（Ozon订单API不返回product_id，需要通过商品接口获取）
+        const offerIds = posting.products
+          .map(p => p.offer_id)
+          .filter((id): id is string => !!id && id.length > 0);
+        
+        if (offerIds.length > 0) {
+          const details = await client.getPostingDetails(posting.posting_number, offerIds);
+          for (const [offerId, info] of Object.entries(details)) {
+            productImagesMap[`${posting.posting_number}:${offerId}`] = info;
+          }
         }
       } catch (e) {
         // 获取图片失败不影响主流程
