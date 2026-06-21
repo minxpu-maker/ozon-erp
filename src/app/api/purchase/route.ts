@@ -56,55 +56,30 @@ export async function GET(request: NextRequest) {
       tasks = await query;
     }
 
-    // 收集所有offer_id以批量查询商品图片
-    const offerIds = tasks
-      .map(t => t.task.sku_code)
-      .filter((id): id is string => !!id);
-    
-    let productImages: Record<string, string> = {};
-    if (offerIds.length > 0) {
-      const products = await db.select({
-        offer_id: schema.ozonProducts.offer_id,
-        main_image: schema.ozonProducts.main_image,
-      }).from(schema.ozonProducts)
-        .where(inArray(schema.ozonProducts.offer_id, offerIds));
-      
-      productImages = Object.fromEntries(
-        products.map(p => [p.offer_id, p.main_image || ''])
-      );
-    }
-
-    // 附加商品信息
+    // 附加商品信息（直接从订单原始数据获取图片）
     const tasksWithProduct = tasks.map(item => {
       const product = item.order?.ozonRawData 
         ? extractProductInfo(item.order.ozonRawData, item.task.sku_code)
         : null;
       
-      // 从ozon_products表获取图片
-      const imageUrl = item.task.sku_code ? productImages[item.task.sku_code] : null;
+      // 图片直接从订单原始数据的商品信息中获取
+      const imageUrl = product?.image || product?.image_url || null;
       
       return {
         ...item,
         product: product ? {
           ...product,
-          image: imageUrl || product.image_url,
-          image_url: imageUrl || product.image_url,
-        } : (imageUrl ? {
-          sku: 0,
-          name: '',
-          offer_id: item.task.sku_code || '',
-          quantity: item.task.quantity || 1,
-          price: '',
           image: imageUrl,
           image_url: imageUrl,
-        } : null),
+        } : null,
       };
     });
 
     return NextResponse.json({ success: true, data: tasksWithProduct });
   } catch (error) {
     console.error('获取采购任务失败:', error);
-    return NextResponse.json({ success: false, error: '获取采购任务失败' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ success: false, error: '获取采购任务失败', detail: errorMessage }, { status: 500 });
   }
 }
 
