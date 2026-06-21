@@ -293,7 +293,7 @@ export function Sidebar() {
 
               {/* 子菜单 */}
               {isExpanded && (
-                <div className="ml-3 mt-0.5 space-y-0.5 border-l-2 border-gray-200 pl-3">
+                <div className="ml-3 mt-0.5 space-y-0.5">
                   {group.items.map((item) => (
                     <div key={item.href}>
                       {item.locked ? (
@@ -305,10 +305,10 @@ export function Sidebar() {
                         <Link
                           href={item.href}
                           className={cn(
-                            'flex items-center gap-2 px-3 py-1.5 rounded-md text-xs transition-colors',
+                            'flex items-center gap-2 px-3 py-1.5 rounded-md text-xs transition-all duration-150',
                             isActive(item.href)
-                              ? 'bg-blue-100 text-blue-700 font-medium'
-                              : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                              ? 'bg-blue-50 text-blue-600 font-medium border-r-2 border-blue-500 pr-[calc(0.75rem-2px)]'
+                              : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700 focus-visible:bg-gray-50 focus-visible:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-200'
                           )}
                         >
                           {item.name}
