@@ -77,23 +77,37 @@ export default function OrdersListPage() {
       const res = await fetch("/api/sync/orders", { method: "POST" });
       const result = await res.json();
       
-      if (res.ok && result.success) {
-        // 重新获取订单列表
-        await mutate();
-        setLastSyncedAt(new Date());
-        
-        // 显示同步详情
-        const { newOrders = 0, updatedOrders = 0, newDemands = 0 } = result;
-        if (newOrders > 0 || updatedOrders > 0 || newDemands > 0) {
-          toast.success(
-            `同步完成${newOrders > 0 ? ` | 新增 ${newOrders} 单` : ''}${updatedOrders > 0 ? ` | 更新 ${updatedOrders} 单` : ''}${newDemands > 0 ? ` | 新需求 ${newDemands}` : ''}`
-          );
+      // 显示同步详情
+      const { newOrders = 0, updatedOrders = 0, newDemands = 0, syncedShops = 0, failedShops = 0, errors = [] } = result;
+      
+      if (syncedShops > 0 || failedShops > 0) {
+        // 有同步记录，显示详情
+        let detail = `同步完成 | ${syncedShops}个店铺成功`;
+        if (failedShops > 0) {
+          detail += ` | ${failedShops}个店铺失败`;
+        }
+        if (newOrders > 0) {
+          detail += ` | 新增 ${newOrders} 单`;
+        }
+        if (updatedOrders > 0) {
+          detail += ` | 更新 ${updatedOrders} 单`;
+        }
+        if (newDemands > 0) {
+          detail += ` | 新需求 ${newDemands}`;
+        }
+        if (failedShops > 0) {
+          toast.warning(detail);
         } else {
-          toast.success("同步成功");
+          toast.success(detail);
         }
       } else {
-        toast.error(result.message || result.error || "同步失败");
+        // 没有同步记录
+        toast.info("暂无需要同步的店铺或凭证未配置");
       }
+      
+      // 重新获取订单列表
+      await mutate();
+      setLastSyncedAt(new Date());
     } catch (err) {
       console.error("同步失败:", err);
       toast.error("网络错误，同步失败");
