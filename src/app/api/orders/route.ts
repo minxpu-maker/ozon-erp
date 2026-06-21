@@ -398,14 +398,15 @@ export async function GET(request: NextRequest) {
         'refunded': '已退款',
       };
 
-      // 从已有products数组计算总价（卢布），然后转换为人民币
+      // 从已有products数组计算总价（卢布）
+      // 注意：Ozon后台显示的¥金额就是卢布数的直接显示，不需要汇率转换
       const totalRub = products.reduce((sum: number, p: any) => {
         const price = parseFloat(p.price) || 0;
         const qty = parseInt(p.quantity) || 1;
         return sum + price * qty;
       }, 0);
-      // 汇率：1 卢布 ≈ 0.08 人民币
-      const totalInCNY = Math.round(totalRub * 0.08 * 100) / 100;
+      // Ozon显示的¥金额 = 卢布数，直接使用
+      const totalInCNY = Math.round(totalRub * 100) / 100;
       
       return {
         id: o.id,
