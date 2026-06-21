@@ -275,7 +275,7 @@ export function SyncToast({
         <div 
           className="absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-blue-500 to-blue-400 transition-all duration-1000 ease-linear"
           style={{ 
-            width: `${(countdown / (status === 'error' ? 5 : 3)) * 100}%`,
+            width: `${(countdown / (status === 'error' ? 5 : 10)) * 100}%`,
             opacity: isPaused ? 0.3 : 1
           }}
         />
