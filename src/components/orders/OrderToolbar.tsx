@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, ChevronDown, LayoutGrid, List, X, Zap, Clock, RefreshCw, Building2 } from 'lucide-react';
+import { Search, ChevronDown, LayoutGrid, List, X, Zap, Clock, RefreshCw, Building } from 'lucide-react';
 
 // 筛选状态类型
 export interface ToolbarFilters {
@@ -141,7 +141,7 @@ function ShopMultiSelect({
         onClick={() => setOpen(!open)}
         className={`flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-50 border border-gray-200 text-sm hover:border-gray-300 transition-colors focus-visible:border-blue-400 focus-visible:ring-2 focus-visible:ring-blue-100 ${selectedShops.includes('all') ? 'text-gray-700' : 'text-blue-600'}`}
       >
-        <Building2 className="w-4 h-4 text-gray-400" />
+        <Building className="w-4 h-4 text-gray-400" />
         <span>{selectedLabel}</span>
         <ChevronDown className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>

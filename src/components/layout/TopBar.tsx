@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { ChevronDown, Bell, User, Camera } from 'lucide-react';
+import { ChevronDown, ChevronRight, Bell, User, Camera } from 'lucide-react';
 import { useShop } from './ShopContext';
 import { GlobalSearchTrigger, GlobalSearchModal } from './GlobalSearch';
 
@@ -42,7 +42,7 @@ function Breadcrumb() {
       >
         首页
       </Link>
-      <span className="mx-2 text-gray-300">/</span>
+      <ChevronRight className="h-3 w-3 text-gray-300" />
       <span className="text-gray-900 font-medium">{pageName}</span>
     </nav>
   );
