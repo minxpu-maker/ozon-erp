@@ -15,6 +15,7 @@ import { OrderCardSkeletonList } from "./OrderCardSkeleton";
 import { getOrderStatusLabel } from "@/lib/utils";
 import { PIPELINE_TABS, TabConfig, OrderStatus, default as PipelineTabs } from "./PipelineTabs";
 import { cn } from "@/lib/utils";
+import { useShop } from "@/components/layout/ShopContext";
 
 // 初始筛选状态
 const INITIAL_FILTERS: ToolbarFilters = {
@@ -53,8 +54,14 @@ export default function OrderPipeline({ orders, onSync, isLoading, error, onRetr
   // 将订单转换为 OrderRecord 类型
   const typedOrders = useMemo(() => orders as OrderRecord[], [orders]);
 
-  // 从订单数据中动态提取店铺列表
+  // 从 ShopContext 获取店铺列表（包含所有店铺，不只是有订单的）
+  const { shops: contextShops } = useShop();
   const availableShops: Shop[] = useMemo(() => {
+    // 优先使用 ShopContext 的店铺列表
+    if (contextShops && contextShops.length > 0) {
+      return contextShops;
+    }
+    // 降级：从订单数据中提取
     const shopMap = new Map<string, Shop>();
     typedOrders.forEach(order => {
       if (order.shopId && order.shopName && !shopMap.has(order.shopId)) {
@@ -62,7 +69,7 @@ export default function OrderPipeline({ orders, onSync, isLoading, error, onRetr
       }
     });
     return Array.from(shopMap.values());
-  }, [typedOrders]);
+  }, [contextShops, typedOrders]);
 
   // 筛选逻辑：先按Tab过滤，再按搜索+筛选条件过滤
   const filteredOrders = useMemo(() => {
