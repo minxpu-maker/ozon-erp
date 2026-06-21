@@ -420,6 +420,107 @@ export class OzonClient {
     
     return result;
   }
+
+  /**
+   * 获取产品列表
+   * POST /v2/product/list
+   * @param limit - 每页数量
+   * @param offset - 偏移量
+   * @returns 产品列表和总数
+   */
+  async getProductList(limit: number = 100, offset: number = 0): Promise<{
+    items: Array<{
+      product_id: number;
+      offer_id: string;
+      name: string;
+      sku: string;
+      barcodes?: string[];
+      buybox_price?: number;
+      price?: number;
+      recommended_price?: number;
+      vat?: number;
+      weight?: number;
+      dimensions?: { length: number; width: number; height: number };
+      status: string;
+      category_id?: number;
+      category_name?: string;
+      brand?: string;
+      image?: string;
+      images?: string[];
+      created_at?: string;
+      updated_at?: string;
+    }>;
+    total: number;
+  }> {
+    try {
+      const response = await this.post<{
+        result?: {
+          items?: Array<{
+            product_id: number;
+            offer_id: string;
+            name: string;
+            sku?: string;
+            barcodes?: string[];
+            buybox_price?: string | number;
+            price?: string | number;
+            recommended_price?: string | number;
+            vat?: number;
+            weight?: string | number;
+            depth?: string | number;
+            height?: string | number;
+            width?: string | number;
+            status?: string;
+            category_id?: number;
+            images?: string[];
+            image?: string;
+            created_at?: string;
+            updated_at?: string;
+          }>;
+          total?: number;
+        };
+      }>('/v3/product/list', {
+        filter: { visibility: 'VISIBLE' },
+        limit,
+        offset,
+      });
+
+      if (response.ok && response.data?.result) {
+        const result = response.data.result;
+        const items = (result.items || []).map(item => ({
+          product_id: item.product_id,
+          offer_id: item.offer_id,
+          name: item.name,
+          sku: item.sku || item.offer_id,
+          barcodes: item.barcodes,
+          buybox_price: item.buybox_price ? Number(item.buybox_price) : undefined,
+          price: item.price ? Number(item.price) : undefined,
+          recommended_price: item.recommended_price ? Number(item.recommended_price) : undefined,
+          vat: item.vat,
+          weight: item.weight ? Number(item.weight) : undefined,
+          dimensions: item.depth || item.height || item.width ? {
+            length: Number(item.depth || 0),
+            width: Number(item.width || 0),
+            height: Number(item.height || 0),
+          } : undefined,
+          status: item.status || 'unknown',
+          image: item.images?.[0] || item.image,
+          images: item.images,
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+        }));
+
+        return {
+          items,
+          total: result.total || items.length,
+        };
+      }
+
+      return { items: [], total: 0 };
+    } catch (error) {
+      console.error('[OzonClient] 获取产品列表失败:', error);
+      return { items: [], total: 0 };
+    }
+  }
 }
 
 /**

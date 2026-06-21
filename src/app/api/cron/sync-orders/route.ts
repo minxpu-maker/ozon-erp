@@ -16,6 +16,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { syncAllShops } from '@/lib/ozon-order-sync';
+import { syncAllShopProducts } from '@/lib/ozon-product-sync';
 
 // CRON密钥（应设置为环境变量）
 const CRON_SECRET = process.env.CRON_SECRET || 'development-cron-secret';
@@ -51,20 +52,31 @@ export async function GET(request: NextRequest) {
   try {
     console.log('[CronOrderSync] 定时同步开始');
     
-    // 执行同步
-    const result = await syncAllShops();
+    // 1. 同步订单
+    console.log('[Cron] 同步订单...');
+    const orderResult = await syncAllShops();
+    
+    // 2. 同步产品
+    console.log('[Cron] 同步产品...');
+    const productResult = await syncAllShopProducts();
     
     const duration = Date.now() - startTime;
     console.log(`[CronOrderSync] 定时同步完成，耗时${duration}ms`);
     
     return NextResponse.json({
-      success: result.success,
-      message: `定时同步完成: ${result.syncedShops}个店铺成功, ${result.failedShops}个失败`,
-      syncedShops: result.syncedShops,
-      failedShops: result.failedShops,
-      newOrders: result.newOrders,
-      updatedOrders: result.updatedOrders,
-      newDemands: result.newDemands,
+      success: orderResult.success && productResult.success,
+      message: `定时同步完成`,
+      orders: {
+        syncedShops: orderResult.syncedShops,
+        failedShops: orderResult.failedShops,
+        newOrders: orderResult.newOrders,
+        updatedOrders: orderResult.updatedOrders,
+      },
+      products: {
+        syncedShops: productResult.syncedShops,
+        failedShops: productResult.failedShops,
+        totalProducts: productResult.totalProducts,
+      },
       duration: `${duration}ms`,
       timestamp: new Date().toISOString(),
     });
