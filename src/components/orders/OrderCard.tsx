@@ -807,10 +807,11 @@ function SingleProductRow({ product }: { product: OrderProduct }) {
             <p className="text-sm text-gray-700 line-clamp-2 leading-snug">{displayName}</p>
           )
         )}
-        <div className="flex items-center gap-1 mt-1">
-          <span className="text-xs font-mono text-gray-400">{product.sku || '—'}</span>
-          <span className="text-gray-300">·</span>
-          <span className="text-xs font-medium text-gray-500">×{product.quantity}</span>
+        {/* SKU + 数量，字体加大 */}
+        <div className="flex items-center gap-1 mt-2">
+          <span className="text-base font-mono text-gray-700 font-medium">{product.sku || '—'}</span>
+          <span className="text-gray-400">·</span>
+          <span className="text-base font-medium text-gray-700">×{product.quantity}</span>
         </div>
       </div>
     </div>
