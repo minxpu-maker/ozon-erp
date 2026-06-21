@@ -552,11 +552,11 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
           )}
         </div>
 
-        {/* 价格区 + 去采购按钮（多商品时显示，单商品时隐藏） */}
+        {/* 价格区 + 目的地 + 发货截止日期 + 去采购按钮（多商品时显示，单商品时隐藏） */}
         <div className="px-5 pb-3">
           {products.length > 1 && (
             <div className="flex items-center justify-between gap-4">
-              <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-3">
                 <div className="flex items-baseline">
                   <span className="text-2xl font-bold tracking-tight text-gray-900">
                     {formatRUB(Number(order.totalPrice || 0))}
@@ -567,8 +567,19 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
                     </span>
                   )}
                 </div>
+                {order.recipientCity && (
+                  <>
+                    <span className="text-gray-300">|</span>
+                    <span className="text-sm text-gray-600">目的地：{order.recipientCity}</span>
+                  </>
+                )}
+                {order.shipmentDeadline && (
+                  <>
+                    <span className="text-gray-300">|</span>
+                    <span className="text-sm text-gray-600">发货截止：{formatDateTime(order.shipmentDeadline)}</span>
+                  </>
+                )}
               </div>
-              {/* 外部已显示目的地和截止日期 */}
             </div>
           )}
         </div>
@@ -576,20 +587,8 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
         {/* 底部元数据 */}
         <div className="px-5 pb-3 flex items-center justify-between">
           <div className="flex items-center gap-2 text-xs text-gray-400 flex-wrap">
-            {order.recipientCity && (
-              <>
-                <span>{order.recipientCity}</span>
-                <span>·</span>
-              </>
-            )}
             {totalWeight > 0 && (
-              <>
-                <span>{formatWeight(totalWeight)}</span>
-                <span>·</span>
-              </>
-            )}
-            {order.shipmentDeadline && (
-              <span className="text-gray-600">截止 {formatDateTime(order.shipmentDeadline)}</span>
+              <span>{formatWeight(totalWeight)}</span>
             )}
           </div>
           {/* 查看详情按钮 */}
@@ -836,13 +835,27 @@ function SingleProductRow({
           <span className="text-base text-gray-400 ml-2">数量·</span>
           <span className="text-base font-medium text-gray-700">×{product.quantity}</span>
         </div>
-        {/* 金额 + 去采购按钮（单商品时显示） */}
+        {/* 金额 + 目的地 + 发货截止日期 + 去采购按钮（单商品时显示） */}
         {orderPrice !== undefined && (
-          <div className="flex items-center justify-between mt-2">
-            <div className="flex items-baseline gap-1">
-              <span className="text-xl font-bold text-gray-900">{formatRUB(orderPrice)}</span>
-              {rate && (
-                <span className="text-sm text-gray-400">≈{formatCNYFromRUB(orderPrice)}</span>
+          <div className="flex items-center justify-between gap-4 mt-2">
+            <div className="flex items-center gap-3">
+              <div className="flex items-baseline gap-1">
+                <span className="text-xl font-bold text-gray-900">{formatRUB(orderPrice)}</span>
+                {rate && (
+                  <span className="text-sm text-gray-400">≈{formatCNYFromRUB(orderPrice)}</span>
+                )}
+              </div>
+              {destination && (
+                <>
+                  <span className="text-gray-300">|</span>
+                  <span className="text-sm text-gray-600">目的地：{destination}</span>
+                </>
+              )}
+              {deliveryDeadline && (
+                <>
+                  <span className="text-gray-300">|</span>
+                  <span className="text-sm text-gray-600">发货截止：{formatDateTime(deliveryDeadline)}</span>
+                </>
               )}
             </div>
             {actionButton && (
