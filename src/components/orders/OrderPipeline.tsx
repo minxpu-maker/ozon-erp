@@ -53,6 +53,9 @@ export default function OrderPipeline({ orders, onSync, isLoading, error, onRetr
   const [pageSize] = useState(20);
   const listRef = useRef<HTMLDivElement>(null);
 
+  // 将订单转换为 OrderRecord 类型
+  const typedOrders = useMemo(() => orders as OrderRecord[], [orders]);
+
   // 从订单数据中动态提取店铺列表
   const availableShops: Shop[] = useMemo(() => {
     const shopMap = new Map<string, Shop>();
@@ -63,9 +66,6 @@ export default function OrderPipeline({ orders, onSync, isLoading, error, onRetr
     });
     return Array.from(shopMap.values());
   }, [typedOrders]);
-
-  // 将订单转换为 OrderRecord 类型
-  const typedOrders = useMemo(() => orders as OrderRecord[], [orders]);
 
   // 筛选逻辑：先按Tab过滤，再按搜索+筛选条件过滤
   const filteredOrders = useMemo(() => {
