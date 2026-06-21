@@ -117,28 +117,8 @@ function getOzonImageUrl(productId?: number | string | null, size: 'middle' | 's
 // 商品图片占位组件 - 小尺寸 10x10
 function ProductImageMini({ image, name, sku, productId }: { image?: string | null; name: string; sku: string; productId?: number | string | null }) {
   const [hasError, setHasError] = useState(false);
-  const [isLoading, setIsLoading] = useState(!!image);
-  // 直接使用传入的image作为src
-  const src = image || null;
-
-  // 如果没有图片，尝试从Ozon CDN或代理获取
-  useEffect(() => {
-    if (!src && (productId || sku)) {
-      // 优先使用 productId
-      if (productId) {
-        const url = getOzonImageUrl(productId, 'small');
-        if (url) setIsLoading(true);
-      } else if (sku) {
-        // 使用 SKU 从后端代理获取图片
-        fetch(`/api/ozon-product-image?sku=${encodeURIComponent(sku)}`)
-          .then(r => r.json())
-          .then(data => {
-            if (data.imageUrl) setIsLoading(true);
-          })
-          .catch(() => {});
-      }
-    }
-  }, [src, productId, sku]);
+  // image有值时直接显示
+  const src = image || undefined;
 
   if (!src || hasError) {
     return (
@@ -148,24 +128,12 @@ function ProductImageMini({ image, name, sku, productId }: { image?: string | nu
     );
   }
 
-  if (isLoading) {
-    return (
-      <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0 animate-pulse">
-        <div className="w-5 h-5 bg-gray-200 rounded" />
-      </div>
-    );
-  }
-
   return (
     <img
       src={src}
       alt={name || sku}
       className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
-      onLoad={() => setIsLoading(false)}
-      onError={() => {
-        setHasError(true);
-        setIsLoading(false);
-      }}
+      onError={() => setHasError(true)}
     />
   );
 }
@@ -173,45 +141,14 @@ function ProductImageMini({ image, name, sku, productId }: { image?: string | nu
 // 商品图片占位组件 - 完整尺寸 24x24
 function ProductImage({ image, name, sku, productId }: { image?: string | null; name: string; sku: string; productId?: number | string | null }) {
   const [hasError, setHasError] = useState(false);
-  const [isLoading, setIsLoading] = useState(!!image);
   const [isHovering, setIsHovering] = useState(false);
-  // 直接使用传入的image作为src
-  const src = image || null;
-
-  // 如果没有图片，尝试从Ozon CDN或代理获取
-  useEffect(() => {
-    if (!src && (productId || sku)) {
-      // 优先使用 productId
-      if (productId) {
-        const url = getOzonImageUrl(productId, 'middle');
-        if (url) {
-          setIsLoading(true);
-          // 直接使用图片URL
-        }
-      } else if (sku) {
-        // 使用 SKU 从后端代理获取图片
-        fetch(`/api/ozon-product-image?sku=${encodeURIComponent(sku)}`)
-          .then(r => r.json())
-          .then(data => {
-            if (data.imageUrl) setIsLoading(true);
-          })
-          .catch(() => {});
-      }
-    }
-  }, [src, productId, sku]);
+  // image有值时直接显示
+  const src = image || undefined;
 
   if (!src || hasError) {
     return (
       <div className="w-24 h-24 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
         <ShoppingBag className="w-8 h-8 text-gray-300" />
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="w-24 h-24 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0 animate-pulse">
-        <div className="w-12 h-12 bg-gray-200 rounded" />
       </div>
     );
   }
@@ -222,11 +159,7 @@ function ProductImage({ image, name, sku, productId }: { image?: string | null; 
         src={src}
         alt={name || sku}
         className="w-24 h-24 rounded-lg object-cover flex-shrink-0 cursor-pointer transition-transform duration-200 hover:scale-105"
-        onLoad={() => setIsLoading(false)}
-        onError={() => {
-          setHasError(true);
-          setIsLoading(false);
-        }}
+        onError={() => setHasError(true)}
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
       />
