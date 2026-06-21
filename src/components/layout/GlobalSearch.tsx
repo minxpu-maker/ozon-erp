@@ -144,9 +144,9 @@ export function GlobalSearchModal({
 
   return (
     <div className="fixed inset-0 z-[var(--z-modal,50)] flex items-start justify-center pt-[15vh]">
-      {/* 背景遮罩 */}
+      {/* 背景遮罩 - 毛玻璃效果 */}
       <div 
-        className="absolute inset-0 bg-black/30" 
+        className="absolute inset-0 bg-black/20 backdrop-blur-sm" 
         onClick={handleClose}
       />
       
