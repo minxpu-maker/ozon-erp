@@ -75,14 +75,24 @@ export default function OrdersListPage() {
   const handleSync = async () => {
     try {
       const res = await fetch("/api/sync/orders", { method: "POST" });
-      if (res.ok) {
+      const result = await res.json();
+      
+      if (res.ok && result.success) {
         // 重新获取订单列表
         await mutate();
         setLastSyncedAt(new Date());
-        toast.success("同步成功");
+        
+        // 显示同步详情
+        const { newOrders = 0, updatedOrders = 0, newDemands = 0 } = result;
+        if (newOrders > 0 || updatedOrders > 0 || newDemands > 0) {
+          toast.success(
+            `同步完成${newOrders > 0 ? ` | 新增 ${newOrders} 单` : ''}${updatedOrders > 0 ? ` | 更新 ${updatedOrders} 单` : ''}${newDemands > 0 ? ` | 新需求 ${newDemands}` : ''}`
+          );
+        } else {
+          toast.success("同步成功");
+        }
       } else {
-        const data = await res.json().catch(() => ({}));
-        toast.error(data.message || "同步失败");
+        toast.error(result.message || result.error || "同步失败");
       }
     } catch (err) {
       console.error("同步失败:", err);
