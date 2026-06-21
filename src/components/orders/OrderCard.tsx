@@ -547,7 +547,7 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
         </div>
 
         {/* 价格区 + 操作按钮（同一行） */}
-        <div className="px-5 py-3 mt-2 flex items-center justify-between">
+        <div className="px-5 py-1 flex items-center justify-between">
           {/* 左侧：总价（多商品显示）或空占位（单商品时按钮右对齐） */}
           {products.length > 1 ? (
             <div className="flex items-baseline">
