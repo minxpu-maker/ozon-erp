@@ -3,8 +3,8 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import useSWR from 'swr';
 import OrderPipeline from "@/components/orders/OrderPipeline";
-import { toast } from "@/hooks/useToast";
-import { useState } from "react";
+import { SyncToast } from "@/components/orders/SyncToast";
+import { useState, useRef } from "react";
 
 const fetcher = (url: string) => fetch(url).then(async (r) => {
   if (!r.ok) throw new Error("请求失败");
@@ -54,13 +54,19 @@ interface OrdersResponse {
   };
 }
 
-interface Shop {
-  id: string;
-  shopName: string;
+interface SyncToastData {
+  status: 'syncing' | 'success' | 'error';
+  newOrders: number;
+  statusUpdates: number;
+  shopCount: number;
+  syncTime: string;
+  errorMessage?: string;
 }
 
 export default function OrdersListPage() {
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
+  const [syncToast, setSyncToast] = useState<SyncToastData | null>(null);
+  const prevOrderIdsRef = useRef<Map<string, string>>(new Map());
 
   // 获取订单数据
   const { data, error, isLoading, mutate } = useSWR<OrdersResponse>(
@@ -71,51 +77,119 @@ export default function OrdersListPage() {
 
   const orders = data?.orders ?? [];
 
-  // 同步订单
+  // 同步订单 - 完整的同步→通知→刷新流程
   const handleSync = async () => {
+    // 新同步触发时，如果旧Toast还在显示，立即清除
+    setSyncToast(null);
+    
+    // 记录当前订单ID+状态快照
+    const currentOrders = data?.orders || [];
+    const snapshot = new Map<string, string>();
+    currentOrders.forEach(o => snapshot.set(o.ozonOrderId, o.ozonStatus));
+    prevOrderIdsRef.current = snapshot;
+
+    // 显示同步中态
+    setSyncToast({
+      status: 'syncing',
+      newOrders: 0,
+      statusUpdates: 0,
+      shopCount: 0,
+      syncTime: ''
+    });
+
     try {
-      const res = await fetch("/api/sync/orders", { method: "POST" });
+      const res = await fetch('/api/orders/sync', { method: 'POST' });
       const result = await res.json();
-      
-      // 显示同步详情
-      const { newOrders = 0, updatedOrders = 0, newDemands = 0, syncedShops = 0, failedShops = 0, errors = [] } = result;
-      
-      if (syncedShops > 0 || failedShops > 0) {
-        // 有同步记录，显示详情
-        let detail = `同步完成 | ${syncedShops}个店铺成功`;
-        if (failedShops > 0) {
-          detail += ` | ${failedShops}个店铺失败`;
+
+      if (result.success) {
+        // 优先使用API返回的diff数据 (R13-A增强)
+        const apiData = result.data || {};
+        let newOrders = apiData.newOrders ?? 0;
+        let statusUpdates = apiData.updatedOrders ?? 0;
+        let shopCount = apiData.shopCount ?? 1;
+
+        // 降级：如果API没返回diff数据，前端对比快照计算
+        if (!result.data) {
+          const refreshed = await fetch('/api/orders?pageSize=100').then(r => r.json());
+          const newOrdersList = refreshed.orders || [];
+          let nCount = 0, uCount = 0;
+          newOrdersList.forEach((o: OrderRecord) => {
+            if (!snapshot.has(o.ozonOrderId)) {
+              nCount++;
+            } else if (snapshot.get(o.ozonOrderId) !== o.ozonStatus) {
+              uCount++;
+            }
+          });
+          newOrders = nCount;
+          statusUpdates = uCount;
         }
-        if (newOrders > 0) {
-          detail += ` | 新增 ${newOrders} 单`;
-        }
-        if (updatedOrders > 0) {
-          detail += ` | 更新 ${updatedOrders} 单`;
-        }
-        if (newDemands > 0) {
-          detail += ` | 新需求 ${newDemands}`;
-        }
-        if (failedShops > 0) {
-          toast.warning(detail);
-        } else {
-          toast.success(detail);
-        }
+
+        const syncTime = new Date().toLocaleTimeString('zh-CN', {
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+
+        // 延迟100ms切状态，避免闪烁
+        setTimeout(() => {
+          setSyncToast({
+            status: 'success',
+            newOrders,
+            statusUpdates,
+            shopCount,
+            syncTime
+          });
+        }, 100);
+
+        // 刷新订单列表数据
+        await mutate();
+        setLastSyncedAt(new Date());
       } else {
-        // 没有同步记录
-        toast.info("暂无需要同步的店铺或凭证未配置");
+        const syncTime = new Date().toLocaleTimeString('zh-CN', {
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+        setSyncToast({
+          status: 'error',
+          newOrders: 0,
+          statusUpdates: 0,
+          shopCount: 0,
+          syncTime,
+          errorMessage: result.data?.errorMessage || result.message || '同步失败，请重试'
+        });
       }
-      
-      // 重新获取订单列表
-      await mutate();
-      setLastSyncedAt(new Date());
     } catch (err) {
-      console.error("同步失败:", err);
-      toast.error("网络错误，同步失败");
+      console.error('同步失败:', err);
+      const syncTime = new Date().toLocaleTimeString('zh-CN', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      setSyncToast({
+        status: 'error',
+        newOrders: 0,
+        statusUpdates: 0,
+        shopCount: 0,
+        syncTime,
+        errorMessage: '网络连接失败，请重试'
+      });
     }
   };
 
   return (
     <AppLayout>
+      {/* SyncToast - 固定在页面顶部居中 */}
+      {syncToast && (
+        <SyncToast
+          status={syncToast.status}
+          newOrders={syncToast.newOrders}
+          statusUpdates={syncToast.statusUpdates}
+          shopCount={syncToast.shopCount}
+          syncTime={syncToast.syncTime}
+          errorMessage={syncToast.errorMessage}
+          onRetry={handleSync}
+          onClose={() => setSyncToast(null)}
+        />
+      )}
+      
       <OrderPipeline
         orders={orders}
         onSync={handleSync}
