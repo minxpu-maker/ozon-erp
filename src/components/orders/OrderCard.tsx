@@ -408,14 +408,14 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
         <div className="flex items-center justify-between px-5 pt-4 pb-2">
           <div className="flex items-center gap-2">
             {/* 订单号 */}
-            <span className="text-xs font-mono text-gray-500 max-w-[280px] truncate" title={String(order.ozonOrderId || order.ozonPostingNumber || order.id)}>
-              {order.ozonOrderId || order.ozonPostingNumber || order.id}
+            <span className="text-xs font-mono text-gray-500 max-w-[280px] truncate" title={String(order.ozonOrderId || order.id)}>
+              {order.ozonOrderId || order.id}
             </span>
             {/* 复制图标 */}
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                const orderNum = String(order.ozonOrderId || order.ozonPostingNumber || order.id);
+                const orderNum = String(order.ozonOrderId || order.id);
                 navigator.clipboard.writeText(orderNum);
               }}
               className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -636,13 +636,13 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
                     <div className="flex items-start justify-between gap-2">
                       <span className="text-xs text-gray-400 flex-shrink-0">订单号</span>
                       <div className="flex items-center gap-1 text-right">
-                        <span className="text-xs text-gray-700 font-mono max-w-[180px] truncate" title={String(order.ozonPostingNumber || order.ozonOrderId || order.id)}>
-                          {order.ozonPostingNumber || order.ozonOrderId || order.id}
+                        <span className="text-xs text-gray-700 font-mono max-w-[180px] truncate" title={String(order.ozonOrderId || order.id)}>
+                          {order.ozonOrderId || order.id}
                         </span>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigator.clipboard.writeText(String(order.ozonPostingNumber || order.ozonOrderId || order.id));
+                            navigator.clipboard.writeText(String(order.ozonOrderId || order.id));
                           }}
                           className="text-gray-300 hover:text-gray-500 transition-colors"
                         >
