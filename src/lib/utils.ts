@@ -109,9 +109,10 @@ export function getCountdown(deadline: Date | string | null | undefined): Countd
  */
 export function getOrderStatusLabel(status: string): string {
   const statusMap: Record<string, string> = {
-    awaiting_packaging: '等待备货',
-    awaiting_deliver: '待采购',
+    awaiting_packaging: '待备货',
+    awaiting_deliver: '待发运',
     delivering: '运输中',
+    disputed: '具争议',
     delivered: '已签收',
     cancelled: '已取消',
   };
