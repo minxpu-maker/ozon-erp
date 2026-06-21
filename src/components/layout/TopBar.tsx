@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ChevronDown, ChevronRight, Bell, User, Camera } from 'lucide-react';
 import { useShop } from './ShopContext';
 import { GlobalSearchTrigger, GlobalSearchModal } from './GlobalSearch';
+import { ToastContainer } from '../ui/Toast';
 
 // 面包屑页面名映射
 const PAGE_NAME_MAP: Record<string, string> = {
@@ -160,6 +161,9 @@ export function TopBar() {
         open={searchOpen} 
         onClose={() => setSearchOpen(false)} 
       />
+
+      {/* 通知弹窗 */}
+      <ToastContainer position="top-center" />
     </>
   );
 }
