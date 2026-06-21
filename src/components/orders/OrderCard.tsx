@@ -149,16 +149,16 @@ function ProductImage({ image, name, sku }: { image?: string | null; name: strin
 
   if (!image || hasError) {
     return (
-      <div className="w-14 h-14 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-        <ShoppingBag className="w-6 h-6 text-gray-300" />
+      <div className="w-24 h-24 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+        <ShoppingBag className="w-8 h-8 text-gray-300" />
       </div>
     );
   }
 
   if (isLoading) {
     return (
-      <div className="w-14 h-14 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0 animate-pulse">
-        <div className="w-8 h-8 bg-gray-200 rounded" />
+      <div className="w-24 h-24 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0 animate-pulse">
+        <div className="w-12 h-12 bg-gray-200 rounded" />
       </div>
     );
   }
@@ -404,20 +404,8 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
       onClick={() => onSelect?.(order.id)}
     >
       <div className="flex flex-col">
-        {/* 顶部：状态Badge + 店铺名 */}
-        <div className="flex items-center justify-between px-5 pt-4 pb-2">
-          {/* 左侧：状态Badge */}
-          <div className="flex items-center gap-2">
-            <span className={cn(
-              'rounded-md px-2 py-0.5 text-xs font-medium border',
-              badgeColors.bg, badgeColors.text, badgeColors.border,
-              'transition-all duration-200 ease-out',
-              'scale-100 opacity-100'
-            )}>
-              {statusLabel}
-            </span>
-          </div>
-          {/* 右侧：店铺名 Tag */}
+        {/* 顶部：店铺名（不在图片上方） */}
+        <div className="flex items-center justify-end px-5 pt-4 pb-2">
           <span className="rounded-md bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
             {order.shopName || '未知店铺'}
           </span>
@@ -429,7 +417,16 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
             <>
               {/* 1个商品：完整显示 */}
               {products.length === 1 && (
-                <SingleProductRow product={products[0]} orderNumber={order.ozonOrderId} />
+                <SingleProductRow 
+                  product={products[0]} 
+                  orderNumber={String(order.ozonOrderId || order.ozonPostingNumber || order.id)} 
+                  statusBadge={<span className={cn(
+                    'rounded-md px-2 py-0.5 text-xs font-medium border',
+                    badgeColors.bg, badgeColors.text, badgeColors.border
+                  )}>
+                    {statusLabel}
+                  </span>}
+                />
               )}
 
               {/* 2-3个商品：横向排列 */}
@@ -494,7 +491,17 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
               {expandedProducts && (
                 <div className="mt-3 space-y-3">
                   {products.map((product, index) => (
-                    <SingleProductRow key={`${product.sku || index}-${index}`} product={product} orderNumber={order.ozonOrderId} />
+                    <SingleProductRow 
+                      key={`${product.sku || index}-${index}`} 
+                      product={product} 
+                      orderNumber={String(order.ozonOrderId || order.ozonPostingNumber || order.id)}
+                      statusBadge={<span className={cn(
+                        'rounded-md px-2 py-0.5 text-xs font-medium border',
+                        badgeColors.bg, badgeColors.text, badgeColors.border
+                      )}>
+                        {statusLabel}
+                      </span>}
+                    />
                   ))}
                 </div>
               )}
@@ -742,7 +749,15 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
 }
 
 // 单个商品行组件 - 完整尺寸
-function SingleProductRow({ product, orderNumber }: { product: OrderProduct; orderNumber?: string }) {
+function SingleProductRow({ 
+  product, 
+  orderNumber,
+  statusBadge 
+}: { 
+  product: OrderProduct; 
+  orderNumber?: string;
+  statusBadge?: React.ReactNode;
+}) {
   const displayName = product.name || '商品信息缺失';
   const isLongName = displayName.length > 30;
 
@@ -752,58 +767,60 @@ function SingleProductRow({ product, orderNumber }: { product: OrderProduct; ord
 
   return (
     <div className="flex items-start gap-3">
-      <div className="flex items-start gap-3 flex-1">
+      {/* 左侧：商品图片 + 状态Badge */}
+      <div className="flex flex-col items-center gap-2 flex-shrink-0">
         <ProductImage image={product.image} name={product.name} sku={product.sku} />
-        <div className="flex-1 min-w-0">
-          {isLongName ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                {productUrl ? (
-                  <a
-                    href={productUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-blue-500 line-clamp-2 leading-snug hover:text-blue-600 transition-colors cursor-pointer"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {displayName}
-                  </a>
-                ) : (
-                  <p className="text-sm text-gray-700 line-clamp-2 leading-snug">{displayName}</p>
-                )}
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="max-w-xs">
-                <p>{displayName}</p>
-              </TooltipContent>
-            </Tooltip>
+        {/* 图片下方显示状态Badge */}
+        {statusBadge && <div className="flex justify-center">{statusBadge}</div>}
+      </div>
+      {/* 右侧：商品信息 */}
+      <div className="flex-1 min-w-0">
+        {isLongName ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              {productUrl ? (
+                <a
+                  href={productUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-blue-500 line-clamp-2 leading-snug hover:text-blue-600 transition-colors cursor-pointer"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {displayName}
+                </a>
+              ) : (
+                <p className="text-sm text-gray-700 line-clamp-2 leading-snug">{displayName}</p>
+              )}
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="max-w-xs">
+              <p>{displayName}</p>
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          productUrl ? (
+            <a
+              href={productUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-blue-500 line-clamp-2 leading-snug hover:text-blue-600"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {displayName}
+            </a>
           ) : (
-            productUrl ? (
-              <a
-                href={productUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm text-blue-500 line-clamp-2 leading-snug hover:text-blue-600"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {displayName}
-              </a>
-            ) : (
-              <p className="text-sm text-gray-700 line-clamp-2 leading-snug">{displayName}</p>
-            )
+            <p className="text-sm text-gray-700 line-clamp-2 leading-snug">{displayName}</p>
+          )
+        )}
+        <div className="flex items-center gap-1 mt-1">
+          <span className="text-xs font-mono text-gray-400">{product.sku || '—'}</span>
+          <span className="text-gray-300">·</span>
+          <span className="text-xs font-medium text-gray-500">×{product.quantity}</span>
+          {/* 订单编号在商品信息右侧 */}
+          {orderNumber && (
+            <span className="text-xs text-gray-400 font-mono ml-2">{orderNumber}</span>
           )}
-          <div className="flex items-center gap-1 mt-1">
-            <span className="text-xs font-mono text-gray-400">{product.sku || '—'}</span>
-            <span className="text-gray-300">·</span>
-            <span className="text-xs font-medium text-gray-500">×{product.quantity}</span>
-          </div>
         </div>
       </div>
-      {/* 订单编号在图片右侧下方 */}
-      {orderNumber && (
-        <div className="flex-shrink-0 text-right">
-          <span className="text-sm text-blue-500 font-mono">{orderNumber}</span>
-        </div>
-      )}
     </div>
   );
 }
