@@ -404,29 +404,37 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
       onClick={() => onSelect?.(order.id)}
     >
       <div className="flex flex-col">
-        {/* 顶部：订单号 + 状态映射 */}
-        <div className="flex items-center gap-2 px-5 pt-4 pb-2">
-          {/* 订单号 */}
-          <span className="text-xs font-mono text-gray-500">{order.ozonOrderId || order.ozonPostingNumber || order.id}</span>
-          {/* 复制图标 */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              const orderNum = String(order.ozonOrderId || order.ozonPostingNumber || order.id);
-              navigator.clipboard.writeText(orderNum);
-            }}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-            title="复制订单编号"
-          >
-            <Copy className="w-3 h-3" />
-          </button>
-          {/* 状态Badge */}
-          <span className={cn(
-            'rounded-md px-2 py-0.5 text-xs font-medium border',
-            badgeColors.bg, badgeColors.text, badgeColors.border
-          )}>
-            {statusLabel}
-          </span>
+        {/* 顶部：订单号 + 状态映射 + 店铺名（右对齐） */}
+        <div className="flex items-center justify-between px-5 pt-4 pb-2">
+          <div className="flex items-center gap-2">
+            {/* 订单号 */}
+            <span className="text-xs font-mono text-gray-500">{order.ozonOrderId || order.ozonPostingNumber || order.id}</span>
+            {/* 复制图标 */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                const orderNum = String(order.ozonOrderId || order.ozonPostingNumber || order.id);
+                navigator.clipboard.writeText(orderNum);
+              }}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+              title="复制订单编号"
+            >
+              <Copy className="w-3 h-3" />
+            </button>
+            {/* 状态Badge */}
+            <span className={cn(
+              'rounded-md px-2 py-0.5 text-xs font-medium border',
+              badgeColors.bg, badgeColors.text, badgeColors.border
+            )}>
+              {statusLabel}
+            </span>
+          </div>
+          {/* 店铺名 - 右上角 */}
+          {order.shopName && (
+            <span className="rounded-md bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+              {order.shopName}
+            </span>
+          )}
         </div>
 
         {/* 商品区 */}
@@ -565,12 +573,6 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
         {/* 底部元数据 */}
         <div 
           className="px-5 pb-3 flex items-center gap-2 text-xs text-gray-400 flex-wrap"
-          onClick={(e) => {
-            e.stopPropagation();
-            if (products.length > 1) {
-              setExpandedProducts((prev) => !prev);
-            }
-          }}
         >
           {order.recipientCity && (
             <>
@@ -587,15 +589,9 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
           {order.shipmentDeadline && (
             <span className="text-gray-600">截止 {formatDateTime(order.shipmentDeadline)}</span>
           )}
-          {order.shopName && (
-            <>
-              <span>·</span>
-              <span className="rounded-md bg-gray-100 px-2 py-0.5">{order.shopName}</span>
-            </>
-          )}
         </div>
 
-        {/* 展开详情面板 - grid-template-rows 动画 */}
+        {/* 展开详情面板 */}
         <div className="grid transition-[grid-template-rows] duration-300 ease-out"
           style={{
             gridTemplateRows: expandedDetails ? '1fr' : '0fr',
@@ -736,20 +732,6 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
               </div>
             </div>
           </div>
-        </div>
-
-        {/* 底部展开详情按钮 */}
-        <div className="px-5 pb-4">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setExpandedDetails(!expandedDetails);
-            }}
-            className="w-full flex items-center justify-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors py-1"
-          >
-            <span>{expandedDetails ? '收起详情' : '查看详情'}</span>
-            {expandedDetails ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-          </button>
         </div>
       </div>
     </div>
