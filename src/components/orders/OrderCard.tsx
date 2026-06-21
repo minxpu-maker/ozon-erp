@@ -408,7 +408,7 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
         <div className="flex items-center justify-between px-5 pt-4 pb-2">
           <div className="flex items-center gap-2">
             {/* 订单号 - 使用ozonPostingNumber */}
-            <span className="text-xs font-mono text-gray-500 max-w-[280px] truncate" title={String(order.ozonPostingNumber || order.ozonOrderId || order.id)}>
+            <span className="text-sm font-medium text-blue-600 max-w-[280px] truncate" title={String(order.ozonPostingNumber || order.ozonOrderId || order.id)}>
               {order.ozonPostingNumber || order.ozonOrderId || order.id}
             </span>
             {/* 复制图标 */}
