@@ -463,14 +463,20 @@ export default function ShopsPage() {
                 Api-Key {editShop ? '（留空则不修改）' : ''} {!editShop && <span className="text-red-500">*</span>}
               </label>
               <div className="relative">
-                <Input
-                  type={showApiKey ? 'text' : 'password'}
-                  value={editShop ? (formApiKey || shopList.find(s => s.id === editShop)?.apiKeyLength ? '•'.repeat(shopList.find(s => s.id === editShop)?.apiKeyLength || 16) : '') : formApiKey}
-                  onChange={e => setFormApiKey(e.target.value)}
-                  placeholder={editShop ? '' : 'Ozon Api-Key（加密存储）'}
-                  className="pr-10"
-                  disabled={editShop && !showApiKey && !!shopList.find(s => s.id === editShop)?.apiKeyLength}
-                />
+                {(() => {
+                  const shop = shopList.find(s => s.id === editShop);
+                  const keyLen = shop?.apiKeyLength || 0;
+                  const placeholder = editShop && shop?.hasApiKey ? '•'.repeat(Math.min(keyLen, 50)) : '';
+                  return (
+                    <Input
+                      type={showApiKey ? 'text' : 'password'}
+                      value={formApiKey || placeholder}
+                      onChange={e => setFormApiKey(e.target.value)}
+                      placeholder={editShop ? '' : 'Ozon Api-Key（加密存储）'}
+                      className="pr-10"
+                    />
+                  );
+                })()}
                 <button
                   type="button"
                   onClick={() => setShowApiKey(!showApiKey)}
@@ -492,7 +498,7 @@ export default function ShopsPage() {
               </div>
               {editShop && shopList.find(s => s.id === editShop)?.hasApiKey && (
                 <p className="text-xs text-[#637089] mt-1">
-                  已存储密钥: {'•'.repeat(shopList.find(s => s.id === editShop)?.apiKeyLength || 16)}（{shopList.find(s => s.id === editShop)?.apiKeyLength || 0}位，已加密）
+                  已存储密钥长度: {shopList.find(s => s.id === editShop)?.apiKeyLength || 0}位（已加密）
                 </p>
               )}
             </div>
