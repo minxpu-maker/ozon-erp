@@ -124,5 +124,6 @@ export default function OrdersListPage() {
         onRetry={() => mutate()}
         lastSyncedAt={lastSyncedAt}
       />
+    </AppLayout>
   );
 }
