@@ -15,6 +15,7 @@ interface ShopContextType {
   shops: Shop[];
   loading: boolean;
   error: boolean;
+  refreshShops: () => Promise<void>; // 刷新店铺列表
 }
 
 const ShopContext = createContext<ShopContextType | null>(null);
@@ -35,49 +36,57 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState(false);
 
   // 加载店铺列表
-  useEffect(() => {
-    async function loadShops() {
-      try {
-        const data = await fetcher('/api/shops');
-        let shopList: Shop[] = [];
+  const loadShops = async () => {
+    try {
+      const data = await fetcher('/api/shops');
+      let shopList: Shop[] = [];
+      
+      if (Array.isArray(data) && data.length > 0) {
+        shopList = data;
+      } else if (data?.data && Array.isArray(data.data) && data.data.length > 0) {
+        shopList = data.data;
+      } else if (data?.shops && Array.isArray(data.shops) && data.shops.length > 0) {
+        shopList = data.shops;
+      }
+      
+      if (shopList.length > 0) {
+        setShops(shopList);
+        setError(false);
         
-        if (Array.isArray(data) && data.length > 0) {
-          shopList = data;
-        } else if (data?.data && Array.isArray(data.data) && data.data.length > 0) {
-          shopList = data.data;
-        } else if (data?.shops && Array.isArray(data.shops) && data.shops.length > 0) {
-          shopList = data.shops;
-        }
-        
-        if (shopList.length > 0) {
-          setShops(shopList);
-          
-          // 如果 zustand store 有值，查找对应店铺
-          if (zustandShopId) {
-            const found = shopList.find(s => s.id === zustandShopId);
-            if (found) {
-              setCurrentShopState(found);
-            } else {
-              // store 中的店铺不存在了，重置
-              setZustandShopId(shopList[0].id);
-              setCurrentShopState(shopList[0]);
-            }
+        // 如果 zustand store 有值，查找对应店铺
+        if (zustandShopId) {
+          const found = shopList.find(s => s.id === zustandShopId);
+          if (found) {
+            setCurrentShopState(found);
           } else {
-            // 默认选择第一个
-            setCurrentShopState(shopList[0]);
+            // store 中的店铺不存在了，重置
             setZustandShopId(shopList[0].id);
+            setCurrentShopState(shopList[0]);
           }
         } else {
-          setError(true);
+          // 默认选择第一个
+          setCurrentShopState(shopList[0]);
+          setZustandShopId(shopList[0].id);
         }
-      } catch {
+      } else {
         setError(true);
-      } finally {
-        setLoading(false);
       }
+    } catch {
+      setError(true);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
     loadShops();
   }, [zustandShopId, setZustandShopId]);
+
+  // 刷新店铺列表（供外部调用）
+  const refreshShops = async () => {
+    setLoading(true);
+    await loadShops();
+  };
 
   const setCurrentShop = (shop: Shop) => {
     setCurrentShopState(shop);
@@ -85,7 +94,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <ShopContext.Provider value={{ currentShop, setCurrentShop, shops, loading, error }}>
+    <ShopContext.Provider value={{ currentShop, setCurrentShop, shops, loading, error, refreshShops }}>
       {children}
     </ShopContext.Provider>
   );

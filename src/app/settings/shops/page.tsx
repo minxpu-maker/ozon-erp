@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import useSWR from 'swr';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { useShopContext } from '@/components/layout/ShopContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -110,6 +111,7 @@ export default function ShopsPage() {
       setShowDialog(false);
       setEditShop(null);
       mutate();
+      refreshShops(); // 刷新全局店铺列表
       alert(editShop ? '店铺已更新' : '店铺已新增');
     } catch (e: unknown) {
       alert((e as Error).message || '保存失败');
@@ -276,6 +278,7 @@ export default function ShopsPage() {
       const data = await res.json();
       if (data.success) {
         mutate();
+        refreshShops(); // 刷新全局店铺列表
         setDeleteShop(null);
         alert('店铺已删除');
       } else {
