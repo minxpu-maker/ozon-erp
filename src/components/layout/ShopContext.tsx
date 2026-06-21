@@ -41,12 +41,15 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       const data = await fetcher('/api/shops');
       let shopList: Shop[] = [];
       
-      if (Array.isArray(data) && data.length > 0) {
-        shopList = data;
-      } else if (data?.data && Array.isArray(data.data) && data.data.length > 0) {
-        shopList = data.data;
-      } else if (data?.shops && Array.isArray(data.shops) && data.shops.length > 0) {
-        shopList = data.shops;
+      // API返回的是 { success, shops: [{ id, shopName, ... }] }
+      // 需要映射 shopName -> name
+      const rawShops = data?.shops || data?.data || data || [];
+      if (Array.isArray(rawShops) && rawShops.length > 0) {
+        shopList = rawShops.map((s: any) => ({
+          id: s.id,
+          name: s.shopName || s.name || s.shop_name || '',
+          code: s.code
+        }));
       }
       
       if (shopList.length > 0) {
