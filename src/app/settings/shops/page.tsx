@@ -430,7 +430,7 @@ export default function ShopsPage() {
 
       {/* 新增/编辑 Dialog */}
       <Dialog open={showDialog} onOpenChange={v => { if (!v) { setShowDialog(false); setEditShop(null); } }}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editShop ? '编辑店铺' : '新增店铺'}</DialogTitle>
           </DialogHeader>
