@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { ChevronRight } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, formatCompact } from '@/lib/utils';
 
 export type OrderStatus = 
   | 'awaiting_packaging'  // 等待备货
@@ -143,7 +143,7 @@ function TabCard({ tab, count, isActive, onClick }: TabCardProps) {
         isActive ? tab.textColor : 'text-gray-400',
         isDisabled && 'text-gray-400',
       )}>
-        {animatedCount}
+        {formatCompact(animatedCount)}
       </div>
     </button>
   );

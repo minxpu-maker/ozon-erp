@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { cn, formatCNY, formatRUB, formatCNYFromRUB, formatWeight, formatDateTime } from '@/lib/utils';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
@@ -420,8 +420,8 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
               {statusLabel}
             </span>
           </div>
-          {/* 右侧：店铺名 */}
-          <span className="text-xs text-gray-400">
+          {/* 右侧：店铺名 Tag */}
+          <span className="rounded-md bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
             {order.shopName || '未知店铺'}
           </span>
         </div>
@@ -802,4 +802,73 @@ function SingleProductRow({ product }: { product: OrderProduct }) {
       </div>
     </div>
   );
+}
+
+// ============================================================================
+// 骨架屏组件
+// ============================================================================
+
+/**
+ * 订单卡片骨架屏
+ */
+export function OrderCardSkeleton() {
+  return (
+    <div
+      aria-busy="true"
+      aria-live="polite"
+      className="rounded-xl bg-white border border-gray-100 shadow-sm p-5 animate-pulse"
+    >
+      {/* 顶栏：Badge + 订单号 + 店铺 */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <div className="h-6 w-20 bg-gray-200 rounded-md" />
+          <div className="h-5 w-32 bg-gray-200 rounded" />
+        </div>
+        <div className="h-4 w-24 bg-gray-200 rounded" />
+      </div>
+
+      {/* 商品区 */}
+      <div className="flex gap-4 mb-4">
+        {/* 主商品图片 */}
+        <div className="w-14 h-14 bg-gray-200 rounded-lg flex-shrink-0" />
+        <div className="flex-1 space-y-2">
+          <div className="h-4 bg-gray-200 rounded w-full" />
+          <div className="h-4 bg-gray-200 rounded w-3/4" />
+          <div className="h-3 w-24 bg-gray-200 rounded" />
+        </div>
+      </div>
+
+      {/* 底部信息行 */}
+      <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+        <div className="flex items-center gap-2">
+          <div className="h-6 w-20 bg-gray-200 rounded" />
+          <div className="h-4 w-16 bg-gray-200 rounded" />
+        </div>
+        <div className="h-9 w-20 bg-gray-200 rounded-lg" />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * 多商品骨架屏（2-3个商品）
+ */
+export function MultiProductSkeleton({ count = 2 }: { count?: number }) {
+  return (
+    <div className="flex gap-3">
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="flex flex-col items-center gap-1.5">
+          <div className="w-10 h-10 bg-gray-200 rounded-lg" />
+          <div className="h-3 w-12 bg-gray-200 rounded" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Tab 计数骨架屏
+ */
+export function TabCountSkeleton() {
+  return <div className="h-7 w-8 bg-gray-200 rounded animate-pulse" />;
 }

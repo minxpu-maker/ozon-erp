@@ -25,7 +25,7 @@ export function formatRUB(amount: number | string): string {
 }
 
 /**
- * 卢布转人民币估算
+ * 格式化卢布转人民币估算
  */
 const RUB_TO_CNY_RATE = 0.07; // 1 RUB ≈ 0.07 CNY
 
@@ -34,6 +34,27 @@ export function formatCNYFromRUB(amount: number | string): string {
   if (isNaN(num)) return '≈ ¥ 0.00';
   const cny = num * RUB_TO_CNY_RATE;
   return `≈ ¥ ${cny.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+/**
+ * 格式化卢布转人民币（无约等于符号）
+ */
+export function formatCNYValue(amount: number | string): string {
+  const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+  if (isNaN(num)) return '¥ 0.00';
+  const cny = num * RUB_TO_CNY_RATE;
+  return `¥ ${cny.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+/**
+ * 格式化计数（≥1000显示1.2k，≥10000显示12k）
+ */
+export function formatCompact(count: number): string {
+  if (count < 1000) return String(count);
+  if (count < 10000) {
+    return (count / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+  }
+  return Math.floor(count / 1000) + 'k';
 }
 
 /**
