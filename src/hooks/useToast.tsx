@@ -2,26 +2,10 @@
 
 import { toast as sonnerToast, Toaster } from 'sonner';
 
-// Re-export sonner components
+// Re-export Toaster for root providers
 export { Toaster };
 
 // Toast function with chainable methods
-const toastFn = {
-  success: (message: string, options?: { duration?: number }) => {
-    sonnerToast.success(message, { duration: options?.duration || 4000 });
-  },
-  error: (message: string, options?: { duration?: number }) => {
-    sonnerToast.error(message, { duration: options?.duration || 4000 });
-  },
-  warning: (message: string, options?: { duration?: number }) => {
-    sonnerToast.warning(message, { duration: options?.duration || 4000 });
-  },
-  info: (message: string, options?: { duration?: number }) => {
-    sonnerToast.info(message, { duration: options?.duration || 4000 });
-  },
-};
-
-// Simple toast function - compatible with code that expects toast() call
 export function toast(options: { title?: string; description?: string; type?: 'success' | 'error' | 'warning' | 'info'; duration?: number } | string) {
   if (typeof options === 'string') {
     sonnerToast.success(options);
@@ -46,20 +30,20 @@ export function toast(options: { title?: string; description?: string; type?: 's
   }
 }
 
-// Add chainable methods to toast
-(toast as any).success = toastFn.success;
-(toast as any).error = toastFn.error;
-(toast as any).warning = toastFn.warning;
-(toast as any).info = toastFn.info;
+// Add chainable methods
+toast.success = (message: string, options?: { duration?: number }) => {
+  sonnerToast.success(message, { duration: options?.duration || 4000 });
+};
+toast.error = (message: string, options?: { duration?: number }) => {
+  sonnerToast.error(message, { duration: options?.duration || 4000 });
+};
+toast.warning = (message: string, options?: { duration?: number }) => {
+  sonnerToast.warning(message, { duration: options?.duration || 4000 });
+};
+toast.info = (message: string, options?: { duration?: number }) => {
+  sonnerToast.info(message, { duration: options?.duration || 4000 });
+};
 
 // Legacy compatibility
-export { sonnerToast as toast };
-
-// Empty stubs for components that may be imported but not used
-export function useToast() { return { toast }; }
-export function ToastProvider({ children }: { children: React.ReactNode }) { return children; }
-export function ToastViewport() { return null; }
-export function Toast(props: any) { return props.children; }
-export function ToastClose() { return null; }
-export function ToastDescription() { return null; }
-export function ToastTitle() { return null; }
+export { sonnerToast };
+export const useToast = () => ({ toast });

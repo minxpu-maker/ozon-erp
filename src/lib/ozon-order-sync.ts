@@ -511,7 +511,6 @@ async function insertNewOrders(
           ozonOrderId: String(posting.order_id),
           ozonPostingNumber: posting.posting_number,
           shopId: shopId,
-          shopName: shopName, // 【关键】从 shops 表同步店铺名称
           status: posting.status,
           buyerName: undefined,
           buyerPhone: undefined,

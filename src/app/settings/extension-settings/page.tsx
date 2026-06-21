@@ -34,7 +34,7 @@ import {
   DialogFooter,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { toast, ToastProvider, ToastContainer } from '@/hooks/useToast';
+import { toast } from '@/hooks/useToast';
 
 interface ApiKey {
   id: number;
@@ -242,7 +242,6 @@ export default function ExtensionSettingsPage() {
 
   return (
     <div className="min-h-screen bg-background p-6">
-      <Toaster position="top-center" richColors />
       {/* Page Header */}
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-2">

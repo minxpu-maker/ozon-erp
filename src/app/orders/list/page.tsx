@@ -4,7 +4,8 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import useSWR from 'swr';
 import OrderPipeline from "@/components/orders/OrderPipeline";
 import { SyncToast } from "@/components/orders/SyncToast";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { useGlobalSync } from "@/components/layout/GlobalSyncProvider";
 
 const fetcher = (url: string) => fetch(url).then(async (r) => {
   if (!r.ok) throw new Error("请求失败");
@@ -67,15 +68,35 @@ export default function OrdersListPage() {
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
   const [syncToast, setSyncToast] = useState<SyncToastData | null>(null);
   const prevOrderIdsRef = useRef<Map<string, string>>(new Map());
-
-  // 获取订单数据
+  
+  // 监听全局同步通知
+  const { syncNotification, setSyncNotification } = useGlobalSync();
+  
+  // 获取订单数据 - 必须放在前面，因为 useEffect 会用到 mutate
   const { data, error, isLoading, mutate } = useSWR<OrdersResponse>(
     "/api/orders?pageSize=100",
     fetcher,
     { revalidateOnFocus: false }
   );
-
+  
   const orders = data?.orders ?? [];
+
+  // 全局同步通知触发时显示Toast
+  useEffect(() => {
+    if (syncNotification) {
+      setSyncToast({
+        status: 'success',
+        newOrders: syncNotification.newOrders,
+        statusUpdates: syncNotification.statusUpdates,
+        shopCount: syncNotification.shopCount,
+        syncTime: syncNotification.syncTime,
+      });
+      // 刷新订单数据
+      mutate();
+      // 清除通知
+      setSyncNotification(null);
+    }
+  }, [syncNotification, setSyncNotification, mutate]);
 
   // 同步订单 - 完整的同步→通知→刷新流程
   const handleSync = async () => {
@@ -85,7 +106,7 @@ export default function OrdersListPage() {
     // 记录当前订单ID+状态快照
     const currentOrders = data?.orders || [];
     const snapshot = new Map<string, string>();
-    currentOrders.forEach(o => snapshot.set(o.ozonOrderId, o.ozonStatus));
+    currentOrders.forEach((o: any) => snapshot.set(o.ozonOrderId, o.ozonStatus));
     prevOrderIdsRef.current = snapshot;
 
     // 显示同步中态
@@ -113,7 +134,7 @@ export default function OrdersListPage() {
           const refreshed = await fetch('/api/orders?pageSize=100').then(r => r.json());
           const newOrdersList = refreshed.orders || [];
           let nCount = 0, uCount = 0;
-          newOrdersList.forEach((o: OrderRecord) => {
+          newOrdersList.forEach((o: any) => {
             if (!snapshot.has(o.ozonOrderId)) {
               nCount++;
             } else if (snapshot.get(o.ozonOrderId) !== o.ozonStatus) {
@@ -193,7 +214,6 @@ export default function OrdersListPage() {
       <OrderPipeline
         orders={orders}
         onSync={handleSync}
-        syncing={syncToast?.status === 'syncing'}
         isLoading={isLoading}
         error={error ? "数据加载失败" : null}
         onRetry={() => mutate()}

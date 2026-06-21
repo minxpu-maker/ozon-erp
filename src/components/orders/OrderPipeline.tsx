@@ -186,6 +186,7 @@ export default function OrderPipeline({ orders, onSync, isLoading, error, onRetr
   // 计算"X分钟前"
   const getSyncTimeLabel = (date: Date | null | undefined) => {
     if (!date) return "未同步";
+    const NOW = Date.now();
     const diffMs = NOW - date.getTime();
     const diffMinutes = Math.floor(diffMs / (1000 * 60));
     if (diffMinutes < 1) return "刚刚";
