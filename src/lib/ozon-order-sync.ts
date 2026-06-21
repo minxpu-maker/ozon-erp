@@ -416,7 +416,8 @@ async function insertNewOrders(
         price: p.price,
         offer_id: p.offer_id ?? null,
         product_id: p.product_id ?? null,
-        weight: p.weight ?? null, // 直接使用weight字段
+        weight: p.weight ?? null,
+        images: p.images ?? [], // 添加图片字段
       })),
     };
 

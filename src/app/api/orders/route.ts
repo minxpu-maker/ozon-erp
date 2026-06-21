@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { pool } from '@/storage/database/client';
+import { OzonClient } from '@/lib/ozon-client';
+import { decrypt } from '@/lib/crypto';
+
+// 简单的内存缓存，避免频繁调用Ozon API
+const imageCache = new Map<string, { image: string; expireAt: number }>();
+const CACHE_TTL = 10 * 60 * 1000; // 10分钟缓存
 
 export async function GET(request: NextRequest) {
   try {
@@ -134,7 +140,7 @@ export async function GET(request: NextRequest) {
         o.buyer_name, o.recipient_address, o.recipient_city, o.total_price, o.status,
         o.is_inspected, o.is_packed, o.created_at, o.updated_at,
         o.shop_id, o.purchase_price, o.tracking_number, o.is_purchase_bound,
-        o.ozon_raw_data, s.name as shop_name
+        o.ozon_raw_data, s.name as shop_name, s.ozon_client_id, s.ozon_api_key
       FROM orders o
       LEFT JOIN shops s ON o.shop_id = s.id
       ${whereClause}
@@ -142,6 +148,172 @@ export async function GET(request: NextRequest) {
       LIMIT ${pageSize} OFFSET ${offset}
     `);
     const orders = ordersResult.rows || [];
+
+    // 检查是否需要更新订单图片数据（ozon_raw_data中没有images字段的订单）
+    // 这里标记需要更新的订单ID，后续可以异步更新
+    const ordersNeedUpdate: { id: string; shop_id: string; ozon_posting_number: string }[] = [];
+    
+    // 收集所有需要获取图片的offer_id（按shop分组）
+    const offerIdsByShop = new Map<string, string[]>();
+    console.log('[Orders] 开始收集offer_id, 订单数:', orders.length);
+    for (const o of orders) {
+      try {
+        const rawDataObj = (typeof o.ozon_raw_data === 'string') ? JSON.parse(o.ozon_raw_data) : o.ozon_raw_data;
+        const products = rawDataObj?.products || [];
+        console.log('[Orders] 订单', o.id, 'products数量:', products.length);
+        let hasImages = false;
+        if (Array.isArray(products)) {
+          for (const p of products) {
+            const offerId = p.offer_id || p.sku;
+            console.log('[Orders] 处理商品, offerId:', offerId, 'shopId:', o.shop_id, 'hasClientId:', !!o.ozon_client_id, 'hasApiKey:', !!o.ozon_api_key);
+            // 检查是否有images字段
+            if (p.images && Array.isArray(p.images) && p.images.length > 0) {
+              hasImages = true;
+            }
+            if (offerId && o.shop_id && o.ozon_client_id && o.ozon_api_key) {
+              const cacheKey = `${o.shop_id}-${offerId}`;
+              if (!imageCache.has(cacheKey)) {
+                if (!offerIdsByShop.has(o.shop_id)) {
+                  offerIdsByShop.set(o.shop_id, []);
+                }
+                offerIdsByShop.get(o.shop_id)!.push(offerId);
+              }
+            }
+          }
+        }
+      } catch (e) {}
+    }
+
+    // 批量获取商品图片（按shop，通过offer_id）
+    for (const [shopId, offerIds] of offerIdsByShop) {
+      const shop = orders.find(o => o.shop_id === shopId);
+      if (shop && shop.ozon_client_id && shop.ozon_api_key) {
+        try {
+          // 解密API密钥
+          const apiKey = (shop.ozon_api_key as string).includes(':') 
+            ? decrypt(shop.ozon_api_key as string) 
+            : (shop.ozon_api_key as string);
+          const client = new OzonClient({ clientId: shop.ozon_client_id, apiKey });
+          console.log('[Orders] 正在获取商品图片, shopId:', shopId, 'offerIds:', offerIds.length);
+          const images = await client.getProductImagesByOfferIds(offerIds);
+          console.log('[Orders] 获取到图片:', Object.keys(images).length);
+          for (const [offerId, imageUrl] of Object.entries(images)) {
+            const cacheKey = `${shopId}-${offerId}`;
+            imageCache.set(cacheKey, { image: imageUrl, expireAt: Date.now() + CACHE_TTL });
+          }
+        } catch (e) {
+          console.error('[Orders] 获取商品图片失败:', e);
+        }
+      } else {
+        console.log('[Orders] 无法获取图片, shopId:', shopId, 'hasClientId:', !!shop.ozon_client_id, 'hasApiKey:', !!shop.ozon_api_key);
+      }
+    }
+
+    // 对于没有图片的订单，尝试从Ozon API获取订单详情来更新图片
+    // 先收集没有图片的订单ID和对应的posting_number
+    const ordersNeedImages: { id: string; shop_id: string; ozon_posting_number: string; ozon_client_id: string; ozon_api_key: string }[] = [];
+    for (const o of orders) {
+      try {
+        const rawDataObj = (typeof o.ozon_raw_data === 'string') ? JSON.parse(o.ozon_raw_data) : o.ozon_raw_data;
+        const products = rawDataObj?.products || [];
+        if (Array.isArray(products)) {
+          let hasImages = false;
+          for (const p of products) {
+            if (p.images && Array.isArray(p.images) && p.images.length > 0) {
+              hasImages = true;
+              break;
+            }
+          }
+          // 如果没有图片且有凭证和posting_number，标记需要获取
+          if (!hasImages && o.ozon_posting_number && o.ozon_client_id && o.ozon_api_key) {
+            ordersNeedImages.push({
+              id: o.id,
+              shop_id: o.shop_id,
+              ozon_posting_number: o.ozon_posting_number,
+              ozon_client_id: o.ozon_client_id,
+              ozon_api_key: o.ozon_api_key,
+            });
+          }
+        }
+      } catch (e) {}
+    }
+    
+    // 异步更新订单图片（不影响返回速度）
+    if (ordersNeedImages.length > 0) {
+      console.log('[Orders] 需要更新图片的订单数:', ordersNeedImages.length);
+      // 按shop分组获取订单详情
+      const postingByShop = new Map<string, string[]>();
+      for (const order of ordersNeedImages) {
+        if (!postingByShop.has(order.shop_id)) {
+          postingByShop.set(order.shop_id, []);
+        }
+        postingByShop.get(order.shop_id)!.push(order.ozon_posting_number);
+      }
+      
+      // 并发获取各shop的订单详情
+      const updatePromises: Promise<void>[] = [];
+      for (const [shopId, postingNumbers] of postingByShop) {
+        const order = ordersNeedImages.find(o => o.shop_id === shopId);
+        if (order) {
+          const apiKey = (order.ozon_api_key as string).includes(':') 
+            ? decrypt(order.ozon_api_key as string) 
+            : (order.ozon_api_key as string);
+          const client = new OzonClient({ clientId: order.ozon_client_id, apiKey });
+          
+          updatePromises.push((async () => {
+            try {
+              for (const postingNumber of postingNumbers) {
+                const details = await client.getPostingDetails(postingNumber);
+                if (details?.products) {
+                  // 更新订单的ozon_raw_data
+                  const targetOrder = ordersNeedImages.find(o => o.ozon_posting_number === postingNumber);
+                  if (targetOrder) {
+                    // 获取现有ozon_raw_data
+                    const result = await pool.query('SELECT ozon_raw_data FROM orders WHERE id = $1', [targetOrder.id]);
+                    let rawDataObj: any = {};
+                    if (result.rows.length > 0) {
+                      const rawData = result.rows[0].ozon_raw_data;
+                      rawDataObj = (typeof rawData === 'string') ? JSON.parse(rawData) : rawData;
+                    }
+                    
+                    // 合并获取到的products（保留原有的，添加images）
+                    const updatedProducts = rawDataObj.products?.map((existingP: any) => {
+                      const newP = details.products.find((np: any) => 
+                        np.offer_id === existingP.offer_id || np.sku === existingP.sku
+                      );
+                      if (newP) {
+                        return { ...existingP, images: newP.images || [] };
+                      }
+                      return existingP;
+                    }) || details.products.map((p: any) => ({
+                      sku: p.sku,
+                      name: p.name,
+                      quantity: p.quantity,
+                      price: p.price,
+                      offer_id: p.offer_id,
+                      product_id: p.product_id,
+                      images: p.images || [],
+                    }));
+                    
+                    const newRawData = { ...rawDataObj, products: updatedProducts };
+                    
+                    // 更新数据库
+                    await pool.query(
+                      'UPDATE orders SET ozon_raw_data = $1, updated_at = NOW() WHERE id = $2',
+                      [JSON.stringify(newRawData), targetOrder.id]
+                    );
+                    console.log('[Orders] 已更新订单图片:', targetOrder.id);
+                  }
+                }
+              }
+            } catch (e) {
+              console.error('[Orders] 更新订单图片失败:', e);
+            }
+          })());
+        }
+      }
+      // 不等待完成，让其在后台运行
+    }
 
     // Format response
     const formattedOrders = orders.map((o: any) => {
@@ -159,15 +331,46 @@ export async function GET(request: NextRequest) {
               // 1. financial_data.products[].item_services_marketing_data.weight (Ozon俄罗斯)
               // 2. direct weight field
               const weightData = p.item_services_marketing_data?.weight || p.weight || null;
+              const productId = Number(p.product_id);
+              const offerId = p.offer_id || p.sku;
+              // 从多个来源获取图片：1. images数组 2. image_url 3. 缓存
+              let image: string | null = null;
+              // 来源1: 直接从ozon_raw_data的products中获取images数组
+              if (p.images && Array.isArray(p.images) && p.images.length > 0) {
+                image = p.images[0]; // 取第一张图片
+              }
+              // 来源2: image_url字段
+              if (!image) {
+                image = p.image_url || null;
+              }
+              // 来源3: 从缓存获取
+              if (!image && o.shop_id) {
+                // 先尝试通过offer_id获取
+                if (offerId) {
+                  const cacheKeyByOffer = `${o.shop_id}-${offerId}`;
+                  const cachedByOffer = imageCache.get(cacheKeyByOffer);
+                  if (cachedByOffer && cachedByOffer.expireAt > Date.now()) {
+                    image = cachedByOffer.image;
+                  }
+                }
+                // 再尝试通过product_id获取
+                if (!image && productId) {
+                  const cacheKeyById = `${o.shop_id}-${productId}`;
+                  const cachedById = imageCache.get(cacheKeyById);
+                  if (cachedById && cachedById.expireAt > Date.now()) {
+                    image = cachedById.image;
+                  }
+                }
+              }
               
               return {
                 name: p.name || '未知商品',
                 sku: String(p.sku || p.offer_id || ''),
                 quantity: Number(p.quantity) || 1,
                 price: String(p.price || 0),
-                image: p.image_url || null,
+                image: image,
                 weight: weightData ? Number(weightData) / 1000 : null, // 转换为kg
-                productId: p.product_id || null,
+                productId: productId || null,
               };
             });
           }

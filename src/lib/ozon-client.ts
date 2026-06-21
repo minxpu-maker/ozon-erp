@@ -256,6 +256,147 @@ export class OzonClient {
   async delete<T = unknown>(path: string, headers?: Record<string, string>): Promise<OzonResponse<T>> {
     return this.request<T>('DELETE', path, undefined, headers);
   }
+
+  /**
+   * 获取商品图片信息
+   * POST /v2/product/info
+   * @param productId - Ozon商品ID
+   * @returns 商品图片URL列表
+   */
+  async getProductImages(productId: number): Promise<string[]> {
+    try {
+      const response = await this.post<{
+        result?: {
+          images?: Array<{ url: string; index: number }>;
+        };
+      }>('/v2/product/info', {
+        product_id: productId,
+      });
+
+      if (response.ok && response.data?.result?.images) {
+        // 返回第一张图片（主图）
+        const images = response.data.result.images
+          .sort((a, b) => (a.index || 0) - (b.index || 0))
+          .map(img => img.url);
+        return images;
+      }
+      return [];
+    } catch (error) {
+      console.error('[OzonClient] 获取商品图片失败:', error);
+      return [];
+    }
+  }
+
+  /**
+   * 获取订单详情
+   * POST /v2/posting/fbs/get
+   * @param postingNumber - Ozon发货编号
+   * @returns 订单详情（包含商品图片）
+   */
+  async getPostingDetails(postingNumber: string): Promise<any | null> {
+    try {
+      const response = await this.post<{
+        result?: {
+          products?: Array<{
+            offer_id?: string;
+            product_id?: number;
+            name?: string;
+            sku?: string;
+            quantity?: number;
+            price?: string;
+            images?: string[];
+          }>;
+        };
+      }>('/v2/posting/fbs/get', {
+        posting_number: postingNumber,
+      });
+
+      if (response.ok && response.data?.result) {
+        return response.data.result;
+      }
+      return null;
+    } catch (error) {
+      console.error('[OzonClient] 获取订单详情失败:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 批量获取商品图片信息
+   * POST /v2/product/info/list
+   * @param productIds - Ozon商品ID列表
+   * @returns 商品ID到图片URL的映射
+   */
+  async getProductImagesBatch(productIds: number[]): Promise<Record<number, string>> {
+    const result: Record<number, string> = {};
+    
+    if (productIds.length === 0) return result;
+
+    try {
+      const response = await this.post<{
+        result?: Array<{
+          product_id: number;
+          images?: Array<{ url: string; index: number }>;
+        }>;
+      }>('/v2/product/info/list', {
+        product_id: productIds,
+      });
+
+      if (response.ok && response.data?.result) {
+        for (const item of response.data.result) {
+          if (item.images && item.images.length > 0) {
+            // 按index排序取第一张（主图）
+            const sortedImages = item.images
+              .sort((a, b) => (a.index || 0) - (b.index || 0));
+            result[item.product_id] = sortedImages[0].url;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('[OzonClient] 批量获取商品图片失败:', error);
+    }
+    
+    return result;
+  }
+
+  /**
+   * 通过offer_id（SKU）获取商品图片
+   * POST /v1/product/info/list
+   * @param offerIds - SKU列表
+   * @returns SKU到图片URL的映射
+   */
+  async getProductImagesByOfferIds(offerIds: string[]): Promise<Record<string, string>> {
+    const result: Record<string, string> = {};
+    
+    if (offerIds.length === 0) return result;
+
+    try {
+      const response = await this.post<{
+        result?: Array<{
+          offer_id: string;
+          images?: string[];
+          primary_image?: string;
+        }>;
+      }>('/v1/product/info/list', {
+        offer_id: offerIds,
+      });
+
+      if (response.ok && response.data?.result) {
+        for (const item of response.data.result) {
+          // 优先使用primary_image，其次使用images数组第一张
+          if (item.primary_image) {
+            result[item.offer_id] = item.primary_image;
+          } else if (item.images && item.images.length > 0) {
+            result[item.offer_id] = item.images[0];
+          }
+        }
+      }
+    } catch (error) {
+      console.error('[OzonClient] 通过offer_id获取商品图片失败:', error);
+    }
+    
+    return result;
+  }
 }
 
 /**
