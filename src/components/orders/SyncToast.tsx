@@ -191,35 +191,35 @@ export function SyncToast({
               {/* 新订单 - 始终显示 */}
               <div className="flex items-center gap-1.5 animate-slideDown" style={{ animationDelay: '0.3s' }}>
                 <TrendingUp className={`w-4 h-4 ${newOrders > 0 ? 'text-blue-500' : 'text-gray-300'}`} />
-                <span className={`text-lg font-mono tabular-nums animate-number-pulse ${newOrders > 0 ? 'font-bold text-blue-600' : 'font-medium text-gray-400'}`}>
+                <span className={`text-lg font-mono tabular-nums animate-number-pulse ${newOrders > 0 ? 'font-bold text-blue-600' : 'font-medium text-gray-300'}`}>
                   {displayNumbers.newOrders}
                 </span>
-                <span className="text-xs text-gray-400">笔新订单</span>
+                <span className="text-xs text-blue-500">笔新订单</span>
               </div>
 
               {/* 状态更新 - 始终显示 */}
               <div className="flex items-center gap-1.5 animate-slideDown" style={{ animationDelay: '0.36s' }}>
-                <ArrowRightLeft className={`w-4 h-4 ${statusUpdates > 0 ? 'text-gray-400' : 'text-gray-300'}`} />
-                <span className={`text-lg font-mono tabular-nums ${statusUpdates > 0 ? 'font-semibold text-gray-600' : 'font-medium text-gray-400'}`}>
+                <ArrowRightLeft className={`w-4 h-4 ${statusUpdates > 0 ? 'text-gray-300' : 'text-gray-300'}`} />
+                <span className={`text-lg font-mono tabular-nums ${statusUpdates > 0 ? 'font-semibold text-blue-600' : 'font-medium text-gray-300'}`}>
                   {displayNumbers.statusUpdates}
                 </span>
-                <span className="text-xs text-gray-400">单状态变更</span>
+                <span className="text-xs text-blue-500">单状态变更</span>
               </div>
 
               {/* 店铺 */}
               <div className="flex items-center gap-1.5 animate-slideDown" style={{ animationDelay: '0.42s' }}>
-                <Store className="w-4 h-4 text-gray-400" />
-                <span className="text-lg font-medium text-gray-600 font-mono tabular-nums">
+                <Store className="w-4 h-4 text-gray-300" />
+                <span className="text-lg font-medium text-blue-600 font-mono tabular-nums">
                   {displayNumbers.shopCount}
                 </span>
-                <span className="text-xs text-gray-400">店铺已同步</span>
+                <span className="text-xs text-blue-500">店铺已同步</span>
               </div>
             </div>
 
             {/* 同步时间 */}
             <div className="flex items-center gap-1 text-gray-300">
               <Clock4 className="w-3.5 h-3.5" />
-              <span className="text-xs text-gray-400">{syncTime}</span>
+              <span className="text-xs text-blue-500">{syncTime}</span>
             </div>
 
             {/* 关闭按钮 */}
@@ -228,7 +228,7 @@ export function SyncToast({
               aria-label="关闭通知"
               className="p-1 hover:bg-gray-100 rounded transition-colors duration-150"
             >
-              <X className="w-3.5 h-3.5 text-gray-300 hover:text-gray-500" />
+              <X className="w-3.5 h-3.5 text-gray-300 hover:text-blue-500" />
             </button>
           </>
         )}
@@ -257,7 +257,7 @@ export function SyncToast({
               aria-label="关闭通知"
               className="p-1 hover:bg-gray-100 rounded transition-colors duration-150"
             >
-              <X className="w-3.5 h-3.5 text-gray-300 hover:text-gray-500" />
+              <X className="w-3.5 h-3.5 text-gray-300 hover:text-blue-500" />
             </button>
           </>
         )}
