@@ -85,7 +85,7 @@ function DropdownSelect({
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute top-full left-0 mt-1 z-20 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[120px] animate-fade-in">
+          <div className="absolute top-full left-0 mt-1 z-20 bg-white border border-gray-200 rounded-lg shadow-lg py-1 w-full animate-fade-in">
             {options.map(option => (
               <button
                 key={option.value}
@@ -148,7 +148,7 @@ function ShopMultiSelect({
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute top-full left-0 mt-1 z-20 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[160px] animate-fade-in">
+          <div className="absolute top-full left-0 mt-1 z-20 bg-white border border-gray-200 rounded-lg shadow-lg py-1 w-full animate-fade-in">
             <button
               onClick={() => { onChange(['all']); setOpen(false); }}
               className={`w-full px-3 py-1.5 text-left text-sm hover:bg-gray-50 flex items-center gap-2 ${selectedShops.includes('all') ? 'text-blue-600 bg-blue-50' : 'text-gray-700'}`}
