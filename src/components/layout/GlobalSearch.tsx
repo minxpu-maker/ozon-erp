@@ -25,7 +25,7 @@ export function GlobalSearchTrigger({
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-3 h-10 px-4 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 hover:border-gray-300 transition-colors w-[400px]"
+      className="flex items-center gap-3 h-10 px-4 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 hover:border-gray-300 transition-all duration-200 w-48 focus-within:w-72 focus-within:bg-white focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100"
     >
       <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
