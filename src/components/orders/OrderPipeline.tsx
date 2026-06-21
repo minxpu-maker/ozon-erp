@@ -166,7 +166,6 @@ export default function OrderPipeline({ orders, onSync, isLoading, error, onRetr
   // 同步订单 - 4态逻辑
   const handleSync = async () => {
     if (!onSync || syncing) return;
-    setSyncing(true);
     setSyncStatus("idle");
     try {
       await onSync();
@@ -175,8 +174,6 @@ export default function OrderPipeline({ orders, onSync, isLoading, error, onRetr
       setTimeout(() => setSyncStatus("idle"), 2000);
     } catch {
       setSyncStatus("error");
-    } finally {
-      setSyncing(false);
     }
   };
 

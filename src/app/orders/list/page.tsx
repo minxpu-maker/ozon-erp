@@ -193,6 +193,7 @@ export default function OrdersListPage() {
       <OrderPipeline
         orders={orders}
         onSync={handleSync}
+        syncing={syncToast?.status === 'syncing'}
         isLoading={isLoading}
         error={error ? "数据加载失败" : null}
         onRetry={() => mutate()}
