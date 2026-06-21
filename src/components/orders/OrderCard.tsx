@@ -443,7 +443,11 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
             <>
               {/* 1个商品：完整显示 */}
               {products.length === 1 && (
-                <SingleProductRow product={products[0]} />
+                <SingleProductRow 
+                  product={products[0]} 
+                  orderPrice={Number(order.totalPrice || 0)}
+                  exchangeRate={rate}
+                />
               )}
 
               {/* 2-3个商品：横向排列 */}
@@ -506,14 +510,28 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
 
               {/* 展开后的完整商品列表 */}
               {expandedProducts && (
-                <div className="mt-3 space-y-3">
-                  {products.map((product, index) => (
-                    <SingleProductRow 
-                      key={`${product.sku || index}-${index}`} 
-                      product={product} 
-                    />
-                  ))}
-                </div>
+                <>
+                  <div className="mt-3 space-y-3">
+                    {products.map((product, index) => (
+                      <SingleProductRow 
+                        key={`${product.sku || index}-${index}`} 
+                        product={product} 
+                      />
+                    ))}
+                  </div>
+                  {/* 展开后显示总价 */}
+                  <div className="mt-4 pt-3 border-t border-gray-100 flex items-baseline">
+                    <span className="text-lg font-bold text-gray-900 mr-2">合计:</span>
+                    <span className="text-xl font-bold tracking-tight text-gray-900">
+                      {formatRUB(Number(order.totalPrice || 0))}
+                    </span>
+                    {rate && (
+                      <span className="text-sm text-gray-400 ml-2">
+                        ≈{formatCNYFromRUB(Number(order.totalPrice || 0))}
+                      </span>
+                    )}
+                  </div>
+                </>
               )}
 
               {/* 商品汇总 */}
@@ -530,24 +548,19 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
 
         {/* 价格区 + 操作按钮（同一行） */}
         <div className="px-5 py-3 mt-2 flex items-center justify-between">
-          <div>
+          {/* 左侧：总价（仅多商品时显示） */}
+          {products.length > 1 && (
             <div className="flex items-baseline">
-              {/* Ozon售价 */}
               <span className="text-2xl font-bold tracking-tight text-gray-900">
-                {order.totalPrice ? formatRUB(Number(order.totalPrice)) : '—'}
+                {formatRUB(Number(order.totalPrice || 0))}
               </span>
-              {/* 人民币换算 */}
-              <span className="text-sm text-gray-400 ml-2">
-                ≈{order.totalPrice ? formatCNYFromRUB(Number(order.totalPrice)) : '¥ 0.00'}
-              </span>
+              {rate && (
+                <span className="text-sm text-gray-400 ml-2">
+                  ≈{formatCNYFromRUB(Number(order.totalPrice || 0))}
+                </span>
+              )}
             </div>
-            {/* 买家实付 */}
-            {order.orderAmount && order.orderAmount !== order.totalPrice && (
-              <div className="text-xs text-gray-400 mt-0.5">
-                买家实付 {formatRUB(Number(order.orderAmount))}
-              </div>
-            )}
-          </div>
+          )}
           {/* 操作按钮 */}
           {actionButton && (
             <button
@@ -750,7 +763,15 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
 }
 
 // 单个商品行组件 - 完整尺寸
-function SingleProductRow({ product }: { product: OrderProduct }) {
+function SingleProductRow({ 
+  product, 
+  orderPrice,
+  exchangeRate: rate 
+}: { 
+  product: OrderProduct;
+  orderPrice?: number;
+  exchangeRate?: number;
+}) {
   const displayName = product.name || '商品信息缺失';
   const isLongName = displayName.length > 30;
 
@@ -819,6 +840,15 @@ function SingleProductRow({ product }: { product: OrderProduct }) {
           <span className="text-base text-gray-400 ml-2">数量·</span>
           <span className="text-base font-medium text-gray-700">×{product.quantity}</span>
         </div>
+        {/* 金额显示在SKU下方 */}
+        {orderPrice !== undefined && (
+          <div className="flex items-baseline gap-1 mt-1">
+            <span className="text-xl font-bold text-gray-900">{formatRUB(orderPrice)}</span>
+            {rate && (
+              <span className="text-sm text-gray-400">≈{formatCNYFromRUB(orderPrice)}</span>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
