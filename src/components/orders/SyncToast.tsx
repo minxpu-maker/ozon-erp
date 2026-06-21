@@ -75,7 +75,7 @@ export function SyncToast({
   useEffect(() => {
     if (!isEntered || isPaused || isExiting) return
 
-    const duration = status === 'error' ? 5 : 3
+    const duration = status === 'error' ? 5 : 7
     setCountdown(duration)
 
     timerRef.current = setInterval(() => {
