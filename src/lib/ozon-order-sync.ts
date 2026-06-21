@@ -251,6 +251,7 @@ export async function syncOrdersForShop(shop: {
       const insertResults = await insertNewOrders(shop.id, newPostings);
       result.newOrders = insertResults.orders;
       result.newDemands = insertResults.demands;
+      result.updatedOrders = insertResults.updated;
     }
 
     // 处理已有订单（状态变更检测）
@@ -351,8 +352,9 @@ async function fetchAllPostings(client: OzonClient): Promise<OzonPosting[]> {
 async function insertNewOrders(
   shopId: string,
   postings: OzonPosting[]
-): Promise<{ orders: number; demands: number }> {
+): Promise<{ orders: number; demands: number; updated: number }> {
   let newOrdersCount = 0;
+  let updatedOrdersCount = 0;
   let newDemandsCount = 0;
   const now = new Date();
 
@@ -436,55 +438,77 @@ async function insertNewOrders(
     // 生成订单UUID
     const orderUuid = randomUUID();
     
-    // 插入到 orders 表（新订单根据Ozon状态动态设置erp_status）
-    // 使用Drizzle ORM确保正确的类型转换和参数绑定
-    await db
-      .insert(orders)
-      .values({
-        id: orderUuid,
-        ozonOrderId: String(posting.order_id),
-        ozonPostingNumber: posting.posting_number,
-        shopId: shopId,
-        status: posting.status,
-        buyerName: undefined,
-        buyerPhone: undefined,
-        recipientName: recipientName || undefined,
-        recipientPhone: undefined,
-        recipientCity: recipientCity || undefined,
-        recipientAddress: recipientAddress || undefined,
-        totalPrice: String(totalPrice),
-        productsPrice: '0',
-        deliveryPrice: '0',
-        trackingNumber: undefined,
-        shippedAt: undefined,
-        deliveredAt: undefined,
-        isPurchaseBound: false,
-        purchaseBoundAt: undefined,
-        isInspected: false,
-        inspectedAt: undefined,
-        isPacked: false,
-        packedAt: undefined,
-        packageWeight: undefined,
-        isSettled: false,
-        settledAt: undefined,
-        purchasePrice: '0',
-        ozonRawData: ozonRawData,
-        ozonCreatedAt: ozonCreatedAt ? new Date(ozonCreatedAt) : new Date(),
-        ozonUpdatedAt: undefined,
-        erpStatus: getErpStatus(posting.status),
-        currency: 'RUB',
-        shipmentDeadline: shipmentDeadlineValue ? new Date(shipmentDeadlineValue) : undefined,
-        lastSyncedAt: undefined,
-        purchasePlatform: undefined,
-        purchaseUrl: undefined,
-        purchaseQty: undefined,
-        purchaseTotalAmount: undefined,
-        purchaseTrackingNumber: undefined,
-        purchaseNote: undefined,
-        purchaseStatus: 'none',
-      });
+    // 检查订单是否已存在（根据 posting_number）
+    const existingOrder = await db
+      .select({ id: orders.id })
+      .from(orders)
+      .where(eq(orders.ozonPostingNumber, posting.posting_number))
+      .limit(1);
 
-    newOrdersCount++;
+    if (existingOrder.length > 0) {
+      // 订单已存在，更新状态
+      await db
+        .update(orders)
+        .set({
+          status: posting.status,
+          erpStatus: getErpStatus(posting.status),
+          ozonRawData: ozonRawData,
+          ozonUpdatedAt: new Date(),
+          lastSyncedAt: new Date(),
+        })
+        .where(eq(orders.ozonPostingNumber, posting.posting_number));
+      
+      updatedOrdersCount++;
+    } else {
+      // 插入到 orders 表（新订单根据Ozon状态动态设置erp_status）
+      await db
+        .insert(orders)
+        .values({
+          id: orderUuid,
+          ozonOrderId: String(posting.order_id),
+          ozonPostingNumber: posting.posting_number,
+          shopId: shopId,
+          status: posting.status,
+          buyerName: undefined,
+          buyerPhone: undefined,
+          recipientName: recipientName || undefined,
+          recipientPhone: undefined,
+          recipientCity: recipientCity || undefined,
+          recipientAddress: recipientAddress || undefined,
+          totalPrice: String(totalPrice),
+          productsPrice: '0',
+          deliveryPrice: '0',
+          trackingNumber: undefined,
+          shippedAt: undefined,
+          deliveredAt: undefined,
+          isPurchaseBound: false,
+          purchaseBoundAt: undefined,
+          isInspected: false,
+          inspectedAt: undefined,
+          isPacked: false,
+          packedAt: undefined,
+          packageWeight: undefined,
+          isSettled: false,
+          settledAt: undefined,
+          purchasePrice: '0',
+          ozonRawData: ozonRawData,
+          ozonCreatedAt: ozonCreatedAt ? new Date(ozonCreatedAt) : new Date(),
+          ozonUpdatedAt: undefined,
+          erpStatus: getErpStatus(posting.status),
+          currency: 'RUB',
+          shipmentDeadline: shipmentDeadlineValue ? new Date(shipmentDeadlineValue) : undefined,
+          lastSyncedAt: new Date(),
+          purchasePlatform: undefined,
+          purchaseUrl: undefined,
+          purchaseQty: undefined,
+          purchaseTotalAmount: undefined,
+          purchaseTrackingNumber: undefined,
+          purchaseNote: undefined,
+          purchaseStatus: 'none',
+        });
+
+      newOrdersCount++;
+    }
 
     // 根据Ozon官方API，只有"已准备发运"状态（awaiting_deliver）才创建采购需求
     // awaiting_packaging（等待打包）状态不需要创建采购需求
@@ -508,7 +532,7 @@ async function insertNewOrders(
     }
   }
 
-  return { orders: newOrdersCount, demands: newDemandsCount };
+  return { orders: newOrdersCount, demands: newDemandsCount, updated: updatedOrdersCount };
 }
 
 // ============================================================================
