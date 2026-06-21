@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/storage/database/client';
 import { shops } from '@/storage/database/shared/schema';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, sql } from 'drizzle-orm';
 import { encrypt } from '@/lib/crypto';
 
 // 店铺列表返回类型（不暴露API密钥）
@@ -105,14 +105,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 检查店铺名称是否已存在
-    const existing = await db
+    // 检查是否存在同名有效店铺（排除软删除的）
+    const existingActive = await db
       .select({ id: shops.id })
       .from(shops)
-      .where(eq(shops.name, body.shopName.trim()))
+      .where(sql`name = ${body.shopName.trim()} AND is_active = true`)
       .limit(1);
 
-    if (existing.length > 0) {
+    if (existingActive.length > 0) {
       return NextResponse.json(
         { success: false, error: '店铺名称已存在' },
         { status: 409 }
