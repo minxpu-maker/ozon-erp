@@ -258,6 +258,46 @@ export class OzonClient {
   }
 
   /**
+   * 获取订单完整详情（包含图片和product_id）
+   * POST /v2/posting/fbs/get
+   * @param postingNumber - Ozon货件号
+   * @returns 包含图片URL和product_id的映射 { offer_id: { imageUrl, productId } }
+   */
+  async getPostingDetails(postingNumber: string): Promise<Record<string, { imageUrl?: string; productId?: number }>> {
+    try {
+      const response = await this.post<{
+        result?: {
+          products?: Array<{
+            offer_id: string;
+            product_id: number;
+            name: string;
+            quantity: number;
+            price: string;
+            images?: Array<{ url: string }>;
+          }>;
+        };
+      }>('/v2/posting/fbs/get', {
+        posting_number: postingNumber,
+      });
+
+      if (response.ok && response.data?.result?.products) {
+        const productMap: Record<string, { imageUrl?: string; productId?: number }> = {};
+        for (const p of response.data.result.products) {
+          productMap[p.offer_id] = {
+            imageUrl: p.images && p.images.length > 0 ? p.images[0].url : undefined,
+            productId: p.product_id,
+          };
+        }
+        return productMap;
+      }
+      return {};
+    } catch (error) {
+      console.error('[OzonClient] 获取订单详情失败:', error);
+      return {};
+    }
+  }
+
+  /**
    * 获取商品图片信息
    * POST /v2/product/info
    * @param productId - Ozon商品ID
@@ -284,40 +324,6 @@ export class OzonClient {
     } catch (error) {
       console.error('[OzonClient] 获取商品图片失败:', error);
       return [];
-    }
-  }
-
-  /**
-   * 获取订单详情
-   * POST /v2/posting/fbs/get
-   * @param postingNumber - Ozon发货编号
-   * @returns 订单详情（包含商品图片）
-   */
-  async getPostingDetails(postingNumber: string): Promise<any | null> {
-    try {
-      const response = await this.post<{
-        result?: {
-          products?: Array<{
-            offer_id?: string;
-            product_id?: number;
-            name?: string;
-            sku?: string;
-            quantity?: number;
-            price?: string;
-            images?: string[];
-          }>;
-        };
-      }>('/v2/posting/fbs/get', {
-        posting_number: postingNumber,
-      });
-
-      if (response.ok && response.data?.result) {
-        return response.data.result;
-      }
-      return null;
-    } catch (error) {
-      console.error('[OzonClient] 获取订单详情失败:', error);
-      return null;
     }
   }
 

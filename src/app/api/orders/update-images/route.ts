@@ -81,10 +81,10 @@ export async function POST(request: NextRequest) {
           }
           
           try {
-            // 获取订单详情
-            const details = await client.getPostingDetails(order.ozon_posting_number);
+            // 获取订单详情中的商品图片
+            const productImages = await client.getPostingDetails(order.ozon_posting_number);
             
-            if (details?.products) {
+            if (Object.keys(productImages).length > 0) {
               // 获取现有ozon_raw_data
               const rawResult = await pool.query(
                 'SELECT ozon_raw_data FROM orders WHERE id = $1',
@@ -97,13 +97,11 @@ export async function POST(request: NextRequest) {
                   ? JSON.parse(rawData) 
                   : rawData || {};
                 
-                // 更新products中的images字段
+                // 更新products中的image字段
                 const updatedProducts = (rawDataObj.products || []).map((existingP: any) => {
-                  const newP = details.products.find((np: any) => 
-                    np.offer_id === existingP.offer_id || np.sku === existingP.sku
-                  );
-                  if (newP && newP.images && Array.isArray(newP.images) && newP.images.length > 0) {
-                    return { ...existingP, images: newP.images };
+                  const imageUrl = productImages[existingP.offer_id];
+                  if (imageUrl) {
+                    return { ...existingP, image: imageUrl };
                   }
                   return existingP;
                 });

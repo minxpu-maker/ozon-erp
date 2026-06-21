@@ -211,6 +211,21 @@ export async function syncOrdersForShop(shop: {
       return result;
     }
 
+    // 获取每个订单的详细图片信息和product_id
+    type ProductInfo = { imageUrl?: string; productId?: number };
+    const productImagesMap: Record<string, ProductInfo> = {};
+    for (const posting of allPostings) {
+      try {
+        const details = await client.getPostingDetails(posting.posting_number);
+        for (const [offerId, info] of Object.entries(details)) {
+          productImagesMap[`${posting.posting_number}:${offerId}`] = info;
+        }
+      } catch (e) {
+        // 获取图片失败不影响主流程
+        console.warn(`[syncShopOrders] 获取订单详情失败: ${posting.posting_number}`);
+      }
+    }
+
     // 获取本地已有的订单（确保order_id类型转换为string）
     const ozonOrderIds = allPostings.map(p => String(p.order_id));
     const existingOrders = await db
@@ -248,7 +263,7 @@ export async function syncOrdersForShop(shop: {
 
     // 处理新订单
     if (newPostings.length > 0) {
-      const insertResults = await insertNewOrders(shop.id, newPostings);
+      const insertResults = await insertNewOrders(shop.id, newPostings, productImagesMap);
       result.newOrders = insertResults.orders;
       result.newDemands = insertResults.demands;
       result.updatedOrders = insertResults.updated;
@@ -351,7 +366,8 @@ async function fetchAllPostings(client: OzonClient): Promise<OzonPosting[]> {
  */
 async function insertNewOrders(
   shopId: string,
-  postings: OzonPosting[]
+  postings: OzonPosting[],
+  productImagesMap: Record<string, { imageUrl?: string; productId?: number }>
 ): Promise<{ orders: number; demands: number; updated: number }> {
   let newOrdersCount = 0;
   let updatedOrdersCount = 0;
@@ -403,6 +419,8 @@ async function insertNewOrders(
     const recipientAddress = posting.customer?.address?.address_tail || (posting as any).recipient_address || null;
 
     // 构建原始数据（包含商品列表和收件人信息，供前端展示）
+    // 从productImagesMap获取图片URL和product_id
+    const productImages = productImagesMap[posting.posting_number] || {};
     const ozonRawData: Record<string, unknown> = {
       posting_number: posting.posting_number,
       order_id: posting.order_id,
@@ -411,16 +429,24 @@ async function insertNewOrders(
       recipient_city: recipientCity,
       recipient_name: recipientName,
       recipient_address: recipientAddress,
-      products: posting.products.map((p: any) => ({
-        sku: p.sku,
-        name: p.name,
-        quantity: p.quantity,
-        price: p.price,
-        offer_id: p.offer_id ?? null,
-        product_id: p.product_id ?? null,
-        weight: p.weight ?? null,
-        images: p.images ?? [], // 添加图片字段
-      })),
+      products: posting.products.map((p: any) => {
+        // 从productImagesMap获取图片URL和product_id
+        const productKey = `${posting.posting_number}:${p.offer_id}`;
+        const productInfo = productImagesMap[productKey] || (productImages as any)?.[p.offer_id] || {};
+        const info = typeof productInfo === 'object' ? productInfo : { imageUrl: productInfo };
+        return {
+          sku: p.sku,
+          name: p.name,
+          quantity: p.quantity,
+          price: p.price,
+          offer_id: p.offer_id ?? null,
+          product_id: info.productId ?? p.product_id ?? null,
+          weight: p.weight ?? null,
+          // 优先使用getPostingDetails获取的图片，否则使用API返回的
+          image: info.imageUrl || (p.images && p.images[0])?.url || null,
+          images: p.images ?? [],
+        };
+      }),
     };
 
     // 转换订单创建时间（Date对象转ISO字符串）
@@ -561,6 +587,7 @@ export async function syncAllShops(): Promise<BatchSyncResult> {
       name: shops.name,
       // 优先使用 ozonClientId/ozonApiKey（加密字段），回退到 clientId/apiKey（明文字段）
       ozonClientId: sql<string>`COALESCE(${shops.ozonClientId}, ${shops.clientId})`,
+      clientId: shops.clientId,
       apiKey: shops.apiKey,
       ozonApiKey: shops.ozonApiKey,
     })
@@ -574,12 +601,13 @@ export async function syncAllShops(): Promise<BatchSyncResult> {
 
   // 按顺序同步每个店铺（单个失败不影响其他）
   for (const shop of activeShops) {
-    // ozonClientId: 从 COALESCE 取（始终有值）
-    // apiKey: 优先 ozonApiKey（加密字段），回退到 apiKey（明文字段）
+    // 优先使用 ozon_client_id，回退到 client_id（查询已用COALESCE合并）
     const encryptedKey = shop.ozonApiKey as string | null;
     const plainKey = shop.apiKey as string | null;
 
-    if (!shop.ozonClientId || (!encryptedKey && !plainKey)) {
+    // 获取有效的 ClientId（优先 ozonClientId，回退 clientId）
+    const clientId = (shop.ozonClientId as string) || (shop.clientId as string);
+    if (!clientId || (!encryptedKey && !plainKey)) {
       result.errors.push({
         shopId: shop.id,
         shopName: shop.name || '未知店铺',
@@ -607,7 +635,7 @@ export async function syncAllShops(): Promise<BatchSyncResult> {
     const shopResult = await syncOrdersForShop({
       id: shop.id,
       name: shop.name || '未知店铺',
-      clientId: shop.ozonClientId as string,
+      clientId: clientId,
       apiKey: decryptedApiKey,
     });
 

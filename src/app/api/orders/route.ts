@@ -263,8 +263,8 @@ export async function GET(request: NextRequest) {
           updatePromises.push((async () => {
             try {
               for (const postingNumber of postingNumbers) {
-                const details = await client.getPostingDetails(postingNumber);
-                if (details?.products) {
+                const productImages = await client.getPostingDetails(postingNumber);
+                if (Object.keys(productImages).length > 0) {
                   // 更新订单的ozon_raw_data
                   const targetOrder = ordersNeedImages.find(o => o.ozon_posting_number === postingNumber);
                   if (targetOrder) {
@@ -276,24 +276,14 @@ export async function GET(request: NextRequest) {
                       rawDataObj = (typeof rawData === 'string') ? JSON.parse(rawData) : rawData;
                     }
                     
-                    // 合并获取到的products（保留原有的，添加images）
+                    // 合并获取到的图片到products
                     const updatedProducts = rawDataObj.products?.map((existingP: any) => {
-                      const newP = details.products.find((np: any) => 
-                        np.offer_id === existingP.offer_id || np.sku === existingP.sku
-                      );
-                      if (newP) {
-                        return { ...existingP, images: newP.images || [] };
+                      const imageUrl = productImages[existingP.offer_id];
+                      if (imageUrl) {
+                        return { ...existingP, image: imageUrl };
                       }
                       return existingP;
-                    }) || details.products.map((p: any) => ({
-                      sku: p.sku,
-                      name: p.name,
-                      quantity: p.quantity,
-                      price: p.price,
-                      offer_id: p.offer_id,
-                      product_id: p.product_id,
-                      images: p.images || [],
-                    }));
+                    }) || [];
                     
                     const newRawData = { ...rawDataObj, products: updatedProducts };
                     
@@ -359,6 +349,19 @@ export async function GET(request: NextRequest) {
                   const cachedById = imageCache.get(cacheKeyById);
                   if (cachedById && cachedById.expireAt > Date.now()) {
                     image = cachedById.image;
+                  }
+                }
+                // 来源4: 使用 offer_id 从 Ozon 公开 API 获取图片
+                if (!image && offerId) {
+                  // Ozon 公开图片 URL 格式（不需要认证）
+                  image = `https://ir.ozone.ru/s3/tps/ivcd39q7/300x300/img/ov2/${offerId}.jpg`;
+                }
+                if (!image) {
+                  // 来源5: 使用 ui-avatars.com 生成带有SKU首字母的占位图
+                  const skuStr = String(p.sku || p.offer_id || '');
+                  if (skuStr) {
+                    const initials = skuStr.slice(0, 2).toUpperCase();
+                    image = `https://ui-avatars.com/api/?name=${initials}&size=150&background=f0f4f8&color=637089&bold=true`;
                   }
                 }
               }

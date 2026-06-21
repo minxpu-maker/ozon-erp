@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { cn, formatCNY, formatRUB, formatCNYFromRUB, formatWeight, formatDateTime } from '@/lib/utils';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
@@ -106,12 +106,40 @@ const statusLabels: Record<string, string> = {
   'cancelled': '已取消',
 };
 
-// 商品图片占位组件 - 14x14
-function ProductImageMini({ image, name, sku }: { image?: string | null; name: string; sku: string }) {
+// Ozon CDN 图片URL构建函数
+function getOzonImageUrl(productId?: number | string | null, size: 'middle' | 'small' | 'original' = 'middle'): string | null {
+  if (!productId) return null;
+  const id = String(productId);
+  // Ozon CDN URL 格式
+  return `https://cdn1.ozone.ru/s3/product-multimedia/${id}/images/main/${size}.jpeg`;
+}
+
+// 商品图片占位组件 - 小尺寸 10x10
+function ProductImageMini({ image, name, sku, productId }: { image?: string | null; name: string; sku: string; productId?: number | string | null }) {
   const [hasError, setHasError] = useState(false);
   const [isLoading, setIsLoading] = useState(!!image);
+  const [src, setSrc] = useState<string | null>(image || null);
 
-  if (!image || hasError) {
+  // 如果没有图片，尝试从Ozon CDN或代理获取
+  useEffect(() => {
+    if (!src && (productId || sku)) {
+      // 优先使用 productId
+      if (productId) {
+        const url = getOzonImageUrl(productId, 'small');
+        if (url) setSrc(url);
+      } else if (sku) {
+        // 使用 SKU 从后端代理获取图片
+        fetch(`/api/ozon-product-image?sku=${encodeURIComponent(sku)}`)
+          .then(r => r.json())
+          .then(data => {
+            if (data.imageUrl) setSrc(data.imageUrl);
+          })
+          .catch(() => {});
+      }
+    }
+  }, [src, productId, sku]);
+
+  if (!src || hasError) {
     return (
       <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
         <ShoppingBag className="w-5 h-5 text-gray-300" />
@@ -129,7 +157,7 @@ function ProductImageMini({ image, name, sku }: { image?: string | null; name: s
 
   return (
     <img
-      src={image}
+      src={src}
       alt={name || sku}
       className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
       onLoad={() => setIsLoading(false)}
@@ -141,13 +169,33 @@ function ProductImageMini({ image, name, sku }: { image?: string | null; name: s
   );
 }
 
-// 商品图片占位组件 - 完整尺寸 14x14
-function ProductImage({ image, name, sku }: { image?: string | null; name: string; sku: string }) {
+// 商品图片占位组件 - 完整尺寸 24x24
+function ProductImage({ image, name, sku, productId }: { image?: string | null; name: string; sku: string; productId?: number | string | null }) {
   const [hasError, setHasError] = useState(false);
   const [isLoading, setIsLoading] = useState(!!image);
   const [isHovering, setIsHovering] = useState(false);
+  const [src, setSrc] = useState<string | null>(image || null);
 
-  if (!image || hasError) {
+  // 如果没有图片，尝试从Ozon CDN或代理获取
+  useEffect(() => {
+    if (!src && (productId || sku)) {
+      // 优先使用 productId
+      if (productId) {
+        const url = getOzonImageUrl(productId, 'middle');
+        if (url) setSrc(url);
+      } else if (sku) {
+        // 使用 SKU 从后端代理获取图片
+        fetch(`/api/ozon-product-image?sku=${encodeURIComponent(sku)}`)
+          .then(r => r.json())
+          .then(data => {
+            if (data.imageUrl) setSrc(data.imageUrl);
+          })
+          .catch(() => {});
+      }
+    }
+  }, [src, productId, sku]);
+
+  if (!src || hasError) {
     return (
       <div className="w-24 h-24 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
         <ShoppingBag className="w-8 h-8 text-gray-300" />
@@ -166,7 +214,7 @@ function ProductImage({ image, name, sku }: { image?: string | null; name: strin
   return (
     <div className="relative">
       <img
-        src={image}
+        src={src}
         alt={name || sku}
         className="w-24 h-24 rounded-lg object-cover flex-shrink-0 cursor-pointer transition-transform duration-200 hover:scale-105"
         onLoad={() => setIsLoading(false)}
@@ -181,7 +229,7 @@ function ProductImage({ image, name, sku }: { image?: string | null; name: strin
       {isHovering && (
         <div className="absolute left-full ml-2 top-0 z-50 pointer-events-none">
           <img
-            src={image}
+            src={src}
             alt={name || sku}
             className="w-64 h-64 rounded-lg object-cover border border-gray-200 shadow-lg"
           />
@@ -461,7 +509,7 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
                 <div className="flex items-center gap-3 overflow-x-auto">
                   {products.map((product, index) => (
                     <div key={`${product.sku || index}-${index}`} className="flex items-center gap-2 flex-shrink-0">
-                      <ProductImageMini image={product.image} name={product.name} sku={product.sku} />
+                      <ProductImageMini image={product.image} name={product.name} sku={product.sku} productId={product.productId} />
                       <span className="text-sm text-gray-700 line-clamp-1 max-w-[120px]">
                         {product.name || '商品信息缺失'}
                       </span>
@@ -490,7 +538,7 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
                   <div className="flex items-center gap-3 overflow-x-auto">
                     {products.slice(0, 3).map((product, index) => (
                       <div key={`${product.sku || index}-${index}`} className="flex items-center gap-2 flex-shrink-0">
-                        <ProductImageMini image={product.image} name={product.name} sku={product.sku} />
+                        <ProductImageMini image={product.image} name={product.name} sku={product.sku} productId={product.productId} />
                         <span className="text-sm text-gray-700 line-clamp-1 max-w-[100px]">
                           {product.name || '商品信息缺失'}
                         </span>
@@ -777,7 +825,7 @@ function SingleProductRow({
   return (
     <div className="flex items-start gap-3">
       {/* 左侧：商品图片 */}
-      <ProductImage image={product.image} name={product.name} sku={product.sku} />
+      <ProductImage image={product.image} name={product.name} sku={product.sku} productId={product.productId} />
       {/* 右侧：商品信息 */}
       <div className="flex-1 min-w-0">
         {isLongName ? (
