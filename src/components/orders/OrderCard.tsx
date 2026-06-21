@@ -451,7 +451,8 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
                   orderPrice={Number(order.totalPrice || 0)}
                   exchangeRate={rate}
                   actionButton={actionButton ?? undefined}
-                  onAction={handleAction}
+                  destination={order.recipientCity || ''}
+                  deliveryDeadline={order.shipmentDeadline ? formatDateTime(order.shipmentDeadline) : ''}
                 />
               )}
 
@@ -554,41 +555,25 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
         {/* 价格区 + 去采购按钮（多商品时显示，单商品时隐藏） */}
         <div className="px-5 pb-3">
           {products.length > 1 && (
-            <div className="flex items-center justify-between">
-              <div className="flex items-baseline">
-                <span className="text-2xl font-bold tracking-tight text-gray-900">
-                  {formatRUB(Number(order.totalPrice || 0))}
-                </span>
-                {rate && (
-                  <span className="text-sm text-gray-400 ml-2">
-                    ≈{formatCNYFromRUB(Number(order.totalPrice || 0))}
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex flex-col gap-1">
+                <div className="flex items-baseline">
+                  <span className="text-2xl font-bold tracking-tight text-gray-900">
+                    {formatRUB(Number(order.totalPrice || 0))}
                   </span>
-                )}
-              </div>
-              {actionButton && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleAction();
-                  }}
-                  className={cn(
-                    'rounded-lg text-white text-sm font-medium px-4 py-2',
-                    'transition-colors duration-150',
-                    'active:scale-[0.98] active:bg-blue-700',
-                    'bg-blue-500 hover:bg-blue-600'
+                  {rate && (
+                    <span className="text-sm text-gray-400 ml-2">
+                      ≈{formatCNYFromRUB(Number(order.totalPrice || 0))}
+                    </span>
                   )}
-                >
-                  <span className="flex items-center justify-center gap-1.5">
-                    {actionButton.icon}
-                    <span>{actionButton.label}</span>
-                  </span>
-                </button>
-              )}
+                </div>
+              </div>
+              {/* 外部已显示目的地和截止日期 */}
             </div>
           )}
         </div>
 
-        {/* 底部元数据 + 查看详情按钮 */}
+        {/* 底部元数据 */}
         <div className="px-5 pb-3 flex items-center justify-between">
           <div className="flex items-center gap-2 text-xs text-gray-400 flex-wrap">
             {order.recipientCity && (
@@ -773,13 +758,15 @@ function SingleProductRow({
   orderPrice,
   exchangeRate: rate,
   actionButton,
-  onAction
+  destination,
+  deliveryDeadline,
 }: { 
   product: OrderProduct;
   orderPrice?: number;
   exchangeRate?: number;
   actionButton?: { label: string; icon: React.ReactNode; variant?: string; className?: string };
-  onAction?: () => void;
+  destination?: string;
+  deliveryDeadline?: string;
 }) {
   const displayName = product.name || '商品信息缺失';
   const isLongName = displayName.length > 30;
@@ -862,7 +849,6 @@ function SingleProductRow({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  onAction?.();
                 }}
                 className={cn(
                   'rounded-lg text-white text-sm font-medium px-4 py-2',
