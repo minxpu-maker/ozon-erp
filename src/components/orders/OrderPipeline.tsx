@@ -16,9 +16,6 @@ import { getOrderStatusLabel } from "@/lib/utils";
 import { PIPELINE_TABS, TabConfig, OrderStatus, default as PipelineTabs } from "./PipelineTabs";
 import { cn } from "@/lib/utils";
 
-// 在模块顶层计算now，避免每次渲染重新计算
-const NOW = Date.now();
-
 // 初始筛选状态
 const INITIAL_FILTERS: ToolbarFilters = {
   keyword: "",
@@ -69,6 +66,9 @@ export default function OrderPipeline({ orders, onSync, isLoading, error, onRetr
 
   // 筛选逻辑：先按Tab过滤，再按搜索+筛选条件过滤
   const filteredOrders = useMemo(() => {
+    // 在渲染时计算当前时间，确保时区正确
+    const now = Date.now();
+
     // Step 1: 按Tab过滤
     let result = typedOrders;
     if (activeTab !== "all") {
@@ -94,7 +94,7 @@ export default function OrderPipeline({ orders, onSync, isLoading, error, onRetr
       result = result.filter((o) => {
         if (!o.shipmentDeadline) return false;
         const deadline = new Date(o.shipmentDeadline).getTime();
-        const diffHours = (deadline - NOW) / (1000 * 60 * 60);
+        const diffHours = (deadline - now) / (1000 * 60 * 60);
 
         if (filters.urgency === "overdue") return diffHours < 0;
         if (filters.urgency === "urgent") return diffHours >= 0 && diffHours < 24;
@@ -108,7 +108,6 @@ export default function OrderPipeline({ orders, onSync, isLoading, error, onRetr
       result = result.filter((o) => {
         if (!o.createdAt) return false;
         const created = new Date(o.createdAt).getTime();
-        const now = NOW;
         const diffHours = (now - created) / (1000 * 60 * 60);
 
         if (filters.timeRange === "today") return diffHours < 24;
