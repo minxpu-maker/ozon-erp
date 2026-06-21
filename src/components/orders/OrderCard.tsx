@@ -439,6 +439,7 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
 
         {/* 商品区 */}
         <div className="px-5 pt-3 pb-3 flex-1">
+
           {products.length > 0 ? (
             <>
               {/* 1个商品：完整显示 */}
@@ -447,6 +448,8 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
                   product={products[0]} 
                   orderPrice={Number(order.totalPrice || 0)}
                   exchangeRate={rate}
+                  actionButton={actionButton ?? undefined}
+                  onAction={handleAction}
                 />
               )}
 
@@ -540,46 +543,44 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
                   共{totalSkus}个SKU · {totalItems}件商品
                 </div>
               )}
-
-              {/* 去采购按钮 - 在商品区末尾 */}
-              {actionButton && (
-                <div className="mt-4 flex justify-end">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleAction();
-                    }}
-                    className={cn(
-                      'rounded-lg text-white text-sm font-medium px-4 py-2',
-                      'transition-colors duration-150',
-                      'active:scale-[0.98] active:bg-blue-700',
-                      'bg-blue-500 hover:bg-blue-600'
-                    )}
-                  >
-                    <span className="flex items-center justify-center gap-1.5">
-                      {actionButton.icon}
-                      <span>{actionButton.label}</span>
-                    </span>
-                  </button>
-                </div>
-              )}
             </>
           ) : (
             <p className="text-sm text-gray-400 py-4">商品信息缺失</p>
           )}
         </div>
 
-        {/* 价格区（仅多商品时显示总价，单商品时隐藏） */}
+        {/* 价格区 + 去采购按钮（多商品时显示，单商品时隐藏） */}
         <div className="px-5 pb-3">
           {products.length > 1 && (
-            <div className="flex items-baseline">
-              <span className="text-2xl font-bold tracking-tight text-gray-900">
-                {formatRUB(Number(order.totalPrice || 0))}
-              </span>
-              {rate && (
-                <span className="text-sm text-gray-400 ml-2">
-                  ≈{formatCNYFromRUB(Number(order.totalPrice || 0))}
+            <div className="flex items-center justify-between">
+              <div className="flex items-baseline">
+                <span className="text-2xl font-bold tracking-tight text-gray-900">
+                  {formatRUB(Number(order.totalPrice || 0))}
                 </span>
+                {rate && (
+                  <span className="text-sm text-gray-400 ml-2">
+                    ≈{formatCNYFromRUB(Number(order.totalPrice || 0))}
+                  </span>
+                )}
+              </div>
+              {actionButton && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleAction();
+                  }}
+                  className={cn(
+                    'rounded-lg text-white text-sm font-medium px-4 py-2',
+                    'transition-colors duration-150',
+                    'active:scale-[0.98] active:bg-blue-700',
+                    'bg-blue-500 hover:bg-blue-600'
+                  )}
+                >
+                  <span className="flex items-center justify-center gap-1.5">
+                    {actionButton.icon}
+                    <span>{actionButton.label}</span>
+                  </span>
+                </button>
               )}
             </div>
           )}
@@ -768,11 +769,15 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
 function SingleProductRow({ 
   product, 
   orderPrice,
-  exchangeRate: rate 
+  exchangeRate: rate,
+  actionButton,
+  onAction
 }: { 
   product: OrderProduct;
   orderPrice?: number;
   exchangeRate?: number;
+  actionButton?: { label: string; icon: React.ReactNode; variant?: string; className?: string };
+  onAction?: () => void;
 }) {
   const displayName = product.name || '商品信息缺失';
   const isLongName = displayName.length > 30;
@@ -842,12 +847,33 @@ function SingleProductRow({
           <span className="text-base text-gray-400 ml-2">数量·</span>
           <span className="text-base font-medium text-gray-700">×{product.quantity}</span>
         </div>
-        {/* 金额显示在SKU下方 */}
+        {/* 金额 + 去采购按钮（单商品时显示） */}
         {orderPrice !== undefined && (
-          <div className="flex items-baseline gap-1 mt-1">
-            <span className="text-xl font-bold text-gray-900">{formatRUB(orderPrice)}</span>
-            {rate && (
-              <span className="text-sm text-gray-400">≈{formatCNYFromRUB(orderPrice)}</span>
+          <div className="flex items-center justify-between mt-2">
+            <div className="flex items-baseline gap-1">
+              <span className="text-xl font-bold text-gray-900">{formatRUB(orderPrice)}</span>
+              {rate && (
+                <span className="text-sm text-gray-400">≈{formatCNYFromRUB(orderPrice)}</span>
+              )}
+            </div>
+            {actionButton && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAction?.();
+                }}
+                className={cn(
+                  'rounded-lg text-white text-sm font-medium px-4 py-2',
+                  'transition-colors duration-150',
+                  'active:scale-[0.98] active:bg-blue-700',
+                  'bg-blue-500 hover:bg-blue-600'
+                )}
+              >
+                <span className="flex items-center justify-center gap-1.5">
+                  {actionButton.icon}
+                  <span>{actionButton.label}</span>
+                </span>
+              </button>
             )}
           </div>
         )}
