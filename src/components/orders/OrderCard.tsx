@@ -419,7 +419,6 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
               {products.length === 1 && (
                 <SingleProductRow 
                   product={products[0]} 
-                  orderNumber={String(order.ozonOrderId || order.ozonPostingNumber || order.id)} 
                   statusBadge={<span className={cn(
                     'rounded-md px-2 py-0.5 text-xs font-medium border',
                     badgeColors.bg, badgeColors.text, badgeColors.border
@@ -494,7 +493,6 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
                     <SingleProductRow 
                       key={`${product.sku || index}-${index}`} 
                       product={product} 
-                      orderNumber={String(order.ozonOrderId || order.ozonPostingNumber || order.id)}
                       statusBadge={<span className={cn(
                         'rounded-md px-2 py-0.5 text-xs font-medium border',
                         badgeColors.bg, badgeColors.text, badgeColors.border
@@ -570,20 +568,39 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
             }
           }}
         >
+          {/* 订单编号 + 复制图标 */}
+          <div className="flex items-center gap-1">
+            <span className="font-mono">{order.ozonOrderId || order.ozonPostingNumber || order.id}</span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                const orderNum = String(order.ozonOrderId || order.ozonPostingNumber || order.id);
+                navigator.clipboard.writeText(orderNum);
+                // 可以添加一个简单的提示反馈
+              }}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+              title="复制订单编号"
+            >
+              <Copy className="w-3 h-3" />
+            </button>
+          </div>
           {order.recipientCity && (
             <>
-              <span>{order.recipientCity}</span>
               <span>·</span>
+              <span>{order.recipientCity}</span>
             </>
           )}
           {totalWeight > 0 && (
             <>
-              <span>{formatWeight(totalWeight)}</span>
               <span>·</span>
+              <span>{formatWeight(totalWeight)}</span>
             </>
           )}
           {order.shipmentDeadline && (
-            <span className="text-gray-600">截止 {formatDateTime(order.shipmentDeadline)}</span>
+            <>
+              <span>·</span>
+              <span className="text-gray-600">截止 {formatDateTime(order.shipmentDeadline)}</span>
+            </>
           )}
         </div>
 
@@ -751,11 +768,9 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
 // 单个商品行组件 - 完整尺寸
 function SingleProductRow({ 
   product, 
-  orderNumber,
   statusBadge 
 }: { 
   product: OrderProduct; 
-  orderNumber?: string;
   statusBadge?: React.ReactNode;
 }) {
   const displayName = product.name || '商品信息缺失';
@@ -815,10 +830,6 @@ function SingleProductRow({
           <span className="text-xs font-mono text-gray-400">{product.sku || '—'}</span>
           <span className="text-gray-300">·</span>
           <span className="text-xs font-medium text-gray-500">×{product.quantity}</span>
-          {/* 订单编号在商品信息右侧 */}
-          {orderNumber && (
-            <span className="text-xs text-gray-400 font-mono ml-2">{orderNumber}</span>
-          )}
         </div>
       </div>
     </div>
