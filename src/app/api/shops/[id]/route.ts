@@ -59,15 +59,36 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { shopName, isActive } = body;
+    const { shopName, isActive, ozonClientId, ozonApiKey } = body;
 
-    // 使用原始 SQL 更新，因为 schema 字段名和数据库字段名不一致
+    // 构建更新字段
+    const updateFields: string[] = [];
+    const params2: (string | boolean | null)[] = [];
+    
+    if (shopName !== undefined) {
+      updateFields.push(`name = $${params2.length + 1}`);
+      params2.push(shopName);
+    }
+    if (isActive !== undefined) {
+      updateFields.push(`is_active = $${params2.length + 1}`);
+      params2.push(isActive);
+    }
+    if (ozonClientId !== undefined) {
+      updateFields.push(`ozon_client_id = $${params2.length + 1}`);
+      params2.push(ozonClientId || null);
+    }
+    if (ozonApiKey !== undefined) {
+      updateFields.push(`ozon_api_key = $${params2.length + 1}`);
+      params2.push(ozonApiKey || null);
+    }
+    
+    updateFields.push(`updated_at = NOW()`);
+    params2.push(id);
+
     await db.execute(sql`
       UPDATE shops 
-      SET name = ${shopName}, 
-          is_active = ${isActive}, 
-          updated_at = NOW()
-      WHERE id = ${id}
+      SET ${sql.raw(updateFields.join(', '))}
+      WHERE id = $${params2.length}
     `);
 
     // 查询更新后的店铺
