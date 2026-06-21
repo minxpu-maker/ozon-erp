@@ -271,9 +271,11 @@ export async function syncOrdersForShop(shop: {
     // 处理新订单
     if (newPostings.length > 0) {
       const insertResults = await insertNewOrders(shop.id, newPostings, productImagesMap);
-      result.newOrders = insertResults.orders;
-      result.newDemands = insertResults.demands;
-      result.updatedOrders = insertResults.updated;
+      result.newOrders += insertResults.orders;
+      result.newDemands += insertResults.demands;
+      // insertResults.updated 是"根据posting_number判断为已存在"的订单，不是状态变更
+      // 累加而非覆盖，后续循环还会检测真正的状态变更
+      result.updatedOrders += insertResults.updated;
     }
 
     // 处理已有订单（状态变更检测）
