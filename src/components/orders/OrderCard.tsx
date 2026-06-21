@@ -570,25 +570,36 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
           )}
         </div>
 
-        {/* 底部元数据 */}
-        <div 
-          className="px-5 pb-3 flex items-center gap-2 text-xs text-gray-400 flex-wrap"
-        >
-          {order.recipientCity && (
-            <>
-              <span>{order.recipientCity}</span>
-              <span>·</span>
-            </>
-          )}
-          {totalWeight > 0 && (
-            <>
-              <span>{formatWeight(totalWeight)}</span>
-              <span>·</span>
-            </>
-          )}
-          {order.shipmentDeadline && (
-            <span className="text-gray-600">截止 {formatDateTime(order.shipmentDeadline)}</span>
-          )}
+        {/* 底部元数据 + 查看详情按钮 */}
+        <div className="px-5 pb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-xs text-gray-400 flex-wrap">
+            {order.recipientCity && (
+              <>
+                <span>{order.recipientCity}</span>
+                <span>·</span>
+              </>
+            )}
+            {totalWeight > 0 && (
+              <>
+                <span>{formatWeight(totalWeight)}</span>
+                <span>·</span>
+              </>
+            )}
+            {order.shipmentDeadline && (
+              <span className="text-gray-600">截止 {formatDateTime(order.shipmentDeadline)}</span>
+            )}
+          </div>
+          {/* 查看详情按钮 */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setExpandedDetails(!expandedDetails);
+            }}
+            className="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-600 transition-colors"
+          >
+            <span>{expandedDetails ? '收起详情' : '查看详情'}</span>
+            {expandedDetails ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </button>
         </div>
 
         {/* 展开详情面板 */}
@@ -789,9 +800,21 @@ function SingleProductRow({ product }: { product: OrderProduct }) {
             <p className="text-sm text-gray-700 line-clamp-2 leading-snug">{displayName}</p>
           )
         )}
-        {/* SKU + 数量，字体加大 */}
+        {/* SKU + 复制按钮 + 数量 */}
         <div className="flex items-center gap-1 mt-2">
           <span className="text-base font-mono text-gray-700 font-medium">{product.sku || '—'}</span>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (product.sku) {
+                navigator.clipboard.writeText(product.sku);
+              }
+            }}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+            title="复制SKU"
+          >
+            <Copy className="w-3.5 h-3.5" />
+          </button>
           <span className="text-gray-400">·</span>
           <span className="text-base font-medium text-gray-700">×{product.quantity}</span>
         </div>
