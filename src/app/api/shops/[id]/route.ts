@@ -61,6 +61,19 @@ export async function PUT(
     const body = await request.json();
     const { shopName, isActive, ozonClientId, ozonApiKey } = body;
 
+    // 记录更新前的店铺名称（用于同步 orders 表）
+    let oldShopName = '';
+    if (shopName !== undefined) {
+      const existingShop = await db
+        .select({ name: shops.name })
+        .from(shops)
+        .where(eq(shops.id, id))
+        .limit(1);
+      if (existingShop.length > 0) {
+        oldShopName = existingShop[0].name || '';
+      }
+    }
+    
     // 构建更新字段
     const updateFields: string[] = [];
     const params2: (string | boolean | null)[] = [];
@@ -90,6 +103,14 @@ export async function PUT(
       SET ${sql.raw(updateFields.join(', '))}
       WHERE id = $${params2.length}
     `);
+
+    // 【关键】同步更新 orders 表的店铺名称
+    if (shopName !== undefined && oldShopName && oldShopName !== shopName) {
+      await db.execute(sql`
+        UPDATE orders SET shop_name = ${shopName} WHERE shop_name = ${oldShopName}
+      `);
+      console.log(`[Shop Sync] 同步更新订单店铺名称: ${oldShopName} -> ${shopName}`);
+    }
 
     // 查询更新后的店铺
     const updated = await db
@@ -144,10 +165,20 @@ export async function DELETE(
       );
     }
 
+    const shopName = shop[0].name || '';
+
     // 软删除：将 is_active 设为 false
     await db.execute(sql`
       UPDATE shops SET is_active = false, updated_at = NOW() WHERE id = ${id}
     `);
+
+    // 【关键】同步更新 orders 表的店铺名称（标记为已删除店铺）
+    if (shopName) {
+      await db.execute(sql`
+        UPDATE orders SET shop_name = ${shopName + ' (已删除)'} WHERE shop_name = ${shopName}
+      `);
+      console.log(`[Shop Sync] 同步更新已删除店铺的订单: ${shopName}`);
+    }
 
     return NextResponse.json({
       success: true,

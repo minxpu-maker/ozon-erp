@@ -381,6 +381,14 @@ async function insertNewOrders(
   let newDemandsCount = 0;
   const now = new Date();
 
+  // 【关键】从 shops 表获取店铺名称，确保同步
+  const shopInfoResult = await db
+    .select({ name: shops.name })
+    .from(shops)
+    .where(eq(shops.id, shopId))
+    .limit(1);
+  const shopName = shopInfoResult.length > 0 ? shopInfoResult[0].name || '' : '';
+
   // 查询已有的 ozonPostingNumber，避免重复插入
   const existingPostings = await db
     .select({ ozonPostingNumber: orders.ozonPostingNumber })
@@ -501,6 +509,7 @@ async function insertNewOrders(
           ozonOrderId: String(posting.order_id),
           ozonPostingNumber: posting.posting_number,
           shopId: shopId,
+          shopName: shopName, // 【关键】从 shops 表同步店铺名称
           status: posting.status,
           buyerName: undefined,
           buyerPhone: undefined,
