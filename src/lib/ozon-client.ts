@@ -287,9 +287,10 @@ export class OzonClient {
       });
 
       // Ozon v3/product/info/list API 响应格式是 { items: [...] }
-      if (response.ok && response.data?.items) {
+      const items = (response.data as any)?.items || (response.data as any)?.result?.items || [];
+      if (response.ok && items.length > 0) {
         const productMap: Record<string, { imageUrl?: string; productId?: number }> = {};
-        for (const p of response.data.items) {
+        for (const p of items) {
           // 使用offer_id作为key
           if (p.images && p.images.length > 0) {
             productMap[p.offer_id] = {

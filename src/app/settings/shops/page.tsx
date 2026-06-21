@@ -464,9 +464,9 @@ export default function ShopsPage() {
               </label>
               <div className="relative">
                 {(() => {
-                  const shop = shopList.find(s => s.id === editShop);
-                  const keyLen = shop?.apiKeyLength || 0;
-                  const placeholder = editShop && shop?.hasApiKey ? '•'.repeat(Math.min(keyLen, 50)) : '';
+                  const currentShop = shops.find((s: Shop) => s.id === editShop?.id);
+                  const keyLen = (currentShop as any)?.apiKeyLength || 0;
+                  const placeholder = editShop && (currentShop as any)?.hasApiKey ? '•'.repeat(Math.min(keyLen, 50)) : '';
                   return (
                     <Input
                       type={showApiKey ? 'text' : 'password'}
@@ -496,9 +496,9 @@ export default function ShopsPage() {
                   )}
                 </button>
               </div>
-              {editShop && shopList.find(s => s.id === editShop)?.hasApiKey && (
+              {(editShop && (shops.find((s: Shop) => s.id === editShop?.id) as any)?.hasApiKey) && (
                 <p className="text-xs text-[#637089] mt-1">
-                  已存储密钥长度: {shopList.find(s => s.id === editShop)?.apiKeyLength || 0}位（已加密）
+                  已存储密钥长度: {(shops.find((s: Shop) => s.id === editShop?.id) as any)?.apiKeyLength || 0}位（已加密）
                 </p>
               )}
             </div>
