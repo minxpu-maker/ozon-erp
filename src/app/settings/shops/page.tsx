@@ -465,9 +465,9 @@ export default function ShopsPage() {
               <div className="relative">
                 <Input
                   type={showApiKey ? 'text' : 'password'}
-                  value={formApiKey}
+                  value={editShop ? (formApiKey || '••••••••') : formApiKey}
                   onChange={e => setFormApiKey(e.target.value)}
-                  placeholder={editShop ? '留空则保持原密钥不变' : 'Ozon Api-Key（加密存储）'}
+                  placeholder={editShop ? '' : 'Ozon Api-Key（加密存储）'}
                   className="pr-10"
                 />
                 <button
