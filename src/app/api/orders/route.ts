@@ -323,13 +323,17 @@ export async function GET(request: NextRequest) {
               const weightData = p.item_services_marketing_data?.weight || p.weight || null;
               const productId = Number(p.product_id);
               const offerId = p.offer_id || p.sku;
-              // 从多个来源获取图片：1. images数组 2. image_url 3. 缓存
+              // 从多个来源获取图片：1. p.image字段 2. images数组 3. image_url 4. 缓存
               let image: string | null = null;
-              // 来源1: 直接从ozon_raw_data的products中获取images数组
-              if (p.images && Array.isArray(p.images) && p.images.length > 0) {
+              // 来源1: 直接从p.image获取（同步时已获取）
+              if (!image && p.image) {
+                image = p.image;
+              }
+              // 来源2: 直接从ozon_raw_data的products中获取images数组
+              if (!image && p.images && Array.isArray(p.images) && p.images.length > 0) {
                 image = p.images[0]; // 取第一张图片
               }
-              // 来源2: image_url字段
+              // 来源3: image_url字段
               if (!image) {
                 image = p.image_url || null;
               }
