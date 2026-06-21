@@ -408,7 +408,9 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
         <div className="flex items-center justify-between px-5 pt-4 pb-2">
           <div className="flex items-center gap-2">
             {/* 订单号 */}
-            <span className="text-xs font-mono text-gray-500">{order.ozonOrderId || order.ozonPostingNumber || order.id}</span>
+            <span className="text-xs font-mono text-gray-500 max-w-[280px] truncate" title={String(order.ozonOrderId || order.ozonPostingNumber || order.id)}>
+              {order.ozonOrderId || order.ozonPostingNumber || order.id}
+            </span>
             {/* 复制图标 */}
             <button
               onClick={(e) => {
@@ -634,7 +636,7 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
                     <div className="flex items-start justify-between gap-2">
                       <span className="text-xs text-gray-400 flex-shrink-0">订单号</span>
                       <div className="flex items-center gap-1 text-right">
-                        <span className="text-xs text-gray-700 font-mono">
+                        <span className="text-xs text-gray-700 font-mono max-w-[180px] truncate" title={String(order.ozonPostingNumber || order.ozonOrderId || order.id)}>
                           {order.ozonPostingNumber || order.ozonOrderId || order.id}
                         </span>
                         <button
