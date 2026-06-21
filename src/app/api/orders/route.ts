@@ -134,13 +134,21 @@ export async function GET(request: NextRequest) {
 
     // Get orders with ozon_raw_data for products
     const offset = (page - 1) * pageSize;
+    
+    // 首先获取所有店铺的ID到名称映射
+    const shopsResult = await pool.query('SELECT id, name FROM shops');
+    const shopNameMap = new Map<string, string>();
+    for (const s of shopsResult.rows) {
+      shopNameMap.set(s.id, s.name);
+    }
+    
     const ordersResult = await pool.query(`
       SELECT 
         o.id, o.ozon_posting_number, o.erp_status, o.shipment_deadline,
         o.buyer_name, o.recipient_address, o.recipient_city, o.total_price, o.status,
         o.is_inspected, o.is_packed, o.created_at, o.updated_at,
         o.shop_id, o.purchase_price, o.tracking_number, o.is_purchase_bound,
-        o.ozon_raw_data, s.name as shop_name, s.ozon_client_id, s.ozon_api_key
+        o.ozon_raw_data, s.ozon_client_id, s.ozon_api_key
       FROM orders o
       LEFT JOIN shops s ON o.shop_id = s.id
       ${whereClause}
@@ -456,7 +464,7 @@ export async function GET(request: NextRequest) {
         updatedAt: o.updated_at,
         lastSyncedAt: o.updated_at,
         shopId: o.shop_id,
-        shopName: (row as any).shop_name || o.shop_name,
+        shopName: shopNameMap.get(o.shop_id) || o.shop_id,
         products, // 添加商品数组
         purchaseInfo: o.is_purchase_bound ? {
           platform: null,
