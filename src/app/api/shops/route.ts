@@ -18,6 +18,7 @@ interface ShopListItem {
   isActive: boolean;
   ozonClientId: string | null;
   hasApiKey: boolean;
+  apiKeyLength: number; // 返回密钥长度，用于前端显示占位符
   createdAt: Date | null;
   updatedAt: Date | null;
 }
@@ -50,6 +51,14 @@ export async function GET(request: NextRequest) {
       .orderBy(desc(shops.createdAt));
 
     // 格式化返回数据，隐藏API密钥 - 使用主字段 client_id/api_key 或兼容字段 ozon_client_id/ozon_api_key
+    // 获取密钥长度（加密后的base64字符串长度）
+    const getApiKeyLength = (shop: typeof shopList[0]): number => {
+      const apiKey = shop.apiKey || shop.ozonApiKey;
+      if (!apiKey) return 0;
+      // 加密后的格式: base64(encrypted):base64(iv)，总长度约88-100字符
+      return apiKey.length;
+    };
+    
     const result: ShopListItem[] = shopList.map(shop => ({
       id: shop.id,
       shopName: shop.name || '',
@@ -57,6 +66,7 @@ export async function GET(request: NextRequest) {
       isActive: shop.isActive ?? true,
       ozonClientId: shop.clientId || shop.ozonClientId || null,
       hasApiKey: !!(shop.apiKey || shop.ozonApiKey),
+      apiKeyLength: getApiKeyLength(shop),
       createdAt: shop.createdAt,
       updatedAt: shop.updatedAt,
     }));
