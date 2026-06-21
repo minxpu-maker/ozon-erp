@@ -118,7 +118,8 @@ function getOzonImageUrl(productId?: number | string | null, size: 'middle' | 's
 function ProductImageMini({ image, name, sku, productId }: { image?: string | null; name: string; sku: string; productId?: number | string | null }) {
   const [hasError, setHasError] = useState(false);
   const [isLoading, setIsLoading] = useState(!!image);
-  const [src, setSrc] = useState<string | null>(image || null);
+  // 直接使用传入的image作为src
+  const src = image || null;
 
   // 如果没有图片，尝试从Ozon CDN或代理获取
   useEffect(() => {
@@ -126,13 +127,13 @@ function ProductImageMini({ image, name, sku, productId }: { image?: string | nu
       // 优先使用 productId
       if (productId) {
         const url = getOzonImageUrl(productId, 'small');
-        if (url) setSrc(url);
+        if (url) setIsLoading(true);
       } else if (sku) {
         // 使用 SKU 从后端代理获取图片
         fetch(`/api/ozon-product-image?sku=${encodeURIComponent(sku)}`)
           .then(r => r.json())
           .then(data => {
-            if (data.imageUrl) setSrc(data.imageUrl);
+            if (data.imageUrl) setIsLoading(true);
           })
           .catch(() => {});
       }
@@ -174,7 +175,8 @@ function ProductImage({ image, name, sku, productId }: { image?: string | null; 
   const [hasError, setHasError] = useState(false);
   const [isLoading, setIsLoading] = useState(!!image);
   const [isHovering, setIsHovering] = useState(false);
-  const [src, setSrc] = useState<string | null>(image || null);
+  // 直接使用传入的image作为src
+  const src = image || null;
 
   // 如果没有图片，尝试从Ozon CDN或代理获取
   useEffect(() => {
@@ -182,13 +184,16 @@ function ProductImage({ image, name, sku, productId }: { image?: string | null; 
       // 优先使用 productId
       if (productId) {
         const url = getOzonImageUrl(productId, 'middle');
-        if (url) setSrc(url);
+        if (url) {
+          setIsLoading(true);
+          // 直接使用图片URL
+        }
       } else if (sku) {
         // 使用 SKU 从后端代理获取图片
         fetch(`/api/ozon-product-image?sku=${encodeURIComponent(sku)}`)
           .then(r => r.json())
           .then(data => {
-            if (data.imageUrl) setSrc(data.imageUrl);
+            if (data.imageUrl) setIsLoading(true);
           })
           .catch(() => {});
       }
