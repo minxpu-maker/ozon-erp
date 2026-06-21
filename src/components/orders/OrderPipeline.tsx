@@ -47,7 +47,7 @@ export default function OrderPipeline({ orders, onSync, isLoading, error, onRetr
   
   // 分页状态
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(20);
+  const [pageSize, setPageSize] = useState(20);
   const listRef = useRef<HTMLDivElement>(null);
 
   // 将订单转换为 OrderRecord 类型
@@ -430,7 +430,10 @@ export default function OrderPipeline({ orders, onSync, isLoading, error, onRetr
           total={filteredOrders.length}
           totalPages={totalPages || 1}
           onPageChange={handlePageChange}
-          onPageSizeChange={(size: number) => setCurrentPage(1)}
+          onPageSizeChange={(size: number) => {
+            setPageSize(size);
+            setCurrentPage(1);
+          }}
         />
       )}
     </div>
