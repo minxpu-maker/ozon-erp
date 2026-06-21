@@ -188,27 +188,23 @@ export function SyncToast({
               <StatusIcon className={iconClass} />
               <span className="text-sm font-medium text-gray-700">同步完成</span>
 
-              {/* 新订单 */}
-              {newOrders > 0 && (
-                <div className="flex items-center gap-1.5 animate-slideDown" style={{ animationDelay: '0.3s' }}>
-                  <TrendingUp className="w-4 h-4 text-blue-500" />
-                  <span className="text-lg font-bold text-blue-600 font-mono tabular-nums animate-number-pulse">
-                    {displayNumbers.newOrders}
-                  </span>
-                  <span className="text-xs text-gray-400">笔新订单</span>
-                </div>
-              )}
+              {/* 新订单 - 始终显示 */}
+              <div className="flex items-center gap-1.5 animate-slideDown" style={{ animationDelay: '0.3s' }}>
+                <TrendingUp className={`w-4 h-4 ${newOrders > 0 ? 'text-blue-500' : 'text-gray-300'}`} />
+                <span className={`text-lg font-mono tabular-nums animate-number-pulse ${newOrders > 0 ? 'font-bold text-blue-600' : 'font-medium text-gray-400'}`}>
+                  {displayNumbers.newOrders}
+                </span>
+                <span className="text-xs text-gray-400">笔新订单</span>
+              </div>
 
-              {/* 状态更新 */}
-              {statusUpdates > 0 && (
-                <div className="flex items-center gap-1.5 animate-slideDown" style={{ animationDelay: newOrders > 0 ? '0.36s' : '0.3s' }}>
-                  <ArrowRightLeft className="w-4 h-4 text-gray-400" />
-                  <span className="text-lg font-semibold text-gray-600 font-mono tabular-nums">
-                    {displayNumbers.statusUpdates}
-                  </span>
-                  <span className="text-xs text-gray-400">单状态变更</span>
-                </div>
-              )}
+              {/* 状态更新 - 始终显示 */}
+              <div className="flex items-center gap-1.5 animate-slideDown" style={{ animationDelay: '0.36s' }}>
+                <ArrowRightLeft className={`w-4 h-4 ${statusUpdates > 0 ? 'text-gray-400' : 'text-gray-300'}`} />
+                <span className={`text-lg font-mono tabular-nums ${statusUpdates > 0 ? 'font-semibold text-gray-600' : 'font-medium text-gray-400'}`}>
+                  {displayNumbers.statusUpdates}
+                </span>
+                <span className="text-xs text-gray-400">单状态变更</span>
+              </div>
 
               {/* 店铺 */}
               <div className="flex items-center gap-1.5 animate-slideDown" style={{ animationDelay: '0.42s' }}>
