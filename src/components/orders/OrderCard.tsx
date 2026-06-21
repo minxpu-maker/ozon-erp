@@ -528,17 +528,12 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
                       />
                     ))}
                   </div>
-                  {/* 展开后显示总价 */}
+                  {/* 展开后显示总价 - totalPrice 已是人民币 */}
                   <div className="mt-4 pt-3 border-t border-gray-100 flex items-baseline">
                     <span className="text-lg font-bold text-gray-900 mr-2">合计:</span>
                     <span className="text-xl font-bold tracking-tight text-gray-900">
-                      {formatRUB(Number(order.totalPrice || 0))}
+                      {formatCNY(Number(order.totalPrice || 0))}
                     </span>
-                    {rate && (
-                      <span className="text-sm text-gray-400 ml-2">
-                        ≈{formatCNYFromRUB(Number(order.totalPrice || 0))}
-                      </span>
-                    )}
                   </div>
                 </>
               )}
@@ -562,13 +557,8 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
               <div className="flex items-center gap-3">
                 <div className="flex items-baseline">
                   <span className="text-2xl font-bold tracking-tight text-gray-900">
-                    {formatRUB(Number(order.totalPrice || 0))}
+                    {formatCNY(Number(order.totalPrice || 0))}
                   </span>
-                  {rate && (
-                    <span className="text-sm text-gray-400 ml-2">
-                      ≈{formatCNYFromRUB(Number(order.totalPrice || 0))}
-                    </span>
-                  )}
                 </div>
                 {order.recipientCity && (
                   <>
@@ -708,7 +698,7 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
                     <div className="flex items-start justify-between gap-2">
                       <span className="text-xs text-gray-400 flex-shrink-0">商品总价</span>
                       <span className="text-xs text-gray-700 font-medium">
-                        {order.totalPrice ? formatRUB(Number(order.totalPrice)) : <span className="text-gray-300 italic">暂无</span>}
+                        {order.totalPrice ? formatCNY(Number(order.totalPrice)) : <span className="text-gray-300 italic">暂无</span>}
                       </span>
                     </div>
                     <div className="flex items-start justify-between gap-2">
@@ -721,12 +711,6 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
                       <span className="text-xs text-gray-400 flex-shrink-0">折扣金额</span>
                       <span className="text-xs text-emerald-600">
                         {(order as any).discountAmount ? `-${formatRUB(Number((order as any).discountAmount))}` : <span className="text-gray-300 italic">无</span>}
-                      </span>
-                    </div>
-                    <div className="flex items-start justify-between gap-2">
-                      <span className="text-xs text-gray-400 flex-shrink-0">人民币</span>
-                      <span className="text-xs text-gray-400">
-                        {order.totalPrice ? formatCNYFromRUB(Number(order.totalPrice)) : <span className="text-gray-300 italic">暂无</span>}
                       </span>
                     </div>
                   </div>
@@ -843,10 +827,7 @@ function SingleProductRow({
           <div className="flex items-center justify-between gap-4 mt-2">
             <div className="flex items-center gap-3">
               <div className="flex items-baseline gap-1">
-                <span className="text-xl font-bold text-gray-900">{formatRUB(orderPrice)}</span>
-                {rate && (
-                  <span className="text-sm text-gray-400">≈{formatCNYFromRUB(orderPrice)}</span>
-                )}
+                <span className="text-xl font-bold text-gray-900">{formatCNY(orderPrice)}</span>
               </div>
               {destination && (
                 <>

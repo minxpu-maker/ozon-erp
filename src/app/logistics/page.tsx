@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
-import { formatCNYFromRUB } from '@/lib/utils';
+import { formatCNY } from '@/lib/utils';
 import { Truck, RefreshCw, Search, ScanLine, CheckCircle, XCircle, Box, ShoppingCart, Package } from 'lucide-react';
 import {
   Dialog,
@@ -192,7 +192,7 @@ return (
            <div><span className="text-xs text-[#637089]">Ozon订单号</span><div className="text-sm font-medium text-[#2F6BFF]">{currentTask.order?.ozon_order_id}</div></div>
            <div><span className="text-xs text-[#637089]">发货单号</span><div className="text-sm font-medium text-[#152033]">{currentTask.order?.ozon_posting_number}</div></div>
            <div><span className="text-xs text-[#637089]">订单状态</span><div className="text-sm font-medium text-[#152033]">{currentTask.order?.status}</div></div>
-           <div><span className="text-xs text-[#637089]">订单金额</span><div className="text-sm font-medium text-[#152033]">{formatCNYFromRUB(parseFloat(currentTask.order?.total_price || '0'))}</div></div>
+           <div><span className="text-xs text-[#637089]">订单金额</span><div className="text-sm font-medium text-[#152033]">{formatCNY(parseFloat(currentTask.order?.total_price || '0'))}</div></div>
          </div>
          <div className="grid grid-cols-3 gap-4">
            <div><span className="text-xs text-[#637089]">买家</span><div className="text-sm font-medium text-[#152033]">{currentTask.order?.buyer_name}</div></div>
