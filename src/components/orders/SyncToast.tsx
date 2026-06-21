@@ -192,7 +192,7 @@ export function SyncToast({
               {newOrders > 0 && (
                 <div className="flex items-center gap-1.5 animate-slideDown" style={{ animationDelay: '0.3s' }}>
                   <TrendingUp className="w-4 h-4 text-blue-500" />
-                  <span className="text-lg font-bold text-blue-600 font-mono tabular-nums">
+                  <span className="text-lg font-bold text-blue-600 font-mono tabular-nums animate-number-pulse">
                     {displayNumbers.newOrders}
                   </span>
                   <span className="text-xs text-gray-400">笔新订单</span>
@@ -270,7 +270,7 @@ export function SyncToast({
       {/* 同步中态底部扫描线 */}
       {status === 'syncing' && (
         <div className="h-0.5 w-full overflow-hidden">
-          <div className="h-full w-24 bg-gradient-to-r from-transparent via-blue-400 to-transparent animate-shimmer-line" />
+          <div className="h-full bg-gradient-to-r from-transparent via-blue-400 to-transparent animate-shimmer-line" />
         </div>
       )}
 
