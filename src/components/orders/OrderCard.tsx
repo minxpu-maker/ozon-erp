@@ -114,9 +114,11 @@ function getOzonImageUrl(productId?: number | string | null, size: 'middle' | 's
   return `https://cdn1.ozone.ru/s3/product-multimedia/${id}/images/main/${size}.jpeg`;
 }
 
-// 商品图片占位组件 - 小尺寸 10x10
+// 商品图片占位组件 - 小尺寸 10x10（带悬停放大）
 function ProductImageMini({ image, name, sku, productId }: { image?: string | null; name: string; sku: string; productId?: number | string | null }) {
   const [hasError, setHasError] = useState(false);
+  const [isHovering, setIsHovering] = useState(false);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
   // image有值时直接显示
   const src = image || undefined;
 
@@ -128,13 +130,43 @@ function ProductImageMini({ image, name, sku, productId }: { image?: string | nu
     );
   }
 
+  const handleMouseEnter = (e: React.MouseEvent<HTMLImageElement>) => {
+    setIsHovering(true);
+    const rect = e.currentTarget.getBoundingClientRect();
+    setPosition({ x: rect.right + 10, y: rect.top });
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovering(false);
+  };
+
   return (
-    <img
-      src={src}
-      alt={name || sku}
-      className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
-      onError={() => setHasError(true)}
-    />
+    <>
+      <img
+        src={src}
+        alt={name || sku}
+        className="w-10 h-10 rounded-lg object-cover flex-shrink-0 cursor-pointer transition-transform duration-200 hover:scale-110"
+        onError={() => setHasError(true)}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      />
+      {/* 悬停放大预览 */}
+      {isHovering && (
+        <div 
+          className="fixed z-[9999] pointer-events-none"
+          style={{ left: `${position.x}px`, top: `${position.y}px` }}
+        >
+          <div className="bg-white rounded-xl border border-gray-200 shadow-2xl p-2">
+            <img
+              src={src}
+              alt={name || sku}
+              className="w-48 h-48 rounded-lg object-cover"
+            />
+            <p className="text-xs text-gray-500 mt-2 text-center truncate max-w-48">{name || sku}</p>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 

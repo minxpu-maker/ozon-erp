@@ -1,11 +1,58 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import type { OrderRecord } from "./OrderCard";
 import { cn } from "@/lib/utils";
 import { formatRUB } from "@/lib/utils";
 import { PurchaseStatusBadge } from "./PurchaseStatusBadge";
 import { OzonStatusTag } from "./OzonStatusTag";
+
+// 图片悬停放大组件
+function ImageWithHover({ product }: { product: { image?: string | null; name?: string | null; sku?: string | null } }) {
+  const [isHovering, setIsHovering] = useState(false);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+
+  const handleMouseEnter = (e: React.MouseEvent<HTMLImageElement>) => {
+    setIsHovering(true);
+    const rect = e.currentTarget.getBoundingClientRect();
+    setPosition({ x: rect.right + 10, y: rect.top });
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovering(false);
+  };
+
+  if (!product?.image) return null;
+
+  return (
+    <>
+      <img
+        src={product.image}
+        alt=""
+        className="w-10 h-10 rounded-lg object-cover flex-shrink-0 bg-gray-100 cursor-pointer transition-transform duration-200 hover:scale-110"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      />
+      {/* 悬停放大预览 */}
+      {isHovering && (
+        <div 
+          className="fixed z-[9999] pointer-events-none"
+          style={{ left: `${position.x}px`, top: `${position.y}px` }}
+        >
+          <div className="bg-white rounded-xl border border-gray-200 shadow-2xl p-2">
+            <img
+              src={product.image}
+              alt={product.name || product.sku || ""}
+              className="w-48 h-48 rounded-lg object-cover"
+            />
+            <p className="text-xs text-gray-500 mt-2 text-center truncate max-w-48">{product.name || product.sku || ""}</p>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
 
 interface OrderListViewProps {
   orders: OrderRecord[];
@@ -119,11 +166,7 @@ export function OrderListView({
               {/* 商品信息 */}
               <div className="flex-1 min-w-0 flex items-center gap-3 px-2">
                 {product?.image ? (
-                  <img
-                    src={product.image}
-                    alt=""
-                    className="w-10 h-10 rounded-lg object-cover flex-shrink-0 bg-gray-100"
-                  />
+                  <ImageWithHover product={product} />
                 ) : (
                   <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-lg flex-shrink-0">
                     📦
