@@ -29,6 +29,7 @@ import {
   ExternalLink,
   ChevronDown,
   ChevronUp,
+  Clock,
 } from 'lucide-react';
 import type { OrderStatus } from './PipelineTabs';
 
@@ -112,6 +113,61 @@ function getOzonImageUrl(productId?: number | string | null, size: 'middle' | 's
   const id = String(productId);
   // Ozon CDN URL 格式
   return `https://cdn1.ozone.ru/s3/product-multimedia/${id}/images/main/${size}.jpeg`;
+}
+
+// 发货截止日期徽章组件 - 根据紧急程度显示不同颜色
+function DeadlineBadge({ deadline, className }: { deadline: string; className?: string }) {
+  const getDeadlineStyle = () => {
+    const now = Date.now();
+    const deadlineTime = new Date(deadline).getTime();
+    const diffHours = (deadlineTime - now) / (1000 * 60 * 60);
+    
+    if (diffHours < 0) {
+      // 已过期：深红色背景 + 白色文字
+      return {
+        bg: 'bg-red-600',
+        text: 'text-white',
+        icon: <AlertTriangle className="w-3 h-3" />,
+        label: '已过期'
+      };
+    } else if (diffHours < 24) {
+      // 紧急（<24小时）：橙色背景 + 白色文字
+      return {
+        bg: 'bg-orange-500',
+        text: 'text-white',
+        icon: <Clock className="w-3 h-3" />,
+        label: '紧急'
+      };
+    } else if (diffHours < 48) {
+      // 临近（24-48小时）：金黄色 + 深色文字
+      return {
+        bg: 'bg-amber-100',
+        text: 'text-amber-800',
+        icon: <Clock className="w-3 h-3" />,
+        label: '临近'
+      };
+    } else {
+      // 正常：品牌蓝 + 白色文字
+      return {
+        bg: 'bg-blue-500',
+        text: 'text-white',
+        icon: <Clock className="w-3 h-3" />,
+        label: ''
+      };
+    }
+  };
+
+  const style = getDeadlineStyle();
+  
+  return (
+    <div className={cn('inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-medium text-xs', style.bg, style.text, className)}>
+      {style.icon}
+      <span>{formatDateTime(deadline)}</span>
+      {style.label && (
+        <span className="ml-1 px-1 py-0.5 bg-white/20 rounded text-[10px]">{style.label}</span>
+      )}
+    </div>
+  );
 }
 
 // 商品图片占位组件 - 小尺寸 10x10（带悬停放大）
@@ -601,7 +657,7 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
                 {order.shipmentDeadline && (
                   <>
                     <span className="text-gray-300">|</span>
-                    <span className="text-sm text-gray-600">发货截止：{formatDateTime(order.shipmentDeadline)}</span>
+                    <DeadlineBadge deadline={order.shipmentDeadline} />
                   </>
                 )}
               </div>
@@ -704,7 +760,7 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
                       <span className="text-xs text-gray-400 flex-shrink-0">发货截止</span>
                       <span className="text-xs text-gray-700">
                         {order.shipmentDeadline ? (
-                          <span className="text-red-500 font-medium">{formatDateTime(order.shipmentDeadline)}</span>
+                          <DeadlineBadge deadline={order.shipmentDeadline} />
                         ) : <span className="text-gray-300 italic">暂无</span>}
                       </span>
                     </div>
@@ -870,7 +926,7 @@ function SingleProductRow({
               {deliveryDeadline && (
                 <>
                   <span className="text-gray-300">|</span>
-                  <span className="text-sm text-gray-600">发货截止：{formatDateTime(deliveryDeadline)}</span>
+                  <DeadlineBadge deadline={deliveryDeadline} />
                 </>
               )}
             </div>
