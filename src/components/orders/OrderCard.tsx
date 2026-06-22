@@ -543,7 +543,7 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
                   exchangeRate={rate}
                   actionButton={actionButton ?? undefined}
                   destination={order.recipientCity || ''}
-                  deliveryDeadline={order.shipmentDeadline ? formatDateTime(order.shipmentDeadline) : ''}
+                  shipmentDeadline={order.shipmentDeadline || ''}
                 />
               )}
 
@@ -834,14 +834,14 @@ function SingleProductRow({
   exchangeRate: rate,
   actionButton,
   destination,
-  deliveryDeadline,
+  shipmentDeadline,
 }: { 
   product: OrderProduct;
   orderPrice?: number;
   exchangeRate?: number;
   actionButton?: { label: string; icon: React.ReactNode; variant?: string; className?: string };
   destination?: string;
-  deliveryDeadline?: string;
+  shipmentDeadline?: string;
 }) {
   const displayName = product.name || '商品信息缺失';
   const isLongName = displayName.length > 30;
@@ -924,10 +924,11 @@ function SingleProductRow({
                   <span className="text-sm text-gray-600">目的地：{destination}</span>
                 </>
               )}
-              {deliveryDeadline && (
+              {shipmentDeadline && (
                 <>
                   <span className="text-gray-300">|</span>
-                  <DeadlineBadge deadline={deliveryDeadline} />
+                  <span className="text-gray-400">发货截止</span>
+                  <DeadlineBadge deadline={shipmentDeadline} />
                 </>
               )}
             </div>
