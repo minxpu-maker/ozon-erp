@@ -657,6 +657,7 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
                 {order.shipmentDeadline && (
                   <>
                     <span className="text-gray-300">|</span>
+                    <span className="text-gray-400">发货截止</span>
                     <DeadlineBadge deadline={order.shipmentDeadline} />
                   </>
                 )}
