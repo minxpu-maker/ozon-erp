@@ -136,7 +136,7 @@ export const qcRecords = pgTable('qc_records', {
  */
 export const shipmentRecords = pgTable('shipment_records', {
   id: varchar('id', { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
-  orderId: varchar('order_id').notNull(),
+  orderId: varchar('order_id', { length: 36 }).notNull(),
   shopId: varchar('shop_id', { length: 36 }),
   expressCompany: varchar('express_company', { length: 100 }),
   expressNo: varchar('express_no', { length: 100 }),
@@ -165,7 +165,7 @@ export const shipmentRecords = pgTable('shipment_records', {
  */
 export const orderFinance = pgTable('order_finance', {
   id: varchar('id', { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
-  orderId: varchar('order_id').notNull(),
+  orderId: varchar('order_id', { length: 36 }).notNull(),
   shopId: varchar('shop_id', { length: 36 }),
   ozonSettlementAmount: numeric('ozon_settlement_amount', { precision: 12, scale: 2 }),
   purchaseAmount: numeric('purchase_amount', { precision: 12, scale: 2 }),
