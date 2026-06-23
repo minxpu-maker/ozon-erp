@@ -50,7 +50,7 @@ export const ozonOrders = pgTable('ozon_orders', {
  */
 export const purchaseDemands = pgTable('purchase_demands', {
   id: serial('id').primaryKey(),
-  orderId: varchar('order_id').notNull(),
+  orderId: varchar('order_id', { length: 36 }).notNull(),
   sku: varchar('sku', { length: 100 }).notNull(),
   productName: varchar('product_name', { length: 200 }),
   productImage: varchar('product_image', { length: 500 }),
