@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer, numeric, jsonb, index, serial, uniqueIndex, boolean, decimal } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, integer, numeric, jsonb, index, serial, uniqueIndex, boolean, decimal, uuid } from "drizzle-orm/pg-core";
 
 // ============================================================================
 // 履约模块 (Fulfillment Module)
@@ -50,7 +50,7 @@ export const ozonOrders = pgTable('ozon_orders', {
  */
 export const purchaseDemands = pgTable('purchase_demands', {
   id: serial('id').primaryKey(),
-  orderId: varchar('order_id', { length: 36 }).notNull(),
+  orderId: uuid('order_id').notNull(),
   sku: varchar('sku', { length: 100 }).notNull(),
   productName: varchar('product_name', { length: 200 }),
   productImage: varchar('product_image', { length: 500 }),
