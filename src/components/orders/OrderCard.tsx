@@ -115,9 +115,23 @@ function getOzonImageUrl(productId?: number | string | null, size: 'middle' | 's
   return `https://cdn1.ozone.ru/s3/product-multimedia/${id}/images/main/${size}.jpeg`;
 }
 
-// 发货截止日期徽章组件 - 根据紧急程度显示不同颜色
-function DeadlineBadge({ deadline, className }: { deadline: string; className?: string }) {
+// 发货截止日期徽章组件 - 根据紧急程度和订单状态显示不同颜色
+// 只有待处理状态的订单才显示超时警告，运输中/已签收/已取消等状态应显示正常
+function DeadlineBadge({ deadline, className, orderStatus }: { deadline: string; className?: string; orderStatus?: string }) {
+  // 已发货/运输中/已签收/已取消状态：显示正常品牌蓝，不显示警告
+  const isShippedStatus = orderStatus && ['delivering', 'delivered', 'cancelled', 'shipped'].includes(orderStatus);
+  
   const getDeadlineStyle = () => {
+    // 如果订单已发货，显示正常状态
+    if (isShippedStatus) {
+      return {
+        bg: 'bg-blue-500',
+        text: 'text-white',
+        icon: <CheckCircle className="w-3 h-3" />,
+        label: ''
+      };
+    }
+    
     const now = Date.now();
     const deadlineTime = new Date(deadline).getTime();
     const diffHours = (deadlineTime - now) / (1000 * 60 * 60);
@@ -544,6 +558,7 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
                   actionButton={actionButton ?? undefined}
                   destination={order.recipientCity || ''}
                   shipmentDeadline={order.shipmentDeadline || ''}
+                  orderStatus={order.status}
                 />
               )}
 
@@ -658,7 +673,7 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
                   <>
                     <span className="text-gray-300">|</span>
                     <span className="text-gray-400">发货截止</span>
-                    <DeadlineBadge deadline={order.shipmentDeadline} />
+                    <DeadlineBadge deadline={order.shipmentDeadline} orderStatus={order.status} />
                   </>
                 )}
               </div>
@@ -761,7 +776,7 @@ export function OrderCard({ order, selected, onSelect, currentTab = 'all' }: Ord
                       <span className="text-xs text-gray-400 flex-shrink-0">发货截止</span>
                       <span className="text-xs text-gray-700">
                         {order.shipmentDeadline ? (
-                          <DeadlineBadge deadline={order.shipmentDeadline} />
+                          <DeadlineBadge deadline={order.shipmentDeadline} orderStatus={order.status} />
                         ) : <span className="text-gray-300 italic">暂无</span>}
                       </span>
                     </div>
@@ -835,6 +850,7 @@ function SingleProductRow({
   actionButton,
   destination,
   shipmentDeadline,
+  orderStatus,
 }: { 
   product: OrderProduct;
   orderPrice?: number;
@@ -842,6 +858,7 @@ function SingleProductRow({
   actionButton?: { label: string; icon: React.ReactNode; variant?: string; className?: string };
   destination?: string;
   shipmentDeadline?: string;
+  orderStatus?: string;
 }) {
   const displayName = product.name || '商品信息缺失';
   const isLongName = displayName.length > 30;
@@ -928,7 +945,7 @@ function SingleProductRow({
                 <>
                   <span className="text-gray-300">|</span>
                   <span className="text-gray-400">发货截止</span>
-                  <DeadlineBadge deadline={shipmentDeadline} />
+                  <DeadlineBadge deadline={shipmentDeadline} orderStatus={orderStatus} />
                 </>
               )}
             </div>
