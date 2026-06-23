@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { cn } from '@/lib/utils';
@@ -218,7 +218,7 @@ function aggregateBySku(orders: Order[]): AggregatedSku[] {
 }
 
 // ============ 主组件 ============
-export default function PurchasePage() {
+function PurchasePageContent() {
   // 基础状态
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1526,6 +1526,25 @@ export default function PurchasePage() {
             </div>
           )}
         </div>
+      </div>
+    </AppLayout>
+  );
+}
+
+// ============ Suspense包装组件 ============
+export default function PurchasePage() {
+  return (
+    <Suspense fallback={<PurchasePageLoading />}>
+      <PurchasePageContent />
+    </Suspense>
+  );
+}
+
+function PurchasePageLoading() {
+  return (
+    <AppLayout>
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-[#637089]">加载中...</div>
       </div>
     </AppLayout>
   );
