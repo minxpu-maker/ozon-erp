@@ -45,16 +45,25 @@ export interface PurchaseRecord {
 }
 
 export interface PurchaseDemand {
-  id: number;
+  id: number | null;
   orderId: string;
-  sku: string;
-  productName: string | null;
+  sku: string | null;
+  productName: string;
   productImage: string | null;
   quantity: number;
   priority: string | null;
-  status: string;
+  status: string | null;
   createdAt: string;
-  updatedAt: string;
+  order: {
+    id: string;
+    postingNumber: string | null;
+    status: string;
+    erpStatus: string | null;
+    shipmentDeadline: string | null;
+    shopId: string | null;
+    shopName: string | null;
+    totalPrice: string | null;
+  } | null;
 }
 
 export interface CreatePurchaseRecordData {

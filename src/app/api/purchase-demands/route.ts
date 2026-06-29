@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/storage/database/client';
 import { purchaseDemands } from '@/storage/database/shared/fulfillment';
-import { orders } from '@/storage/database/shared/schema';
+import { orders, shops } from '@/storage/database/shared/schema';
 import { eq, and, desc, isNull, isNotNull, sql } from "drizzle-orm";
 
 export async function GET(request: NextRequest) {
@@ -36,12 +36,19 @@ export async function GET(request: NextRequest) {
         erpStatus: orders.erpStatus,
         shipmentDeadline: orders.shipmentDeadline,
         shopId: orders.shopId,
+        totalPrice: orders.totalPrice,
         createdAt2: orders.createdAt,
+        // 店铺字段
+        shopName: shops.name,
       })
       .from(orders)
       .leftJoin(
         purchaseDemands,
         sql`${purchaseDemands.orderId} = ${orders.id}::uuid`
+      )
+      .leftJoin(
+        shops,
+        eq(orders.shopId, shops.id)
       )
       .where(and(...queryConditions))
       .orderBy(desc(orders.createdAt));
@@ -64,6 +71,8 @@ export async function GET(request: NextRequest) {
         erpStatus: row.erpStatus,
         shipmentDeadline: row.shipmentDeadline,
         shopId: row.shopId,
+        shopName: row.shopName,
+        totalPrice: row.totalPrice,
       } : null,
     }));
 
