@@ -24,11 +24,12 @@ export interface DemandGroup {
 }
 
 export interface TabPendingProps {
-  onCardClick: (group: DemandGroup) => void;
+  onCardClick: (group: DemandGroup, cardIndex: number) => void;
   selectedSku: string | null;
+  onListUpdate?: (groups: DemandGroup[]) => void;
 }
 
-export function TabPending({ onCardClick, selectedSku }: TabPendingProps) {
+export function TabPending({ onCardClick, selectedSku, onListUpdate }: TabPendingProps) {
   const [demands, setDemands] = useState<PurchaseDemand[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -100,6 +101,13 @@ export function TabPending({ onCardClick, selectedSku }: TabPendingProps) {
 
     return Array.from(groups.values());
   }, [demands]);
+
+  // 通知父组件数据更新
+  useEffect(() => {
+    if (onListUpdate && groupedData.length > 0) {
+      onListUpdate(groupedData);
+    }
+  }, [groupedData, onListUpdate]);
 
   // 计算倒计时小时数
   const calcHoursLeft = (deadline: string | null): number => {
@@ -258,7 +266,7 @@ export function TabPending({ onCardClick, selectedSku }: TabPendingProps) {
             productImage={group.productImage}
             orders={group.orders}
             isSelected={selectedSku === group.sku}
-            onClick={() => onCardClick(group)}
+            onClick={() => onCardClick(group, idx)}
           />
         ))}
       </div>

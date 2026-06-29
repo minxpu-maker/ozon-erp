@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { RefreshCw, ShoppingCart, Package, Truck, ClipboardCheck, Layers, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +14,7 @@ import { TabOrdered } from '@/components/purchase/tab-ordered';
 import { TabInTransit } from '@/components/purchase/tab-in-transit';
 import { TabReceived } from '@/components/purchase/tab-received';
 import { TabAll } from '@/components/purchase/tab-all';
+import { usePurchaseToast } from '@/components/purchase/purchase-toast';
 
 import { fetchPurchaseStats } from '@/lib/api/purchase';
 
@@ -35,6 +36,15 @@ export default function PurchasePage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerMode, setDrawerMode] = useState<'create' | 'edit' | 'view'>('create');
   const [selectedRecord, setSelectedRecord] = useState<DemandGroup | null>(null);
+  const [selectedOrders, setSelectedOrders] = useState<string[]>([]); // 批量模式选中的订单
+  const [autoNextEnabled, setAutoNextEnabled] = useState(true); // 自动下一条开关
+  
+  // Toast 系统
+  const { toasts, showToast, removeToast, ToastComponent } = usePurchaseToast();
+  
+  // 待采购列表引用（用于自动下一条）
+  const pendingListRef = useRef<DemandGroup[]>([]);
+  const currentCardIndexRef = useRef<number>(0);
 
   // Stats 数据
   const [stats, setStats] = useState<PurchaseStats | null>(null);
@@ -67,22 +77,77 @@ export default function PurchasePage() {
   };
 
   // 打开 Drawer
-  const openDrawer = (mode: 'create' | 'edit' | 'view', data: DemandGroup | null = null) => {
+  const openDrawer = useCallback((mode: 'create' | 'edit' | 'view', data: DemandGroup | null = null, cardIndex: number = 0) => {
     setDrawerMode(mode);
     setSelectedRecord(data);
     setDrawerOpen(true);
-  };
+    currentCardIndexRef.current = cardIndex;
+    
+    // 默认选中所有订单
+    if (data?.orders) {
+      setSelectedOrders(data.orders.map(o => o.orderId));
+    }
+  }, []);
 
   // 关闭 Drawer
   const closeDrawer = () => {
     setDrawerOpen(false);
     setSelectedRecord(null);
+    setSelectedOrders([]);
   };
 
   // 待采购卡片点击
-  const handlePendingCardClick = (group: DemandGroup) => {
-    openDrawer('create', group);
-  };
+  const handlePendingCardClick = useCallback((group: DemandGroup, cardIndex: number) => {
+    openDrawer('create', group, cardIndex);
+  }, [openDrawer]);
+  
+  // 更新待采购列表引用
+  const handlePendingListUpdate = useCallback((groups: DemandGroup[]) => {
+    pendingListRef.current = groups;
+  }, []);
+
+  // 自动下一条逻辑
+  const goToNextCard = useCallback(() => {
+    const list = pendingListRef.current;
+    const currentIndex = currentCardIndexRef.current;
+    
+    if (currentIndex < list.length - 1) {
+      // 有下一张卡片
+      const nextGroup = list[currentIndex + 1];
+      openDrawer('create', nextGroup, currentIndex + 1);
+      showToast('已跳转到下一张卡片', 'info');
+    } else {
+      // 已是最后一张
+      closeDrawer();
+      showToast('已完成全部待采购', 'success');
+    }
+  }, [openDrawer, showToast]);
+  
+  // 跳过当前卡片
+  const handleSkip = useCallback(() => {
+    showToast('已跳过', 'info', () => {
+      // 撤销：重新打开当前卡片
+      openDrawer('create', selectedRecord, currentCardIndexRef.current);
+    });
+    goToNextCard();
+  }, [goToNextCard, showToast, openDrawer, selectedRecord]);
+  
+  // Drawer 提交回调
+  const handleDrawerSubmit = useCallback((success: boolean) => {
+    if (success) {
+      // 刷新统计数据
+      handleRefresh();
+      
+      // 自动下一条
+      if (autoNextEnabled) {
+        setTimeout(() => {
+          goToNextCard();
+        }, 800);
+      } else {
+        closeDrawer();
+      }
+    }
+  }, [autoNextEnabled, goToNextCard]);
 
   // 当前选中的 SKU（用于卡片选中态）
   const selectedSku = selectedRecord?.sku || null;
@@ -200,6 +265,7 @@ export default function PurchasePage() {
             <TabPending
               onCardClick={handlePendingCardClick}
               selectedSku={selectedSku}
+              onListUpdate={handlePendingListUpdate}
             />
           </TabsContent>
 
@@ -229,7 +295,17 @@ export default function PurchasePage() {
         }}
         mode={drawerMode}
         data={selectedRecord}
+        selectedOrders={selectedOrders}
+        onSelectedOrdersChange={setSelectedOrders}
+        autoNextEnabled={autoNextEnabled}
+        onAutoNextChange={setAutoNextEnabled}
+        onSubmit={handleDrawerSubmit}
+        onSkip={handleSkip}
+        onToast={(message, type) => showToast(message, type)}
       />
+      
+      {/* Toast 组件 */}
+      <ToastComponent />
     </div>
   );
 }

@@ -4,8 +4,8 @@ import { Package, Clock, AlertTriangle, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatRUB } from '@/lib/utils';
 
-// 计算倒计时和紧急度等级
-function calcDeadline(deadline: string | null | undefined): {
+// 计算倒计时和紧急度等级（导出给 drawer 使用）
+export function calcDeadline(deadline: string | null | undefined): {
   text: string;
   level: 'expired' | 'urgent' | 'warning' | 'normal';
   hoursLeft: number;
@@ -38,8 +38,8 @@ function calcDeadline(deadline: string | null | undefined): {
   return { text: `${days}天`, level: 'normal', hoursLeft };
 }
 
-// 紧急度色条样式
-function getUrgencyBarClass(level: 'expired' | 'urgent' | 'warning' | 'normal'): string {
+// 紧急度色条样式（导出给 drawer 使用）
+export function getUrgencyBarClass(level: 'expired' | 'urgent' | 'warning' | 'normal'): string {
   switch (level) {
     case 'expired':
       return 'bg-red-700 shadow-[0_0_12px_rgba(185,28,28,0.6)]';
@@ -54,8 +54,8 @@ function getUrgencyBarClass(level: 'expired' | 'urgent' | 'warning' | 'normal'):
   }
 }
 
-// 倒计时图标和样式
-function getDeadlineDisplay(level: 'expired' | 'urgent' | 'warning' | 'normal'): {
+// 倒计时图标和样式（导出给 drawer 使用）
+export function getDeadlineDisplay(level: 'expired' | 'urgent' | 'warning' | 'normal'): {
   icon: React.ReactNode;
   textClass: string;
 } {
