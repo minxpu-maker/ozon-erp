@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/storage/database/client';
 import { purchaseRecords, ozonOrders } from '@/storage/database/shared/fulfillment';
-import { eq, and, ne, sql, gte, isNull, or } from 'drizzle-orm';
+import { eq, and, isNull, or, gte, sql, sum } from 'drizzle-orm';
 
 /**
  * GET - 采购工作台摘要统计
@@ -9,26 +9,28 @@ import { eq, and, ne, sql, gte, isNull, or } from 'drizzle-orm';
  */
 export async function GET(request: NextRequest) {
   try {
-    // 1. pendingPurchaseCount - 待采购订单数（从 ozon_orders 表）
+    // 1. pendingPurchaseCount - 待采购订单数
+    // 查询 ozon_orders 表中 order_status = 'awaiting_deliver' AND erp_status = 'pending_purchase'
     const pendingPurchaseResult = await db
       .select({ count: sql<number>`count(*)` })
       .from(ozonOrders)
-      .where(eq(ozonOrders.erpStatus, 'pending_purchase'));
+      .where(and(
+        eq(ozonOrders.orderStatus, 'awaiting_deliver'),
+        eq(ozonOrders.erpStatus, 'pending_purchase')
+      ));
     
     const pendingPurchaseCount = Number(pendingPurchaseResult[0]?.count || 0);
 
-    // 2. orderedCount - 已下单采购数（从 purchase_records 表，排除 cancelled）
+    // 2. orderedCount - 已下单采购数（status = 'ordered'）
     const orderedResult = await db
       .select({ count: sql<number>`count(*)` })
       .from(purchaseRecords)
-      .where(and(
-        eq(purchaseRecords.status, 'ordered'),
-        ne(purchaseRecords.status, 'cancelled')
-      ));
+      .where(eq(purchaseRecords.status, 'ordered'));
     
     const orderedCount = Number(orderedResult[0]?.count || 0);
 
     // 3. orderedWithoutTrackingCount - 已下单无快递单号数
+    // status = 'ordered' 且 domestic_tracking_no IS NULL 或 = ''
     const orderedWithoutTrackingResult = await db
       .select({ count: sql<number>`count(*)` })
       .from(purchaseRecords)
@@ -42,51 +44,39 @@ export async function GET(request: NextRequest) {
     
     const orderedWithoutTrackingCount = Number(orderedWithoutTrackingResult[0]?.count || 0);
 
-    // 4. shippedCount - 已发货（国内物流）数
-    const shippedResult = await db
+    // 4. inTransitCount - 运输中数量（status = 'shipped'）
+    const inTransitResult = await db
       .select({ count: sql<number>`count(*)` })
       .from(purchaseRecords)
-      .where(and(
-        eq(purchaseRecords.status, 'shipped'),
-        ne(purchaseRecords.status, 'cancelled')
-      ));
+      .where(eq(purchaseRecords.status, 'shipped'));
     
-    const shippedCount = Number(shippedResult[0]?.count || 0);
+    const inTransitCount = Number(inTransitResult[0]?.count || 0);
 
-    // 5. receivedCount - 已收货数
-    const receivedResult = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(purchaseRecords)
-      .where(and(
-        eq(purchaseRecords.status, 'received'),
-        ne(purchaseRecords.status, 'cancelled')
-      ));
-    
-    const receivedCount = Number(receivedResult[0]?.count || 0);
-
-    // 6. todayPurchasedCount - 今日采购数（created_at >= 今天零点）
+    // 5. todayPurchasedCount & 6. todayPurchasedAmount
+    // 今日零点（服务器时区）
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    const todayPurchasedResult = await db
-      .select({ count: sql<number>`count(*)` })
+    // ordered_at >= 今日零点的计数和金额求和
+    const todayStatsResult = await db
+      .select({
+        count: sql<number>`count(*)`,
+        totalAmount: sql<string>`COALESCE(SUM(total_purchase_cost), 0)`,
+      })
       .from(purchaseRecords)
-      .where(and(
-        gte(purchaseRecords.createdAt, today),
-        ne(purchaseRecords.status, 'cancelled')
-      ));
+      .where(gte(purchaseRecords.orderedAt, today));
     
-    const todayPurchasedCount = Number(todayPurchasedResult[0]?.count || 0);
+    const todayPurchasedCount = Number(todayStatsResult[0]?.count || 0);
+    const todayPurchasedAmount = Number(todayStatsResult[0]?.totalAmount || 0);
 
     return NextResponse.json({
-      success: true,
       data: {
         pendingPurchaseCount,
         orderedCount,
         orderedWithoutTrackingCount,
-        shippedCount,
-        receivedCount,
+        inTransitCount,
         todayPurchasedCount,
+        todayPurchasedAmount,
       },
     });
   } catch (error) {
