@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/storage/database/client';
 import { purchaseRecords, purchaseDemands, ozonOrders } from '@/storage/database/shared/fulfillment';
+import { shops } from '@/storage/database/shared/schema';
 import { eq, and, inArray, sql } from "drizzle-orm";
 
 export async function GET(request: NextRequest) {
@@ -52,29 +53,37 @@ export async function GET(request: NextRequest) {
         demandSku: purchaseDemands.sku,
         demandProductName: purchaseDemands.productName,
         demandQuantity: purchaseDemands.quantity,
-        // 关联的订单信息
-        ozonOrderId: ozonOrders.ozonOrderId,
-        ozonPostingNumber: ozonOrders.ozonPostingNumber,
-        orderStatus: ozonOrders.orderStatus,
-        orderAmount: ozonOrders.orderAmount,
-        shipmentDeadline: ozonOrders.shipmentDeadline,
       })
       .from(purchaseRecords)
       .leftJoin(purchaseDemands, eq(purchaseDemands.id, purchaseRecords.demandId))
-      .leftJoin(ozonOrders, eq(ozonOrders.id, purchaseDemands.orderId))
       .where(whereClause)
       .orderBy(sql`${purchaseRecords.orderedAt} DESC NULLS LAST`)
       .limit(limit)
       .offset(offset);
 
+    // 获取店铺名称（需要单独查询）
+    const shopIds = results.map(r => r.shopId).filter(Boolean);
+    let shopNames: Record<string, string> = {};
+    
+    if (shopIds.length > 0) {
+      const shopResults = await db
+        .select({ id: shops.id, name: shops.name })
+        .from(shops)
+        .where(inArray(shops.id, shopIds as string[]));
+      
+      shopResults.forEach(s => {
+        shopNames[s.id] = s.name;
+      });
+    }
+
     return NextResponse.json({
       success: true,
       data: results.map(r => ({
         ...r,
+        shopName: r.shopId ? shopNames[r.shopId] || null : null,
         purchasePrice: r.purchasePrice ? Number(r.purchasePrice) : null,
         totalPurchaseCost: r.totalPurchaseCost ? Number(r.totalPurchaseCost) : null,
         shippingFee: r.shippingFee ? Number(r.shippingFee) : null,
-        orderAmount: r.orderAmount ? Number(r.orderAmount) : null,
       })),
       offset,
       limit,

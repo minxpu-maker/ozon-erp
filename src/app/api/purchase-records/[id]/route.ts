@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/storage/database/client';
 import { purchaseRecords, purchaseDemands, ozonOrders } from '@/storage/database/shared/fulfillment';
-import { eq } from "drizzle-orm";
+import { eq, and, ne } from "drizzle-orm";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -257,6 +257,114 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     console.error('Error patching purchase record:', error);
     return NextResponse.json(
       { success: false, error: '更新采购记录状态失败' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * DELETE - 撤销采购（软删除）
+ * 撤销后：
+ * 1. purchase_records.status 设为 cancelled
+ * 2. purchase_demands.status 恢复为 pending
+ * 3. ozon_orders.erpStatus 恢复为 pending_purchase
+ * 4. ozon_orders.purchaseStatus 恢复为 none
+ * 5. ozon_orders.purchaseTrackingNumber 清空
+ */
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  try {
+    const { id } = await params;
+    const recordId = parseInt(id, 10);
+    
+    if (isNaN(recordId)) {
+      return NextResponse.json(
+        { success: false, error: '无效的记录ID' },
+        { status: 400 }
+      );
+    }
+
+    // 1. 查找采购记录
+    const record = await db
+      .select({
+        id: purchaseRecords.id,
+        demandId: purchaseRecords.demandId,
+        status: purchaseRecords.status,
+      })
+      .from(purchaseRecords)
+      .where(eq(purchaseRecords.id, recordId))
+      .limit(1);
+
+    if (record.length === 0) {
+      return NextResponse.json(
+        { success: false, error: '采购记录不存在' },
+        { status: 404 }
+      );
+    }
+
+    const { demandId } = record[0];
+
+    // 2. 查找关联的采购需求
+    const demand = await db
+      .select({
+        id: purchaseDemands.id,
+        orderId: purchaseDemands.orderId,
+        status: purchaseDemands.status,
+      })
+      .from(purchaseDemands)
+      .where(eq(purchaseDemands.id, demandId))
+      .limit(1);
+
+    if (demand.length === 0) {
+      return NextResponse.json(
+        { success: false, error: '关联的采购需求不存在' },
+        { status: 404 }
+      );
+    }
+
+    const { orderId } = demand[0];
+
+    // 3. 更新采购记录状态为 cancelled
+    await db
+      .update(purchaseRecords)
+      .set({
+        status: 'cancelled',
+        updatedAt: new Date(),
+      })
+      .where(eq(purchaseRecords.id, recordId));
+
+    // 4. 恢复采购需求状态为 pending
+    await db
+      .update(purchaseDemands)
+      .set({
+        status: 'pending',
+        updatedAt: new Date(),
+      })
+      .where(eq(purchaseDemands.id, demandId));
+
+    // 5. 恢复关联的 Ozon 订单状态
+    // 注意：ozon_orders.id 是 serial 类型，purchase_demands.orderId 是 varchar
+    // 需要类型转换
+    const orderIdNum = Number(orderId);
+    if (!isNaN(orderIdNum)) {
+      await db
+        .update(ozonOrders)
+        .set({
+          erpStatus: 'pending_purchase',
+          purchaseStatus: 'none',
+          purchaseTrackingNumber: null,
+          updatedAt: new Date(),
+        })
+        .where(eq(ozonOrders.id, orderIdNum));
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: '已撤销采购',
+    });
+  } catch (error) {
+    console.error('Error deleting purchase record:', error);
+    return NextResponse.json(
+      { success: false, error: '撤销采购失败' },
       { status: 500 }
     );
   }

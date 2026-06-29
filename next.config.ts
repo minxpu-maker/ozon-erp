@@ -14,6 +14,9 @@ const nextConfig: NextConfig = {
   // 减少日志输出
   poweredByHeader: false,
   
+  // 服务端外部包配置（不再放在 experimental 中）
+  serverExternalPackages: ['pg', 'drizzle-orm', 'node-postgres'],
+  
   // 图片优化
   images: {
     remotePatterns: [
@@ -36,8 +39,6 @@ const nextConfig: NextConfig = {
     optimizeCss: true,
     // 减少编译内存占用
     memoryBasedWorkersCount: true,
-    // 禁用 source map 以减少内存
-    serverExternalPackages: ['pg', 'drizzle-orm', 'node-postgres'],
   },
   
   // 允许的开发环境来源
