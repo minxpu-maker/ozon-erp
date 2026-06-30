@@ -13,6 +13,7 @@ import { TabPending, DemandGroup } from '@/components/purchase/tab-pending';
 import { TabOrdered } from '@/components/purchase/tab-ordered';
 import { OrderedRecord } from '@/components/purchase/ordered-card';
 import { TabInTransit } from '@/components/purchase/tab-in-transit';
+import { InTransitRecord } from '@/components/purchase/in-transit-card';
 import { TabReceived } from '@/components/purchase/tab-received';
 import { TabAll } from '@/components/purchase/tab-all';
 import { usePurchaseToast } from '@/components/purchase/purchase-toast';
@@ -109,6 +110,29 @@ export default function PurchasePage() {
         orderAmount: '0',
         shipmentDeadline: '',
         erpStatus: 'ordered',
+      }],
+    };
+    setDrawerMode('view');
+    setSelectedRecord(group);
+    setDrawerOpen(true);
+  }, []);
+  
+  // 运输中卡片点击（只读 Drawer）
+  const handleInTransitCardClick = useCallback((record: InTransitRecord) => {
+    // 将 InTransitRecord 转换为 DemandGroup 格式（只读模式）
+    const group: DemandGroup = {
+      sku: record.demandSku || '',
+      productName: record.demandProductName || '',
+      productImage: record.demandProductImage || null,
+      orders: [{
+        orderId: record.ozonOrderIds?.[0] ? String(record.ozonOrderIds[0]) : String(record.id),
+        demandId: record.demandId || 0,
+        ozonOrderId: record.ozonPostingNumbers?.[0] || '',
+        shopName: record.shopName || '',
+        quantity: record.purchaseQty || 1,
+        orderAmount: '0',
+        shipmentDeadline: '',
+        erpStatus: 'shipped',
       }],
     };
     setDrawerMode('view');
@@ -296,7 +320,13 @@ export default function PurchasePage() {
           </TabsContent>
 
           <TabsContent value="inTransit" className="mt-4 bg-white rounded-xl border border-gray-200">
-            <TabInTransit />
+            <TabInTransit
+              onCardClick={handleInTransitCardClick}
+              stats={{
+                inTransitCount: stats?.inTransitCount ?? 0,
+              }}
+              onRefresh={handleRefresh}
+            />
           </TabsContent>
 
           <TabsContent value="received" className="mt-4 bg-white rounded-xl border border-gray-200">
