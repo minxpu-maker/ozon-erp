@@ -5,6 +5,7 @@ import { Package, Search, RefreshCw, ClipboardCheck } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { fetchPurchaseRecords, PurchaseRecord } from "@/lib/api/purchase";
 import { ReceivedCard, ReceivedRecord } from "./received-card";
 
@@ -202,5 +203,3 @@ export function TabReceived({ onCardClick, stats, onRefresh }: TabReceivedProps)
     </div>
   );
 }
-
-import { cn } from "@/lib/utils";

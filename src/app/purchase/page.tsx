@@ -15,7 +15,9 @@ import { OrderedRecord } from '@/components/purchase/ordered-card';
 import { TabInTransit } from '@/components/purchase/tab-in-transit';
 import { InTransitRecord } from '@/components/purchase/in-transit-card';
 import { TabReceived } from '@/components/purchase/tab-received';
+import { ReceivedRecord } from '@/components/purchase/received-card';
 import { TabAll } from '@/components/purchase/tab-all';
+import { AllRecord } from '@/components/purchase/all-card';
 import { usePurchaseToast } from '@/components/purchase/purchase-toast';
 
 import { fetchPurchaseStats } from '@/lib/api/purchase';
@@ -140,8 +142,8 @@ export default function PurchasePage() {
     setDrawerOpen(true);
   }, []);
   
-  // 已到货卡片点击（只读 Drawer）- 使用 PurchaseRecord 类型
-  const handleReceivedCardClick = useCallback((record: any) => {
+  // 已到货卡片点击（只读 Drawer）
+  const handleReceivedCardClick = useCallback((record: ReceivedRecord) => {
     const group: DemandGroup = {
       sku: record.demandSku || '',
       productName: record.demandProductName || '',
@@ -162,8 +164,8 @@ export default function PurchasePage() {
     setDrawerOpen(true);
   }, []);
   
-  // 全部卡片点击（只读 Drawer）- 使用 PurchaseRecord 类型
-  const handleAllCardClick = useCallback((record: any) => {
+  // 全部卡片点击（只读 Drawer）
+  const handleAllCardClick = useCallback((record: AllRecord) => {
     const group: DemandGroup = {
       sku: record.demandSku || '',
       productName: record.demandProductName || '',
@@ -185,7 +187,7 @@ export default function PurchasePage() {
   }, []);
   
   // 全部卡片操作回调
-  const handleAllCardAction = useCallback((record: any, action: 'bindTracking' | 'confirmReceived' | 'gotoQc') => {
+  const handleAllCardAction = useCallback((record: AllRecord, action: 'bindTracking' | 'confirmReceived' | 'gotoQc') => {
     if (action === 'gotoQc') {
       showToast('入库验货模块开发中，敬请期待', 'success');
     } else if (action === 'bindTracking' || action === 'confirmReceived') {

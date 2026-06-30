@@ -5,6 +5,7 @@ import { Package, Search, RefreshCw, Layers } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { fetchPurchaseRecords, PurchaseRecord } from "@/lib/api/purchase";
 import { AllCard, AllRecord } from "./all-card";
 
@@ -200,5 +201,3 @@ export function TabAll({ onCardClick, onCardAction, stats, onRefresh }: TabAllPr
     </div>
   );
 }
-
-import { cn } from "@/lib/utils";

@@ -210,9 +210,10 @@ export function AllCard({
   return (
     <div
       className={cn(
-        "relative rounded-xl bg-white border border-gray-100 shadow-sm",
+        "relative rounded-xl bg-white border border-gray-100 shadow-sm cursor-pointer",
         "transition-all duration-200 hover:shadow-md hover:border-gray-200"
       )}
+      onClick={onCardClick}
     >
       {/* 左侧状态色条 */}
       <div
@@ -241,8 +242,7 @@ export function AllCard({
         <div className="flex items-start gap-3">
           {/* 主图 */}
           <div
-            className="w-12 h-12 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0 relative flex items-center justify-center cursor-pointer"
-            onClick={onCardClick}
+            className="w-12 h-12 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0 relative flex items-center justify-center"
           >
             {record.demandProductImage ? (
               <img
