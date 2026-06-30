@@ -20,7 +20,7 @@ import { TabAll } from '@/components/purchase/tab-all';
 import { AllRecord } from '@/components/purchase/all-card';
 import { usePurchaseToast } from '@/components/purchase/purchase-toast';
 
-import { fetchPurchaseStats } from '@/lib/api/purchase';
+import { fetchPurchaseStats, deletePurchaseRecord } from '@/lib/api/purchase';
 
 export default function PurchasePage() {
   // Tab 状态
@@ -248,22 +248,40 @@ export default function PurchasePage() {
     goToNextCard();
   }, [goToNextCard, showToast, openDrawer, selectedRecord]);
   
-  // Drawer 提交回调
-  const handleDrawerSubmit = useCallback((success: boolean) => {
-    if (success) {
+  // Drawer 提交回调（返回采购记录ID列表用于撤销）
+  const handleDrawerSubmit = useCallback((success: boolean, purchaseRecordIds?: number[]) => {
+    if (success && purchaseRecordIds && purchaseRecordIds.length > 0) {
       // 刷新统计数据
       handleRefresh();
       
-      // 自动下一条
+      // 显示撤销Toast
+      const undoKey = `undo_purchase_${Date.now()}`;
+      showToast('已确认采购', 'undo', async () => {
+        // 撤销操作：删除采购记录
+        try {
+          for (const id of purchaseRecordIds) {
+            await deletePurchaseRecord(id);
+          }
+          // 刷新数据
+          handleRefresh();
+          showToast('已撤销，恢复为待采购', 'success');
+        } catch (error) {
+          showToast('撤销失败，请重试', 'error');
+        }
+      });
+      
+      // 自动下一条（延迟800ms让用户看到确认动画）
       if (autoNextEnabled) {
         setTimeout(() => {
           goToNextCard();
         }, 800);
       } else {
-        closeDrawer();
+        setTimeout(() => {
+          closeDrawer();
+        }, 800);
       }
     }
-  }, [autoNextEnabled, goToNextCard]);
+  }, [autoNextEnabled, goToNextCard, handleRefresh, showToast, closeDrawer]);
 
   // 当前选中的 SKU（用于卡片选中态）
   const selectedSku = selectedRecord?.sku || null;

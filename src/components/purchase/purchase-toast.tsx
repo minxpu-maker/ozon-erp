@@ -4,10 +4,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { X, Undo2, CheckCircle, AlertCircle, Info, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+export type ToastType = 'success' | 'error' | 'info' | 'undo';
+
 export interface ToastMessage {
   id: string;
   message: string;
-  type: 'success' | 'error' | 'info';
+  type: ToastType;
   duration?: number; // 毫秒，默认 3000，error 类型默认不自动消失
   onUndo?: () => void;
   onRetry?: () => void; // 新增重试回调
@@ -92,6 +94,8 @@ function ToastItem({ toast, onRemove }: { toast: ToastMessage; onRemove: () => v
         return 'bg-red-500';
       case 'info':
         return 'bg-blue-500';
+      case 'undo':
+        return 'bg-amber-400';
     }
   };
   
@@ -114,6 +118,12 @@ function ToastItem({ toast, onRemove }: { toast: ToastMessage; onRemove: () => v
         return {
           icon: <Info className="w-5 h-5" />,
           iconClass: 'text-blue-500',
+          textClass: 'text-gray-900',
+        };
+      case 'undo':
+        return {
+          icon: <Undo2 className="w-5 h-5" />,
+          iconClass: 'text-amber-500',
           textClass: 'text-gray-900',
         };
     }
@@ -207,7 +217,7 @@ export function usePurchaseToast() {
   
   const addToast = useCallback((
     message: string, 
-    type: 'success' | 'error' | 'info' = 'info',
+    type: ToastType = 'info',
     options?: { duration?: number; onUndo?: () => void; onRetry?: () => void }
   ) => {
     const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -230,7 +240,7 @@ export function usePurchaseToast() {
   
   const showToast = useCallback((
     message: string, 
-    type: 'success' | 'error' | 'info' = 'info',
+    type: ToastType = 'info',
     onUndo?: () => void,
     onRetry?: () => void
   ) => {
