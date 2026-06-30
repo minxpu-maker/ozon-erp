@@ -12,6 +12,7 @@ export interface OrderedRecord {
   shopId: string | null;
   supplierName: string | null;
   supplierSource: string | null;
+  sourceUrl?: string | null;
   purchasePrice: number | null;
   purchaseQty: number | null;
   domesticTrackingNo: string | null;
@@ -338,7 +339,7 @@ export function OrderedCard({
       )}
 
       {/* CSS 动画 */}
-      <style jsx>{`
+      <style>{`
         @keyframes expandHeight {
           from {
             opacity: 0;

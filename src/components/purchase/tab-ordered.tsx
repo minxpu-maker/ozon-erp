@@ -32,18 +32,41 @@ export function TabOrdered({ onCardClick, stats, onRefresh }: TabOrderedProps) {
     text: string;
     type: "success" | "error";
   } | null>(null);
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
 
   useEffect(() => {
     loadData();
   }, []);
 
-  const loadData = async () => {
+  const loadData = async (): Promise<OrderedRecord[]> => {
     try {
       setLoading(true);
       const result = await fetchPurchaseRecords({ status: "ordered" });
-      setData(result as OrderedRecord[]);
+      const records = result as OrderedRecord[];
+      setData(records);
+      
+      // 首次加载时，默认展开最近采购且无快递单号的1张卡片
+      if (isFirstLoad && records.length > 0) {
+        // 按 orderedAt 降序排序，找最近采购的
+        const sortedByTime = [...records].sort((a, b) => {
+          const aTime = a.orderedAt ? new Date(a.orderedAt).getTime() : 0;
+          const bTime = b.orderedAt ? new Date(b.orderedAt).getTime() : 0;
+          return bTime - aTime;
+        });
+        // 找最近采购且无快递单号的
+        const latestWithoutTracking = sortedByTime.find(
+          (r) => !r.domesticTrackingNo || r.domesticTrackingNo.trim() === ""
+        );
+        if (latestWithoutTracking) {
+          setExpandedId(latestWithoutTracking.id);
+        }
+        setIsFirstLoad(false);
+      }
+      
+      return records;
     } catch (error) {
       console.error("Failed to load ordered records:", error);
+      return [];
     } finally {
       setLoading(false);
     }
@@ -59,26 +82,23 @@ export function TabOrdered({ onCardClick, stats, onRefresh }: TabOrderedProps) {
   }, []);
 
   // 绑定成功后：刷新 + 自动展开下一张
-  const handleBindSuccess = useCallback((currentId: number) => {
-    // 先刷新数据
-    loadData().then(() => {
-      onRefresh();
-      
-      // 找到下一张没有快递单号的卡片
-      setTimeout(() => {
-        const nextRecord = data.find(
-          (r) =>
-            r.id !== currentId &&
-            (!r.domesticTrackingNo || r.domesticTrackingNo.trim() === "")
-        );
-        if (nextRecord) {
-          setExpandedId(nextRecord.id);
-        } else {
-          setExpandedId(null);
-        }
-      }, 100);
-    });
-  }, [data, onRefresh]);
+  const handleBindSuccess = useCallback(async (currentId: number) => {
+    // 先刷新数据，获取新数组
+    const newRecords = await loadData();
+    onRefresh();
+    
+    // 用新数组找下一张没有快递单号的卡片
+    const nextRecord = newRecords.find(
+      (r) =>
+        r.id !== currentId &&
+        (!r.domesticTrackingNo || r.domesticTrackingNo.trim() === "")
+    );
+    if (nextRecord) {
+      setExpandedId(nextRecord.id);
+    } else {
+      setExpandedId(null);
+    }
+  }, [onRefresh]);
 
   // Toast 显示
   const handleToast = useCallback(
@@ -91,11 +111,15 @@ export function TabOrdered({ onCardClick, stats, onRefresh }: TabOrderedProps) {
     []
   );
 
-  // 筛选后的数据
+  // 筛选后的数据（搜索支持供应商名和快递单号）
   const filteredData = data.filter((r) => {
-    // 关键词搜索（供应商名模糊匹配）
-    if (searchKeyword && r.supplierName) {
-      if (!r.supplierName.toLowerCase().includes(searchKeyword.toLowerCase())) {
+    // 关键词搜索（供应商名模糊匹配 或 快递单号包含匹配）
+    if (searchKeyword) {
+      const kw = searchKeyword.toLowerCase();
+      const supplierMatch = r.supplierName && r.supplierName.toLowerCase().includes(kw);
+      const trackingMatch = r.domesticTrackingNo && r.domesticTrackingNo.toLowerCase().includes(kw);
+      // 任一命中即保留，或者两者都为null时不保留
+      if (!supplierMatch && !trackingMatch) {
         return false;
       }
     }
@@ -108,10 +132,13 @@ export function TabOrdered({ onCardClick, stats, onRefresh }: TabOrderedProps) {
     return true;
   });
 
-  // 按供应商聚合（可选）
+  // 按供应商+采购链接聚合（相同供应商 + 相同采购链接才合并）
   const aggregatedData = filteredData.reduce<Map<string, OrderedRecord[]>>(
     (acc, record) => {
-      const key = record.supplierName || "未知供应商";
+      // 聚合key：供应商名 + 采购链接
+      const supplierKey = record.supplierName || "未知供应商";
+      const sourceKey = record.sourceUrl || "";
+      const key = `${supplierKey}||${sourceKey}`;
       const existing = acc.get(key);
       if (existing) {
         existing.push(record);
@@ -161,7 +188,7 @@ export function TabOrdered({ onCardClick, stats, onRefresh }: TabOrderedProps) {
           <Input
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
-            placeholder="供应商名称"
+            placeholder="供应商名称 / 快递单号"
             className="pl-10 h-9"
           />
         </div>
@@ -208,7 +235,7 @@ export function TabOrdered({ onCardClick, stats, onRefresh }: TabOrderedProps) {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3 gap-4 p-4">
-          {Array.from(aggregatedData.entries()).map(([supplierName, records]) => {
+          {Array.from(aggregatedData.entries()).map(([compositeKey, records]) => {
             // 如果只有1条，不聚合
             if (records.length === 1) {
               const record = records[0];
@@ -229,13 +256,10 @@ export function TabOrdered({ onCardClick, stats, onRefresh }: TabOrderedProps) {
 
             // 多条聚合：显示第一条的信息，但聚合角标显示数量
             const firstRecord = records[0];
-            const hasAnyTrackingNo = records.some(
-              (r) => r.domesticTrackingNo && r.domesticTrackingNo.trim() !== ""
-            );
 
             return (
               <OrderedCard
-                key={`aggregate-${supplierName}`}
+                key={`aggregate-${compositeKey}`}
                 record={firstRecord}
                 records={records}
                 isExpanded={expandedId === firstRecord.id}

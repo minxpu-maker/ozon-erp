@@ -100,7 +100,8 @@ export default function PurchasePage() {
       productName: record.demandProductName || '',
       productImage: record.demandProductImage || null,
       orders: [{
-        orderId: String(record.id),
+        // 使用 ozonOrderIds 的第一个元素作为 orderId，如果为空则用 record.id 兜底
+        orderId: record.ozonOrderIds?.[0] ? String(record.ozonOrderIds[0]) : String(record.id),
         demandId: record.demandId || 0,
         ozonOrderId: record.ozonPostingNumbers?.[0] || '',
         shopName: record.shopName || '',
