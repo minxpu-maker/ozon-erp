@@ -417,11 +417,21 @@ export function PurchaseDrawer({
           </button>
         </div>
 
-        {/* 内容区域（支持淡出动画，支持滚动） */}
+        {/* 内容区域（桌面端左右两栏，移动端单栏） */}
         <div className={cn(
-          "flex-1 flex flex-col overflow-y-auto transition-opacity duration-[150ms]",
-          contentFading && "opacity-0"
+          "flex-1 flex flex-col overflow-hidden transition-opacity duration-[150ms]",
+          contentFading && "opacity-0",
+          // 桌面端改为左右两栏布局
+          "md:flex-row"
         )}>
+          {/* 左栏：商品信息 + 关联订单（桌面端可滚动，移动端不滚动） */}
+          <div className={cn(
+            "flex flex-col flex-shrink-0",
+            // 移动端高度自适应
+            "h-auto",
+            // 桌面端占一半宽度，可滚动
+            "md:w-1/2 md:h-full md:overflow-y-auto md:border-r md:border-gray-100"
+          )}>
           {/* 商品信息区 */}
           {data && (
             <div className="px-6 py-4 border-b border-gray-100 flex-shrink-0">
@@ -639,9 +649,22 @@ export function PurchaseDrawer({
               )}
             </div>
           )}
+          </div>{/* 左栏结束 */}
 
+          {/* 右栏：录入表单 + 操作按钮（桌面端固定不滚动） */}
+          <div className={cn(
+            "flex flex-col",
+            // 移动端自适应高度
+            "flex-shrink-0",
+            // 桌面端占一半宽度，固定高度不滚动
+            "md:w-1/2 md:h-full md:flex-shrink-0 md:overflow-hidden"
+          )}>
           {/* 录入表单区 */}
-          <div className="px-6 py-5 flex-shrink-0">
+          <div className={cn(
+            "px-6 py-5",
+            // 桌面端可滚动（表单内容较多时）
+            "md:flex-1 md:overflow-y-auto"
+          )}>
             <div className="space-y-5">
               {/* 采购价 */}
               <div>
@@ -739,10 +762,13 @@ export function PurchaseDrawer({
               </div>
             </div>
           </div>
-        </div>
 
-        {/* 操作按钮区 */}
-        <div className="px-6 py-4 border-t border-gray-100 bg-gray-50">
+          {/* 操作按钮区 - 放在右栏内 */}
+          <div className={cn(
+            "px-6 py-4 border-t border-gray-100 bg-gray-50",
+            // 桌面端固定在右栏底部
+            "md:flex-shrink-0"
+          )}>
           <div className="flex items-center justify-between">
             {/* 跳过按钮 */}
             <button
@@ -792,7 +818,9 @@ export function PurchaseDrawer({
             </div>
           </div>
         </div>
-      </SheetContent>
-    </Sheet>
-  );
+        </div>{/* 右栏结束 */}
+      </div>{/* 内容区域结束 */}
+    </SheetContent>
+  </Sheet>
+);
 }
