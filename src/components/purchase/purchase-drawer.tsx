@@ -387,8 +387,8 @@ export function PurchaseDrawer({
         className={cn(
           // 移动端：底部滑出（高度85vh）
           "h-[85vh] rounded-t-2xl p-0 flex flex-col",
-          // 桌面端：底部上滑（高度65vh，宽度100%）
-          "md:h-[65vh]",
+          // 桌面端：底部上滑（高度80vh，宽度100%）
+          "md:h-[80vh]",
           "bg-white"
         )}
       >
@@ -417,14 +417,14 @@ export function PurchaseDrawer({
           </button>
         </div>
 
-        {/* 内容区域（支持淡出动画） */}
+        {/* 内容区域（支持淡出动画，支持滚动） */}
         <div className={cn(
-          "flex-1 flex flex-col overflow-hidden transition-opacity duration-[150ms]",
+          "flex-1 flex flex-col overflow-y-auto transition-opacity duration-[150ms]",
           contentFading && "opacity-0"
         )}>
           {/* 商品信息区 */}
           {data && (
-            <div className="px-6 py-4 border-b border-gray-100">
+            <div className="px-6 py-4 border-b border-gray-100 flex-shrink-0">
               {/* 草稿恢复提示 */}
               {showDraftPrompt && draftData && (
                 <div className="mb-4 px-4 py-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center justify-between">
@@ -513,7 +513,7 @@ export function PurchaseDrawer({
 
           {/* 关联订单区 */}
           {data && data.orders.length > 0 && (
-            <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
+            <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex-shrink-0">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="text-sm font-medium text-gray-700 flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4 text-amber-500" />
@@ -641,7 +641,7 @@ export function PurchaseDrawer({
           )}
 
           {/* 录入表单区 */}
-          <div className="flex-1 px-6 py-5 overflow-auto">
+          <div className="px-6 py-5 flex-shrink-0">
             <div className="space-y-5">
               {/* 采购价 */}
               <div>
