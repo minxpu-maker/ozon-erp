@@ -20,9 +20,10 @@ interface TabOrderedProps {
   onCardClick: (record: OrderedRecord) => void;
   stats: { orderedCount: number; orderedWithoutTrackingCount: number } | null;
   onRefresh: () => void;
+  searchInputRef?: React.RefObject<HTMLInputElement | null>;
 }
 
-export function TabOrdered({ onCardClick, stats, onRefresh }: TabOrderedProps) {
+export function TabOrdered({ onCardClick, stats, onRefresh, searchInputRef }: TabOrderedProps) {
   const [data, setData] = useState<OrderedRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<number | null>(null);
@@ -186,6 +187,7 @@ export function TabOrdered({ onCardClick, stats, onRefresh }: TabOrderedProps) {
         <div className="relative flex-1 max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
+            ref={searchInputRef}
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
             placeholder="供应商名称 / 快递单号"

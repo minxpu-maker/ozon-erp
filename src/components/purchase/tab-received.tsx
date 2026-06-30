@@ -5,6 +5,7 @@ import { Package, Search, RefreshCw, ClipboardCheck } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { fetchPurchaseRecords, PurchaseRecord } from "@/lib/api/purchase";
 import { ReceivedCard, ReceivedRecord } from "./received-card";
@@ -13,6 +14,7 @@ interface TabReceivedProps {
   onCardClick: (record: ReceivedRecord) => void;
   stats: { receivedCount: number } | null;
   onRefresh: () => void;
+  searchInputRef?: React.RefObject<HTMLInputElement | null>;
 }
 
 // 扩展 PurchaseRecord 为 ReceivedRecord
@@ -25,7 +27,7 @@ function convertToReceivedRecord(record: PurchaseRecord): ReceivedRecord {
 
 export type { ReceivedRecord };
 
-export function TabReceived({ onCardClick, stats, onRefresh }: TabReceivedProps) {
+export function TabReceived({ onCardClick, stats, onRefresh, searchInputRef }: TabReceivedProps) {
   const [data, setData] = useState<ReceivedRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchKeyword, setSearchKeyword] = useState("");
@@ -152,6 +154,7 @@ export function TabReceived({ onCardClick, stats, onRefresh }: TabReceivedProps)
         <div className="relative flex-1 max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
+            ref={searchInputRef}
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
             placeholder="供应商名称 / 快递单号"
@@ -160,15 +163,19 @@ export function TabReceived({ onCardClick, stats, onRefresh }: TabReceivedProps)
         </div>
 
         {/* 快速筛选 */}
-        <select
+        <Select
           value={quickFilter}
-          onChange={(e) => setQuickFilter(e.target.value as "all" | "thisWeek" | "thisMonth")}
-          className="h-9 px-3 rounded-lg border border-gray-200 text-sm bg-white"
+          onValueChange={(value) => setQuickFilter(value as "all" | "thisWeek" | "thisMonth")}
         >
-          <option value="all">全部</option>
-          <option value="thisWeek">本周</option>
-          <option value="thisMonth">本月</option>
-        </select>
+          <SelectTrigger className="h-9 w-[120px] rounded-lg border border-gray-200 text-sm bg-white">
+            <SelectValue placeholder="筛选" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">全部</SelectItem>
+            <SelectItem value="thisWeek">本周</SelectItem>
+            <SelectItem value="thisMonth">本月</SelectItem>
+          </SelectContent>
+        </Select>
 
         {/* 刷新按钮 */}
         <Button

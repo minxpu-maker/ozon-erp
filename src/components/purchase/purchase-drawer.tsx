@@ -2,13 +2,21 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
-import { X, Package, ExternalLink, Loader2, ChevronDown, ChevronUp, Check, AlertTriangle } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { X, Package, ExternalLink, Loader2, ChevronDown, ChevronUp, Check, AlertTriangle, Info } from 'lucide-react';
 import { cn, formatCNY } from '@/lib/utils';
 import { formatRUB } from '@/lib/utils';
 import { PendingOrder, calcDeadline, getUrgencyBarClass, getDeadlineDisplay } from './pending-card';
 import { DemandGroup } from './tab-pending';
 import { createPurchaseRecord, fetchLastPrice } from '@/lib/api/purchase';
 
+// ERP 状态文字映射
+const erpStatusText: Record<string, string> = {
+  'pending_purchase': '待采购',
+  'ordered': '已下单',
+  'shipped': '运输中',
+  'received': '已到货',
+};
 
 // 表单错误类型
 interface FormErrors {
@@ -208,10 +216,16 @@ export function PurchaseDrawer({
       <SheetContent
         side="right"
         className={cn(
-          "w-[720px] max-w-[720px] rounded-l-2xl p-0 flex flex-col",
+          // 移动端：底部滑出
+          "fixed bottom-0 top-auto left-0 right-0 w-full h-[85vh] rounded-t-2xl p-0 flex flex-col",
+          // 桌面端：右侧滑出
+          "md:top-0 md:bottom-0 md:left-auto md:right-0 md:w-[720px] md:max-w-[720px] md:rounded-l-2xl md:rounded-t-none md:h-full",
           "bg-white"
         )}
       >
+        {/* 移动端顶部拖动条 */}
+        <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mt-2 md:hidden" />
+        
         {/* 头部 */}
         <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -351,9 +365,34 @@ export function PurchaseDrawer({
                     {/* 订单信息 */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-blue-500 font-medium">
-                          {order.ozonOrderId}
-                        </span>
+                        {/* 订单号 Tooltip */}
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="text-sm text-blue-500 font-medium cursor-help underline underline-offset-2 decoration-dotted">
+                                {order.ozonOrderId}
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent 
+                              side="right" 
+                              className="rounded-lg bg-white border border-gray-100 shadow-lg p-3 text-xs max-w-[240px]"
+                            >
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2">
+                                  <Info className="w-3.5 h-3.5 text-blue-500" />
+                                  <span className="font-medium text-gray-900">订单详情</span>
+                                </div>
+                                <div className="space-y-1.5 text-gray-600">
+                                  <div><span className="text-gray-400">Ozon订单号：</span>{order.ozonOrderId}</div>
+                                  <div><span className="text-gray-400">店铺名：</span>{order.shopName}</div>
+                                  <div><span className="text-gray-400">数量：</span>×{order.quantity}</div>
+                                  <div><span className="text-gray-400">发货截止：</span>{order.shipmentDeadline ? new Date(order.shipmentDeadline).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '未设置'}</div>
+                                  <div><span className="text-gray-400">当前状态：</span>{erpStatusText[order.erpStatus] || order.erpStatus}</div>
+                                </div>
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                         <span className="text-xs text-gray-400">•</span>
                         <span className="text-xs text-gray-500">{order.shopName}</span>
                       </div>

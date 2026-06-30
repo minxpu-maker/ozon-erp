@@ -21,9 +21,10 @@ interface TabInTransitProps {
   onCardClick: (record: InTransitRecord) => void;
   stats: { inTransitCount: number } | null;
   onRefresh: () => void;
+  searchInputRef?: React.RefObject<HTMLInputElement | null>;
 }
 
-export function TabInTransit({ onCardClick, stats, onRefresh }: TabInTransitProps) {
+export function TabInTransit({ onCardClick, stats, onRefresh, searchInputRef }: TabInTransitProps) {
   const [data, setData] = useState<InTransitRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchKeyword, setSearchKeyword] = useState("");
@@ -152,6 +153,7 @@ export function TabInTransit({ onCardClick, stats, onRefresh }: TabInTransitProp
         <div className="relative flex-1 max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
+            ref={searchInputRef}
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
             placeholder="供应商名称 / 快递单号"

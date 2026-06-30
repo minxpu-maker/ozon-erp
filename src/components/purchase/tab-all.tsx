@@ -5,6 +5,7 @@ import { Package, Search, RefreshCw, Layers } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { fetchPurchaseRecords, PurchaseRecord } from "@/lib/api/purchase";
 import { AllCard, AllRecord } from "./all-card";
@@ -14,6 +15,7 @@ interface TabAllProps {
   onCardAction: (record: AllRecord, action: "bindTracking" | "confirmReceived" | "gotoQc") => void;
   stats: { orderedCount: number; inTransitCount: number; receivedCount: number } | null;
   onRefresh: () => void;
+  searchInputRef?: React.RefObject<HTMLInputElement | null>;
 }
 
 // 转换为 AllRecord
@@ -23,7 +25,7 @@ function convertToAllRecord(record: PurchaseRecord): AllRecord {
 
 export type { AllRecord };
 
-export function TabAll({ onCardClick, onCardAction, stats, onRefresh }: TabAllProps) {
+export function TabAll({ onCardClick, onCardAction, stats, onRefresh, searchInputRef }: TabAllProps) {
   const [data, setData] = useState<AllRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchKeyword, setSearchKeyword] = useState("");
@@ -145,6 +147,7 @@ export function TabAll({ onCardClick, onCardAction, stats, onRefresh }: TabAllPr
         <div className="relative flex-1 max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
+            ref={searchInputRef}
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
             placeholder="供应商名称 / 快递单号"
@@ -153,16 +156,20 @@ export function TabAll({ onCardClick, onCardAction, stats, onRefresh }: TabAllPr
         </div>
 
         {/* 状态筛选 */}
-        <select
+        <Select
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as "all" | "ordered" | "shipped" | "received")}
-          className="h-9 px-3 rounded-lg border border-gray-200 text-sm bg-white"
+          onValueChange={(value) => setStatusFilter(value as "all" | "ordered" | "shipped" | "received")}
         >
-          <option value="all">全部状态 ({totalCount})</option>
-          <option value="ordered">已下单 ({stats?.orderedCount ?? 0})</option>
-          <option value="shipped">运输中 ({stats?.inTransitCount ?? 0})</option>
-          <option value="received">已到货 ({stats?.receivedCount ?? 0})</option>
-        </select>
+          <SelectTrigger className="h-9 w-[140px] rounded-lg border border-gray-200 text-sm bg-white">
+            <SelectValue placeholder="筛选" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">全部状态 ({totalCount})</SelectItem>
+            <SelectItem value="ordered">已下单 ({stats?.orderedCount ?? 0})</SelectItem>
+            <SelectItem value="shipped">运输中 ({stats?.inTransitCount ?? 0})</SelectItem>
+            <SelectItem value="received">已到货 ({stats?.receivedCount ?? 0})</SelectItem>
+          </SelectContent>
+        </Select>
 
         {/* 刷新按钮 */}
         <Button

@@ -27,9 +27,10 @@ export interface TabPendingProps {
   onCardClick: (group: DemandGroup, cardIndex: number) => void;
   selectedSku: string | null;
   onListUpdate?: (groups: DemandGroup[]) => void;
+  searchInputRef?: React.RefObject<HTMLInputElement | null>;
 }
 
-export function TabPending({ onCardClick, selectedSku, onListUpdate }: TabPendingProps) {
+export function TabPending({ onCardClick, selectedSku, onListUpdate, searchInputRef }: TabPendingProps) {
   const [demands, setDemands] = useState<PurchaseDemand[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -201,6 +202,7 @@ export function TabPending({ onCardClick, selectedSku, onListUpdate }: TabPendin
           <div className="relative flex-1 max-w-[200px]">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
+              ref={searchInputRef}
               placeholder="搜索 SKU / 商品名"
               value={searchKeyword}
               onChange={(e) => setSearchKeyword(e.target.value)}

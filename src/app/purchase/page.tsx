@@ -39,6 +39,9 @@ export default function PurchasePage() {
   // 待采购列表引用（用于自动下一条）
   const pendingListRef = useRef<DemandGroup[]>([]);
   const currentCardIndexRef = useRef<number>(0);
+  
+  // 搜索框引用（用于快捷键聚焦）
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Stats 数据
   const [stats, setStats] = useState<PurchaseStats | null>(null);
@@ -59,6 +62,24 @@ export default function PurchasePage() {
     };
     loadStats();
   }, []);
+
+  // 快捷键支持：/ 键聚焦搜索框
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // 检查是否在输入框中
+      const activeElement = document.activeElement;
+      const isInputFocused = activeElement?.tagName === 'INPUT' || activeElement?.tagName === 'TEXTAREA';
+      
+      // / 键聚焦搜索框（不在输入框中时）
+      if (e.key === '/' && !isInputFocused && !drawerOpen) {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [drawerOpen]);
 
   // 刷新 stats
   const handleRefresh = async () => {
@@ -379,6 +400,7 @@ export default function PurchasePage() {
               onCardClick={handlePendingCardClick}
               selectedSku={selectedSku}
               onListUpdate={handlePendingListUpdate}
+              searchInputRef={activeTab === 'pending' ? searchInputRef : undefined}
             />
           </TabsContent>
 
@@ -390,6 +412,7 @@ export default function PurchasePage() {
                 orderedWithoutTrackingCount: stats?.orderedWithoutTrackingCount ?? 0,
               }}
               onRefresh={handleRefresh}
+              searchInputRef={activeTab === 'ordered' ? searchInputRef : undefined}
             />
           </TabsContent>
 
@@ -400,6 +423,7 @@ export default function PurchasePage() {
                 inTransitCount: stats?.inTransitCount ?? 0,
               }}
               onRefresh={handleRefresh}
+              searchInputRef={activeTab === 'inTransit' ? searchInputRef : undefined}
             />
           </TabsContent>
 
@@ -410,6 +434,7 @@ export default function PurchasePage() {
                 receivedCount: stats?.receivedCount ?? 0,
               }}
               onRefresh={handleRefresh}
+              searchInputRef={activeTab === 'received' ? searchInputRef : undefined}
             />
           </TabsContent>
 
@@ -423,6 +448,7 @@ export default function PurchasePage() {
                 receivedCount: stats?.receivedCount ?? 0,
               }}
               onRefresh={handleRefresh}
+              searchInputRef={activeTab === 'all' ? searchInputRef : undefined}
             />
           </TabsContent>
         </Tabs>

@@ -332,7 +332,38 @@ body {
   transform: scale(0.8);
 }
 
-/* Toast通知滑入/滑出动画 */
+/* Toast通知滑入/滑出动画 - V2.8：从上滑入 */
+@keyframes toastSlideIn {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes toastSlideOut {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+}
+
+.animate-toast-in {
+  animation: toastSlideIn 200ms ease-out forwards;
+}
+
+.animate-toast-out {
+  animation: toastSlideOut 200ms ease-out forwards;
+}
+
+/* 旧动画保留兼容 */
 @keyframes slideInRight {
   from {
     transform: translateX(100%);
