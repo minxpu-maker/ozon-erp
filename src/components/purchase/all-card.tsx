@@ -68,7 +68,7 @@ export function AllCard({
   const statusConfig = {
     ordered: {
       barColor: "bg-blue-500",
-      barShadow: "shadow-[0_0_8px_rgba(59,130,246,0.5)]",
+      barShadow: "shadow-[0_0_8px_rgba(59,130,246,0.6)]",
       badgeBg: "bg-blue-100",
       badgeText: "text-blue-700",
       badgeBorder: "border-blue-200",
@@ -76,7 +76,7 @@ export function AllCard({
     },
     shipped: {
       barColor: "bg-purple-500",
-      barShadow: "shadow-[0_0_8px_rgba(168,85,247,0.5)]",
+      barShadow: "shadow-[0_0_8px_rgba(168,85,247,0.6)]",
       badgeBg: "bg-purple-100",
       badgeText: "text-purple-700",
       badgeBorder: "border-purple-200",
@@ -84,7 +84,7 @@ export function AllCard({
     },
     received: {
       barColor: "bg-teal-500",
-      barShadow: "shadow-[0_0_8px_rgba(20,184,166,0.5)]",
+      barShadow: "shadow-[0_0_8px_rgba(20,184,166,0.6)]",
       badgeBg: "bg-teal-100",
       badgeText: "text-teal-700",
       badgeBorder: "border-teal-200",
@@ -211,7 +211,7 @@ export function AllCard({
     <div
       className={cn(
         "relative rounded-xl bg-white border border-gray-100 shadow-sm cursor-pointer",
-        "transition-all duration-200 hover:shadow-md hover:border-gray-200"
+        "transition-all duration-200 hover:shadow-md hover:border-gray-200 hover:-translate-y-0.5"
       )}
       onClick={onCardClick}
     >

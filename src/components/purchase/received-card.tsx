@@ -37,14 +37,14 @@ export function ReceivedCard({ record, onCardClick, onToast }: ReceivedCardProps
     <div
       className={cn(
         "relative rounded-xl bg-white border border-gray-100 shadow-sm",
-        "transition-all duration-200 hover:shadow-md hover:border-gray-200",
+        "transition-all duration-200 hover:shadow-md hover:border-gray-200 hover:-translate-y-0.5",
         "cursor-pointer"
       )}
       onClick={onCardClick}
     >
       {/* 左侧青色状态色条 */}
       <div
-        className="absolute left-0 top-0 bottom-0 w-1 bg-teal-500 rounded-l-xl shadow-[0_0_8px_rgba(20,184,166,0.5)]"
+        className="absolute left-0 top-0 bottom-0 w-1 bg-teal-500 rounded-l-xl shadow-[0_0_8px_rgba(20,184,166,0.6)]"
       />
 
       {/* 卡片内容 */}

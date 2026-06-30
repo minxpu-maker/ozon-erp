@@ -611,3 +611,12 @@ body {
     transition: none !important;
   }
 }
+
+/* ========================================
+   GPU加速声明 - 采购工作台
+   ======================================== */
+.drawer-panel,
+.toast-enter {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+}

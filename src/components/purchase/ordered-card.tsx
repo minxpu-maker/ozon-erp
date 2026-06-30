@@ -147,7 +147,7 @@ export function OrderedCard({
     <div
       className={cn(
         "relative rounded-xl bg-white border border-gray-100 shadow-sm transition-all duration-200",
-        isExpanded ? "ring-2 ring-blue-400 border-blue-200" : "hover:shadow-md hover:border-gray-200"
+        isExpanded ? "ring-2 ring-blue-400 border-blue-200" : "hover:shadow-md hover:border-gray-200 hover:-translate-y-0.5"
       )}
     >
       {/* 左侧蓝色色条 */}

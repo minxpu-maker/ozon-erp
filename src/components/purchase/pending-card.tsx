@@ -46,7 +46,7 @@ export function getUrgencyBarClass(level: 'expired' | 'urgent' | 'warning' | 'no
     case 'urgent':
       return 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]';
     case 'warning':
-      return 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.4)]';
+      return 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.6)]';
     case 'normal':
       return 'bg-emerald-400';
     default:

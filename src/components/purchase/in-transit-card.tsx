@@ -149,7 +149,7 @@ export function InTransitCard({
     <div
       className={cn(
         "relative rounded-xl bg-white border border-gray-100 shadow-sm transition-all duration-200",
-        "hover:shadow-md hover:border-gray-200",
+        "hover:shadow-md hover:border-gray-200 hover:-translate-y-0.5",
         isSubmitting && "opacity-50"
       )}
     >

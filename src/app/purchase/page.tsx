@@ -19,6 +19,7 @@ import { ReceivedRecord } from '@/components/purchase/received-card';
 import { TabAll } from '@/components/purchase/tab-all';
 import { AllRecord } from '@/components/purchase/all-card';
 import { usePurchaseToast } from '@/components/purchase/purchase-toast';
+import { CountUp } from '@/components/purchase/count-up';
 
 import { fetchPurchaseStats, deletePurchaseRecord } from '@/lib/api/purchase';
 
@@ -80,6 +81,15 @@ export default function PurchasePage() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [drawerOpen]);
+
+  // Tab 切换时清空搜索
+  const handleTabChange = (newTab: string) => {
+    setActiveTab(newTab);
+    // 清空搜索输入框
+    if (searchInputRef.current) {
+      searchInputRef.current.value = '';
+    }
+  };
 
   // 刷新 stats
   const handleRefresh = async () => {
@@ -324,12 +334,12 @@ export default function PurchasePage() {
 
       {/* Tab 栏 + 内容区 */}
       <div className="px-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="bg-white border border-gray-200 rounded-lg p-1 h-auto">
             {/* 待采购 */}
             <TabsTrigger
               value="pending"
-              className="data-[state=active]:bg-blue-500 data-[state=active]:text-white px-4 py-2 rounded-md flex items-center gap-1.5"
+              className="data-[state=active]:bg-blue-500 data-[state=active]:text-white px-4 py-2 rounded-md flex items-center gap-1.5 relative transition-transform duration-150 data-[state=active]:scale-[1.03] data-[state=active]:after:absolute data-[state=active]:after:top-0 data-[state=active]:after:left-[12.5%] data-[state=active]:after:h-[2px] data-[state=active]:after:w-3/4 data-[state=active]:after:bg-gradient-to-r data-[state=active]:after:from-transparent data-[state=active]:after:via-current data-[state=active]:after:to-transparent data-[state=active]:after:opacity-50 data-[state=active]:after:rounded-full"
             >
               <ShoppingCart className="w-4 h-4" />
               待采购
@@ -338,15 +348,18 @@ export default function PurchasePage() {
                   variant="secondary"
                   className="ml-1 bg-amber-100 text-amber-700 border-amber-200 px-1.5 py-0.5 text-xs font-bold"
                 >
-                  {pendingBadge}
+                  <CountUp end={pendingBadge} duration={600} />
                 </Badge>
               )}
             </TabsTrigger>
 
+            {/* 数据源分隔符：待采购（需求端）| 已下单（供应端） */}
+            <div className="w-px h-4 bg-slate-200 self-center mx-1.5" />
+
             {/* 已下单 */}
             <TabsTrigger
               value="ordered"
-              className="data-[state=active]:bg-blue-500 data-[state=active]:text-white px-4 py-2 rounded-md flex items-center gap-1.5"
+              className="data-[state=active]:bg-blue-500 data-[state=active]:text-white px-4 py-2 rounded-md flex items-center gap-1.5 relative transition-transform duration-150 data-[state=active]:scale-[1.03] data-[state=active]:after:absolute data-[state=active]:after:top-0 data-[state=active]:after:left-[12.5%] data-[state=active]:after:h-[2px] data-[state=active]:after:w-3/4 data-[state=active]:after:bg-gradient-to-r data-[state=active]:after:from-transparent data-[state=active]:after:via-current data-[state=active]:after:to-transparent data-[state=active]:after:opacity-50 data-[state=active]:after:rounded-full"
             >
               <Package className="w-4 h-4" />
               已下单
@@ -355,7 +368,7 @@ export default function PurchasePage() {
                   variant="secondary"
                   className="ml-1 bg-blue-100 text-blue-700 border-blue-200 px-1.5 py-0.5 text-xs font-bold"
                 >
-                  {orderedBadge}
+                  <CountUp end={orderedBadge} duration={600} />
                 </Badge>
               )}
             </TabsTrigger>
@@ -363,7 +376,7 @@ export default function PurchasePage() {
             {/* 运输中 */}
             <TabsTrigger
               value="inTransit"
-              className="data-[state=active]:bg-blue-500 data-[state=active]:text-white px-4 py-2 rounded-md flex items-center gap-1.5"
+              className="data-[state=active]:bg-blue-500 data-[state=active]:text-white px-4 py-2 rounded-md flex items-center gap-1.5 relative transition-transform duration-150 data-[state=active]:scale-[1.03] data-[state=active]:after:absolute data-[state=active]:after:top-0 data-[state=active]:after:left-[12.5%] data-[state=active]:after:h-[2px] data-[state=active]:after:w-3/4 data-[state=active]:after:bg-gradient-to-r data-[state=active]:after:from-transparent data-[state=active]:after:via-current data-[state=active]:after:to-transparent data-[state=active]:after:opacity-50 data-[state=active]:after:rounded-full"
             >
               <Truck className="w-4 h-4" />
               运输中
@@ -372,7 +385,7 @@ export default function PurchasePage() {
                   variant="secondary"
                   className="ml-1 bg-purple-100 text-purple-700 border-purple-200 px-1.5 py-0.5 text-xs font-bold"
                 >
-                  {inTransitBadge}
+                  <CountUp end={inTransitBadge} duration={600} />
                 </Badge>
               )}
             </TabsTrigger>
@@ -380,7 +393,7 @@ export default function PurchasePage() {
             {/* 已到货 */}
             <TabsTrigger
               value="received"
-              className="data-[state=active]:bg-blue-500 data-[state=active]:text-white px-4 py-2 rounded-md flex items-center gap-1.5"
+              className="data-[state=active]:bg-blue-500 data-[state=active]:text-white px-4 py-2 rounded-md flex items-center gap-1.5 relative transition-transform duration-150 data-[state=active]:scale-[1.03] data-[state=active]:after:absolute data-[state=active]:after:top-0 data-[state=active]:after:left-[12.5%] data-[state=active]:after:h-[2px] data-[state=active]:after:w-3/4 data-[state=active]:after:bg-gradient-to-r data-[state=active]:after:from-transparent data-[state=active]:after:via-current data-[state=active]:after:to-transparent data-[state=active]:after:opacity-50 data-[state=active]:after:rounded-full"
             >
               <ClipboardCheck className="w-4 h-4" />
               已到货
@@ -389,7 +402,7 @@ export default function PurchasePage() {
                   variant="secondary"
                   className="ml-1 bg-teal-100 text-teal-700 border-teal-200 px-1.5 py-0.5 text-xs font-bold"
                 >
-                  {receivedBadge}
+                  <CountUp end={receivedBadge} duration={600} />
                 </Badge>
               )}
             </TabsTrigger>
@@ -397,7 +410,7 @@ export default function PurchasePage() {
             {/* 全部 */}
             <TabsTrigger
               value="all"
-              className="data-[state=active]:bg-blue-500 data-[state=active]:text-white px-4 py-2 rounded-md flex items-center gap-1.5"
+              className="data-[state=active]:bg-blue-500 data-[state=active]:text-white px-4 py-2 rounded-md flex items-center gap-1.5 relative transition-transform duration-150 data-[state=active]:scale-[1.03] data-[state=active]:after:absolute data-[state=active]:after:top-0 data-[state=active]:after:left-[12.5%] data-[state=active]:after:h-[2px] data-[state=active]:after:w-3/4 data-[state=active]:after:bg-gradient-to-r data-[state=active]:after:from-transparent data-[state=active]:after:via-current data-[state=active]:after:to-transparent data-[state=active]:after:opacity-50 data-[state=active]:after:rounded-full"
             >
               <Layers className="w-4 h-4" />
               全部
@@ -406,14 +419,14 @@ export default function PurchasePage() {
                   variant="secondary"
                   className="ml-1 bg-slate-100 text-slate-700 border-slate-200 px-1.5 py-0.5 text-xs font-bold"
                 >
-                  {allBadge}
+                  <CountUp end={allBadge} duration={600} />
                 </Badge>
               )}
             </TabsTrigger>
           </TabsList>
 
           {/* Tab 内容 */}
-          <TabsContent value="pending" className="mt-4 bg-white rounded-xl border border-gray-200">
+          <TabsContent value="pending" className="mt-4 bg-slate-50 rounded-xl border border-gray-200 p-4">
             <TabPending
               onCardClick={handlePendingCardClick}
               selectedSku={selectedSku}
@@ -422,7 +435,7 @@ export default function PurchasePage() {
             />
           </TabsContent>
 
-          <TabsContent value="ordered" className="mt-4 bg-white rounded-xl border border-gray-200">
+          <TabsContent value="ordered" className="mt-4 bg-slate-50 rounded-xl border border-gray-200 p-4">
             <TabOrdered
               onCardClick={handleOrderedCardClick}
               stats={{
@@ -434,7 +447,7 @@ export default function PurchasePage() {
             />
           </TabsContent>
 
-          <TabsContent value="inTransit" className="mt-4 bg-white rounded-xl border border-gray-200">
+          <TabsContent value="inTransit" className="mt-4 bg-slate-50 rounded-xl border border-gray-200 p-4">
             <TabInTransit
               onCardClick={handleInTransitCardClick}
               stats={{
@@ -445,7 +458,7 @@ export default function PurchasePage() {
             />
           </TabsContent>
 
-          <TabsContent value="received" className="mt-4 bg-white rounded-xl border border-gray-200">
+          <TabsContent value="received" className="mt-4 bg-slate-50 rounded-xl border border-gray-200 p-4">
             <TabReceived
               onCardClick={handleReceivedCardClick}
               stats={{
@@ -456,7 +469,7 @@ export default function PurchasePage() {
             />
           </TabsContent>
 
-          <TabsContent value="all" className="mt-4 bg-white rounded-xl border border-gray-200">
+          <TabsContent value="all" className="mt-4 bg-slate-50 rounded-xl border border-gray-200 p-4">
             <TabAll
               onCardClick={handleAllCardClick}
               onCardAction={handleAllCardAction}
