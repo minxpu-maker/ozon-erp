@@ -182,7 +182,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     const body = await request.json();
-    const { domesticStatus, status, exceptionType } = body;
+    const { domesticStatus, status, exceptionType, domesticTrackingNo, domesticCarrier } = body;
 
     // 检查记录是否存在
     const existing = await db
@@ -222,8 +222,27 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       );
     }
 
+    // 验证快递单号
+    if (domesticTrackingNo !== undefined && domesticTrackingNo === '') {
+      return NextResponse.json(
+        { success: false, error: '快递单号不能为空字符串' },
+        { status: 400 }
+      );
+    }
+
     // 构建更新对象
     const updates: Record<string, unknown> = { updatedAt: new Date() };
+    
+    // 处理快递单号录入 - 自动状态变更
+    if (domesticTrackingNo !== undefined && domesticTrackingNo) {
+      updates.domesticTrackingNo = domesticTrackingNo;
+      if (domesticCarrier !== undefined) {
+        updates.domesticCarrier = domesticCarrier;
+      }
+      // 有快递单号时自动将状态设为 shipped
+      updates.status = 'shipped';
+      updates.domesticStatus = 'shipped';
+    }
     
     if (domesticStatus) {
       updates.domesticStatus = domesticStatus;

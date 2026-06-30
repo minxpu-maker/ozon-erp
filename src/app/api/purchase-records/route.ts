@@ -52,7 +52,10 @@ export async function GET(request: NextRequest) {
         // 关联的需求信息
         demandSku: purchaseDemands.sku,
         demandProductName: purchaseDemands.productName,
+        demandProductImage: purchaseDemands.productImage,
         demandQuantity: purchaseDemands.quantity,
+        // ozonOrderIds (jsonb字段)
+        ozonOrderIds: purchaseRecords.ozonOrderIds,
       })
       .from(purchaseRecords)
       .leftJoin(purchaseDemands, eq(purchaseDemands.id, purchaseRecords.demandId))
@@ -76,15 +79,41 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // 获取 Ozon 订单号（批量查询 ozon_orders）
+    const allOzonOrderIds = results
+      .flatMap(r => r.ozonOrderIds as number[] || [])
+      .filter(Boolean);
+    let ozonPostingNumbers: Record<number, string | null> = {};
+    
+    if (allOzonOrderIds.length > 0) {
+      const ozonResults = await db
+        .select({ id: ozonOrders.id, ozonPostingNumber: ozonOrders.ozonPostingNumber })
+        .from(ozonOrders)
+        .where(inArray(ozonOrders.id, allOzonOrderIds));
+      
+      ozonResults.forEach(o => {
+        ozonPostingNumbers[o.id] = o.ozonPostingNumber;
+      });
+    }
+
     return NextResponse.json({
       success: true,
-      data: results.map(r => ({
-        ...r,
-        shopName: r.shopId ? shopNames[r.shopId] || null : null,
-        purchasePrice: r.purchasePrice ? Number(r.purchasePrice) : null,
-        totalPurchaseCost: r.totalPurchaseCost ? Number(r.totalPurchaseCost) : null,
-        shippingFee: r.shippingFee ? Number(r.shippingFee) : null,
-      })),
+      data: results.map(r => {
+        // 根据 ozonOrderIds 获取对应的 posting numbers
+        const ozonIds = (r.ozonOrderIds as number[] || []);
+        const postingNumbers = ozonIds
+          .map(id => ozonPostingNumbers[id])
+          .filter(Boolean);
+        
+        return {
+          ...r,
+          shopName: r.shopId ? shopNames[r.shopId] || null : null,
+          purchasePrice: r.purchasePrice ? Number(r.purchasePrice) : null,
+          totalPurchaseCost: r.totalPurchaseCost ? Number(r.totalPurchaseCost) : null,
+          shippingFee: r.shippingFee ? Number(r.shippingFee) : null,
+          ozonPostingNumbers: postingNumbers.length > 0 ? postingNumbers : null,
+        };
+      }),
       offset,
       limit,
     });
@@ -173,11 +202,8 @@ export async function POST(request: NextRequest) {
 
     const shopId = order.length > 0 ? order[0].shopId : null;
 
-    // 如果有快递号，获取对应的Ozon订单ID（存数字数组）
-    let ozonOrderIds: number[] = [];
-    if (domesticTrackingNo) {
-      ozonOrderIds = [Number(demand[0].orderId)];
-    }
+    // 获取对应的Ozon订单ID（存数字数组）- 无论是否有快递号都要写入
+    const ozonOrderIds: number[] = [Number(demand[0].orderId)];
 
     // 创建采购记录
     const insertData: Record<string, unknown> = {
@@ -191,7 +217,7 @@ export async function POST(request: NextRequest) {
     
     // 可选字段
     if (shopId) insertData.shopId = shopId;
-    if (ozonOrderIds.length > 0) insertData.ozonOrderIds = ozonOrderIds;
+    insertData.ozonOrderIds = ozonOrderIds; // 始终写入，用于关联Ozon订单
     if (supplierName) insertData.supplierName = supplierName;
     if (sourceUrl) insertData.sourceUrl = sourceUrl;
     if (purchaseQty) insertData.purchaseQty = purchaseQty;

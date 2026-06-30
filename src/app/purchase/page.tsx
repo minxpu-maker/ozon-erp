@@ -11,6 +11,7 @@ import { PurchaseSummary, PurchaseStats } from '@/components/purchase/purchase-s
 import { PurchaseDrawer } from '@/components/purchase/purchase-drawer';
 import { TabPending, DemandGroup } from '@/components/purchase/tab-pending';
 import { TabOrdered } from '@/components/purchase/tab-ordered';
+import { OrderedRecord } from '@/components/purchase/ordered-card';
 import { TabInTransit } from '@/components/purchase/tab-in-transit';
 import { TabReceived } from '@/components/purchase/tab-received';
 import { TabAll } from '@/components/purchase/tab-all';
@@ -90,6 +91,29 @@ export default function PurchasePage() {
   const handlePendingCardClick = useCallback((group: DemandGroup, cardIndex: number) => {
     openDrawer('create', group, cardIndex);
   }, [openDrawer]);
+  
+  // 已下单卡片点击（只读 Drawer）
+  const handleOrderedCardClick = useCallback((record: OrderedRecord) => {
+    // 将 OrderedRecord 转换为 DemandGroup 格式（只读模式）
+    const group: DemandGroup = {
+      sku: record.demandSku || '',
+      productName: record.demandProductName || '',
+      productImage: record.demandProductImage || null,
+      orders: [{
+        orderId: String(record.id),
+        demandId: record.demandId || 0,
+        ozonOrderId: record.ozonPostingNumbers?.[0] || '',
+        shopName: record.shopName || '',
+        quantity: record.purchaseQty || 1,
+        orderAmount: '0',
+        shipmentDeadline: '',
+        erpStatus: 'ordered',
+      }],
+    };
+    setDrawerMode('view');
+    setSelectedRecord(group);
+    setDrawerOpen(true);
+  }, []);
   
   // 更新待采购列表引用
   const handlePendingListUpdate = useCallback((groups: DemandGroup[]) => {
@@ -260,7 +284,14 @@ export default function PurchasePage() {
           </TabsContent>
 
           <TabsContent value="ordered" className="mt-4 bg-white rounded-xl border border-gray-200">
-            <TabOrdered />
+            <TabOrdered
+              onCardClick={handleOrderedCardClick}
+              stats={{
+                orderedCount: stats?.orderedCount ?? 0,
+                orderedWithoutTrackingCount: stats?.orderedWithoutTrackingCount ?? 0,
+              }}
+              onRefresh={handleRefresh}
+            />
           </TabsContent>
 
           <TabsContent value="inTransit" className="mt-4 bg-white rounded-xl border border-gray-200">

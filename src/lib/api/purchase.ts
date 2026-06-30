@@ -42,6 +42,9 @@ export interface PurchaseRecord {
   demandSku?: string | null;
   demandProductName?: string | null;
   demandQuantity?: number | null;
+  demandProductImage?: string | null;  // 需求商品图
+  ozonOrderIds?: number[];             // 关联的Ozon订单ID数组
+  ozonPostingNumbers?: string[] | null; // Ozon订单号数组
 }
 
 export interface PurchaseDemand {
@@ -233,4 +236,22 @@ export async function fetchLastPrice(sku: string): Promise<{
   }
   const json = await response.json();
   return json.data;
+}
+
+/**
+ * 绑定快递单号（内联录入）
+ */
+export async function bindTrackingNumber(
+  id: number,
+  data: { domesticTrackingNo: string; domesticCarrier?: string }
+): Promise<void> {
+  const response = await fetch(`${API_BASE}/purchase-records/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "绑定快递单号失败");
+  }
 }
