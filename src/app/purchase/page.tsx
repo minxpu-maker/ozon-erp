@@ -184,6 +184,16 @@ export default function PurchasePage() {
     setDrawerOpen(true);
   }, []);
   
+  // 全部卡片操作回调
+  const handleAllCardAction = useCallback((record: any, action: 'bindTracking' | 'confirmReceived' | 'gotoQc') => {
+    if (action === 'gotoQc') {
+      showToast('入库验货模块开发中，敬请期待', 'success');
+    } else if (action === 'bindTracking' || action === 'confirmReceived') {
+      // 这些操作在 AllCard 内部完成，这里只需要刷新数据
+      handleRefresh();
+    }
+  }, [showToast, handleRefresh]);
+  
   // 更新待采购列表引用
   const handlePendingListUpdate = useCallback((groups: DemandGroup[]) => {
     pendingListRef.current = groups;
@@ -239,6 +249,8 @@ export default function PurchasePage() {
   const pendingBadge = stats?.pendingPurchaseCount ?? 0;
   const orderedBadge = stats?.orderedCount ?? 0;
   const inTransitBadge = stats?.inTransitCount ?? 0;
+  const receivedBadge = stats?.receivedCount ?? 0;
+  const allBadge = (stats?.orderedCount ?? 0) + (stats?.inTransitCount ?? 0) + (stats?.receivedCount ?? 0);
 
   return (
     <div className="min-h-screen bg-[#F6F8FB]">
@@ -331,6 +343,14 @@ export default function PurchasePage() {
             >
               <ClipboardCheck className="w-4 h-4" />
               已到货
+              {receivedBadge > 0 && (
+                <Badge
+                  variant="secondary"
+                  className="ml-1 bg-teal-100 text-teal-700 border-teal-200 px-1.5 py-0.5 text-xs font-bold"
+                >
+                  {receivedBadge}
+                </Badge>
+              )}
             </TabsTrigger>
 
             {/* 全部 */}
@@ -340,6 +360,14 @@ export default function PurchasePage() {
             >
               <Layers className="w-4 h-4" />
               全部
+              {allBadge > 0 && (
+                <Badge
+                  variant="secondary"
+                  className="ml-1 bg-slate-100 text-slate-700 border-slate-200 px-1.5 py-0.5 text-xs font-bold"
+                >
+                  {allBadge}
+                </Badge>
+              )}
             </TabsTrigger>
           </TabsList>
 
@@ -386,6 +414,7 @@ export default function PurchasePage() {
           <TabsContent value="all" className="mt-4 bg-white rounded-xl border border-gray-200">
             <TabAll
               onCardClick={handleAllCardClick}
+              onCardAction={handleAllCardAction}
               stats={{
                 orderedCount: stats?.orderedCount ?? 0,
                 inTransitCount: stats?.inTransitCount ?? 0,
