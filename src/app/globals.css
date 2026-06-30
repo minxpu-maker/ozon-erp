@@ -132,7 +132,9 @@
 
   /* z-index层级 */
   --z-sticky: 20;
+  --z-drawer: 30;
   --z-toast: 40;
+  --z-overlay: 45;
   --z-modal: 50;
 }
 

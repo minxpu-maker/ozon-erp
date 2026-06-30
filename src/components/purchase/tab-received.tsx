@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Package, Search, RefreshCw, ClipboardCheck } from "lucide-react";
+import { Package, Search, RefreshCw, ClipboardCheck, AlertCircle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,7 @@ export type { ReceivedRecord };
 export function TabReceived({ onCardClick, stats, onRefresh, searchInputRef }: TabReceivedProps) {
   const [data, setData] = useState<ReceivedRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchKeyword, setSearchKeyword] = useState("");
   const [quickFilter, setQuickFilter] = useState<"all" | "thisWeek" | "thisMonth">("all");
   const [toast, setToast] = useState<{ message: string; type: "success" | "error"; visible: boolean }>({
@@ -58,6 +59,7 @@ export function TabReceived({ onCardClick, stats, onRefresh, searchInputRef }: T
       return records;
     } catch (error) {
       console.error("Failed to load received records:", error);
+      setError("数据加载失败");
       return [];
     } finally {
       setLoading(false);
@@ -122,6 +124,25 @@ export function TabReceived({ onCardClick, stats, onRefresh, searchInputRef }: T
             <Skeleton className="h-4 w-3/4" />
           </div>
         ))}
+      </div>
+    );
+  }
+
+  // 错误态
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[300px] p-4">
+        <AlertCircle className="w-12 h-12 text-red-300 mx-auto mb-3" />
+        <p className="text-gray-500 text-sm mb-3">数据加载失败</p>
+        <button
+          onClick={() => {
+            setError(null);
+            loadData();
+          }}
+          className="px-4 py-1.5 bg-red-50 text-red-500 hover:bg-red-100 rounded-lg text-sm font-medium transition-colors"
+        >
+          重试
+        </button>
       </div>
     );
   }

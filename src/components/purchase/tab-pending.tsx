@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Search, Filter, Package, AlertCircle } from 'lucide-react';
+import { Search, Filter, Package, ShoppingCart, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -223,7 +223,9 @@ export function TabPending({ onCardClick, selectedSku, onListUpdate, searchInput
 
         {/* 空状态 */}
         <div className="flex flex-col items-center justify-center h-[300px] text-gray-400">
-          <Package className="w-12 h-12 mb-4 text-gray-300" />
+          <div className="bg-emerald-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+            <ShoppingCart className="w-8 h-8 text-emerald-300" />
+          </div>
           <p className="text-sm">
             {searchKeyword || timeFilter !== 'all'
               ? '未找到匹配的待采购订单'

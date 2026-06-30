@@ -20,12 +20,15 @@ import { TabAll } from '@/components/purchase/tab-all';
 import { AllRecord } from '@/components/purchase/all-card';
 import { usePurchaseToast } from '@/components/purchase/purchase-toast';
 import { CountUp } from '@/components/purchase/count-up';
+import { cn } from '@/lib/utils';
 
 import { fetchPurchaseStats, deletePurchaseRecord } from '@/lib/api/purchase';
 
 export default function PurchasePage() {
   // Tab 状态
   const [activeTab, setActiveTab] = useState('pending');
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [prevTab, setPrevTab] = useState('pending');
 
   // Drawer 状态
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -82,13 +85,27 @@ export default function PurchasePage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [drawerOpen]);
 
-  // Tab 切换时清空搜索
+  // Tab 切换时清空搜索 + 过渡动画
   const handleTabChange = (newTab: string) => {
-    setActiveTab(newTab);
+    if (newTab === activeTab) return; // 切换前后Tab相同，跳过动画
+    
     // 清空搜索输入框
     if (searchInputRef.current) {
       searchInputRef.current.value = '';
     }
+    
+    // 开始过渡动画
+    setPrevTab(activeTab);
+    setIsTransitioning(true);
+    
+    // 150ms后切换Tab（淡出完成）
+    setTimeout(() => {
+      setActiveTab(newTab);
+      // 200ms后结束过渡（淡入完成）
+      setTimeout(() => {
+        setIsTransitioning(false);
+      }, 200);
+    }, 150);
   };
 
   // 刷新 stats
@@ -425,63 +442,84 @@ export default function PurchasePage() {
             </TabsTrigger>
           </TabsList>
 
-          {/* Tab 内容 */}
-          <TabsContent value="pending" className="mt-4 bg-slate-50 rounded-xl border border-gray-200 p-4">
-            <TabPending
-              onCardClick={handlePendingCardClick}
-              selectedSku={selectedSku}
-              onListUpdate={handlePendingListUpdate}
-              searchInputRef={activeTab === 'pending' ? searchInputRef : undefined}
-            />
-          </TabsContent>
+          {/* Tab 内容区 - 过渡动画包裹层 */}
+          <div className={cn(
+            "relative transition-opacity duration-200",
+            isTransitioning ? "opacity-0" : "opacity-100"
+          )}>
+            {/* 过渡时显示骨架屏 */}
+            {isTransitioning && (
+              <div className="absolute inset-0 bg-slate-50 rounded-xl border border-gray-200 p-4 flex items-center justify-center z-10">
+                <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3 gap-4 w-full">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="bg-white rounded-xl p-4 shadow-sm">
+                      <Skeleton className="h-4 w-1/2 mb-2" />
+                      <Skeleton className="h-12 w-full mb-2" />
+                      <Skeleton className="h-4 w-3/4" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
-          <TabsContent value="ordered" className="mt-4 bg-slate-50 rounded-xl border border-gray-200 p-4">
-            <TabOrdered
-              onCardClick={handleOrderedCardClick}
-              stats={{
-                orderedCount: stats?.orderedCount ?? 0,
-                orderedWithoutTrackingCount: stats?.orderedWithoutTrackingCount ?? 0,
-              }}
-              onRefresh={handleRefresh}
-              searchInputRef={activeTab === 'ordered' ? searchInputRef : undefined}
-            />
-          </TabsContent>
+            {/* Tab 内容 */}
+            <TabsContent value="pending" className="mt-4 bg-slate-50 rounded-xl border border-gray-200 p-4">
+              <TabPending
+                onCardClick={handlePendingCardClick}
+                selectedSku={selectedSku}
+                onListUpdate={handlePendingListUpdate}
+                searchInputRef={activeTab === 'pending' ? searchInputRef : undefined}
+              />
+            </TabsContent>
 
-          <TabsContent value="inTransit" className="mt-4 bg-slate-50 rounded-xl border border-gray-200 p-4">
-            <TabInTransit
-              onCardClick={handleInTransitCardClick}
-              stats={{
-                inTransitCount: stats?.inTransitCount ?? 0,
-              }}
-              onRefresh={handleRefresh}
-              searchInputRef={activeTab === 'inTransit' ? searchInputRef : undefined}
-            />
-          </TabsContent>
+            <TabsContent value="ordered" className="mt-4 bg-slate-50 rounded-xl border border-gray-200 p-4">
+              <TabOrdered
+                onCardClick={handleOrderedCardClick}
+                stats={{
+                  orderedCount: stats?.orderedCount ?? 0,
+                  orderedWithoutTrackingCount: stats?.orderedWithoutTrackingCount ?? 0,
+                }}
+                onRefresh={handleRefresh}
+                searchInputRef={activeTab === 'ordered' ? searchInputRef : undefined}
+              />
+            </TabsContent>
 
-          <TabsContent value="received" className="mt-4 bg-slate-50 rounded-xl border border-gray-200 p-4">
-            <TabReceived
-              onCardClick={handleReceivedCardClick}
-              stats={{
-                receivedCount: stats?.receivedCount ?? 0,
-              }}
-              onRefresh={handleRefresh}
-              searchInputRef={activeTab === 'received' ? searchInputRef : undefined}
-            />
-          </TabsContent>
+            <TabsContent value="inTransit" className="mt-4 bg-slate-50 rounded-xl border border-gray-200 p-4">
+              <TabInTransit
+                onCardClick={handleInTransitCardClick}
+                stats={{
+                  inTransitCount: stats?.inTransitCount ?? 0,
+                }}
+                onRefresh={handleRefresh}
+                searchInputRef={activeTab === 'inTransit' ? searchInputRef : undefined}
+              />
+            </TabsContent>
 
-          <TabsContent value="all" className="mt-4 bg-slate-50 rounded-xl border border-gray-200 p-4">
-            <TabAll
-              onCardClick={handleAllCardClick}
-              onCardAction={handleAllCardAction}
-              stats={{
-                orderedCount: stats?.orderedCount ?? 0,
-                inTransitCount: stats?.inTransitCount ?? 0,
-                receivedCount: stats?.receivedCount ?? 0,
-              }}
-              onRefresh={handleRefresh}
-              searchInputRef={activeTab === 'all' ? searchInputRef : undefined}
-            />
-          </TabsContent>
+            <TabsContent value="received" className="mt-4 bg-slate-50 rounded-xl border border-gray-200 p-4">
+              <TabReceived
+                onCardClick={handleReceivedCardClick}
+                stats={{
+                  receivedCount: stats?.receivedCount ?? 0,
+                }}
+                onRefresh={handleRefresh}
+                searchInputRef={activeTab === 'received' ? searchInputRef : undefined}
+              />
+            </TabsContent>
+
+            <TabsContent value="all" className="mt-4 bg-slate-50 rounded-xl border border-gray-200 p-4">
+              <TabAll
+                onCardClick={handleAllCardClick}
+                onCardAction={handleAllCardAction}
+                stats={{
+                  orderedCount: stats?.orderedCount ?? 0,
+                  inTransitCount: stats?.inTransitCount ?? 0,
+                  receivedCount: stats?.receivedCount ?? 0,
+                }}
+                onRefresh={handleRefresh}
+                searchInputRef={activeTab === 'all' ? searchInputRef : undefined}
+              />
+            </TabsContent>
+          </div>
         </Tabs>
       </div>
 

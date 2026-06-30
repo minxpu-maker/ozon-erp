@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Package, Search, RefreshCw, Filter, AlertTriangle } from "lucide-react";
+import { Package, Truck, Search, RefreshCw, Filter, AlertTriangle, AlertCircle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ interface TabInTransitProps {
 export function TabInTransit({ onCardClick, stats, onRefresh, searchInputRef }: TabInTransitProps) {
   const [data, setData] = useState<InTransitRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchKeyword, setSearchKeyword] = useState("");
   const [filterType, setFilterType] = useState<"all" | "warning">("all");
   const [toastMessage, setToastMessage] = useState<{
@@ -47,6 +48,7 @@ export function TabInTransit({ onCardClick, stats, onRefresh, searchInputRef }: 
       return records;
     } catch (error) {
       console.error("Failed to load in-transit records:", error);
+      setError("数据加载失败");
       return [];
     } finally {
       setLoading(false);
@@ -113,6 +115,25 @@ export function TabInTransit({ onCardClick, stats, onRefresh, searchInputRef }: 
             <Skeleton className="h-4 w-3/4" />
           </div>
         ))}
+      </div>
+    );
+  }
+
+  // 错误态
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[300px] p-4">
+        <AlertCircle className="w-12 h-12 text-red-300 mx-auto mb-3" />
+        <p className="text-gray-500 text-sm mb-3">数据加载失败</p>
+        <button
+          onClick={() => {
+            setError(null);
+            loadData();
+          }}
+          className="px-4 py-1.5 bg-red-50 text-red-500 hover:bg-red-100 rounded-lg text-sm font-medium transition-colors"
+        >
+          重试
+        </button>
       </div>
     );
   }
@@ -195,7 +216,9 @@ export function TabInTransit({ onCardClick, stats, onRefresh, searchInputRef }: 
       {/* 数据列表 */}
       {filteredData.length === 0 ? (
         <div className="text-center py-16">
-          <Package className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+          <div className="bg-purple-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Truck className="w-8 h-8 text-purple-300" />
+          </div>
           <p className="text-gray-500">暂无运输中记录</p>
           {filterType === "warning" && (
             <p className="text-sm text-gray-400 mt-2">无超时预警记录</p>

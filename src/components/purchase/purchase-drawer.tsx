@@ -389,6 +389,9 @@ export function PurchaseDrawer({
           "fixed bottom-0 top-auto left-0 right-0 w-full h-[85vh] rounded-t-2xl p-0 flex flex-col",
           // 桌面端：右侧滑出
           "md:top-0 md:bottom-0 md:left-auto md:right-0 md:w-[720px] md:max-w-[720px] md:rounded-l-2xl md:rounded-t-none md:h-full",
+          // 桌面端：蓝色渐变边框 + 左侧阴影
+          "md:border-l-2 md:border-l-blue-400/50",
+          "md:shadow-[-8px_0_24px_rgba(59,130,246,0.15)]",
           "bg-white"
         )}
       >

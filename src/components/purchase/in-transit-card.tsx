@@ -154,7 +154,7 @@ export function InTransitCard({
       )}
     >
       {/* 左侧紫色色条 */}
-      <div className="absolute left-0 top-0 bottom-0 w-1 bg-purple-500 rounded-l-xl" />
+      <div className="absolute left-0 top-0 bottom-0 w-1 bg-purple-500 rounded-l-xl shadow-[0_0_8px_rgba(168,85,247,0.6)]" />
 
       {/* 卡片内容区 */}
       <div className="pl-4 pr-4 pt-4 pb-2 cursor-pointer" onClick={handleCardClick}>
