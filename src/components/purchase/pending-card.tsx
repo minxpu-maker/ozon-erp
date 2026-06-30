@@ -89,6 +89,7 @@ export function getDeadlineDisplay(level: 'expired' | 'urgent' | 'warning' | 'no
 }
 
 export interface PendingOrder {
+  demandId: number; // 采购需求ID（用于创建采购记录）
   orderId: string;
   ozonOrderId: string; // postingNumber
   shopName: string;

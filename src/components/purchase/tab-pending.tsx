@@ -70,6 +70,7 @@ export function TabPending({ onCardClick, selectedSku, onListUpdate }: TabPendin
       if (existingGroup) {
         // 添加到已有组
         existingGroup.orders.push({
+          demandId: d.id!, // 采购需求ID（用于创建采购记录）
           orderId: d.orderId,
           ozonOrderId: d.order.postingNumber || d.order.id,
           shopName: d.order.shopName || '未知店铺',
@@ -86,6 +87,7 @@ export function TabPending({ onCardClick, selectedSku, onListUpdate }: TabPendin
           productImage: d.productImage,
           orders: [
             {
+              demandId: d.id!, // 采购需求ID（用于创建采购记录）
               orderId: d.orderId,
               ozonOrderId: d.order.postingNumber || d.order.id,
               shopName: d.order.shopName || '未知店铺',
@@ -120,13 +122,13 @@ export function TabPending({ onCardClick, selectedSku, onListUpdate }: TabPendin
   const filteredAndSorted = useMemo(() => {
     let result = groupedData;
 
-    // 关键词搜索
+    // 关键词搜索：SKU精确匹配，商品名模糊匹配
     if (searchKeyword) {
       const kw = searchKeyword.toLowerCase();
       result = result.filter(
         (g) =>
-          (g.sku && g.sku.toLowerCase().includes(kw)) ||
-          g.productName.toLowerCase().includes(kw)
+          (g.sku && g.sku.toLowerCase() === kw) || // SKU精确匹配
+          g.productName.toLowerCase().includes(kw) // 商品名模糊匹配
       );
     }
 

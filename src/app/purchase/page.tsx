@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 
-import { PurchaseSummary } from '@/components/purchase/purchase-summary';
+import { PurchaseSummary, PurchaseStats } from '@/components/purchase/purchase-summary';
 import { PurchaseDrawer } from '@/components/purchase/purchase-drawer';
 import { TabPending, DemandGroup } from '@/components/purchase/tab-pending';
 import { TabOrdered } from '@/components/purchase/tab-ordered';
@@ -17,16 +17,6 @@ import { TabAll } from '@/components/purchase/tab-all';
 import { usePurchaseToast } from '@/components/purchase/purchase-toast';
 
 import { fetchPurchaseStats } from '@/lib/api/purchase';
-
-// Stats 数据类型
-interface PurchaseStats {
-  pendingPurchaseCount: number;
-  orderedCount: number;
-  orderedWithoutTrackingCount: number;
-  inTransitCount: number;
-  todayPurchasedCount: number;
-  todayPurchasedAmount: number;
-}
 
 export default function PurchasePage() {
   // Tab 状态
@@ -182,7 +172,7 @@ export default function PurchasePage() {
             ))}
           </div>
         ) : (
-          <PurchaseSummary />
+          <PurchaseSummary stats={stats} loading={statsLoading} />
         )}
       </div>
 

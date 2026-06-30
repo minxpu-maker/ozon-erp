@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { ShoppingCart, Package, Truck, ClipboardCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { fetchPurchaseStats } from "@/lib/api/purchase";
+import { Skeleton } from "@/components/ui/skeleton";
 
-interface PurchaseStats {
+export interface PurchaseStats {
   pendingPurchaseCount: number;
   orderedCount: number;
   orderedWithoutTrackingCount: number;
@@ -15,29 +14,12 @@ interface PurchaseStats {
 }
 
 interface PurchaseSummaryProps {
+  stats: PurchaseStats | null;
+  loading?: boolean;
   className?: string;
 }
 
-export function PurchaseSummary({ className }: PurchaseSummaryProps) {
-  const [stats, setStats] = useState<PurchaseStats | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    loadStats();
-  }, []);
-
-  const loadStats = async () => {
-    try {
-      setLoading(true);
-      const data = await fetchPurchaseStats();
-      setStats(data);
-    } catch (error) {
-      console.error("Failed to load purchase stats:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+export function PurchaseSummary({ stats, loading = false, className }: PurchaseSummaryProps) {
   const cards = [
     {
       label: "待采购",
@@ -77,27 +59,48 @@ export function PurchaseSummary({ className }: PurchaseSummaryProps) {
 
   return (
     <div className={cn("grid grid-cols-4 gap-4", className)}>
-      {cards.map((card) => (
-        <div
-          key={card.label}
-          className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow"
-        >
-          <div className="flex items-center gap-3">
-            <div className={cn("p-2.5 rounded-lg", card.iconBg)}>
-              <card.icon className={cn("w-5 h-5", card.color)} />
+      {cards.map((card) => {
+        const Icon = card.icon;
+        
+        if (loading) {
+          return (
+            <div
+              key={card.label}
+              className="bg-white rounded-xl p-4 shadow-sm border border-gray-100"
+            >
+              <div className="flex items-center gap-3">
+                <Skeleton className="w-10 h-10 rounded-lg" />
+                <div className="flex-1">
+                  <Skeleton className="h-4 w-16 mb-2" />
+                  <Skeleton className="h-6 w-12" />
+                </div>
+              </div>
             </div>
-            <div className="flex-1">
-              <p className="text-sm text-gray-500">{card.label}</p>
-              <p className={cn("text-2xl font-bold", card.color)}>
-                {loading ? "..." : card.value}
-              </p>
-              {card.subLabel && (
-                <p className="text-xs text-gray-400 mt-0.5">{card.subLabel}</p>
-              )}
+          );
+        }
+        
+        return (
+          <div
+            key={card.label}
+            className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
+          >
+            <div className="flex items-center gap-3">
+              <div className={cn("p-2.5 rounded-lg", card.iconBg)}>
+                <Icon className={cn("w-5 h-5", card.color)} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-gray-500 font-medium">{card.label}</p>
+                <p className={cn("text-xl font-bold", card.color)}>
+                  {card.value}
+                </p>
+                {card.subLabel && (
+                  <p className="text-xs text-gray-400 mt-0.5">{card.subLabel}</p>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

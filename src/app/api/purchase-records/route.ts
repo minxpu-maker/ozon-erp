@@ -173,10 +173,10 @@ export async function POST(request: NextRequest) {
 
     const shopId = order.length > 0 ? order[0].shopId : null;
 
-    // 如果有快递号，获取对应的Ozon订单ID
-    let ozonOrderIds: string[] = [];
+    // 如果有快递号，获取对应的Ozon订单ID（存数字数组）
+    let ozonOrderIds: number[] = [];
     if (domesticTrackingNo) {
-      ozonOrderIds = [demand[0].orderId.toString()];
+      ozonOrderIds = [Number(demand[0].orderId)];
     }
 
     // 创建采购记录

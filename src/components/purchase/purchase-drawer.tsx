@@ -6,20 +6,14 @@ import { X, Package, ExternalLink, Loader2, ChevronDown, ChevronUp, Check, Alert
 import { cn, formatCNY } from '@/lib/utils';
 import { formatRUB } from '@/lib/utils';
 import { PendingOrder, calcDeadline, getUrgencyBarClass, getDeadlineDisplay } from './pending-card';
+import { DemandGroup } from './tab-pending';
 import { createPurchaseRecord, fetchLastPrice } from '@/lib/api/purchase';
-import { identifyCarrier, getCarrierColor } from '@/lib/utils/express-carrier';
+
 
 // 表单错误类型
 interface FormErrors {
   purchasePrice?: string;
   supplierName?: string;
-}
-
-export interface DemandGroup {
-  sku: string | null;
-  productName: string;
-  productImage: string | null;
-  orders: PendingOrder[];
 }
 
 interface PurchaseDrawerProps {
@@ -51,12 +45,9 @@ export function PurchaseDrawer({
 }: PurchaseDrawerProps) {
   // 表单状态
   const [purchasePrice, setPurchasePrice] = useState<string>('');
-  const [supplierSource, setSupplierSource] = useState<'1688' | 'pdd' | 'taobao' | 'manual'>('1688');
+  const [supplierSource, setSupplierSource] = useState<'1688' | 'pdd' | 'manual'>('1688');
   const [supplierName, setSupplierName] = useState<string>('');
   const [sourceUrl, setSourceUrl] = useState<string>('');
-  const [trackingNo, setTrackingNo] = useState<string>('');
-  const [remark, setRemark] = useState<string>('');
-  const [shippingFee, setShippingFee] = useState<string>('');
   
   // UI状态
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -64,10 +55,6 @@ export function PurchaseDrawer({
   const [lastPrice, setLastPrice] = useState<{ purchasePrice: number | null; supplierName: string | null; orderedAt: string | null } | null>(null);
   const [lastPriceLoading, setLastPriceLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
-  
-  // 识别的快递公司
-  const detectedCarrier = trackingNo ? identifyCarrier(trackingNo) : null;
-  const carrierColor = detectedCarrier ? getCarrierColor(detectedCarrier) : '#6B7280';
   
   // 加载上次采购价
   useEffect(() => {
@@ -96,9 +83,6 @@ export function PurchaseDrawer({
       setSupplierSource('1688');
       setSupplierName('');
       setSourceUrl('');
-      setTrackingNo('');
-      setRemark('');
-      setShippingFee('');
       setErrors({});
       setShowAllOrders(false);
     }
@@ -141,15 +125,12 @@ export function PurchaseDrawer({
       // 批量创建采购记录
       for (const order of ordersToProcess) {
         await createPurchaseRecord({
-          demandId: parseInt(order.orderId.split('-')[0] || '0'), // 需要从API获取真实的demandId
+          demandId: order.demandId, // 使用订单中的 demandId
           supplierSource,
           purchasePrice: parseFloat(purchasePrice),
           supplierName: supplierName.trim(),
           sourceUrl: sourceUrl.trim(),
-          domesticTrackingNo: trackingNo.trim(),
-          shippingFee: parseFloat(shippingFee) || 0,
           purchaseQty: order.quantity,
-          remark: remark.trim(),
         });
       }
       
@@ -465,7 +446,6 @@ export function PurchaseDrawer({
               >
                 <option value="1688">1688</option>
                 <option value="pdd">拼多多</option>
-                <option value="taobao">淘宝</option>
                 <option value="manual">线下采购</option>
               </select>
             </div>
@@ -520,64 +500,7 @@ export function PurchaseDrawer({
               </div>
             </div>
             
-            {/* 快递单号 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                快递单号
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={trackingNo}
-                  onChange={(e) => setTrackingNo(e.target.value)}
-                  placeholder="粘贴快递单号自动识别快递公司"
-                  className="w-full px-4 py-2.5 pr-24 rounded-lg border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-colors"
-                />
-                {detectedCarrier && (
-                  <span 
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs px-2 py-1 rounded-full font-medium"
-                    style={{ 
-                      backgroundColor: carrierColor + '20',
-                      color: carrierColor 
-                    }}
-                  >
-                    {detectedCarrier}
-                  </span>
-                )}
-              </div>
-            </div>
-            
-            {/* 运费 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                运费
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">¥</span>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={shippingFee}
-                  onChange={(e) => setShippingFee(e.target.value)}
-                  placeholder="0.00"
-                  className="w-full pl-8 pr-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-colors"
-                />
-              </div>
-            </div>
-            
-            {/* 备注 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                备注
-              </label>
-              <textarea
-                value={remark}
-                onChange={(e) => setRemark(e.target.value)}
-                placeholder="可选备注信息..."
-                rows={2}
-                className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-colors resize-none"
-              />
-            </div>
+            {/* V2.8设计：快递单号在已下单Tab内联录入，不在Drawer中 */}
           </div>
         </div>
 
