@@ -52,7 +52,15 @@ export async function GET(request: NextRequest) {
     
     const inTransitCount = Number(inTransitResult[0]?.count || 0);
 
-    // 5. todayPurchasedCount & 6. todayPurchasedAmount
+    // 5. receivedCount - 已到货数量（status = 'received'）
+    const receivedResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(purchaseRecords)
+      .where(eq(purchaseRecords.status, 'received'));
+    
+    const receivedCount = Number(receivedResult[0]?.count || 0);
+
+    // 6. todayPurchasedCount & 7. todayPurchasedAmount
     // 今日零点（服务器时区）
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -75,6 +83,7 @@ export async function GET(request: NextRequest) {
         orderedCount,
         orderedWithoutTrackingCount,
         inTransitCount,
+        receivedCount,
         todayPurchasedCount,
         todayPurchasedAmount,
       },

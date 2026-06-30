@@ -10,6 +10,7 @@ export interface PurchaseStats {
   orderedCount: number;
   orderedWithoutTrackingCount: number;
   inTransitCount: number;
+  receivedCount: number;
   todayPurchasedCount: number;
   todayPurchasedAmount: number;
 }

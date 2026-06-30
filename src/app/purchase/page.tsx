@@ -140,6 +140,50 @@ export default function PurchasePage() {
     setDrawerOpen(true);
   }, []);
   
+  // 已到货卡片点击（只读 Drawer）- 使用 PurchaseRecord 类型
+  const handleReceivedCardClick = useCallback((record: any) => {
+    const group: DemandGroup = {
+      sku: record.demandSku || '',
+      productName: record.demandProductName || '',
+      productImage: record.demandProductImage || null,
+      orders: [{
+        orderId: record.ozonOrderIds?.[0] ? String(record.ozonOrderIds[0]) : String(record.id),
+        demandId: record.demandId || 0,
+        ozonOrderId: record.ozonPostingNumbers?.[0] || '',
+        shopName: record.shopName || '',
+        quantity: record.purchaseQty || 1,
+        orderAmount: '0',
+        shipmentDeadline: '',
+        erpStatus: 'received',
+      }],
+    };
+    setDrawerMode('view');
+    setSelectedRecord(group);
+    setDrawerOpen(true);
+  }, []);
+  
+  // 全部卡片点击（只读 Drawer）- 使用 PurchaseRecord 类型
+  const handleAllCardClick = useCallback((record: any) => {
+    const group: DemandGroup = {
+      sku: record.demandSku || '',
+      productName: record.demandProductName || '',
+      productImage: record.demandProductImage || null,
+      orders: [{
+        orderId: record.ozonOrderIds?.[0] ? String(record.ozonOrderIds[0]) : String(record.id),
+        demandId: record.demandId || 0,
+        ozonOrderId: record.ozonPostingNumbers?.[0] || '',
+        shopName: record.shopName || '',
+        quantity: record.purchaseQty || 1,
+        orderAmount: '0',
+        shipmentDeadline: '',
+        erpStatus: record.status || 'all',
+      }],
+    };
+    setDrawerMode('view');
+    setSelectedRecord(group);
+    setDrawerOpen(true);
+  }, []);
+  
   // 更新待采购列表引用
   const handlePendingListUpdate = useCallback((groups: DemandGroup[]) => {
     pendingListRef.current = groups;
@@ -330,11 +374,25 @@ export default function PurchasePage() {
           </TabsContent>
 
           <TabsContent value="received" className="mt-4 bg-white rounded-xl border border-gray-200">
-            <TabReceived />
+            <TabReceived
+              onCardClick={handleReceivedCardClick}
+              stats={{
+                receivedCount: stats?.receivedCount ?? 0,
+              }}
+              onRefresh={handleRefresh}
+            />
           </TabsContent>
 
           <TabsContent value="all" className="mt-4 bg-white rounded-xl border border-gray-200">
-            <TabAll />
+            <TabAll
+              onCardClick={handleAllCardClick}
+              stats={{
+                orderedCount: stats?.orderedCount ?? 0,
+                inTransitCount: stats?.inTransitCount ?? 0,
+                receivedCount: stats?.receivedCount ?? 0,
+              }}
+              onRefresh={handleRefresh}
+            />
           </TabsContent>
         </Tabs>
       </div>
