@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PendingCard, PendingOrder } from './pending-card';
-import { fetchPurchaseDemands, PurchaseDemand } from '@/lib/api/purchase';
+import { getPurchaseDemandList, PurchaseDemand, PurchaseDemandsResponse } from '@/lib/api/purchase';
 import { ViewToggle } from './view-toggle';
 import { EnhancedList } from './enhanced-list';
 import { cn } from '@/lib/utils';
@@ -80,8 +80,8 @@ export function TabPending({
     const loadData = async () => {
       try {
         setLoading(true);
-        const data = await fetchPurchaseDemands();
-        setDemands(data);
+        const response = await getPurchaseDemandList({ status: 'pending' });
+        setDemands(response.data);
         setError(null);
       } catch (err) {
         console.error('获取待采购数据失败:', err);

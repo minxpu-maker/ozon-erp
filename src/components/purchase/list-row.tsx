@@ -1,12 +1,10 @@
-import React, { useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect, useCallback, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { formatRUB, formatCNY } from '@/lib/utils';
 import { PurchaseDemand } from '@/lib/api/purchase';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import {
-  LayoutGrid,
-  LayoutList,
   Check,
   AlertCircle,
   X,
@@ -93,16 +91,18 @@ function getSourceMatchIcon(status: string | undefined): React.ReactNode {
 }
 
 /**
- * 获取供应渠道标签样式
+ * 获取货源匹配状态标签样式和文本
  */
-function getChannelBadgeStyle(channel: string | undefined): string {
-  switch (channel) {
-    case '1688':
-      return 'bg-blue-50 text-blue-700';
-    case 'pdd':
-      return 'bg-orange-50 text-orange-700';
+function getSourceMatchBadge(status: string | undefined): { style: string; text: string } {
+  switch (status) {
+    case 'matched':
+      return { style: 'bg-blue-50 text-blue-700', text: '1688' }; // 已匹配默认显示1688
+    case 'partial':
+      return { style: 'bg-amber-50 text-amber-700', text: '部分匹配' };
+    case 'unmatched':
+      return { style: 'bg-gray-50 text-gray-500', text: '未匹配' };
     default:
-      return 'bg-gray-50 text-gray-500';
+      return { style: 'bg-gray-50 text-gray-500', text: '待匹配' };
   }
 }
 
@@ -151,6 +151,19 @@ const ListRow = React.memo(function ListRow({
   // 截止时间静默刷新（60秒）
   const deadlineRef = useRef<HTMLDivElement>(null);
   const deadlineTextRef = useRef(getDeadlineDisplay(demand.deadline, demand.urgencyLevel));
+
+  // 货源匹配状态徽章（使用sourceMatchStatus，不是erpStatus）
+  const sourceMatchBadge = useMemo(() => {
+    const status = demand.sourceMatchStatus;
+    if (status === 'matched') {
+      return { text: '1688', style: 'bg-orange-50 text-orange-700 border-orange-100' };
+    }
+    if (status === 'partial') {
+      return { text: '部分匹配', style: 'bg-amber-50 text-amber-700 border-amber-100' };
+    }
+    // unmatched or pending
+    return { text: '待匹配', style: 'bg-gray-50 text-gray-500 border-gray-100' };
+  }, [demand.sourceMatchStatus]);
 
   useEffect(() => {
     if (!demand.deadline) return;
@@ -241,14 +254,14 @@ const ListRow = React.memo(function ListRow({
             </span>
           )}
 
-          {/* 供应渠道标签 */}
+          {/* 货源匹配状态标签 */}
           <span
             className={cn(
               'text-xs px-1.5 py-0.5 rounded ml-1',
-              getChannelBadgeStyle(demand.order?.erpStatus ?? undefined)
+              sourceMatchBadge.style
             )}
           >
-            未匹配
+            {sourceMatchBadge.text}
           </span>
 
           {/* 截止时间（右对齐） */}

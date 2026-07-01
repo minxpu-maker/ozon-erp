@@ -54,6 +54,7 @@ export interface EnhancedListProps {
   groupBy?: GroupBy;
   onSortChange?: (sortBy: SortBy, sortOrder: SortOrder) => void;
   currentSort?: { sortBy: SortBy; sortOrder: SortOrder };
+  onViewToggle?: () => void;
 }
 
 /**
@@ -66,6 +67,7 @@ function KeyboardHelpPanel({ onClose }: { onClose: () => void }) {
     { key: 'Space', desc: '勾选/取消当前行' },
     { key: 'Esc', desc: '关闭Drawer / 取消选择' },
     { key: 'P', desc: '批量采购' },
+    { key: 'V', desc: '切换到卡片视角' },
     { key: '/', desc: '聚焦搜索框' },
     { key: 'Ctrl+A', desc: '全选' },
     { key: '?', desc: '显示快捷键帮助' },
@@ -464,6 +466,7 @@ export function EnhancedList({
   hasMore,
   onLoadMore,
   groupBy = 'order',
+  onViewToggle,
   onSortChange,
   currentSort = { sortBy: 'deadline', sortOrder: 'asc' },
 }: EnhancedListProps) {
@@ -747,6 +750,14 @@ export function EnhancedList({
           // 批量采购接口预留
           console.log('批量采购触发');
           break;
+
+        case 'v':
+        case 'V':
+          e.preventDefault();
+          if (onViewToggle) {
+            onViewToggle();
+          }
+          break;
           
         case 'a':
         case 'A':
@@ -867,7 +878,6 @@ export function EnhancedList({
                 ref={virtualizer.measureElement}
                 style={getVirtualRowStyle(virtualRow)}
                 className={cn(
-                  'animate-view-enter',
                   isFocused && 'border-l-2 border-blue-500'
                 )}
               >

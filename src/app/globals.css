@@ -633,37 +633,37 @@ body {
    V3.0 视角切换动画关键帧
    ======================================== */
 
-/* 视角退场动画 - 淡出+轻微左移 */
+/* 视角退场动画 - 淡出+微缩放 */
 @keyframes viewExit {
   from {
     opacity: 1;
-    transform: translateX(0);
+    transform: scale(1);
   }
   to {
     opacity: 0;
-    transform: translateX(-8px);
+    transform: scale(0.98);
   }
 }
 
-/* 视角入场动画 - 淡入+轻微右移 */
+/* 视角入场动画 - 淡入+微缩放恢复 */
 @keyframes viewEnter {
   from {
     opacity: 0;
-    transform: translateX(8px);
+    transform: scale(0.98);
   }
   to {
     opacity: 1;
-    transform: translateX(0);
+    transform: scale(1);
   }
 }
 
-/* 视角切换按钮弹跳动画 */
+/* 视角切换按钮弹跳动画 - 先压缩后微弹 */
 @keyframes toggleBounce {
   0% {
-    transform: scale(1);
+    transform: scale(0.95);
   }
-  50% {
-    transform: scale(1.15);
+  60% {
+    transform: scale(1.05);
   }
   100% {
     transform: scale(1);
@@ -681,4 +681,36 @@ body {
 
 .toggle-active {
   animation: toggleBounce 300ms var(--ease-spring);
+}
+
+/* 批量操作栏入场动画 - 从底部上滑渐入 */
+@keyframes batchEnter {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 批量操作栏退场动画 - 向下滑出渐隐 */
+@keyframes batchExit {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+}
+
+.animate-batch-enter {
+  animation: batchEnter 250ms var(--ease-out-expo) forwards;
+}
+
+.animate-batch-exit {
+  animation: batchExit 250ms var(--ease-in-quart) forwards;
 }
