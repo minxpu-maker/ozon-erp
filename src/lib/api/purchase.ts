@@ -58,6 +58,12 @@ export interface PurchaseDemand {
   priority: string | null;
   status: string | null;
   createdAt: string;
+  updatedAt?: string;
+  // V3.0新增计算字段
+  deadline?: string | null;
+  urgencyLevel?: 'overdue' | 'today' | 'tomorrow' | 'later';
+  sourceMatchStatus?: 'matched' | 'partial' | 'unmatched';
+  sourceMatchCount?: number;
   order: {
     id: string;
     postingNumber: string | null;
@@ -65,8 +71,9 @@ export interface PurchaseDemand {
     erpStatus: string | null;
     shipmentDeadline: string | null;
     shopId: string | null;
-    shopName: string | null;
     totalPrice: string | null;
+    createdAt?: string;
+    shopName: string | null;
   } | null;
 }
 
@@ -255,4 +262,170 @@ export async function bindTrackingNumber(
     const error = await response.json();
     throw new Error(error.error || "绑定快递单号失败");
   }
+}
+
+// ==================== V3.0 列表视角新增类型和函数 ====================
+
+/**
+ * 采购需求查询参数（V3.0扩展）
+ */
+export interface PurchaseDemandsParams {
+  status?: string;
+  page?: number;
+  pageSize?: number;
+  sortBy?: 'deadline' | 'createdAt' | 'totalPrice';
+  sortOrder?: 'asc' | 'desc';
+  groupBy?: 'order' | 'supplier' | 'store';
+  urgency?: 'overdue' | 'today' | 'tomorrow' | 'all';
+  channel?: '1688' | 'pdd' | 'manual' | 'all';
+  keyword?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+/**
+ * 分页信息
+ */
+export interface PaginationInfo {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
+
+/**
+ * 需求统计数据
+ */
+export interface DemandStats {
+  overdue: number;
+  today: number;
+  tomorrow: number;
+  total: number;
+}
+
+/**
+ * 采购需求响应（V3.0扩展）
+ */
+export interface PurchaseDemandsResponse {
+  success: boolean;
+  data: PurchaseDemand[];
+  pagination: PaginationInfo;
+  stats: DemandStats;
+}
+
+/**
+ * 批量状态响应项
+ */
+export interface BatchStatusItem {
+  id: number;
+  status: string;
+  deadline: string | null;
+  urgencyLevel: 'overdue' | 'today' | 'tomorrow' | 'later';
+  sourceMatchStatus: 'matched' | 'partial' | 'unmatched';
+  sourceMatchCount: number;
+  orderId: string;
+  sku: string | null;
+  productName: string;
+  quantity: number;
+  priority: string | null;
+  createdAt: string;
+  updatedAt: string;
+  order: {
+    id: string;
+    postingNumber: string | null;
+    status: string;
+    erpStatus: string | null;
+    shipmentDeadline: string | null;
+    shopId: string | null;
+    totalPrice: string | null;
+    createdAt: string;
+    shopName: string | null;
+  } | null;
+}
+
+/**
+ * 批量导出响应
+ */
+export interface BatchExportResponse {
+  success: boolean;
+  data: {
+    csv: string;
+    filename: string;
+  };
+}
+
+/**
+ * 获取采购需求列表（V3.0扩展版）
+ * 支持分页、排序、筛选
+ */
+export async function getPurchaseDemandList(
+  params?: PurchaseDemandsParams
+): Promise<PurchaseDemandsResponse> {
+  const query = new URLSearchParams();
+  
+  if (params?.status) query.set('status', params.status);
+  if (params?.page) query.set('page', params.page.toString());
+  if (params?.pageSize) query.set('pageSize', params.pageSize.toString());
+  if (params?.sortBy) query.set('sortBy', params.sortBy);
+  if (params?.sortOrder) query.set('sortOrder', params.sortOrder);
+  if (params?.groupBy) query.set('groupBy', params.groupBy);
+  if (params?.urgency) query.set('urgency', params.urgency);
+  if (params?.channel) query.set('channel', params.channel);
+  if (params?.keyword) query.set('keyword', params.keyword);
+  if (params?.dateFrom) query.set('dateFrom', params.dateFrom);
+  if (params?.dateTo) query.set('dateTo', params.dateTo);
+
+  const response = await fetch(`${API_BASE}/purchase-demands?${query.toString()}`);
+  if (!response.ok) {
+    throw new Error('获取采购需求失败');
+  }
+  return response.json();
+}
+
+/**
+ * 批量获取采购需求状态
+ */
+export async function getBatchDemandStatus(ids: number[]): Promise<BatchStatusItem[]> {
+  if (ids.length === 0) return [];
+  
+  const query = new URLSearchParams();
+  query.set('ids', ids.join(','));
+  
+  const response = await fetch(`${API_BASE}/purchase-demands/batch-status?${query.toString()}`);
+  if (!response.ok) {
+    throw new Error('批量获取状态失败');
+  }
+  const json = await response.json();
+  return json.data || [];
+}
+
+/**
+ * 批量导出采购需求为CSV
+ */
+export async function batchExportDemands(ids: number[]): Promise<BatchExportResponse> {
+  const response = await fetch(`${API_BASE}/purchase-demands/batch-export`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ids }),
+  });
+  if (!response.ok) {
+    throw new Error('批量导出失败');
+  }
+  return response.json();
+}
+
+/**
+ * 下载CSV文件（含UTF-8 BOM）
+ */
+export function downloadCSV(csv: string, filename: string): void {
+  // csv内容已包含BOM，直接创建Blob
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.click();
+  
+  URL.revokeObjectURL(url);
 }
