@@ -135,7 +135,13 @@
   --z-drawer: 30;
   --z-toast: 40;
   --z-overlay: 45;
-  --z-modal: 50;
+  --z-modal: 60;
+
+  /* V3.0 缓动曲线变量 */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);      /* 入场动画 */
+  --ease-out-quart: cubic-bezier(0.25, 0.46, 0.45, 0.94); /* hover微交互 */
+  --ease-in-quart: cubic-bezier(0.895, 0.03, 0.685, 0.22); /* 退场动画 */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);    /* 弹性动效（视角切换） */
 }
 
 .dark {
@@ -621,4 +627,58 @@ body {
 .toast-enter {
   will-change: transform, opacity;
   transform: translateZ(0);
+}
+
+/* ========================================
+   V3.0 视角切换动画关键帧
+   ======================================== */
+
+/* 视角退场动画 - 淡出+轻微左移 */
+@keyframes viewExit {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+}
+
+/* 视角入场动画 - 淡入+轻微右移 */
+@keyframes viewEnter {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* 视角切换按钮弹跳动画 */
+@keyframes toggleBounce {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* 视角切换动画工具类 */
+.view-exit {
+  animation: viewExit 150ms var(--ease-in-quart) forwards;
+}
+
+.view-enter {
+  animation: viewEnter 200ms var(--ease-out-expo) forwards;
+}
+
+.toggle-active {
+  animation: toggleBounce 300ms var(--ease-spring);
 }
