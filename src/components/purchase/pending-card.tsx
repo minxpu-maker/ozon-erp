@@ -149,7 +149,7 @@ export function PendingCard({
 
   return (
     <div
-      onClick={onClick}
+      onClick={(e) => { e.stopPropagation(); onClick(); }}
       className={cn(
         'relative rounded-xl bg-white border p-4 shadow-sm',
         'hover:shadow-md hover:border-gray-200 hover:-translate-y-0.5',

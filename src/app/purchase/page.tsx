@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { PurchaseSummary, PurchaseStats } from '@/components/purchase/purchase-summary';
 import { PurchaseDrawer } from '@/components/purchase/purchase-drawer';
 import { TabPending, DemandGroup } from '@/components/purchase/tab-pending';
+import { ViewToggle } from '@/components/purchase/view-toggle';
 import { TabOrdered } from '@/components/purchase/tab-ordered';
 import { OrderedRecord } from '@/components/purchase/ordered-card';
 import { TabInTransit } from '@/components/purchase/tab-in-transit';
@@ -29,6 +30,9 @@ export default function PurchasePage() {
   const [activeTab, setActiveTab] = useState('pending');
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [prevTab, setPrevTab] = useState('pending');
+
+  // 视角切换状态（仅pending tab使用）
+  const [viewMode, setViewMode] = useState<'card' | 'list'>('card');
 
   // Drawer 状态
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -345,7 +349,13 @@ export default function PurchasePage() {
             ))}
           </div>
         ) : (
-          <PurchaseSummary stats={stats} loading={statsLoading} />
+          <PurchaseSummary 
+            stats={stats} 
+            loading={statsLoading}
+            rightContent={activeTab === 'pending' && (
+              <ViewToggle viewMode={viewMode} onViewChange={setViewMode} />
+            )}
+          />
         )}
       </div>
 
@@ -469,6 +479,8 @@ export default function PurchasePage() {
                 selectedSku={selectedSku}
                 onListUpdate={handlePendingListUpdate}
                 searchInputRef={activeTab === 'pending' ? searchInputRef : undefined}
+                viewMode={viewMode}
+                onViewModeChange={setViewMode}
               />
             </TabsContent>
 

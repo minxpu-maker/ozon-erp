@@ -159,6 +159,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // 渠道筛选（基于sourceMatchStatus，后续货源池实现后完善）
+    // 注：当前sourceMatchStatus固定返回'unmatched'，渠道筛选暂不生效
+    // 当货源匹配功能实现后，matched状态会携带platform字段用于筛选
+    if (channel !== 'all') {
+      // TODO: 货源池实现后，根据sourceMatchStatus和匹配结果的platform字段筛选
+      // 当前暂不做过滤，等待货源匹配数据
+    }
+
     // 截止日期范围筛选
     if (dateFrom) {
       const fromDate = new Date(dateFrom);

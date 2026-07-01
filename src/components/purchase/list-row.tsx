@@ -91,22 +91,6 @@ function getSourceMatchIcon(status: string | undefined): React.ReactNode {
 }
 
 /**
- * 获取货源匹配状态标签样式和文本
- */
-function getSourceMatchBadge(status: string | undefined): { style: string; text: string } {
-  switch (status) {
-    case 'matched':
-      return { style: 'bg-blue-50 text-blue-700', text: '1688' }; // 已匹配默认显示1688
-    case 'partial':
-      return { style: 'bg-amber-50 text-amber-700', text: '部分匹配' };
-    case 'unmatched':
-      return { style: 'bg-gray-50 text-gray-500', text: '未匹配' };
-    default:
-      return { style: 'bg-gray-50 text-gray-500', text: '待匹配' };
-  }
-}
-
-/**
  * 格式化采购价（将CNY替换为¥）
  */
 function formatPurchasePrice(price: number | string | null): string {

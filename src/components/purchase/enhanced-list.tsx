@@ -262,7 +262,7 @@ function GroupHeaderRow({
   isSelected: boolean;
   onSelect: () => void;
   onOpenDrawer: (id: number) => void;
-  style: React.CSSProperties;
+  style?: React.CSSProperties;
 }) {
   // 计算组内最紧急的截止时间
   const mostUrgent = groupItems.reduce<{ urgency: UrgencyLevel; deadline: string | null }>((min, item) => {
@@ -906,7 +906,6 @@ export function EnhancedList({
                       }
                     }}
                     onOpenDrawer={onOpenDrawer}
-                    style={getVirtualRowStyle(virtualRow)}
                   />
                 )}
                 {rowItem?.type === 'item' && (
@@ -925,7 +924,6 @@ export function EnhancedList({
                       isActive={rowItem.demand.id === activeDemandId}
                       onSelect={onSelect}
                       onOpenDrawer={onOpenDrawer}
-                      style={getVirtualRowStyle(virtualRow)}
                     />
                   </div>
                 )}

@@ -37,6 +37,10 @@ export interface TabPendingProps {
   onDrawerClose?: () => void;
   /** 列表视角打开Drawer回调 */
   onOpenDrawer?: (demandId: number) => void;
+  /** 视角模式（由父组件管理） */
+  viewMode?: ViewMode;
+  /** 视角切换回调 */
+  onViewModeChange?: (mode: ViewMode) => void;
 }
 
 // 视角模式类型
@@ -49,7 +53,9 @@ export function TabPending({
   searchInputRef,
   activeDemandId,
   onDrawerClose,
-  onOpenDrawer
+  onOpenDrawer,
+  viewMode: externalViewMode,
+  onViewModeChange
 }: TabPendingProps) {
   const [demands, setDemands] = useState<PurchaseDemand[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,8 +65,9 @@ export function TabPending({
   const [searchKeyword, setSearchKeyword] = useState('');
   const [timeFilter, setTimeFilter] = useState<'all' | 'expired' | 'urgent'>('all');
 
-  // 视角切换状态
-  const [viewMode, setViewMode] = useState<ViewMode>('card');
+  // 视角切换状态 - 支持外部控制或内部管理
+  const [internalViewMode, setInternalViewMode] = useState<ViewMode>('card');
+  const viewMode = externalViewMode ?? internalViewMode;
   const [isTransitioning, setIsTransitioning] = useState(false);
   const transitionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -75,13 +82,20 @@ export function TabPending({
   const pageSize = 50;
   const [showLargeListHint, setShowLargeListHint] = useState(true);
 
+  // 列表视角分页状态
+  const [listPage, setListPage] = useState(1);
+  const [paginationInfo, setPaginationInfo] = useState<{ total: number; totalPages: number } | null>(null);
+  const [listLoadingMore, setListLoadingMore] = useState(false);
+
   // 获取数据
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true);
-        const response = await getPurchaseDemandList({ status: 'pending' });
+        const response = await getPurchaseDemandList({ status: 'pending', page: 1, pageSize: 100 });
         setDemands(response.data);
+        setPaginationInfo(response.pagination ? { total: response.pagination.total, totalPages: response.pagination.totalPages } : null);
+        setListPage(1);
         setError(null);
       } catch (err) {
         console.error('获取待采购数据失败:', err);
@@ -93,19 +107,43 @@ export function TabPending({
     loadData();
   }, []);
 
-  // 初始化viewMode（URL参数 > localStorage > 默认'card'）
+  // 列表视角加载更多
+  const handleListLoadMore = useCallback(async () => {
+    if (listLoadingMore || !paginationInfo) return;
+    if (listPage >= paginationInfo.totalPages) return;
+
+    try {
+      setListLoadingMore(true);
+      const nextPage = listPage + 1;
+      const response = await getPurchaseDemandList({ status: 'pending', page: nextPage, pageSize: 100 });
+      setDemands(prev => [...prev, ...response.data]);
+      setListPage(nextPage);
+    } catch (err) {
+      console.error('加载更多失败:', err);
+    } finally {
+      setListLoadingMore(false);
+    }
+  }, [listLoadingMore, listPage, paginationInfo]);
+
+  // 列表视角是否还有更多数据
+  const listHasMore = paginationInfo ? listPage < paginationInfo.totalPages : false;
+
+  // 初始化viewMode（仅在没有外部传入时使用）
   useEffect(() => {
+    // 如果外部传入viewMode，跳过初始化
+    if (externalViewMode) return;
+    
     const urlView = new URLSearchParams(window.location.search).get('view');
     const storedView = localStorage.getItem('purchase_view_mode');
     
     if (urlView === 'card' || urlView === 'list') {
-      setViewMode(urlView);
+      setInternalViewMode(urlView);
     } else if (storedView === 'card' || storedView === 'list') {
-      setViewMode(storedView);
+      setInternalViewMode(storedView);
     } else {
-      setViewMode('card');
+      setInternalViewMode('card');
     }
-  }, []);
+  }, [externalViewMode]);
 
   // SKU聚合
   const groupedData = useMemo(() => {
@@ -230,7 +268,12 @@ export function TabPending({
 
     // 退出动画
     setTimeout(() => {
-      setViewMode(newMode);
+      // 更新状态（内部或外部）
+      if (onViewModeChange) {
+        onViewModeChange(newMode);
+      } else {
+        setInternalViewMode(newMode);
+      }
       // 持久化
       localStorage.setItem('purchase_view_mode', newMode);
       // 更新URL参数
@@ -244,7 +287,7 @@ export function TabPending({
         viewChangeLockRef.current = false;
       }, 200);
     }, 150);
-  }, [viewMode]);
+  }, [viewMode, onViewModeChange]);
 
   // 选中处理（卡片视角）- 根据SKU找到对应的demand id
   const handleCardSelect = useCallback((sku: string) => {
@@ -433,11 +476,6 @@ export function TabPending({
         </div>
       )}
 
-      {/* 视角切换 */}
-      <div className="flex justify-end mb-4">
-        <ViewToggle viewMode={viewMode} onViewChange={handleViewChange} />
-      </div>
-
       {/* 卡片视角 */}
       {viewMode === 'card' && (
         <>
@@ -521,9 +559,9 @@ export function TabPending({
           onClearSelection={handleClearSelection}
           onOpenDrawer={handleListOpenDrawer}
           activeDemandId={activeDemandId ?? null}
-          isLoading={false}
-          hasMore={false}
-          onLoadMore={() => {}}
+          isLoading={listLoadingMore}
+          hasMore={listHasMore}
+          onLoadMore={handleListLoadMore}
           groupBy="order"
         />
       )}
