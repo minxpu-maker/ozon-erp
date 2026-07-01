@@ -3,6 +3,7 @@
 import { ShoppingCart, Package, Truck, ClipboardCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ReactNode } from "react";
 
 export interface PurchaseStats {
   pendingPurchaseCount: number;
@@ -18,9 +19,11 @@ interface PurchaseSummaryProps {
   stats: PurchaseStats | null;
   loading?: boolean;
   className?: string;
+  /** 右侧自定义内容插槽（用于视角切换按钮等） */
+  rightContent?: ReactNode;
 }
 
-export function PurchaseSummary({ stats, loading = false, className }: PurchaseSummaryProps) {
+export function PurchaseSummary({ stats, loading = false, className, rightContent }: PurchaseSummaryProps) {
   const cards = [
     {
       label: "待采购",
@@ -58,6 +61,65 @@ export function PurchaseSummary({ stats, loading = false, className }: PurchaseS
     },
   ];
 
+  // 如果有rightContent，使用flex布局
+  if (rightContent) {
+    return (
+      <div className={cn("flex items-center gap-4", className)}>
+        {/* 左侧指标区 */}
+        <div className="flex-1 min-w-0 grid grid-cols-4 gap-4">
+          {cards.map((card) => {
+            const Icon = card.icon;
+            
+            if (loading) {
+              return (
+                <div
+                  key={card.label}
+                  className="bg-white rounded-xl p-4 shadow-sm border border-gray-100"
+                >
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="w-10 h-10 rounded-lg" />
+                    <div className="flex-1">
+                      <Skeleton className="h-4 w-16 mb-2" />
+                      <Skeleton className="h-6 w-12" />
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+            
+            return (
+              <div
+                key={card.label}
+                className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
+              >
+                <div className="flex items-center gap-3">
+                  <div className={cn("p-2.5 rounded-lg", card.iconBg)}>
+                    <Icon className={cn("w-5 h-5", card.color)} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-gray-500 font-medium">{card.label}</p>
+                    <p className={cn("text-xl font-bold", card.color)}>
+                      {card.value}
+                    </p>
+                    {card.subLabel && (
+                      <p className="text-xs text-gray-400 mt-0.5">{card.subLabel}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        
+        {/* 右侧操作区 - 移动端隐藏 */}
+        <div className="hidden md:flex items-center gap-2 shrink-0">
+          {rightContent}
+        </div>
+      </div>
+    );
+  }
+
+  // 无rightContent时保持原有布局（向后兼容）
   return (
     <div className={cn("grid grid-cols-4 gap-4", className)}>
       {cards.map((card) => {

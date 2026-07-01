@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { Search, Filter, Package, ShoppingCart, AlertCircle } from 'lucide-react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { Search, Filter, Package, ShoppingCart, AlertCircle, Check, ChevronRight, ChevronDown, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -14,6 +14,9 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { PendingCard, PendingOrder } from './pending-card';
 import { fetchPurchaseDemands, PurchaseDemand } from '@/lib/api/purchase';
+import { ViewToggle } from './view-toggle';
+import { EnhancedList } from './enhanced-list';
+import { cn } from '@/lib/utils';
 
 // SKU聚合组类型（导出给父组件使用）
 export interface DemandGroup {
@@ -28,9 +31,26 @@ export interface TabPendingProps {
   selectedSku: string | null;
   onListUpdate?: (groups: DemandGroup[]) => void;
   searchInputRef?: React.RefObject<HTMLInputElement | null>;
+  /** 当前激活的demandId（Drawer对应的行） */
+  activeDemandId?: number | null;
+  /** Drawer关闭回调 */
+  onDrawerClose?: () => void;
+  /** 列表视角打开Drawer回调 */
+  onOpenDrawer?: (demandId: number) => void;
 }
 
-export function TabPending({ onCardClick, selectedSku, onListUpdate, searchInputRef }: TabPendingProps) {
+// 视角模式类型
+type ViewMode = 'card' | 'list';
+
+export function TabPending({ 
+  onCardClick, 
+  selectedSku, 
+  onListUpdate, 
+  searchInputRef,
+  activeDemandId,
+  onDrawerClose,
+  onOpenDrawer
+}: TabPendingProps) {
   const [demands, setDemands] = useState<PurchaseDemand[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,6 +58,22 @@ export function TabPending({ onCardClick, selectedSku, onListUpdate, searchInput
   // 搜索和筛选
   const [searchKeyword, setSearchKeyword] = useState('');
   const [timeFilter, setTimeFilter] = useState<'all' | 'expired' | 'urgent'>('all');
+
+  // 视角切换状态
+  const [viewMode, setViewMode] = useState<ViewMode>('card');
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const transitionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 选中状态（跨视角共享）
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+
+  // 视角切换防抖锁
+  const viewChangeLockRef = useRef(false);
+
+  // 卡片分页状态
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 50;
+  const [showLargeListHint, setShowLargeListHint] = useState(true);
 
   // 获取数据
   useEffect(() => {
@@ -57,6 +93,20 @@ export function TabPending({ onCardClick, selectedSku, onListUpdate, searchInput
     loadData();
   }, []);
 
+  // 初始化viewMode（URL参数 > localStorage > 默认'card'）
+  useEffect(() => {
+    const urlView = new URLSearchParams(window.location.search).get('view');
+    const storedView = localStorage.getItem('purchase_view_mode');
+    
+    if (urlView === 'card' || urlView === 'list') {
+      setViewMode(urlView);
+    } else if (storedView === 'card' || storedView === 'list') {
+      setViewMode(storedView);
+    } else {
+      setViewMode('card');
+    }
+  }, []);
+
   // SKU聚合
   const groupedData = useMemo(() => {
     const groups: Map<string, DemandGroup> = new Map();
@@ -71,7 +121,7 @@ export function TabPending({ onCardClick, selectedSku, onListUpdate, searchInput
       if (existingGroup) {
         // 添加到已有组
         existingGroup.orders.push({
-          demandId: d.id!, // 采购需求ID（用于创建采购记录）
+          demandId: d.id!,
           orderId: d.orderId,
           ozonOrderId: d.order.postingNumber || d.order.id,
           shopName: d.order.shopName || '未知店铺',
@@ -88,7 +138,7 @@ export function TabPending({ onCardClick, selectedSku, onListUpdate, searchInput
           productImage: d.productImage,
           orders: [
             {
-              demandId: d.id!, // 采购需求ID（用于创建采购记录）
+              demandId: d.id!,
               orderId: d.orderId,
               ozonOrderId: d.order.postingNumber || d.order.id,
               shopName: d.order.shopName || '未知店铺',
@@ -128,8 +178,8 @@ export function TabPending({ onCardClick, selectedSku, onListUpdate, searchInput
       const kw = searchKeyword.toLowerCase();
       result = result.filter(
         (g) =>
-          (g.sku && g.sku.toLowerCase() === kw) || // SKU精确匹配
-          g.productName.toLowerCase().includes(kw) // 商品名模糊匹配
+          (g.sku && g.sku.toLowerCase() === kw) ||
+          g.productName.toLowerCase().includes(kw)
       );
     }
 
@@ -152,16 +202,114 @@ export function TabPending({ onCardClick, selectedSku, onListUpdate, searchInput
       const aEarliest = a.orders.reduce((min, o) => Math.min(min, calcHoursLeft(o.shipmentDeadline)), Infinity);
       const bEarliest = b.orders.reduce((min, o) => Math.min(min, calcHoursLeft(o.shipmentDeadline)), Infinity);
 
-      // 已超时的排最前
       if (aEarliest <= 0 && bEarliest > 0) return -1;
       if (bEarliest <= 0 && aEarliest > 0) return 1;
 
-      // 按截止时间升序
       return aEarliest - bEarliest;
     });
 
     return result;
   }, [groupedData, searchKeyword, timeFilter]);
+
+  // 卡片分页数据
+  const paginatedGroups = useMemo(() => {
+    const start = 0;
+    const end = currentPage * pageSize;
+    return filteredAndSorted.slice(start, end);
+  }, [filteredAndSorted, currentPage]);
+
+  const hasMoreCards = paginatedGroups.length < filteredAndSorted.length;
+  const totalCount = filteredAndSorted.length;
+
+  // 视角切换处理
+  const handleViewChange = useCallback((newMode: ViewMode) => {
+    if (viewChangeLockRef.current || newMode === viewMode) return;
+    
+    viewChangeLockRef.current = true;
+    setIsTransitioning(true);
+
+    // 退出动画
+    setTimeout(() => {
+      setViewMode(newMode);
+      // 持久化
+      localStorage.setItem('purchase_view_mode', newMode);
+      // 更新URL参数
+      const url = new URL(window.location.href);
+      url.searchParams.set('view', newMode);
+      window.history.replaceState(null, '', url.toString());
+      
+      // 进入动画
+      setTimeout(() => {
+        setIsTransitioning(false);
+        viewChangeLockRef.current = false;
+      }, 200);
+    }, 150);
+  }, [viewMode]);
+
+  // 选中处理（卡片视角）- 根据SKU找到对应的demand id
+  const handleCardSelect = useCallback((sku: string) => {
+    // 找到该SKU对应的demand id
+    const matchingDemand = demands.find(d => d.sku === sku);
+    if (matchingDemand && matchingDemand.id !== null) {
+      const demandId = matchingDemand.id; // 类型收窄为number
+      setSelectedIds(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(demandId)) {
+          newSet.delete(demandId);
+        } else {
+          newSet.add(demandId);
+        }
+        return newSet;
+      });
+    }
+  }, [demands]);
+
+  // 选中处理（列表视角）
+  const handleListSelect = useCallback((id: number) => {
+    setSelectedIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  }, []);
+
+  // 全选/取消全选
+  const handleSelectAll = useCallback(() => {
+    const allIds = demands.filter(d => d.id !== null).map(d => d.id!);
+    if (selectedIds.size === allIds.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(allIds));
+    }
+  }, [selectedIds, demands]);
+
+  // 清空选择
+  const handleClearSelection = useCallback(() => {
+    setSelectedIds(new Set());
+  }, []);
+
+  // 列表视角打开Drawer
+  const handleListOpenDrawer = useCallback((demandId: number) => {
+    if (onOpenDrawer) {
+      onOpenDrawer(demandId);
+    }
+  }, [onOpenDrawer]);
+
+  // 加载更多卡片
+  const handleLoadMore = useCallback(() => {
+    setCurrentPage(prev => prev + 1);
+  }, []);
+
+  // 过渡动画类名
+  const transitionClass = isTransitioning
+    ? viewMode === 'card'
+      ? 'view-exit opacity-0'
+      : 'view-enter opacity-100'
+    : '';
 
   // 加载态
   if (loading) {
@@ -221,7 +369,6 @@ export function TabPending({ onCardClick, selectedSku, onListUpdate, searchInput
           </Select>
         </div>
 
-        {/* 空状态 */}
         <div className="flex flex-col items-center justify-center h-[300px] text-gray-400">
           <div className="bg-emerald-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
             <ShoppingCart className="w-8 h-8 text-emerald-300" />
@@ -237,12 +384,13 @@ export function TabPending({ onCardClick, selectedSku, onListUpdate, searchInput
   }
 
   return (
-    <div className="p-4">
+    <div className={cn("p-4 transition-opacity duration-200", transitionClass)}>
       {/* 搜索筛选栏 */}
       <div className="flex gap-3 mb-4">
         <div className="relative flex-1 max-w-[200px]">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input
+            ref={searchInputRef}
             placeholder="搜索 SKU / 商品名"
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
@@ -262,25 +410,123 @@ export function TabPending({ onCardClick, selectedSku, onListUpdate, searchInput
         </Select>
       </div>
 
-      {/* 卡片网格 */}
-      <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3 gap-4">
-        {filteredAndSorted.map((group, idx) => (
-          <PendingCard
-            key={group.sku || `group-${idx}`}
-            sku={group.sku}
-            productName={group.productName}
-            productImage={group.productImage}
-            orders={group.orders}
-            isSelected={selectedSku === group.sku}
-            onClick={() => onCardClick(group, idx)}
-          />
-        ))}
+      {/* 大量数据提示条 */}
+      {totalCount >= 200 && showLargeListHint && viewMode === 'card' && (
+        <div className="bg-blue-50/50 text-blue-600 text-xs px-4 py-1.5 text-center mb-4 rounded-lg flex items-center justify-center gap-2">
+          <span>数据量较大，建议切换到列表视角获得更好体验</span>
+          <Button
+            variant="link"
+            size="sm"
+            className="text-blue-600 h-auto p-0 text-xs"
+            onClick={() => handleViewChange('list')}
+          >
+            切换列表视角
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-gray-400 h-auto p-0 text-xs hover:text-gray-600"
+            onClick={() => setShowLargeListHint(false)}
+          >
+            关闭
+          </Button>
+        </div>
+      )}
+
+      {/* 视角切换 */}
+      <div className="flex justify-end mb-4">
+        <ViewToggle viewMode={viewMode} onViewChange={handleViewChange} />
       </div>
 
-      {/* 数量统计 */}
-      <div className="mt-4 text-xs text-gray-400 text-center">
-        共 {filteredAndSorted.length} 个 SKU · {demands.length} 笔订单
-      </div>
+      {/* 卡片视角 */}
+      {viewMode === 'card' && (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3 gap-4">
+            {paginatedGroups.map((group, idx) => {
+              // 判断该组是否选中：组内所有demandId都在selectedIds中
+              const groupDemandIds = group.orders.map(o => o.demandId).filter((id): id is number => id !== null);
+              const isSelected = groupDemandIds.length > 0 && groupDemandIds.every(id => selectedIds.has(id));
+              const isActive = group.orders.some(o => activeDemandId === o.demandId);
+              
+              return (
+                <div
+                  key={group.sku || `group-${idx}`}
+                  className={cn(
+                    "relative",
+                    isSelected && "ring-2 ring-blue-400/60 rounded-xl"
+                  )}
+                  onClick={() => handleCardSelect(group.sku || '')}
+                >
+                  {/* 选中勾选标记 */}
+                  {isSelected && (
+                    <div className="absolute top-2 right-2 bg-blue-500 rounded-full w-5 h-5 flex items-center justify-center z-10">
+                      <Check className="w-3 h-3 text-white" />
+                    </div>
+                  )}
+                  
+                  <PendingCard
+                    sku={group.sku}
+                    productName={group.productName}
+                    productImage={group.productImage}
+                    orders={group.orders}
+                    isSelected={selectedSku === group.sku || isActive}
+                    onClick={() => onCardClick(group, idx)}
+                  />
+                </div>
+              );
+            })}
+          </div>
+
+          {/* 加载更多 */}
+          {hasMoreCards && (
+            <div className="mt-4 text-center">
+              <Button
+                variant="outline"
+                onClick={handleLoadMore}
+                className="text-sm"
+              >
+                加载更多（还有 {totalCount - paginatedGroups.length} 条）
+              </Button>
+            </div>
+          )}
+
+          {/* 数量统计 */}
+          <div className="mt-4 text-xs text-gray-400 text-center">
+            共 {totalCount} 个 SKU · {demands.length} 笔订单
+            {selectedIds.size > 0 && ` · 已选中 ${selectedIds.size} 个`}
+          </div>
+        </>
+      )}
+
+      {/* 列表视角 */}
+      {viewMode === 'list' && (
+        <EnhancedList
+          demands={demands}
+          selectedIds={selectedIds}
+          onSelect={handleListSelect}
+          onSelectRange={(fromId, toId) => {
+            // 范围选择逻辑
+            const fromIdx = demands.findIndex(d => d.id === fromId);
+            const toIdx = demands.findIndex(d => d.id === toId);
+            if (fromIdx !== -1 && toIdx !== -1) {
+              const [start, end] = fromIdx < toIdx ? [fromIdx, toIdx] : [toIdx, fromIdx];
+              const newIds = new Set(selectedIds);
+              for (let i = start; i <= end; i++) {
+                newIds.add(demands[i].id!);
+              }
+              setSelectedIds(newIds);
+            }
+          }}
+          onSelectAll={handleSelectAll}
+          onClearSelection={handleClearSelection}
+          onOpenDrawer={handleListOpenDrawer}
+          activeDemandId={activeDemandId ?? null}
+          isLoading={false}
+          hasMore={false}
+          onLoadMore={() => {}}
+          groupBy="order"
+        />
+      )}
     </div>
   );
 }
