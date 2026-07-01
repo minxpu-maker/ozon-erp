@@ -33,6 +33,36 @@ export default function PurchasePage() {
 
   // 视角切换状态（仅pending tab使用）
   const [viewMode, setViewMode] = useState<'card' | 'list'>('card');
+  const [viewTransitioning, setViewTransitioning] = useState(false);
+  const viewChangeLockRef = useRef(false);
+
+  // 视角切换（带动画）
+  const handleViewChange = useCallback((newMode: 'card' | 'list') => {
+    if (newMode === viewMode || viewChangeLockRef.current) return;
+    
+    // 防抖锁
+    viewChangeLockRef.current = true;
+    
+    // 开始退出动画
+    setViewTransitioning(true);
+    
+    // 150ms后切换视角
+    setTimeout(() => {
+      setViewMode(newMode);
+      // 持久化
+      localStorage.setItem('purchase_view_mode', newMode);
+      // 更新URL参数
+      const url = new URL(window.location.href);
+      url.searchParams.set('view', newMode);
+      window.history.replaceState({}, '', url.toString());
+      
+      // 200ms后结束过渡（淡入完成）
+      setTimeout(() => {
+        setViewTransitioning(false);
+        viewChangeLockRef.current = false;
+      }, 200);
+    }, 150);
+  }, [viewMode]);
 
   // Drawer 状态
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -353,7 +383,7 @@ export default function PurchasePage() {
             stats={stats} 
             loading={statsLoading}
             rightContent={activeTab === 'pending' && (
-              <ViewToggle viewMode={viewMode} onViewChange={setViewMode} />
+              <ViewToggle viewMode={viewMode} onViewChange={handleViewChange} />
             )}
           />
         )}
@@ -480,7 +510,8 @@ export default function PurchasePage() {
                 onListUpdate={handlePendingListUpdate}
                 searchInputRef={activeTab === 'pending' ? searchInputRef : undefined}
                 viewMode={viewMode}
-                onViewModeChange={setViewMode}
+                viewTransitioning={viewTransitioning}
+                onViewModeChange={handleViewChange}
               />
             </TabsContent>
 

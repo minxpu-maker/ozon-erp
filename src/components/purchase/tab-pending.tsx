@@ -39,6 +39,8 @@ export interface TabPendingProps {
   onOpenDrawer?: (demandId: number) => void;
   /** 视角模式（由父组件管理） */
   viewMode?: ViewMode;
+  /** 视角切换过渡状态 */
+  viewTransitioning?: boolean;
   /** 视角切换回调 */
   onViewModeChange?: (mode: ViewMode) => void;
 }
@@ -55,6 +57,7 @@ export function TabPending({
   onDrawerClose,
   onOpenDrawer,
   viewMode: externalViewMode,
+  viewTransitioning: externalTransitioning,
   onViewModeChange
 }: TabPendingProps) {
   const [demands, setDemands] = useState<PurchaseDemand[]>([]);
@@ -68,14 +71,14 @@ export function TabPending({
   // 视角切换状态 - 支持外部控制或内部管理
   const [internalViewMode, setInternalViewMode] = useState<ViewMode>('card');
   const viewMode = externalViewMode ?? internalViewMode;
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const transitionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // 使用外部传入的过渡状态，或内部默认false
+  const isTransitioning = externalTransitioning ?? false;
 
   // 选中状态（跨视角共享）
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
-  // 视角切换防抖锁
-  const viewChangeLockRef = useRef(false);
+  // 过渡动画类名
+  const transitionClass = isTransitioning ? 'animate-view-exit' : '';
 
   // 卡片分页状态
   const [currentPage, setCurrentPage] = useState(1);
@@ -259,36 +262,6 @@ export function TabPending({
   const hasMoreCards = paginatedGroups.length < filteredAndSorted.length;
   const totalCount = filteredAndSorted.length;
 
-  // 视角切换处理
-  const handleViewChange = useCallback((newMode: ViewMode) => {
-    if (viewChangeLockRef.current || newMode === viewMode) return;
-    
-    viewChangeLockRef.current = true;
-    setIsTransitioning(true);
-
-    // 退出动画
-    setTimeout(() => {
-      // 更新状态（内部或外部）
-      if (onViewModeChange) {
-        onViewModeChange(newMode);
-      } else {
-        setInternalViewMode(newMode);
-      }
-      // 持久化
-      localStorage.setItem('purchase_view_mode', newMode);
-      // 更新URL参数
-      const url = new URL(window.location.href);
-      url.searchParams.set('view', newMode);
-      window.history.replaceState(null, '', url.toString());
-      
-      // 进入动画
-      setTimeout(() => {
-        setIsTransitioning(false);
-        viewChangeLockRef.current = false;
-      }, 200);
-    }, 150);
-  }, [viewMode, onViewModeChange]);
-
   // 选中处理（卡片视角）- 根据SKU找到对应的demand id
   const handleCardSelect = useCallback((sku: string) => {
     // 找到该SKU对应的demand id
@@ -346,13 +319,6 @@ export function TabPending({
   const handleLoadMore = useCallback(() => {
     setCurrentPage(prev => prev + 1);
   }, []);
-
-  // 过渡动画类名
-  const transitionClass = isTransitioning
-    ? viewMode === 'card'
-      ? 'view-exit opacity-0'
-      : 'view-enter opacity-100'
-    : '';
 
   // 加载态
   if (loading) {
@@ -461,7 +427,7 @@ export function TabPending({
             variant="link"
             size="sm"
             className="text-blue-600 h-auto p-0 text-xs"
-            onClick={() => handleViewChange('list')}
+            onClick={() => onViewModeChange?.('list')}
           >
             切换列表视角
           </Button>

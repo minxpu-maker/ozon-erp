@@ -142,11 +142,6 @@ export async function POST(request: NextRequest) {
       const urgencyLevel = calculateUrgencyLevel(deadline);
       const deadlineStr = formatDeadline(deadline, urgencyLevel);
       
-      // 计算毛利（Ozon售价 - 采购价）
-      const ozonPrice = order?.totalPrice ? parseFloat(order.totalPrice) : 0;
-      const purchasePrice = 0; // 待采购状态采购价为0
-      const profit = ozonPrice * 0.07 - purchasePrice; // 简化计算：售价*汇率估算
-      
       // 格式化数据
       const row = [
         order?.ozonPostingNumber || '-',

@@ -29,15 +29,15 @@ export function BatchActionBar({
       setIsEntering(true);
       setIsExiting(false);
       // 入场动画完成
-      const timer = setTimeout(() => setIsEntering(false), 300);
+      const timer = setTimeout(() => setIsEntering(false), 280);
       return () => clearTimeout(timer);
     } else if (isVisible) {
       setIsExiting(true);
-      // 退场动画完成后隐藏
+      // 退场动画完成后隐藏（300ms ≥ 动画时长250ms + 余量）
       const timer = setTimeout(() => {
         setIsVisible(false);
         setIsExiting(false);
-      }, 200);
+      }, 300);
       return () => clearTimeout(timer);
     }
   }, [selectedCount, isVisible]);

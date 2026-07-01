@@ -21,8 +21,6 @@ export interface ListRowProps {
   isActive: boolean;
   onSelect: (id: number) => void;
   onOpenDrawer: (id: number) => void;
-  style?: React.CSSProperties;
-  measureRef?: (el: HTMLElement | null) => void;
 }
 
 /**
@@ -129,8 +127,6 @@ const ListRow = React.memo(function ListRow({
   isActive,
   onSelect,
   onOpenDrawer,
-  style,
-  measureRef,
 }: ListRowProps) {
   // 截止时间静默刷新（60秒）
   const deadlineRef = useRef<HTMLDivElement>(null);
@@ -190,8 +186,6 @@ const ListRow = React.memo(function ListRow({
 
   return (
     <div
-      ref={measureRef}
-      style={style}
       onClick={handleRowClick}
       className={cn(
         'relative flex items-center h-[72px] px-3 border-b border-slate-100/80',
