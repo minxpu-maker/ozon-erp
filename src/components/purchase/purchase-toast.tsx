@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { X, Undo2, CheckCircle, AlertCircle, Info, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -37,12 +37,32 @@ export function PurchaseToast({ toasts, onRemove }: PurchaseToastProps) {
 function ToastItem({ toast, onRemove }: { toast: ToastMessage; onRemove: () => void }) {
   const [isExiting, setIsExiting] = useState(false);
   const [progress, setProgress] = useState(100); // 进度条（仅 success/info）
+  const countdownRef = useRef<HTMLSpanElement>(null);
+  const countdownValueRef = useRef(5); // 撤销倒计时初始值5秒
   
   // 自动消失逻辑：error 类型不自动消失
   useEffect(() => {
     // error 类型不自动消失
     if (toast.type === 'error') {
       return;
+    }
+    
+    // undo 类型特殊处理：5秒倒计时
+    if (toast.type === 'undo' && toast.onUndo) {
+      countdownValueRef.current = 5;
+      const countdownInterval = setInterval(() => {
+        countdownValueRef.current -= 1;
+        if (countdownRef.current) {
+          countdownRef.current.textContent = `${countdownValueRef.current}s`;
+        }
+        if (countdownValueRef.current <= 0) {
+          clearInterval(countdownInterval);
+          setIsExiting(true);
+          setTimeout(onRemove, 200);
+        }
+      }, 1000);
+      
+      return () => clearInterval(countdownInterval);
     }
     
     const duration = toast.duration || 3000;
@@ -65,7 +85,7 @@ function ToastItem({ toast, onRemove }: { toast: ToastMessage; onRemove: () => v
       clearTimeout(timer);
       clearInterval(progressInterval);
     };
-  }, [toast.duration, toast.type, onRemove]);
+  }, [toast.duration, toast.type, toast.onUndo, onRemove]);
   
   // 手动关闭
   const handleClose = () => {
@@ -189,13 +209,22 @@ function ToastItem({ toast, onRemove }: { toast: ToastMessage; onRemove: () => v
           
           {/* 撤销按钮（可选） */}
           {toast.onUndo && (
-            <button
-              onClick={handleUndo}
-              className="text-xs text-blue-500 hover:text-blue-600 font-medium flex items-center gap-1 px-2 py-1 rounded hover:bg-blue-50 transition-colors"
-            >
-              <Undo2 className="w-3 h-3" />
-              撤销
-            </button>
+            <>
+              <button
+                onClick={handleUndo}
+                className="text-xs text-blue-500 hover:text-blue-600 font-medium flex items-center gap-1 px-2 py-1 rounded hover:bg-blue-50 transition-colors"
+              >
+                <Undo2 className="w-3 h-3" />
+                撤销
+              </button>
+              {/* 倒计时显示 */}
+              <span 
+                ref={countdownRef}
+                className="text-xs font-mono text-blue-500"
+              >
+                5s
+              </span>
+            </>
           )}
           
           {/* 关闭按钮 */}

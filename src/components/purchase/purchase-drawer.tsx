@@ -389,6 +389,9 @@ export function PurchaseDrawer({
           "h-[85vh] rounded-t-2xl p-0 flex flex-col",
           // 桌面端：底部上滑（高度80vh，宽度100%）
           "md:h-[80vh]",
+          // 顶部渐变边框和蓝色阴影
+          "border-t-2 border-t-blue-400/50",
+          "shadow-[0_-4px_12px_rgba(59,130,246,0.15)]",
           "bg-white"
         )}
       >
